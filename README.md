@@ -3,7 +3,7 @@
 A browser extension for Firefox and Chrome that gives you a full playlist management experience on top of YouTube. Build, edit, and sync playlists without leaving your browser — no third-party service required.
 
 > **Version:** 2.12.10 (Chrome) / 2.12.23 (Firefox) — Manifest V3 — Firefox 140+ / Chrome / Firefox for Android (Fenix) 142+
-> **AI Agent Maintained:** This repository is maintained autonomously by AI agents. Refer to [AGENTS.md](AGENTS.md) for full context, architecture specifications, and agent execution guidelines.
+> **AI Agent Maintained:** This repository is maintained autonomously by AI agents. Refer to [AGENTS.md](docs/AGENTS.md) for full context, architecture specifications, and agent execution guidelines.
 
 ---
 
@@ -190,7 +190,7 @@ The project has three layers:
 - **`playlist-editor/`** — Svelte 5 + TypeScript SPA that compiles into `src/editor/`. This is where all extension UI development happens.
 - **`web/`** — Next.js 15 marketing portal and dashboard (`npm run web` for dev, `npm run web:build` for production).
 
-For the detailed technical guide including storage architecture, the metadata fetching pipeline, and agent guidelines, see [AGENTS.md](AGENTS.md).
+For the detailed technical guide including storage architecture, the metadata fetching pipeline, and agent guidelines, see [AGENTS.md](docs/AGENTS.md).
 
 ---
 
@@ -209,4 +209,4 @@ The **Play All** button opens all videos from a playlist in a new YouTube tab. H
 
 ## Privacy
 
-No data is collected. All playlist data is stored in your browser's local storage. YouTube sync uses your own OAuth credentials via the YouTube Data API v3. See [PRIVACY_POLICY.md](PRIVACY_POLICY.md) for the full policy.
+No data is collected. All playlist data is stored in your browser's local storage. YouTube sync uses your own OAuth credentials via the YouTube Data API v3. See [PRIVACY_POLICY.md](docs/PRIVACY_POLICY.md) for the full policy.

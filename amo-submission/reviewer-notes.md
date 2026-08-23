@@ -11,7 +11,7 @@ Paste this into the **"Notes for Reviewers"** field on AMO (if available).
 - **API Calls:** The extension calls the YouTube Data API v3 (`https://www.googleapis.com/`) only when the user explicitly triggers a sync operation.
 - **Source Code:** Full source code is available at https://github.com/el-musleh/independent-youtube-playlist-manager
 - **Permissions:** The extension requests `identity`, `storage`, `tabs`, `activeTab`, `contextMenus`, `scripting`, `unlimitedStorage`, `alarms`, and `notifications` — all used exclusively for playlist management and YouTube sync functionality.
-- **Data Collection:** No personally identifiable information is collected. See `PRIVACY_POLICY.md` in the repository root.
+- **Data Collection:** No personally identifiable information is collected. See `docs/PRIVACY_POLICY.md` in the repository root.
 
 ---
 

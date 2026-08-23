@@ -5,14 +5,14 @@ const LAST_UPDATED = "August 23, 2026";
 const REPO_BLOB = "https://github.com/el-musleh/independent-youtube-playlist-manager/blob/master";
 
 const FOOTER_LINKS = [
-  { label: "Support & FAQ", href: `${REPO_BLOB}/SUPPORT.md` },
-  { label: "Release Notes", href: `${REPO_BLOB}/RELEASE_NOTES.md` },
+  { label: "Support & FAQ", href: `${REPO_BLOB}/docs/SUPPORT.md` },
+  { label: "Release Notes", href: `${REPO_BLOB}/docs/RELEASE_NOTES.md` },
   { label: "Bug Reports", href: "https://github.com/el-musleh/independent-youtube-playlist-manager/issues" },
   { label: "Contributing", href: `${REPO_BLOB}/CONTRIBUTING.md` },
   { label: "Security Policy", href: `${REPO_BLOB}/SECURITY.md` },
-  { label: "Privacy Policy", href: `${REPO_BLOB}/PRIVACY_POLICY.md` },
-  { label: "Terms of Service", href: `${REPO_BLOB}/TERMS_OF_SERVICE.md` },
-  { label: "Impressum", href: `${REPO_BLOB}/IMPRESSUM.md` },
+  { label: "Privacy Policy", href: `${REPO_BLOB}/docs/PRIVACY_POLICY.md` },
+  { label: "Terms of Service", href: `${REPO_BLOB}/docs/TERMS_OF_SERVICE.md` },
+  { label: "Impressum", href: `${REPO_BLOB}/docs/IMPRESSUM.md` },
   { label: "License", href: `${REPO_BLOB}/LICENSE` },
 ];
 

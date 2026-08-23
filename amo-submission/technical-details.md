@@ -63,4 +63,4 @@ The extension does not load or execute code from remote URLs. All code is bundle
 
 ## Data Collection
 
-No data collection. The extension operates entirely client-side. See `PRIVACY_POLICY.md` for details.
+No data collection. The extension operates entirely client-side. See `docs/PRIVACY_POLICY.md` for details.

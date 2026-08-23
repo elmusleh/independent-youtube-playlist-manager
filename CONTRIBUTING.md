@@ -49,7 +49,7 @@ npm run watch
 
 - **TypeScript** for the SPA; **plain JS** for the extension shell.
 - Follow existing file conventions and naming.
-- Metadata writes must go through `db-service.ts` (IndexedDB), never `browser.storage.local` (see `AGENTS.md` storage rules).
+- Metadata writes must go through `db-service.ts` (IndexedDB), never `browser.storage.local` (see `docs/AGENTS.md` storage rules).
 - Run `npm run build` and `svelte-check` before submitting — CI enforces both.
 - Keep manifests clean: never add `src/manifest.json`; only `manifest.chrome.json` and `manifest.firefox.json` exist.
 
@@ -57,7 +57,7 @@ npm run watch
 
 1. Fork the repository and create a branch from `master`.
 2. Make focused, minimal changes — one concern per PR.
-3. Update documentation (`README.md`, `RELEASE_NOTES.md`, relevant `.md`) when behavior changes.
+3. Update documentation (`README.md`, `docs/RELEASE_NOTES.md`, relevant `.md`) when behavior changes.
 4. Ensure `npm run build`, `svelte-check`, and `npm run web:build` all pass.
 5. Write a clear PR description: what, why, and how to test.
 6. Commit messages should follow the conventional format: `type(scope): description`.
@@ -74,7 +74,7 @@ docs(readme): update build instructions
 
 ## Reporting Issues
 
-See the [Support & FAQ](SUPPORT.md) for bug-report guidelines. For **security vulnerabilities**, do not open a public issue — see [SECURITY.md](SECURITY.md).
+See the [Support & FAQ](docs/SUPPORT.md) for bug-report guidelines. For **security vulnerabilities**, do not open a public issue — see [SECURITY.md](SECURITY.md).
 
 ## License
 
