@@ -57,4 +57,4 @@ screenshot-04-settings.png
 screenshot-05-dark-mode.png
 ```
 
-Place the final files in this `amo-submission/screenshots/` directory before uploading to AMO. The capture utility also stores supplemental editor views here using the `screenshot-06-*` naming range; submit only the strongest 4–5 images to AMO.
+Place the final files in this `docs/amo-submission/screenshots/` directory before uploading to AMO. The capture utility also stores supplemental editor views here using the `screenshot-06-*` naming range; submit only the strongest 4–5 images to AMO.

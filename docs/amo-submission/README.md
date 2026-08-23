@@ -26,7 +26,7 @@ The `dist/` files and source ZIP are generated release artifacts. They are inten
 ## Quick Start
 
 1. Open `checklist.md` and work through the pre-flight checklist.
-2. Run `npm run build`, then capture screenshots with `node amo-submission/tools/capture.js`.
+2. Run `npm run build`, then capture screenshots with `node docs/amo-submission/tools/capture.js`.
 3. Copy metadata from `metadata.md` into the AMO forms.
 4. Paste `reviewer-notes.md` into the reviewer notes field.
 5. Switch the channel from **Unlisted** to **Listed** and submit for review.
