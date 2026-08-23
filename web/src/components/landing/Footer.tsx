@@ -2,7 +2,7 @@ import React from "react";
 
 const LAST_UPDATED = "August 23, 2026";
 
-const REPO_BLOB = "https://github.com/el-musleh/independent-youtube-playlist-manager/blob/master";
+const REPO_BLOB = "https://github.com/el-musleh/independent-youtube-playlist-manager/blob/main";
 
 const FOOTER_LINKS = [
   { label: "Support & FAQ", href: `${REPO_BLOB}/docs/SUPPORT.md` },

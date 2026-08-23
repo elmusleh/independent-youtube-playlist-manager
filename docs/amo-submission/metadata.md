@@ -48,7 +48,7 @@ https://github.com/el-musleh/independent-youtube-playlist-manager/issues
 
 ## Privacy Policy URL
 
-https://github.com/el-musleh/independent-youtube-playlist-manager/blob/master/docs/PRIVACY_POLICY.md
+https://github.com/el-musleh/independent-youtube-playlist-manager/blob/main/docs/PRIVACY_POLICY.md
 
 ---
 
