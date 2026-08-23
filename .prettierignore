@@ -1,8 +1,8 @@
 dist/
 node_modules/
-src/editor/
-src/browser-polyfill.min.js
-src/playlist-editor/public/
-web/.next/
-web/out/
+apps/browser-extension/editor/
+apps/browser-extension/assets/browser-polyfill.min.js
+apps/browser-extension/playlist-editor/public/
+apps/web-portal/.next/
+apps/web-portal/out/
 *.min.js

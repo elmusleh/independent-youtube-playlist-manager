@@ -6,14 +6,14 @@ export default [
     ignores: [
       "dist/**",
       "node_modules/**",
-      "src/editor/**",
-      "src/browser-polyfill.min.js",
-      "src/playlist-editor/**",
-      "web/**",
+      "apps/browser-extension/editor/**",
+      "apps/browser-extension/assets/browser-polyfill.min.js",
+      "apps/browser-extension/playlist-editor/**",
+      "apps/web-portal/**",
     ],
   },
   {
-    files: ["src/**/*.js"],
+    files: ["apps/browser-extension/**/*.js"],
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: "module",
@@ -33,7 +33,7 @@ export default [
     },
   },
   {
-    files: ["scripts/**/*.js"],
+    files: ["packages/build-tools/**/*.js"],
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: "commonjs",
@@ -50,7 +50,7 @@ export default [
     },
   },
   {
-    files: ["scripts/sync-version.js"],
+    files: ["packages/build-tools/sync-version.js"],
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: "module",

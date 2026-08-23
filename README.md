@@ -1,4 +1,4 @@
-<p align="center"><a href="https://iypm.vercel.app" target="_blank" rel="noreferrer noopener"><img width="128" alt="IYPM logo" src="https://raw.githubusercontent.com/el-musleh/independent-youtube-playlist-manager/main/web/public/icon.png"></a></p>
+<p align="center"><a href="https://iypm.vercel.app" target="_blank" rel="noreferrer noopener"><img width="128" alt="IYPM logo" src="https://raw.githubusercontent.com/el-musleh/independent-youtube-playlist-manager/main/apps/web-portal/public/icon.png"></a></p>
 <p align="center">Independent YouTube Playlist Manager (IYPM) <strong>organizes</strong> and <strong>manages</strong> YouTube playlists client-side with <strong>privacy by default</strong>.</p>
 <br/>
 <p align="center">
@@ -79,7 +79,7 @@ cd independent-youtube-playlist-manager
 ### 2. Install dependencies
 ```bash
 npm install
-cd playlist-editor && npm install
+cd apps/browser-extension/playlist-editor && npm install
 cd ..
 ```
 

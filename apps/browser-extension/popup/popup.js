@@ -202,7 +202,7 @@ function setupUI() {
       const result = await /** @type {any} */ (browser).scripting.executeScript(
         {
           target: { tabId },
-          files: ["/actions/getPlaylistVideoIds.js"],
+          files: ["/content-scripts/injectors/get-playlist-video-ids.js"],
         },
       );
 
@@ -376,7 +376,7 @@ async function scrapeMetadataFromTabs(tabs) {
       // @ts-ignore
       const res = await browser.scripting.executeScript({
         target: { tabId: tab.id },
-        files: ["/actions/getVideoMetadata.js"],
+        files: ["/content-scripts/injectors/get-video-metadata.js"],
       });
 
       const result = res[0]?.result;
@@ -877,7 +877,7 @@ async function detectChannelFromDOM(tab) {
   try {
     const result = await browser.scripting.executeScript({
       target: { tabId: tab.id },
-      files: ["/actions/getChannelMetadata.js"],
+      files: ["/content-scripts/injectors/get-channel-metadata.js"],
     });
 
     const metadata = result[0]?.result;
@@ -985,7 +985,7 @@ async function handleChannelImport() {
 
       const result = await browser.scripting.executeScript({
         target: { tabId: activeTab.id },
-        files: ["/actions/getChannelVideoIds.js"],
+        files: ["/content-scripts/injectors/get-channel-video-ids.js"],
       });
 
       const rawVideos = result[0]?.result || [];
@@ -1005,7 +1005,7 @@ async function handleChannelImport() {
       try {
         result = await browser.scripting.executeScript({
           target: { tabId: activeTab.id },
-          files: ["/actions/scrapeYouTubeLinks.js"],
+          files: ["/content-scripts/injectors/scrape-youtube-links.js"],
         });
         await log(
           "INFO",

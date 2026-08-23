@@ -35,5 +35,5 @@ The `dist/` files and source ZIP are generated release artifacts. They are inten
 
 - **Current channel:** Unlisted
 - **Current upload UUID:** `0379b5d80cc941c289548955e9dc9d5d`
-- **Target version:** Set this from `src/manifest.firefox.json` immediately before upload.
+- **Target version:** Set this from `apps/browser-extension/manifest.firefox.json` immediately before upload.
 - **Extension ID:** `{790842fe-fecb-4375-a127-95c1c1d35d3e}`

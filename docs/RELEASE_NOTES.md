@@ -167,7 +167,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - Firefox / Firefox for Android: signed unlisted XPI via `web-ext sign --channel=unlisted`; installable from AMO or by drag-and-drop
 
 ### Changed
-- `src/manifest.firefox.json` version bumped to `2.12.5` for AMO submission
+- `apps/browser-extension/manifest.firefox.json` version bumped to `2.12.5` for AMO submission
 
 ---
 

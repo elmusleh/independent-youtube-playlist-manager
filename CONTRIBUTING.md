@@ -10,9 +10,9 @@ All contributors must follow our [Code of Conduct](CODE_OF_CONDUCT.md). Please r
 
 The repository has three layers:
 
-- **`playlist-editor/`** — Svelte 5 + TypeScript SPA that compiles into `src/editor/`. All extension UI lives here.
-- **`src/`** — Plain JS WebExtension shell (background service worker, popup, content scripts) plus the compiled editor output.
-- **`web/`** — Next.js 15 marketing site and dashboard (`npm run web` / `npm run web:build`).
+- **`apps/browser-extension/apps/browser-extension/playlist-editor/`** — Svelte 5 + TypeScript SPA that compiles into `apps/browser-extension/editor/`. All extension UI lives here.
+- **`apps/browser-extension/`** — Plain JS WebExtension shell (background service worker, popup, content scripts) plus the compiled editor output.
+- **`apps/web-portal/`** — Next.js 15 marketing site and dashboard (`npm run web` / `npm run web:build`).
 
 ## Local Development Setup
 
@@ -23,7 +23,7 @@ cd independent-youtube-playlist-manager
 
 # 2. Install dependencies
 npm install
-cd playlist-editor && npm install && cd ..
+cd apps/browser-extension/playlist-editor && npm install && cd ..
 cd web && npm install && cd ..
 ```
 
@@ -33,7 +33,7 @@ All commands run from the repository root:
 
 ```bash
 # Type-check the Svelte SPA
-cd playlist-editor && npx svelte-check && cd ..
+cd apps/browser-extension/playlist-editor && npx svelte-check && cd ..
 
 # Full production build (extension + dist/)
 npm run build
@@ -51,7 +51,7 @@ npm run watch
 - Follow existing file conventions and naming.
 - Metadata writes must go through `db-service.ts` (IndexedDB), never `browser.storage.local` (see `docs/AGENTS.md` storage rules).
 - Run `npm run build` and `svelte-check` before submitting — CI enforces both.
-- Keep manifests clean: never add `src/manifest.json`; only `manifest.chrome.json` and `manifest.firefox.json` exist.
+- Keep manifests clean: never add `apps/browser-extension/manifest.json`; only `manifest.chrome.json` and `manifest.firefox.json` exist.
 
 ## Pull Request Guidelines
 

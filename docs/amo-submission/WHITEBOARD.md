@@ -35,7 +35,7 @@ Use this file to jot down notes, temporary values, or copy-paste buffers while f
 
 ### 1. popup.js — Replaced 5x `.innerHTML` with DOM-safe `setIcon()`
 
-File: `src/popup/popup.js`
+File: `apps/browser-extension/popup/popup.js`
 
 ```js
 function setIcon(element, className) {
@@ -61,7 +61,7 @@ Replaced at lines 574, 592, 604, 628, 664 (all `btnExecute.innerHTML` assignment
 
 **Final decision:** Keep `data_collection_permissions` with `strict_min_version: 140.0` for desktop (Firefox 140+ required), `121.0` for Android. Trade-off: older desktop Firefox users (121–139) cannot install, but zero warnings on AMO.
 
-**File:** `src/manifest.firefox.json:51-62`
+**File:** `apps/browser-extension/manifest.firefox.json:51-62`
 
 ---
 
@@ -76,7 +76,7 @@ Replaced at lines 574, 592, 604, 628, 664 (all `btnExecute.innerHTML` assignment
 
 ## Current State
 
-- **Source code:** Fixed (`src/popup/popup.js`, `src/editor/main.js`, `src/manifest.firefox.json`, `scripts/patch-innerhtml.js`)
+- **Source code:** Fixed (`apps/browser-extension/popup/popup.js`, `apps/browser-extension/editor/main.js`, `apps/browser-extension/manifest.firefox.json`, `packages/build-tools/patch-innerhtml.js`)
 - **Built:** `dist/firefox/` contains clean v2.12.12 with 0 validation errors
 - **Editor white page:** FIXED — `patch-innerhtml.js` now returns `HTMLTemplateElement` with `.content` populated via `DOMParser`
 - **Signed:** `web-ext sign` timed out (AMO API slow); try running manually or upload source zip directly

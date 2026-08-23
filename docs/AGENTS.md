@@ -8,17 +8,17 @@
 
 The codebase is split into two primary layers:
 
-1. **`playlist-editor/` (Frontend SPA Extension UI)**
+1. **`apps/browser-extension/apps/browser-extension/playlist-editor/` (Frontend SPA Extension UI)**
    - Built with **Svelte 4 / 5 + TypeScript + Rollup**.
-   - Compiles into `src/editor/` (`main.js`, `bundle.css`, `index.html`).
+   - Compiles into `apps/browser-extension/editor/` (`main.js`, `bundle.css`, `index.html`).
    - Location of all UI views (`App.svelte`, `PlaylistEditor.svelte`, `Saved.svelte`, `Settings.svelte`, `History.svelte`, `Search.svelte`) and data services (`video-service.ts`, `youtube-api.ts`, `storage-service.ts`, `sync-service.ts`).
 
-2. **`web/` (Official SaaS Portal & Interactive Dashboard)**
+2. **`apps/web-portal/` (Official SaaS Portal & Interactive Dashboard)**
    - Built with **Next.js 15 (App Router) + TypeScript + Tailwind CSS + shadcn/ui + Lucide icons**.
    - High-converting marketing landing page, interactive extension simulator, and authenticated Supabase-ready cross-device dashboard.
    - Run `npm run web` (dev server on `localhost:3000`) or `npm run web:build` (production bundle).
 
-3. **`src/` (Extension Shell)**
+3. **`apps/browser-extension/` (Extension Shell)**
    - Plain JavaScript WebExtension shell (MV3).
    - `background-worker.js` / `background.js` — Service worker / background script.
    - `actions/` — Content script injectables (`watch-tracker.js`, `getVideoMetadata.js`, `scrapeYouTubeLinks.js`, `getChannelVideoIds.js`, `getPlaylistVideoIds.js`).
@@ -34,16 +34,16 @@ The project target platforms are **Google Chrome**, **Mozilla Firefox Desktop (1
 ### Critical Manifest Rules:
 - **Chrome (`manifest.chrome.json`):** Uses `"service_worker": "background-worker.js"`. Requires public `"key"` field to lock extension ID `lppdplclfhchgkgckfmkopomahlpfjok`.
 - **Firefox (`manifest.firefox.json`):** Uses `"background.scripts": ["background-worker.js"]`. Must **NOT** contain a `"key"` field. Uses Gecko extension ID `{790842fe-fecb-4375-a127-95c1c1d35d3e}`.
-- **Never put `src/manifest.json` in `src/`!** Build scripts validate that only `manifest.chrome.json` and `manifest.firefox.json` exist in `src/`. `npm run build` generates `dist/chrome/manifest.json` and `dist/firefox/manifest.json`.
+- **Never put `apps/browser-extension/manifest.json` in `apps/browser-extension/`!** Build scripts validate that only `manifest.chrome.json` and `manifest.firefox.json` exist in `apps/browser-extension/`. `npm run build` generates `dist/chrome/manifest.json` and `dist/firefox/manifest.json`.
 
 ---
 
 ## 💾 Storage, Normalization & Backup Architecture
 
 ### 1. Per-Video Metadata Storage & Transactional CRUD (`IndexedDB`)
-- **Database & Store:** Dedicated database `yph_metadata_db_v2` with object store `metadata` managed natively via `playlist-editor/src/services/db-service.ts` (zero external library conflicts, atomic batch transactions, memory fallback).
+- **Database & Store:** Dedicated database `yph_metadata_db_v2` with object store `metadata` managed natively via `apps/browser-extension/apps/browser-extension/playlist-editor/apps/browser-extension/services/db-service.ts` (zero external library conflicts, atomic batch transactions, memory fallback).
 - **Key Pattern:** `yph:meta:<videoId>` managed via `db-service.ts` with exponential backoff retry.
-- **Strict Normalization:** All metadata and playlist writes are sanitized and enforced through `playlist-editor/src/services/schema-normalizer.ts` (`normalizeVideoMeta`, `normalizePlaylist`, `normalizeHistoryRecord`).
+- **Strict Normalization:** All metadata and playlist writes are sanitized and enforced through `apps/browser-extension/apps/browser-extension/playlist-editor/apps/browser-extension/services/schema-normalizer.ts` (`normalizeVideoMeta`, `normalizePlaylist`, `normalizeHistoryRecord`).
 - **Rule for AI Agents:** NEVER store large arrays of video metadata in `browser.storage.local`. High-frequency video metadata MUST be queried and written via `db-service.ts` to utilize the multi-gigabyte `unlimitedStorage` IndexedDB capacity without item quota limits.
 
 ### 2. Playlist & App State (`browser.storage.local`)
@@ -67,7 +67,7 @@ The project target platforms are **Google Chrome**, **Mozilla Firefox Desktop (1
 
 ## 🔄 Video Metadata Fetching & Scraping Pipeline
 
-Metadata fetching occurs in `playlist-editor/src/services/video-service.ts` and `youtube-api.ts` configured via User Settings (`metadataExecutionStrategy: "free_first" | "api_first"`):
+Metadata fetching occurs in `apps/browser-extension/apps/browser-extension/playlist-editor/apps/browser-extension/services/video-service.ts` and `youtube-api.ts` configured via User Settings (`metadataExecutionStrategy: "free_first" | "api_first"`):
 
 ### Default Execution Order (Free / Zero-Quota First):
 1. **IndexedDB Local Cache Hit:** Read `yph:meta:<videoId>` (24h valid TTL, 5min negative TTL).
@@ -76,7 +76,7 @@ Metadata fetching occurs in `playlist-editor/src/services/video-service.ts` and 
 4. **Tier 3 — Official YouTube oEmbed (Zero Quota):** Queries `https://www.youtube.com/oembed?url=...` guaranteeing video title and channel name.
 5. **Tier 4 — YouTube Data API v3 (Uses Quota):** Batch queries (`/videos?id=...`) when user is signed in with OAuth or has configured a custom API key (1 quota unit per 50 videos).
 6. **Tier 5 — Dynamic Piped & Invidious Fallback:** Fallback across active Piped instances (`pipedapi.kavin.rocks`, `api.piped.private.coffee`), Invidious instances (`inv.nadeko.net`, `yewtu.be`), and user-configured custom URLs.
-7. **Open Tab Scraping:** Direct metadata extraction from open tabs via `src/actions/getVideoMetadata.js`.
+7. **Open Tab Scraping:** Direct metadata extraction from open tabs via `apps/browser-extension/content-packages/build-tools/injectors/getVideoMetadata.js`.
 
 ### Scraping Settings Keys (`browser.storage.sync` / `Settings`):
 - `metadataExecutionStrategy`: `"free_first"` (default) or `"api_first"`.
@@ -91,9 +91,9 @@ All commands must be executed from the **repository root**:
 
 ```bash
 # 1. Type-check Svelte SPA
-cd playlist-editor && npx svelte-check && cd ..
+cd apps/browser-extension/playlist-editor && npx svelte-check && cd ..
 
-# 2. Complete production build (Compiles SPA -> src/editor/, copies to dist/chrome/ and dist/firefox/, patches innerHTML, validates manifests)
+# 2. Complete production build (Compiles SPA -> apps/browser-extension/editor/, copies to dist/chrome/ and dist/firefox/, patches innerHTML, validates manifests)
 npm run build
 
 # 3. Web SaaS Portal & Dashboard Build
@@ -107,7 +107,7 @@ npm run watch
 
 ## 🚨 Guidelines & Rules for AI Agents
 
-1. **Run Verification Commands:** Always run `npm run build` and `cd playlist-editor && npx svelte-check` after making code modifications to ensure no compilation or manifest validation errors.
+1. **Run Verification Commands:** Always run `npm run build` and `cd apps/browser-extension/playlist-editor && npx svelte-check` after making code modifications to ensure no compilation or manifest validation errors.
 2. **Preserve Compatibility:** Maintain Android (Fenix) compatibility guard checks (`isAndroid()` user-agent detection) before using desktop-only extension APIs (`contextMenus`, `identity.launchWebAuthFlow`).
-3. **Keep Manifests Clean:** Never add `src/manifest.json`. Only edit `src/manifest.chrome.json` and `src/manifest.firefox.json`.
+3. **Keep Manifests Clean:** Never add `apps/browser-extension/manifest.json`. Only edit `apps/browser-extension/manifest.chrome.json` and `apps/browser-extension/manifest.firefox.json`.
 4. **Debounced Saves:** Ensure UI edits to playlists trigger the debounced autosave in `storage-service.ts`.

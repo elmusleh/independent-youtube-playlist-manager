@@ -1,7 +1,7 @@
 version: 2
 updates:
   - package-ecosystem: "npm"
-    directory: "/src/playlist-editor"
+    directory: "/apps/browser-extension/playlist-editor"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 0  # no limit

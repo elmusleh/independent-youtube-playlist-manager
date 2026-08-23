@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 
-const root = path.join(__dirname, '..');
+const root = path.join(__dirname, '../..');
 const chromeDir = path.join(root, 'dist/chrome');
 const tmpDir = path.join(root, 'dist/.store-chrome');
 const manifestPath = path.join(chromeDir, 'manifest.json');

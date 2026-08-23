@@ -29,7 +29,7 @@ test-results/
 .factory/
 .windsurf/
 skills/
-src/editor/*
+apps/browser-extension/editor/*
 *.crx
 *.pem
 .env*

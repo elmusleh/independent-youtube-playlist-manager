@@ -94,7 +94,7 @@ Open `reviewer-notes.md` and paste the contents into the **"Notes for Reviewers"
 
 ### Quick Release (one-shot)
 
-1. Bump version in `src/manifest.firefox.json`
+1. Bump version in `apps/browser-extension/manifest.firefox.json`
 2. `npm run build` — builds both Chrome and Firefox
 3. `npm run sign-firefox` — signs the XPI using credentials from `.env`
 4. The signed XPI will be at `dist/firefox/web-ext-artifacts/*.xpi`

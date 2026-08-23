@@ -19,7 +19,7 @@ Paste this into the **"Notes for Reviewers"** field on AMO (if available).
 
 ```bash
 npm install
-cd playlist-editor && npm install && npm run build && cd ..
+cd apps/browser-extension/playlist-editor && npm install && npm run build && cd ..
 npm run build-firefox
 ```
 

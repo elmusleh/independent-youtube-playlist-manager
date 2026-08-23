@@ -5,8 +5,8 @@
   "version": "2.12.10",
   "manifest_version": 3,
   "icons": {
-    "48": "icons/icon_48.png",
-    "128": "icons/icon_128.png"
+    "48": "assets/icons/icon_48.png",
+    "128": "assets/icons/icon_128.png"
   },
   "options_ui": {
     "page": "editor/index.html#/settings",
@@ -18,7 +18,7 @@
   },
   "background": {
     "scripts": [
-      "background-worker.js"
+      "background/index.js"
     ],
     "type": "module"
   },
@@ -28,8 +28,8 @@
         "*://www.youtube.com/watch*"
       ],
       "js": [
-        "browser-polyfill.min.js",
-        "actions/watch-tracker.js"
+        "assets/browser-polyfill.min.js",
+        "content-scripts/watch-tracker.js"
       ],
       "run_at": "document_idle"
     }

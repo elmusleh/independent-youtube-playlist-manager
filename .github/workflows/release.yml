@@ -26,10 +26,10 @@ jobs:
       - name: Install Dependencies
         run: |
           npm ci
-          cd src/playlist-editor && npm ci
+          cd apps/browser-extension/playlist-editor && npm ci
 
       - name: Sync Versions (manifests to package.json)
-        run: node scripts/sync-version.js
+        run: node packages/build-tools/sync-version.js
 
       - name: Package Chrome and Firefox Extensions
         run: npm run pack

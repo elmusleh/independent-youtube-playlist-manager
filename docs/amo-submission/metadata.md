@@ -54,4 +54,4 @@ https://github.com/el-musleh/independent-youtube-playlist-manager/blob/main/docs
 
 ## Extension Version
 
-Set this to the `version` value from `src/manifest.firefox.json` immediately before submission.
+Set this to the `version` value from `apps/browser-extension/manifest.firefox.json` immediately before submission.

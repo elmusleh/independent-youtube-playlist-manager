@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 /**
  * sync-version.js
- * Reads the canonical version from src/manifest.chrome.json and propagates
- * it to src/manifest.firefox.json and package.json.
+ * Reads the canonical version from apps/browser-extension/manifest.chrome.json and propagates
+ * it to apps/browser-extension/manifest.firefox.json and package.json.
  *
  * Usage:
- *   node scripts/sync-version.js            # sync from chrome manifest
- *   node scripts/sync-version.js --set 2.12.25  # set new version everywhere
+ *   node packages/build-tools/sync-version.js            # sync from chrome manifest
+ *   node packages/build-tools/sync-version.js --set 2.12.25  # set new version everywhere
  */
 
 import { readFileSync, writeFileSync } from "fs";
@@ -14,7 +14,7 @@ import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const root = resolve(__dirname, "..");
+const root = resolve(__dirname, "../..");
 
 function readJson(filePath) {
   return JSON.parse(readFileSync(filePath, "utf-8"));
@@ -24,8 +24,8 @@ function writeJson(filePath, data) {
   writeFileSync(filePath, JSON.stringify(data, null, 2) + "\n", "utf-8");
 }
 
-const chromeManifestPath = resolve(root, "src/manifest.chrome.json");
-const firefoxManifestPath = resolve(root, "src/manifest.firefox.json");
+const chromeManifestPath = resolve(root, "apps/browser-extension/manifest.chrome.json");
+const firefoxManifestPath = resolve(root, "apps/browser-extension/manifest.firefox.json");
 const packageJsonPath = resolve(root, "package.json");
 
 const args = process.argv.slice(2);
@@ -48,14 +48,14 @@ console.log(`\nSyncing version: ${canonicalVersion}\n`);
 // Update Chrome manifest
 chromeManifest.version = canonicalVersion;
 writeJson(chromeManifestPath, chromeManifest);
-console.log(`  src/manifest.chrome.json -> ${canonicalVersion}`);
+console.log(`  apps/browser-extension/manifest.chrome.json -> ${canonicalVersion}`);
 
 // Update Firefox manifest
 const firefoxManifest = readJson(firefoxManifestPath);
 const firefoxPrev = firefoxManifest.version;
 firefoxManifest.version = canonicalVersion;
 writeJson(firefoxManifestPath, firefoxManifest);
-console.log(`  src/manifest.firefox.json -> ${canonicalVersion} (was ${firefoxPrev})`);
+console.log(`  apps/browser-extension/manifest.firefox.json -> ${canonicalVersion} (was ${firefoxPrev})`);
 
 // Update package.json
 const pkg = readJson(packageJsonPath);
