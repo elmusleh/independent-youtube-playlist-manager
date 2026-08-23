@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "skills": {
+    "audit": {
+      "source": "el-musleh/ai-skill-quality-audit",
+      "sourceType": "github",
+      "computedHash": "3548c13eb944f854b8bcac1e60aadda0c25d0fb2acd351cd5cc255a6bcbb0d1f"
+    },
+    "chrome-debug": {
+      "source": "zenobi-us/dotfiles",
+      "sourceType": "github",
+      "computedHash": "d46d28d9c437a18dc1f28f45744d3574314724a6a2ce56fe661c8833cbcdf184"
+    },
+    "supabase": {
+      "source": "supabase/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/supabase/SKILL.md",
+      "computedHash": "583344c20e90f3654dbb0632f088d89fd9f1dde8ac85e8a644dd12eee59b1380"
+    },
+    "supabase-postgres-best-practices": {
+      "source": "supabase/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/supabase-postgres-best-practices/SKILL.md",
+      "computedHash": "e14e276241805c97dbcfe40dcbea1a3035269cc7293cac4b1832dda41a835e60"
+    },
+    "ui-ux-pro-max": {
+      "source": "nextlevelbuilder/ui-ux-pro-max-skill",
+      "sourceType": "github",
+      "computedHash": "0a413bf988d06481f69bb81df2070741c3ba12dd9f1be2706d57f259c905992d"
+    },
+    "web-design-guidelines": {
+      "source": "vercel-labs/agent-skills",
+      "sourceType": "github",
+      "computedHash": "a6a44d5498f7e8f68289902f3dedfc6f38ae0cee1e96527c80724cf27f727c2a"
+    }
+  }
+}

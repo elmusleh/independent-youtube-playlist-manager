@@ -1,0 +1,27 @@
+{
+    "DockerRun.DisableAutoGenerateConfig": true,
+    "git.ignoreSubmodules": false,
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.tabSize": 2,
+    "editor.trimTrailingWhitespace": true,
+    "editor.insertFinalNewline": true,
+    "typescript.preferences.importModuleSpecifier": "relative",
+    "typescript.updateImportsOnFileMove.enabled": "always",
+    "[svelte]": {
+        "editor.defaultFormatter": "svelte.svelte-vscode"
+    },
+    "[typescript]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[json]": {
+        "editor.defaultFormatter": "vscode.json-language-features"
+    },
+    "files.associations": {
+        "*.html": "html"
+    },
+    "files.exclude": {
+        "**/node_modules": true,
+        "**/src/editor": true
+    }
+}

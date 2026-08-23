@@ -1,0 +1,92 @@
+name: CI / Verification
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test-web:
+    name: Web & Extension E2E Integration (Typecheck, Build, E2E)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: |
+            web/package-lock.json
+            playlist-editor/package-lock.json
+            package-lock.json
+
+      - name: Install Project & Extension Dependencies
+        run: |
+          npm ci
+          cd playlist-editor && npm ci
+
+      - name: Build Extension (Chrome & Firefox Bundles)
+        run: npm run build
+
+      - name: Install Web Dependencies
+        run: npm --prefix web ci
+
+      - name: Install Playwright Browsers
+        run: npx --prefix web playwright install --with-deps chromium
+
+      - name: Build Web Production Bundle
+        run: npm --prefix web run build
+
+      - name: Run Playwright E2E Tests (Headed via Xvfb)
+        env:
+          HEADED: 'true'
+        run: xvfb-run npm --prefix web run test:e2e
+
+      - name: Upload Playwright Test Report (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: web/playwright-report/
+          retention-days: 7
+
+  test-extension:
+    name: Extension CI (Svelte Diagnostics & Manifest Validation)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Root Dependencies
+        run: npm ci
+
+      - name: Install Playlist Editor Dependencies
+        run: cd playlist-editor && npm ci
+
+      - name: Check Version Sync
+        run: |
+          node scripts/sync-version.js
+          git diff --exit-code src/manifest.chrome.json src/manifest.firefox.json package.json || (echo 'Version mismatch detected -- run: npm run sync-version' && exit 1)
+
+      - name: Run Svelte Diagnostics (Typecheck)
+        run: cd playlist-editor && npx svelte-check
+
+      - name: Build Extension (Chrome & Firefox Bundles)
+        run: npm run build
+
+      - name: Validate Manifests
+        run: node scripts/validate-manifests.js

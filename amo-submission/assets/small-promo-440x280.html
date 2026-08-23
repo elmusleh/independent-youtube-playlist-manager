@@ -1,0 +1,60 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="_shared.css">
+<style>
+  body { background: #fff; display: flex; align-items: center; justify-content: center; }
+  .tile {
+    width: 440px; height: 280px;
+    background: radial-gradient(120% 160% at 85% 15%, #ff2d2d 0%, #ff0000 45%, #b30000 100%);
+    position: relative; overflow: hidden;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    color: #fff;
+  }
+  /* subtle diagonal sheen */
+  .tile::before {
+    content: ""; position: absolute; inset: -40%;
+    background: linear-gradient(115deg, rgba(255,255,255,0.16) 0%, rgba(255,255,255,0) 40%);
+    transform: rotate(0deg);
+  }
+  .badge {
+    width: 88px; height: 88px; background: #fff; border-radius: 22px;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.28);
+    margin-bottom: 16px;
+    position: relative; z-index: 2;
+  }
+  h1 {
+    font-size: 26px; font-weight: 800; letter-spacing: -0.4px;
+    position: relative; z-index: 2; text-align: center;
+    line-height: 1.1;
+  }
+  p {
+    font-size: 13px; font-weight: 600; opacity: 0.92; margin-top: 6px;
+    position: relative; z-index: 2; letter-spacing: 0.2px;
+  }
+  .pill {
+    margin-top: 12px; font-size: 10.5px; font-weight: 700; letter-spacing: 0.6px;
+    background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.45);
+    padding: 4px 12px; border-radius: 999px; position: relative; z-index: 2;
+  }
+</style>
+</head>
+<body>
+  <div class="tile">
+    <div class="badge">
+      <svg width="60" height="60" viewBox="0 0 48 48" fill="none">
+        <rect x="4" y="7" width="30" height="7" fill="#ff0000"/>
+        <rect x="4" y="19" width="30" height="7" fill="#ff0000"/>
+        <rect x="4" y="31" width="16" height="7" fill="#ff0000"/>
+        <path d="M31 26.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11Z" fill="#fff" stroke="#ff0000" stroke-width="3"/>
+        <path d="M31 29.5v5M28.5 32h5" stroke="#ff0000" stroke-width="2.4" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <h1>Independent YouTube Playlist Manager</h1>
+    <p>Offline-first playlist editor &amp; bulk manager</p>
+    <div class="pill">FREE &amp; OPEN SOURCE</div>
+  </div>
+</body>
+</html>

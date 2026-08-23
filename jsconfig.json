@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "target": "es6",
+    "checkJs": false,
+    "strict": true,
+    "noImplicitAny": false
+  },
+  "exclude": ["node_modules", "**/node_modules/*", "playlist-editor", "src", "dist"]
+}

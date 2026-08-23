@@ -1,0 +1,70 @@
+{
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAvjS55M/Hb1oFvilNOQv8flRzZTGnjoTBp+iXjmDQwEyTmNMbcQqsnlDlNllp1mrIYr2ALaAwP4/tsenWHdmC9m9Dq7AeEfoZWBtt8lJv2XHv33ePPd8xwe4Sg1Esj6LyctnpkOB+588xDf5dExD4/Doddo65B8rDSbPKTNVcfxQpQ1cBDTaazPNXNd9Ye1gVafZwbHkUUyie51mSVNAOTMYVxYOn1ruux8lC2aUtie992J1xDASupDEP0H2kp5/vBRGGShNszdiJDD+rSK1RxmY8zHd1PfNmHx6v/YJ2Eduycxe7v8wEfaGOx7iHsXxUmwmyoSuPf6FOckBIDey9EwIDAQAB",
+  "name": "Independent YouTube Playlist Manager",
+  "short_name": "Playlist Manager",
+  "description": "An independent system to create and manage YouTube playlists from open tabs, RSS feeds, and subscriptions with a persistent bottom dock.",
+  "version": "2.12.10",
+  "manifest_version": 3,
+  "icons": {
+    "48": "icons/icon_48.png",
+    "128": "icons/icon_128.png"
+  },
+  "options_ui": {
+    "page": "editor/index.html#/settings",
+    "open_in_tab": true
+  },
+  "action": {
+    "default_title": "Independent YouTube Playlist Manager",
+    "default_popup": "popup/popup.html"
+  },
+  "background": {
+    "service_worker": "background-worker.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://www.youtube.com/watch*"
+      ],
+      "js": [
+        "browser-polyfill.min.js",
+        "actions/watch-tracker.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "permissions": [
+    "bookmarks",
+    "tabs",
+    "storage",
+    "notifications",
+    "activeTab",
+    "contextMenus",
+    "identity",
+    "scripting",
+    "unlimitedStorage",
+    "alarms"
+  ],
+  "commands": {
+    "_execute_action": {
+      "suggested_key": {
+        "default": "Alt+Shift+Y",
+        "mac": "Alt+Shift+Y"
+      },
+      "description": "Open Playlist Helper Popup"
+    },
+    "quick_add_active_video": {
+      "suggested_key": {
+        "default": "Alt+Shift+A",
+        "mac": "Alt+Shift+A"
+      },
+      "description": "Quick add current YouTube video to Playlist Builder"
+    }
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "{c3d5f138-77cb-461e-b553-f82bf70fecf7}",
+      "strict_min_version": "121.0"
+    }
+  }
+}

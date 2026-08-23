@@ -1,0 +1,37 @@
+.idea/
+.tscache/
+.baseDir.ts
+.atom-build.json
+node_modules/
+typings/
+target/
+build/
+built/
+*.log
+*.tsbuildinfo
+*.zip
+test-results/
+
+# Build outputs — browser-specific manifests are copied here by npm run build-all
+# Load dist/chrome/ in Chrome, dist/firefox/ in Firefox
+/dist
+/dist-zip
+.agents/
+.agent/
+.codex/
+.devin/
+.gemini/
+.opencode/
+.roo/
+.zenflow/
+.zencoder/
+.claude/
+.factory/
+.windsurf/
+skills/
+src/editor/*
+*.crx
+*.pem
+.env*
+.vercel/
+.vercel

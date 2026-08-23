@@ -1,0 +1,18 @@
+Independent YouTube Playlist Manager
+Copyright (c) 2024-2026 el-musleh and contributors
+
+This project was originally forked from:
+  youtube-playlist-helper
+  https://github.com/sssakhi/youtube-playlist-helper
+  Copyright (c) 2020 Soufiane Sakhi
+  Licensed under the MIT License
+
+The codebase has been substantially rewritten, including:
+- Svelte 5 TypeScript SPA editor (playlist-editor/)
+- IndexedDB metadata pipeline (db-service.ts, schema-normalizer.ts)
+- Multi-tier zero-quota YouTube metadata scraping (video-service.ts)
+- Supabase cloud sync with LWW delta resolution (supabase-sync.ts)
+- Next.js 15 SaaS web portal (web/)
+- Full backup/restore pipeline (backup-service.ts)
+
+Original concepts retained under MIT license terms.

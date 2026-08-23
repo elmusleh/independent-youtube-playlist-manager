@@ -1,0 +1,111 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+    --primary: 0 72.2% 50.6%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 0 72.2% 50.6%;
+    --radius: 0.75rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html {
+    @apply scroll-smooth overflow-x-hidden;
+  }
+  body {
+    @apply bg-background text-foreground antialiased selection:bg-red-500/10 selection:text-red-900 overflow-x-hidden min-h-dvh;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+/* Custom glow and mesh background utilities */
+.bg-mesh-light {
+  background-color: #fcfcfd;
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(239, 68, 68, 0.05) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(220, 38, 38, 0.03) 0px, transparent 50%),
+    radial-gradient(at 50% 50%, rgba(244, 244, 245, 0.8) 0px, transparent 100%);
+}
+
+.glow-red {
+  box-shadow: 0 0 25px -5px rgba(220, 38, 38, 0.15);
+}
+
+.glow-red-lg {
+  box-shadow: 0 0 50px -10px rgba(220, 38, 38, 0.12);
+}
+
+.glow-red-subtle {
+  box-shadow: 0 0 15px -3px rgba(220, 38, 38, 0.08);
+}
+
+.border-gradient-red {
+  border-image: linear-gradient(to bottom right, rgba(220, 38, 38, 0.2), rgba(0, 0, 0, 0.05)) 1;
+}
+
+/* Glassmorphism surfaces */
+.glass-panel {
+  background: rgba(18, 18, 22, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-panel-hover:hover {
+  background: rgba(24, 24, 30, 0.85);
+  border-color: rgba(255, 0, 0, 0.3);
+  box-shadow: 0 10px 30px -10px rgba(255, 0, 0, 0.15);
+}
+
+/* Utility to hide scrollbars for horizontal filter chips */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Accessible minimum touch target helper (44x44px) */
+.touch-target-44 {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Custom scrollbar for desktop */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #09090b;
+}
+::-webkit-scrollbar-thumb {
+  background: #27272a;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3f3f46;
+}

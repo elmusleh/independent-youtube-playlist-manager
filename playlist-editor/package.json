@@ -1,0 +1,51 @@
+{
+  "name": "svelte-app",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "rollup -c --environment PRODUCTION",
+    "prod": "npm run build",
+    "watch": "rollup -c -w --environment PRODUCTION",
+    "cors": "node cors-proxy.js",
+    "validate": "svelte-check"
+  },
+  "devDependencies": {
+    "@fortawesome/free-brands-svg-icons": "^7.2.0",
+    "@rollup/plugin-commonjs": "^17.0.0",
+    "@rollup/plugin-node-resolve": "^11.0.0",
+    "@rollup/plugin-replace": "^2.4.1",
+    "@rollup/plugin-terser": "^1.0.0",
+    "@rollup/plugin-typescript": "^12.3.0",
+    "@tsconfig/svelte": "^5.0.4",
+    "@types/firefox-webext-browser": "^82.0.0",
+    "http-proxy": "^1.18.1",
+    "notyf": "^3.10.0",
+    "rollup": "^2.80.0",
+    "rollup-plugin-copy": "^3.4.0",
+    "rollup-plugin-css-only": "^3.1.0",
+    "rollup-plugin-livereload": "^2.0.0",
+    "rollup-plugin-svelte": "^7.2.3",
+    "svelte": "^5.55.1",
+    "svelte-check": "^4.4.6",
+    "svelte-preprocess": "^6.0.3",
+    "tslib": "^2.8.1",
+    "typescript": "^5.9.3",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "eslint": "^9.0.0",
+    "eslint-plugin-svelte": "^2.0.0",
+    "svelte-eslint-parser": "^0.43.0",
+    "prettier": "^3.0.0",
+    "prettier-plugin-svelte": "^3.0.0"
+  },
+  "dependencies": {
+    "@fortawesome/free-regular-svg-icons": "^6.4.2",
+    "@fortawesome/free-solid-svg-icons": "^6.4.2",
+    "@supabase/supabase-js": "^2.112.3",
+    "idb-keyval": "^6.2.2",
+    "sirv-cli": "^1.0.0",
+    "svelte-fa": "^4.0.4",
+    "svelte-paginate": "^0.0.1",
+    "svelte-spa-router": "^5.0.1"
+  }
+}

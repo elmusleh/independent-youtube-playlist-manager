@@ -1,0 +1,39 @@
+{
+  "name": "independent-youtube-playlist-manager",
+  "version": "2.12.24",
+  "description": "Generate YouTube playlists from bookmarks and URL lists",
+  "author": "el-musleh",
+  "license": "MIT",
+  "scripts": {
+    "build": "cd playlist-editor && npm install && npm run build && cd .. && node scripts/patch-innerhtml.js && npm run build-chrome && npm run build-firefox && node scripts/validate-manifests.js",
+    "prod": "cd playlist-editor && npm run prod",
+    "watch": "cd playlist-editor && npm run watch",
+    "cors": "cd playlist-editor && npm run cors",
+    "build-chrome": "[ -f src/manifest.json ] && { echo 'ERROR: src/manifest.json exists — delete it, only templates belong in src/'; exit 1; } || true; mkdir -p dist/chrome && rm -rf dist/chrome/* && cp -r src/* dist/chrome/ && cp src/manifest.chrome.json dist/chrome/manifest.json",
+    "build-firefox": "[ -f src/manifest.json ] && { echo 'ERROR: src/manifest.json exists — delete it, only templates belong in src/'; exit 1; } || true; mkdir -p dist/firefox && rm -rf dist/firefox/* && cp -r src/* dist/firefox/ && cp src/manifest.firefox.json dist/firefox/manifest.json",
+    "sign-firefox": "bash -c 'set -a && source .env && set +a && npx web-ext sign --source-dir=dist/firefox --artifacts-dir=dist/firefox/web-ext-artifacts --channel=unlisted'",
+    "pack:chrome": "npm run build && node scripts/package-chrome-store.js",
+    "pack:firefox": "npm run build && (cd dist/firefox && zip -r -FS ../youtube-playlist-helper-firefox.zip .)",
+    "pack": "npm run pack:chrome && npm run pack:firefox",
+    "web": "npm --prefix web run dev",
+    "web:build": "npm --prefix web run build",
+    "web:test": "npm --prefix web run test:e2e",
+    "sync-version": "node scripts/sync-version.js",
+    "lint": "eslint src/ scripts/ --ext .js",
+    "lint:fix": "eslint src/ scripts/ --ext .js --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "@types/firefox-webext-browser": "^143.0.0",
+    "notyf": "^3.10.0",
+    "webextension-polyfill": "^0.12.0",
+    "@eslint/js": "^9.0.0",
+    "eslint": "^9.0.0",
+    "globals": "^15.0.0",
+    "prettier": "^3.0.0"
+  },
+  "contributors": [
+    "Soufiane Sakhi <soufiane.sakhi.js@gmail.com> (original upstream)"
+  ]
+}

@@ -1,0 +1,28 @@
+/* Shared brand constants for all store artwork.
+   Brand: YouTube-red icon (list bars + rounded plus), clean white/zinc, red-600 accent.
+*/
+
+:root {
+  --red: #ff0000;
+  --red-deep: #cc0000;
+  --ink: #18181b;
+  --muted: #52525b;
+  --line: #e4e4e7;
+  --bg: #ffffff;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  width: 100%;
+  height: 100%;
+  font-family: "Inter", "Segoe UI", -apple-system, "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  background: #fff;
+}
+
+/* The extension icon, rebuilt in pure SVG so it stays vector-crisp at any size. */
+.icon {
+  display: block;
+}

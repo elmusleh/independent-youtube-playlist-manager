@@ -1,0 +1,25 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/playlist-editor"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 0  # no limit
+    groups:
+      rollup-plugins:
+        patterns: ["@rollup/plugin-*"]
+      svelte-ecosystem:
+        patterns: ["svelte-*"]
+      fortawesome:
+        patterns: ["@fortawesome/*"]
+      minor-and-patch:
+        update-types: ["minor", "patch"]
+        exclude-patterns: ["svelte", "svelte-spa-router", "rollup", "@rollup/plugin-*", "@fortawesome/*"]
+    ignore:
+      # Pinned major versions — see CLAUDE.md Dependency Hygiene
+      - dependency-name: "svelte"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "svelte-spa-router"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "rollup"
+        update-types: ["version-update:semver-major"]

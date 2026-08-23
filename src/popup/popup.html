@@ -1,0 +1,184 @@
+<!doctype html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="../css/fontawesome.min.css" />
+    <link rel="stylesheet" href="../css/solid.min.css" />
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+
+  <body>
+    <header id="popup-header" class="popup-header">
+      <div class="header-left">
+        <img src="../icons/icon_48.png" alt="logo" class="logo" />
+        <span class="app-name">Playlist Manager</span>
+      </div>
+      <button
+        id="open-playlists"
+        class="primary-action-btn"
+        title="Open saved playlists in new tab"
+      >
+        <i class="fa-solid fa-list-ul"></i>
+        <span>My Playlists</span>
+      </button>
+    </header>
+
+    <!-- Quick Add Section -->
+    <div id="quick-add-container" class="quick-add-container">
+      <div class="section-header">
+        <span class="section-title">Quick Add</span>
+        <span class="section-subtitle">Add current or related tabs</span>
+      </div>
+
+      <div class="target-row">
+        <button
+          id="btn-target-fav"
+          class="target-btn icon-only"
+          title="Add to Favorite Playlist"
+        >
+          <i class="fa-solid fa-star"></i>
+        </button>
+        <button
+          id="btn-target-latest"
+          class="target-btn active icon-only"
+          title="Add to Latest Playlist"
+        >
+          <i class="fa-solid fa-clock"></i>
+        </button>
+        <div class="select-wrapper">
+          <select id="select-target-playlist" class="target-select">
+            <option value="" disabled selected>More...</option>
+            <option value="__create_new__">✚ Create new...</option>
+          </select>
+          <i class="fa-solid fa-chevron-down select-icon"></i>
+        </div>
+      </div>
+
+
+      <div class="action-grid compact-actions">
+        <div class="select-wrapper scope-wrapper">
+          <select id="select-tab-scope" class="scope-select">
+            <option value="current">Only this tab</option>
+            <option value="left">Tabs to the left (this window)</option>
+            <option value="right">Tabs to the right (this window)</option>
+            <option value="all-this-window-include">
+              All tabs in this window (include this)
+            </option>
+            <option value="all-this-window-exclude">
+              All tabs in this window (exclude this)
+            </option>
+            <option value="all-windows">All tabs across all windows</option>
+          </select>
+          <i class="fa-solid fa-chevron-down select-icon"></i>
+        </div>
+        <button
+          id="btn-execute-add"
+          class="execute-btn icon-only"
+          title="Add Videos"
+        >
+          <i class="fa-solid fa-plus"></i>
+        </button>
+      </div>
+      <div class="popup-settings-hint">
+        Preferences can be adjusted in <a href="#" id="popup-settings-link">Settings</a>.
+      </div>
+    </div>
+
+    <div class="menu-divider"></div>
+
+    <!-- Main Menu -->
+    <div id="main-menu" class="popup-menu">
+      <div id="save-playlist" class="menu-item">
+        <div class="menu-item-icon">
+          <i class="fa-solid fa-file-import"></i>
+        </div>
+        <div class="menu-item-text">
+          <span class="menu-item-title">Save current playlist</span>
+          <span class="menu-item-desc">Clones the active YT playlist</span>
+        </div>
+      </div>
+      <div id="open-settings" class="menu-item">
+        <div class="menu-item-icon"><i class="fa-solid fa-gear"></i></div>
+        <div class="menu-item-text">
+          <span class="menu-item-title">Settings</span>
+          <span class="menu-item-desc">Manage preferences & auth</span>
+        </div>
+      </div>
+      <div id="import-channel" class="menu-item">
+        <div class="menu-item-icon"><i class="fa-solid fa-download"></i></div>
+        <div class="menu-item-text">
+          <span class="menu-item-title">Import from Page</span>
+          <span class="menu-item-desc"
+            >Detect YouTube links on current page</span
+          >
+        </div>
+      </div>
+    </div>
+
+    <!-- Channel Import Page -->
+    <div id="channel-page" class="page-section" style="display: none">
+      <div class="page-header">
+        <button id="back-to-menu" class="back-btn">
+          <i class="fa-solid fa-arrow-left"></i>
+          <span>Back</span>
+        </button>
+        <h3>Import from Page</h3>
+      </div>
+      <div class="page-body">
+        <div id="channel-info" class="channel-info"></div>
+
+        <div class="form-group">
+          <label for="input-quantity">Quantity</label>
+          <input
+            id="input-quantity"
+            type="number"
+            min="1"
+            max="1000"
+            value="25"
+            class="page-input"
+            placeholder="Number of videos"
+          />
+          <div class="tooltip">
+            Limit the number of links to import (0 = all)
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="select-order">Order</label>
+          <div class="select-wrapper">
+            <select id="select-order" class="page-select">
+              <option value="newest">Newest first</option>
+              <option value="oldest">Oldest first</option>
+              <option value="top">Top videos</option>
+            </select>
+            <i class="fa-solid fa-chevron-down select-icon"></i>
+          </div>
+        </div>
+
+        <div
+          id="progress-section"
+          class="progress-section"
+          style="display: none"
+        >
+          <div class="progress-bar">
+            <div id="progress-fill" class="progress-fill"></div>
+          </div>
+          <div id="progress-text" class="progress-text">Initializing...</div>
+        </div>
+      </div>
+      <div class="page-footer">
+        <button id="confirm-import" class="btn-confirm">Import</button>
+      </div>
+    </div>
+
+    <script src="../browser-polyfill.min.js"></script>
+    <script type="module" src="../editor/youtube-auth.js"></script>
+    <script type="module" src="../editor/youtube-api.js"></script>
+    <script type="module" src="../editor/storage-service.js"></script>
+    <script type="module" src="../editor/utils.js"></script>
+    <script type="module" src="../editor/video-service.js"></script>
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>
