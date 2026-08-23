@@ -1,212 +1,122 @@
-# Independent YouTube Playlist Manager
+<p align="center"><a href="https://iypm.vercel.app" target="_blank" rel="noreferrer noopener"><img width="128" alt="IYPM logo" src="https://raw.githubusercontent.com/el-musleh/independent-youtube-playlist-manager/main/web/public/icon.png"></a></p>
+<p align="center">Independent YouTube Playlist Manager (IYPM) <strong>organizes</strong> and <strong>manages</strong> YouTube playlists client-side with <strong>privacy by default</strong>.</p>
+<br/>
+<p align="center">
+  <a rel="noreferrer noopener" href="https://chromewebstore.google.com/"><img alt="Chrome Web Store" src="https://img.shields.io/badge/Chrome-141e24.svg?&style=for-the-badge&logo=google-chrome&logoColor=white"></a>
+  <a rel="noreferrer noopener" href="https://addons.mozilla.org/firefox/addon/independent-youtube-playlist-manager/"><img alt="Firefox Add-ons" src="https://img.shields.io/badge/Firefox-141e24.svg?&style=for-the-badge&logo=firefox-browser&logoColor=white"></a>
+  <a rel="noreferrer noopener" href="https://microsoftedge.microsoft.com/"><img alt="Edge Addons" src="https://img.shields.io/badge/Edge-141e24.svg?&style=for-the-badge&logo=microsoft-edge&logoColor=white"></a>
+  <img alt="Brave" src="https://img.shields.io/badge/Brave-141e24.svg?&style=for-the-badge&logo=brave&logoColor=white">
+  <img alt="Opera" src="https://img.shields.io/badge/Opera-141e24.svg?&style=for-the-badge&logo=opera&logoColor=white">
+  <img alt="Vivaldi" src="https://img.shields.io/badge/Vivaldi-141e24.svg?&style=for-the-badge&logo=vivaldi&logoColor=white">
+</p>
 
-A browser extension for Firefox and Chrome that gives you a full playlist management experience on top of YouTube. Build, edit, and sync playlists without leaving your browser — no third-party service required.
+<h2 align="center">Independent YouTube Playlist Manager (IYPM)</h2>
+<br/>
+<p align="center">IYPM is an <strong>open-source</strong>, privacy-first <strong>browser extension</strong> designed to replace and enhance YouTube's native playlist management. It operates entirely <strong>client-side</strong>, storing your data locally and syncing on-demand to your YouTube account without any intermediate third-party servers.</p>
+<br/>
+<br/>
 
-> **Version:** 2.12.10 (Chrome) / 2.12.23 (Firefox) — Manifest V3 — Firefox 140+ / Chrome / Firefox for Android (Fenix) 142+
-> **AI Agent Maintained:** This repository is maintained autonomously by AI agents. Refer to [AGENTS.md](docs/AGENTS.md) for full context, architecture specifications, and agent execution guidelines.
+## Questions & Discussions
 
----
+Most questions can be answered by reading the [Support & FAQ](docs/SUPPORT.md) page or the [User Guide](docs/USER_GUIDE.md).
+If you have other questions, open a new [discussion](https://github.com/el-musleh/independent-youtube-playlist-manager/discussions) or submit an [issue](https://github.com/el-musleh/independent-youtube-playlist-manager/issues).
 
-## What it does
+## Supported Browsers
 
-YouTube's native playlist tools are limited: you can't reorder in bulk, you can't build a queue from arbitrary links, and Watch Later is a black box. This extension replaces all of that with a proper editor.
+IYPM is fully compatible with all modern web browsers:
 
-**Playlist Editor**
-
-- Add videos from URLs or IDs (paste multiple at once)
-- Drag-and-drop reorder within a page; supports large playlists via pagination
-- Bulk select and delete multiple videos at once
-- Reverse order, remove duplicates, import from text / export to clipboard
-- Debounced auto-save — changes persist without a manual save button
-
-**Playlist Builder**
-
-- Right-click any YouTube video on any page → "Add to Playlist Builder" (desktop only)
-- Open the builder at any time to edit, play, or save the queued videos as a new playlist
-
-**Saved Playlists**
-
-- Offline-first: playlists are stored locally and optionally synced to your YouTube account
-- Unified view of both extension-managed playlists and your existing YouTube playlists
-- "Adopt" any YouTube playlist to bring it under extension management
-- Real-time search and sort across all playlists
-
-**Favorite Playlist**
-
-- Pin any managed playlist as your ⭐️ Favorite
-- Quick-add from the popup targets your Favorite, your Latest edited playlist, or a custom choice
-- Self-healing: if the playlist is deleted, the extension recreates it automatically
-
-**Quick Add Popup**
-
-- Click the toolbar icon on any YouTube page to instantly add the current video to a playlist
-- Targets Favorite, Latest, or any saved playlist — configurable in Settings
-
-**Settings**
-
-- Light / Dark / Device theme
-- Per-page video count, cache duration, default privacy for synced playlists
-- Toggle thumbnails off to save bandwidth
-- Auto-remove duplicates on import
+*   **Google Chrome:** Install directly from the Chrome Web Store.
+*   **Mozilla Firefox:** Install from Firefox Add-ons (desktop & Android/Fenix).
+*   **Chromium-based browsers (Edge, Brave, Opera, Vivaldi, etc.):** 
+    *   Fully supported using the Chrome package (`dist/chrome`).
+    *   Install directly from the Chrome Web Store or Microsoft Edge Add-ons store.
+*   **Apple Safari:**
+    *   Safari support is experimental. You can compile the extension for Safari using Xcode's converter:
+        ```bash
+        xcrun safari-web-extension-converter dist/chrome
+        ```
 
 ---
 
-## Why not just use YouTube playlists?
+## Features
 
-A comprehensive comparison between **Independent YouTube Playlist Manager** (this extension) and **YouTube's native playlist system**:
+*   **Offline-first:** Edit, reorder, merge, split, and search your playlists without internet connection.
+*   **Bulk Editing:** Drag-and-drop, pagination support, bulk-select and delete, duplicates removal, and reverse sorting.
+*   **Tab Harvester:** Import all open YouTube tabs from active browser windows with a single click.
+*   **Flexible Import/Export:** Backup database to **JSON (Schema v2)**, or export to **CSV** and **M3U** playlists.
+*   **Zero Data Collection:** Fully client-side. No user profiles, tracker links, or telemetry.
 
-| Capability | Independent YouTube Playlist Manager | Native YouTube Playlists |
+### Comparison: IYPM vs Native YouTube Playlists
+
+| Capability | Independent YouTube Playlist Manager (IYPM) | Native YouTube Playlists |
 |---|---|---|
-| **Creating playlists** | ✅ Create **unlimited playlists** with a few clicks directly from the extension. Batch-add dozens of videos at once. | ⚠️ Every single video must be added one at a time — open the video, click **Save**, then pick the playlist. |
-| **Adding open browser tabs** | ✅ Grab all open YouTube tabs from **multiple browser windows** at once, with flexible checkbox selection of exactly which tabs to include. | ❌ Not possible. There is no way to turn your open tabs into a playlist. |
-| **HTML & text scraping** | ✅ Paste raw HTML source, text blocks, or URL collections — the extension automatically identifies and extracts every video ID. Also scrapes links from channels and existing playlists. | ❌ Not possible. Only manual per-video saving. |
-| **Bulk editing (merge / split / combine / sort)** | ✅ Merge, split, divide, combine, sort, reverse, and de-duplicate playlists with **quick one-click buttons**. Bulk-select and delete any selection of videos instantly. | ❌ Very limited. Deleting a selection of videos is tedious (one at a time), and cleaning up **Watch Later** is notoriously painful. No merge/split tools at all. |
-| **Works offline** | ✅ Fully offline. All editing, sorting, and management works with zero connectivity — data lives in your browser's local storage. | ❌ Requires an internet connection and a loaded YouTube session for every action. |
-| **Account & privacy** | ✅ **No login required.** No personalized profile is built about you. Zero data collection — 100% client-side. | ⚠️ Requires a Google account. Your playlist activity feeds your YouTube profile and recommendation tracking. |
-| **Watch history & resume playback** | ✅ **Built-in local history**: continue exactly where you left off in any playlist — without enabling YouTube watch history and without privacy concerns. | ⚠️ Resume depends on YouTube's watch history being enabled, which ties your viewing behavior to your Google profile. |
-| **Playback limits** | ⚠️ In **offline/guest mode**, the generated YouTube link (`watch_videos`) is truncated by YouTube's servers to **~50 videos**. Signing in removes this limit (URL-length bound, supports thousands of IDs). | ✅ No per-playlist playback cap when signed in (native limit is 5,000 videos per playlist). |
-| **Export & portability** | ✅ 1-click export to **JSON (Schema v2)**, **CSV** (Excel/Sheets), and **M3U** (VLC/media players). Full-database backup and restore with merge/overwrite modes. | ❌ No native export. Your playlists are locked into YouTube. |
-| **Backup & data retention** | ⚠️ Data is stored **100% locally**. Exports are the **only backup** — **removing the extension permanently deletes all data** unless you exported first. | ✅ Stored on Google's servers, tied to your account. |
-
-**Bottom line:** the extension trades cloud storage for speed, bulk power, privacy, and portability. Export regularly if you want a safety net.
+| **Creating playlists** | ✅ Create **unlimited playlists** with a few clicks. Batch-add dozens of videos. | ⚠️ Add videos one by one manually (very slow). |
+| **Adding open browser tabs** | ✅ Harvester grabs open YouTube tabs from **all browser windows** automatically. | ❌ Not possible. |
+| **Text & HTML Scraping** | ✅ Extract video IDs from raw HTML source, clipboard paste, or text blocks. | ❌ Not possible. |
+| **Bulk Edit Tools** | ✅ Merge, split, reverse, sort, and de-duplicate. Bulk select and delete. | ❌ Manual per-video deletion only. No merge/split tools. |
+| **Works Offline** | ✅ Yes, data is stored in IndexedDB and local storage. | ❌ Requires active connection and YouTube session. |
+| **Data Portability** | ✅ 1-click export to **JSON**, **CSV**, and **M3U** (VLC). | ❌ Locked into Google ecosystem. |
 
 ---
 
-## Getting Started
+## How to contribute
 
-### 1. Clone the repository
+Read more about contributing to IYPM, code guidelines, and submission checklists in [CONTRIBUTING.md](CONTRIBUTING.md).
 
+---
+
+## Building for use
+
+Building IYPM requires a JavaScript runtime. We recommend **Node.js** (LTS or higher).
+
+### 1. Download the source code
 ```bash
-# Clone with submodules (required for quality-checks/)
+# Clone with submodules (required for validation assets)
 git clone --recurse-submodules https://github.com/el-musleh/independent-youtube-playlist-manager.git
-
-# Or if already cloned without submodules:
-git submodule update --init --recursive
+cd independent-youtube-playlist-manager
 ```
 
 ### 2. Install dependencies
-
-Install dependencies from the repository root:
-
 ```bash
 npm install
 cd playlist-editor && npm install
+cd ..
 ```
 
-### 3. Build and Development
-
-| Command                       | What it does                                                                     |
-| ----------------------------- | -------------------------------------------------------------------------------- |
-| `npm run watch`       | **Recommended for development** — Starts Rollup watcher with production settings |
-| `npm run build`       | One-shot production build → compiles Svelte and creates `dist/chrome/` + `dist/firefox/` |
-| `npm run build-chrome`| Copy `src/` → `dist/chrome/` with the correct Chrome manifest                  |
-| `npm run build-firefox`| Copy `src/` → `dist/firefox/` with the correct Firefox manifest               |
-| `npm run cors`        | Local CORS proxy for development (required for YouTube API calls)             |
-| `npm run web`         | Start the Next.js web portal dev server (`localhost:3000`)                    |
-| `npm run web:build`   | Production build of the web portal (`web/`)                                   |
-
-The compiled extension lives in `src/editor/` and is committed to the repo. To load the extension in a browser, run `npm run build` first to create the `dist/` folders.
-
-> **Note:** All commands must be run from the **repository root** (`independent-youtube-playlist-manager/`), not from `playlist-editor/`.
-
----
-
-## Loading the extension manually
-
-This extension uses **two separate manifest files** to avoid cross-browser warnings. The `dist/` folder contains ready-to-load versions for each browser.
-
+### 3. Build the extension
 ```bash
 npm run build
 ```
+This compiles the Svelte 5 application and bundles the extension into:
+*   **`dist/chrome/`** — Ready to load in Chrome, Edge, Brave, Opera, Vivaldi.
+*   **`dist/firefox/`** — Ready to load in Firefox and Firefox for Android.
 
-### Firefox (temporary — development only)
-
-1. Run `npm run build` from the repo root.
-2. Go to `about:debugging` — for detailed instructions on testing extensions, see the [official Firefox Source Docs](https://firefox-source-docs.mozilla.org/devtools-user/about_colon_debugging/index.html).
-3. Click **This Firefox** → **Load Temporary Add-on**.
-4. Select `dist/firefox/manifest.json`.
-5. After rebuilding, click **Reload** next to the extension entry.
-
-### Chrome (temporary — development only)
-
-1. Run `npm run build` from the repo root.
-2. Go to `chrome://extensions` → enable **Developer mode** (top-right).
-3. Click **Load unpacked** → select the `dist/chrome/` directory.
-4. After rebuilding, click the **↺** reload icon on the extension card.
-
-> **Switching browsers?** Just run `npm run build` again — both `dist/chrome/` and `dist/firefox/` are rebuilt with the correct manifests.
-
----
-
-## Permanent installation (no developer mode)
-
-### Chrome — Enterprise Policy (local machine)
-
-1. Build and package the CRX:
-   ```bash
-   npm run build
-   google-chrome --pack-extension=dist/chrome --pack-extension-key=src.pem
-   # Produces dist/chrome.crx (extension ID: lppdplclfhchgkgckfmkopomahlpfjok)
-   ```
-2. Create the policy file:
-   ```bash
-   sudo mkdir -p /etc/opt/chrome/policies/managed/
-   sudo tee /etc/opt/chrome/policies/managed/yt-playlist-helper.json > /dev/null << 'EOF'
-   {
-     "ExtensionInstallForcelist": [
-       "lppdplclfhchgkgckfmkopomahlpfjok;file:///path/to/dist/chrome.crx"
-     ]
-   }
-   EOF
-   ```
-3. Fully quit and relaunch Chrome — the extension installs permanently without the developer mode badge.
-
-> `src.pem` is the private key that locks the extension ID. Do not lose it or commit it to a public repo.
-
-### Firefox — Signed XPI (local machine, no review wait)
-
+To create release ZIP packages for browser stores, run:
 ```bash
-npm run build
-cd dist/firefox
-web-ext sign --api-key=<JWT_ISSUER> --api-secret=<JWT_SECRET> --channel=unlisted
-# Produces web-ext-artifacts/*.xpi — drag into Firefox to install permanently
+npm run pack
+# Generates zip files: independent-youtube-playlist-manager-chrome.zip and independent-youtube-playlist-manager-firefox.zip
 ```
 
-Get AMO API credentials at: https://addons.mozilla.org/developers/addon/api/key/
+---
 
-### Firefox for Android (Fenix)
+## Loading the extension manually (Developer Mode)
 
-Install the signed XPI via the AMO unlisted channel (same file as desktop Firefox). The extension detects Android at runtime and switches to a tabs-based OAuth flow automatically.
+### Chromium (Chrome, Edge, Brave, Opera, Vivaldi)
+1. Build the extension: `npm run build`
+2. Open `chrome://extensions/` (or `edge://extensions/`).
+3. Enable **Developer mode** (toggle in top-right).
+4. Click **Load unpacked** and select the **`dist/chrome/`** folder.
 
-> **Required:** Add `https://{790842fe-fecb-4375-a127-95c1c1d35d3e}.extensions.allizom.org/` as an authorized redirect URI in your Google Cloud Console OAuth client for sign-in to work on Android.
+### Firefox (Desktop)
+1. Build the extension: `npm run build`
+2. Open `about:debugging` in the address bar.
+3. Click **This Firefox** (or **This Thunderbird**).
+4. Click **Load Temporary Add-on...** and select the **`dist/firefox/manifest.json`** file.
 
 ---
 
-## Architecture overview
+## Privacy Policy
 
-The project has three layers:
+No data is collected. All playlist data is stored in your browser's local storage and IndexedDB. YouTube sync uses your own Google OAuth credentials via the YouTube Data API v3. 
 
-- **`src/`** — Plain JS extension shell (background service worker, popup, content scripts) and the compiled editor output. It does **not** contain a loadable `manifest.json` — use the `dist/` folders instead.
-- **`playlist-editor/`** — Svelte 5 + TypeScript SPA that compiles into `src/editor/`. This is where all extension UI development happens.
-- **`web/`** — Next.js 15 marketing portal and dashboard (`npm run web` for dev, `npm run web:build` for production).
-
-For the detailed technical guide including storage architecture, the metadata fetching pipeline, and agent guidelines, see [AGENTS.md](docs/AGENTS.md).
-
----
-
-## Known Limitations
-
-### "Play All" video count and guest users
-
-The **Play All** button opens all videos from a playlist in a new YouTube tab. How many videos actually load depends on whether you're signed in:
-
-- **Signed in:** All videos load into a single temporary playlist. There is no practical limit — the `&playlist=` URL parameter is constrained only by URL length, which supports thousands of video IDs.
-- **Guest (not signed in):** YouTube's `watch_videos` endpoint silently truncates the video list to approximately **50 videos**. This is a hard server-side limit imposed by YouTube and cannot be bypassed by the extension. If your playlist has more than ~50 videos, only the first ~50 will play.
-
-**Recommendation:** Sign in to your YouTube account to use Play All with large playlists without any truncation.
-
----
-
-## Privacy
-
-No data is collected. All playlist data is stored in your browser's local storage. YouTube sync uses your own OAuth credentials via the YouTube Data API v3. See [PRIVACY_POLICY.md](docs/PRIVACY_POLICY.md) for the full policy.
+See [docs/PRIVACY_POLICY.md](docs/PRIVACY_POLICY.md) for the complete policy statement.
