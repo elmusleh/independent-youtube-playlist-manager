@@ -306,7 +306,7 @@ export async function importFullDatabaseBackup(
  */
 export function downloadBackupFile(backup: CompleteBackupFile, filename?: string): void {
   const dateStr = new Date().toISOString().slice(0, 10);
-  const name = filename || `youtube-playlist-helper-backup-${dateStr}.json`;
+  const name = filename || `independent-youtube-playlist-manager-backup-${dateStr}.json`;
   const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");

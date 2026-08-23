@@ -78,7 +78,7 @@ A comprehensive comparison between **Independent YouTube Playlist Manager** (thi
 
 ```bash
 # Clone with submodules (required for quality-checks/)
-git clone --recurse-submodules https://github.com/el-musleh/youtube-playlist-helper.git
+git clone --recurse-submodules https://github.com/el-musleh/independent-youtube-playlist-manager.git
 
 # Or if already cloned without submodules:
 git submodule update --init --recursive
@@ -107,7 +107,7 @@ cd playlist-editor && npm install
 
 The compiled extension lives in `src/editor/` and is committed to the repo. To load the extension in a browser, run `npm run build` first to create the `dist/` folders.
 
-> **Note:** All commands must be run from the **repository root** (`youtube-playlist-helper/`), not from `playlist-editor/`.
+> **Note:** All commands must be run from the **repository root** (`independent-youtube-playlist-manager/`), not from `playlist-editor/`.
 
 ---
 

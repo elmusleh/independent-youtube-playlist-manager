@@ -55,4 +55,4 @@ These Terms are governed by the laws of the jurisdiction in which the Service's 
 
 ## 10. Contact
 
-For questions about these Terms, open an issue at [github.com/el-musleh/youtube-playlist-helper/issues](https://github.com/el-musleh/youtube-playlist-helper/issues).
+For questions about these Terms, open an issue at [github.com/el-musleh/independent-youtube-playlist-manager/issues](https://github.com/el-musleh/independent-youtube-playlist-manager/issues).

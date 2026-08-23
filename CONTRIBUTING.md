@@ -18,8 +18,8 @@ The repository has three layers:
 
 ```bash
 # 1. Clone with submodules
-git clone --recurse-submodules https://github.com/el-musleh/youtube-playlist-helper.git
-cd youtube-playlist-helper
+git clone --recurse-submodules https://github.com/el-musleh/independent-youtube-playlist-manager.git
+cd independent-youtube-playlist-manager
 
 # 2. Install dependencies
 npm install

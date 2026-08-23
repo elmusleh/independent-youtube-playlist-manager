@@ -78,7 +78,7 @@
     try {
       if (githubStars) return;
       const res = await fetch(
-        "https://api.github.com/repos/el-musleh/youtube-playlist-helper",
+        "https://api.github.com/repos/el-musleh/independent-youtube-playlist-manager",
       );
       const data = await res.json();
       if (data.stargazers_count !== undefined) {
@@ -223,7 +223,7 @@
     event.stopPropagation();
     closeDropdown();
     window.open(
-      "https://github.com/el-musleh/youtube-playlist-helper/issues",
+      "https://github.com/el-musleh/independent-youtube-playlist-manager/issues",
       "_blank",
     );
   }
@@ -733,7 +733,7 @@
                   e.stopPropagation();
                   closeDropdown();
                   window.open(
-                    "https://github.com/el-musleh/youtube-playlist-helper/discussions",
+                    "https://github.com/el-musleh/independent-youtube-playlist-manager/discussions",
                   );
                 }}
               >
@@ -745,7 +745,7 @@
 
             <div class="menu-section">
               <a
-                href="https://github.com/el-musleh/youtube-playlist-helper"
+                href="https://github.com/el-musleh/independent-youtube-playlist-manager"
                 target="_blank"
                 rel="noopener noreferrer"
                 class="menu-item"

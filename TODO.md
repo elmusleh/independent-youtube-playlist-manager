@@ -71,10 +71,10 @@ This milestone integrates Model Context Protocol (MCP) servers to give the AI ag
   - [ ] Connect `web/` repository to **Vercel** or **Cloudflare Pages** (manual: needs owner login).
   - [ ] Configure production domain (e.g. `youtubeplaylisthelper.com` or `yph.dev`).
 - [ ] **Chrome Web Store Submission:** (requires Google developer account + one-time $5 fee)
-  - [x] Package production ZIP via `npm run pack` (`dist/youtube-playlist-helper-chrome.zip`) — automated, also produced by `.github/workflows/release.yml`.
+  - [x] Package production ZIP via `npm run pack` (`dist/independent-youtube-playlist-manager-chrome.zip`) — automated, also produced by `.github/workflows/release.yml`.
   - [ ] Submit package to Google Chrome Developer Dashboard under Extension ID `lppdplclfhchgkgckfmkopomahlpfjok`.
 - [ ] **Mozilla Firefox AMO Submission:** (requires Mozilla AMO account)
-  - [x] Package ZIP via `npm run pack` (`dist/youtube-playlist-helper-firefox.zip`) — automated, also produced by `.github/workflows/release.yml`.
+  - [x] Package ZIP via `npm run pack` (`dist/independent-youtube-playlist-manager-firefox.zip`) — automated, also produced by `.github/workflows/release.yml`.
   - [ ] Submit package to Mozilla Add-ons Developer Hub under Gecko ID `{790842fe-fecb-4375-a127-95c1c1d35d3e}`.
 
 ---

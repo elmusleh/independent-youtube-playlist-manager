@@ -17,7 +17,7 @@ This directory contains everything needed to switch **Independent YouTube Playli
 
 | Artifact | Location |
 |----------|----------|
-| Extension ZIP | Generated at `dist/youtube-playlist-helper-firefox.zip` |
+| Extension ZIP | Generated at `dist/independent-youtube-playlist-manager-firefox.zip` |
 | Signed XPI | Generated at `dist/firefox/web-ext-artifacts/*.xpi` |
 | Source ZIP | Generate locally as an AMO upload attachment; do not commit it |
 

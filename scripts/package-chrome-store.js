@@ -26,7 +26,7 @@ fs.rmSync(tmpDir, { recursive: true, force: true });
 fs.cpSync(chromeDir, tmpDir, { recursive: true });
 fs.writeFileSync(path.join(tmpDir, 'manifest.json'), JSON.stringify(manifest, null, 2) + '\n');
 
-execSync(`cd ${tmpDir} && zip -r -FS ../youtube-playlist-helper-chrome.zip .`, {
+execSync(`cd ${tmpDir} && zip -r -FS ../independent-youtube-playlist-manager-chrome.zip .`, {
   cwd: root,
   stdio: 'inherit',
 });

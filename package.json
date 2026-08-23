@@ -13,7 +13,7 @@
     "build-firefox": "[ -f src/manifest.json ] && { echo 'ERROR: src/manifest.json exists — delete it, only templates belong in src/'; exit 1; } || true; mkdir -p dist/firefox && rm -rf dist/firefox/* && cp -r src/* dist/firefox/ && cp src/manifest.firefox.json dist/firefox/manifest.json",
     "sign-firefox": "bash -c 'set -a && source .env && set +a && npx web-ext sign --source-dir=dist/firefox --artifacts-dir=dist/firefox/web-ext-artifacts --channel=unlisted'",
     "pack:chrome": "npm run build && node scripts/package-chrome-store.js",
-    "pack:firefox": "npm run build && (cd dist/firefox && zip -r -FS ../youtube-playlist-helper-firefox.zip .)",
+    "pack:firefox": "npm run build && (cd dist/firefox && zip -r -FS ../independent-youtube-playlist-manager-firefox.zip .)",
     "pack": "npm run pack:chrome && npm run pack:firefox",
     "web": "npm --prefix web run dev",
     "web:build": "npm --prefix web run build",

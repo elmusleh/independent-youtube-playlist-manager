@@ -2,12 +2,12 @@ import React from "react";
 
 const LAST_UPDATED = "August 23, 2026";
 
-const REPO_BLOB = "https://github.com/el-musleh/youtube-playlist-helper/blob/master";
+const REPO_BLOB = "https://github.com/el-musleh/independent-youtube-playlist-manager/blob/master";
 
 const FOOTER_LINKS = [
   { label: "Support & FAQ", href: `${REPO_BLOB}/SUPPORT.md` },
   { label: "Release Notes", href: `${REPO_BLOB}/RELEASE_NOTES.md` },
-  { label: "Bug Reports", href: "https://github.com/el-musleh/youtube-playlist-helper/issues" },
+  { label: "Bug Reports", href: "https://github.com/el-musleh/independent-youtube-playlist-manager/issues" },
   { label: "Contributing", href: `${REPO_BLOB}/CONTRIBUTING.md` },
   { label: "Security Policy", href: `${REPO_BLOB}/SECURITY.md` },
   { label: "Privacy Policy", href: `${REPO_BLOB}/PRIVACY_POLICY.md` },

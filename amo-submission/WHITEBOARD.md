@@ -13,9 +13,9 @@ Use this file to jot down notes, temporary values, or copy-paste buffers while f
   - Primary:
   - Secondary:
 - [x] **Tags:** `youtube`, `playlist`, `video`, `manager`, `editor`, `tool`, `productivity`, `helper`
-- [x] **Homepage:** `https://github.com/el-musleh/youtube-playlist-helper`
-- [x] **Support URL:** `https://github.com/el-musleh/youtube-playlist-helper/issues`
-- [x] **Privacy Policy URL:** `https://github.com/el-musleh/youtube-playlist-helper/blob/master/PRIVACY_POLICY.md`
+- [x] **Homepage:** `https://github.com/el-musleh/independent-youtube-playlist-manager`
+- [x] **Support URL:** `https://github.com/el-musleh/independent-youtube-playlist-manager/issues`
+- [x] **Privacy Policy URL:** `https://github.com/el-musleh/independent-youtube-playlist-manager/blob/master/PRIVACY_POLICY.md`
 - [x] **License:** MIT (standard open-source — do NOT use the custom EULA field)
 - [x] **Icon:** uploaded
 - [ ] **Screenshots:** NOT uploaded (required for Listed)

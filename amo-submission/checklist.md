@@ -4,7 +4,7 @@ Follow these steps on the [AMO Developer Hub](https://addons.mozilla.org/en-US/d
 
 ## Pre-flight
 
-- [ ] Extension ZIP is current (`dist/youtube-playlist-helper-firefox.zip` matches the manifest version)
+- [ ] Extension ZIP is current (`dist/independent-youtube-playlist-manager-firefox.zip` matches the manifest version)
 - [ ] Source ZIP is generated locally for AMO and has not been committed
 - [ ] Signed XPI exists: `dist/firefox/web-ext-artifacts/*.xpi`
 - [ ] `PRIVACY_POLICY.md` is present in the repo root
@@ -14,7 +14,7 @@ Follow these steps on the [AMO Developer Hub](https://addons.mozilla.org/en-US/d
 
 ## 1. Switch Channel from Unlisted to Listed
 
-1. Go to the [Independent YouTube Playlist Manager developer page](https://addons.mozilla.org/en-US/developers/addon/youtube-playlist-helper/).
+1. Go to the [Independent YouTube Playlist Manager developer page](https://addons.mozilla.org/en-US/developers/addon/independent-youtube-playlist-manager/).
 2. Navigate to **"Edit Product Page"** or the version management area.
 3. Find the **"Channel"** or **"Distribution"** section.
 4. Change from **Unlisted** to **Listed**.
@@ -65,7 +65,7 @@ Open `reviewer-notes.md` and paste the contents into the **"Notes for Reviewers"
 
 ## 6. Upload Version & Submit for Review
 
-1. Upload the extension ZIP (`dist/youtube-playlist-helper-firefox.zip`) **or** the signed XPI.
+1. Upload the extension ZIP (`dist/independent-youtube-playlist-manager-firefox.zip`) **or** the signed XPI.
 2. If the code is minified/bundled, upload the locally generated source ZIP as well. Do not commit generated ZIPs to the repository.
 3. Wait for automated validation (a few seconds).
 4. Click **"Submit for Review"**.
@@ -103,6 +103,6 @@ Open `reviewer-notes.md` and paste the contents into the **"Notes for Reviewers"
 
 ### Manual Steps (if `web-ext sign` fails)
 
-1. `cd dist/firefox && zip -r ../youtube-playlist-helper-firefox.zip .`
+1. `cd dist/firefox && zip -r ../independent-youtube-playlist-manager-firefox.zip .`
 2. Upload the ZIP to AMO manually
 3. Submit for review (usually faster for established add-ons)

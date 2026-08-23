@@ -4,7 +4,7 @@
 
 The fastest and most reliable way to reach us is through GitHub Issues:
 
-- **Bug reports:** [github.com/el-musleh/youtube-playlist-helper/issues](https://github.com/el-musleh/youtube-playlist-helper/issues)
+- **Bug reports:** [github.com/el-musleh/independent-youtube-playlist-manager/issues](https://github.com/el-musleh/independent-youtube-playlist-manager/issues)
 - **Feature requests:** use the same issue tracker and label your request as a feature/enhancement.
 
 When reporting a bug, please include:

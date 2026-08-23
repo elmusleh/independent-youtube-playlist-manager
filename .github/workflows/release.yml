@@ -42,8 +42,8 @@ jobs:
         with:
           name: independent-youtube-playlist-manager-extensions
           path: |
-            dist/youtube-playlist-helper-chrome.zip
-            dist/youtube-playlist-helper-firefox.zip
+            dist/independent-youtube-playlist-manager-chrome.zip
+            dist/independent-youtube-playlist-manager-firefox.zip
           retention-days: 30
 
       - name: Create GitHub Release (on tag push)
@@ -51,8 +51,8 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            dist/youtube-playlist-helper-chrome.zip
-            dist/youtube-playlist-helper-firefox.zip
+            dist/independent-youtube-playlist-manager-chrome.zip
+            dist/independent-youtube-playlist-manager-firefox.zip
             release-source.zip
           generate_release_notes: true
           draft: false
