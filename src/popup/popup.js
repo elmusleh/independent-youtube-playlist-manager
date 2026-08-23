@@ -60,7 +60,7 @@ async function init() {
     },
     parseYoutubeIds: (text) => {
       let matches;
-      let videoIds = [];
+      const videoIds = [];
       const regex = new RegExp(YOUTUBE_REGEX.source, "ig");
       while ((matches = regex.exec(text))) {
         videoIds.push(matches[1]);
@@ -196,7 +196,7 @@ function setupUI() {
         return alert("The current tab is not a YouTube playlist tab");
       }
 
-      /** @type {any} */ let tabId = activeTab.id;
+      /** @type {any} */ const tabId = activeTab.id;
       await log("INFO", `Popup: Fetching video IDs from tab ${tabId}`);
 
       const result = await /** @type {any} */ (browser).scripting.executeScript(

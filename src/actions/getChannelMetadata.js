@@ -20,7 +20,7 @@
   if (!channelId && window['ytInitialData']) {
      try {
        channelId = window['ytInitialData'].metadata.channelMetadataRenderer.externalId;
-     } catch(e) {}
+     } catch(e) { /* ignore */ }
   }
 
   // Get Channel Name

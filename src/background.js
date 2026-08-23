@@ -551,7 +551,7 @@ async function handleCleanupWatchedVideo(videoId, playlistId) {
         browser.runtime
           .sendMessage({ cmd: "update-saved-playlists" })
           .catch(() => {});
-      } catch (e) {}
+      } catch (e) { /* ignore */ }
 
       return true;
     }
@@ -767,5 +767,15 @@ async function handleSyncRetry(localPlaylistId) {
       );
     }
     await browser.alarms.create(alarmName, { delayInMinutes: 30 });
+  }
+}
+
+function updateBadge(text) {
+  const actionApi = browser.action || browser.browserAction;
+  if (actionApi && typeof actionApi.setBadgeText === "function") {
+    actionApi.setBadgeText({ text: text || "" });
+    if (text && typeof actionApi.setBadgeBackgroundColor === "function") {
+      actionApi.setBadgeBackgroundColor({ color: "#FF0000" });
+    }
   }
 }

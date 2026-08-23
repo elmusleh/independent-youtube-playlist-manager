@@ -27,7 +27,7 @@
         message: `${logPrefix} ${message}`,
         details,
       });
-    } catch (e) {}
+    } catch (e) { /* ignore */ }
   }
 
   async function getSettings() {
@@ -110,7 +110,7 @@
     currentVideoId = urlParams.get("v");
 
     // Support URL param, Hash param, or Session Storage fallback (to survive native YouTube SPA navigation)
-    let hashParams = new URLSearchParams(window.location.hash.substring(1));
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
     const urlPlaylistId = urlParams.get("yph_local_list") || hashParams.get("yph_local_list");
     const hasListContext = urlParams.get("list") !== null;
 
@@ -169,7 +169,7 @@
             });
           }
         }
-      } catch (e) {}
+      } catch (e) { /* ignore */ }
     }
 
     startProgressTracking();
@@ -321,7 +321,7 @@
         channelName = channelEl
           ? /** @type {HTMLElement} */ (channelEl).innerText.trim()
           : "";
-      } catch (e) {}
+      } catch (e) { /* ignore */ }
 
       try {
         await browser.runtime.sendMessage({
