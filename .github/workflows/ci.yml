@@ -2,9 +2,9 @@ name: CI / Verification
 
 on:
   push:
-    branches: [ master ]
+    branches: [ main ]
   pull_request:
-    branches: [ master ]
+    branches: [ main ]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -25,13 +25,13 @@ jobs:
           cache: 'npm'
           cache-dependency-path: |
             web/package-lock.json
-            playlist-editor/package-lock.json
+            src/playlist-editor/package-lock.json
             package-lock.json
 
       - name: Install Project & Extension Dependencies
         run: |
           npm ci
-          cd playlist-editor && npm ci
+          cd src/playlist-editor && npm ci
 
       - name: Build Extension (Chrome & Firefox Bundles)
         run: npm run build
@@ -75,7 +75,7 @@ jobs:
         run: npm ci
 
       - name: Install Playlist Editor Dependencies
-        run: cd playlist-editor && npm ci
+        run: cd src/playlist-editor && npm ci
 
       - name: Check Version Sync
         run: |
@@ -83,7 +83,7 @@ jobs:
           git diff --exit-code src/manifest.chrome.json src/manifest.firefox.json package.json || (echo 'Version mismatch detected -- run: npm run sync-version' && exit 1)
 
       - name: Run Svelte Diagnostics (Typecheck)
-        run: cd playlist-editor && npx svelte-check
+        run: cd src/playlist-editor && npx svelte-check
 
       - name: Build Extension (Chrome & Firefox Bundles)
         run: npm run build

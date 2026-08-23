@@ -1,7 +1,7 @@
 version: 2
 updates:
   - package-ecosystem: "npm"
-    directory: "/playlist-editor"
+    directory: "/src/playlist-editor"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 0  # no limit

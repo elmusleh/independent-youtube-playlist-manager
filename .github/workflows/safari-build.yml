@@ -23,8 +23,8 @@ jobs:
       - name: Install Dependencies
         run: |
           npm ci
-          cd playlist-editor && npm ci
-          cd ..
+          cd src/playlist-editor && npm ci
+          cd ../..
 
       - name: Build WebExtension
         run: npm run build

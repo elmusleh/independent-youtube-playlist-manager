@@ -5,5 +5,5 @@
     "strict": true,
     "noImplicitAny": false
   },
-  "exclude": ["node_modules", "**/node_modules/*", "playlist-editor", "src", "dist"]
+  "exclude": ["node_modules", "**/node_modules/*", "src/playlist-editor", "src", "dist"]
 }

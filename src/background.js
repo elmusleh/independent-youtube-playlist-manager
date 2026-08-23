@@ -38,7 +38,7 @@ init();
 
 /**
  *
- * @param {import("../playlist-editor/src/types/model").Settings} settings
+ * @param {import("./playlist-editor/src/types/model").Settings} settings
  */
 async function buildContextMenus(settings) {
   if (isAndroid()) return;

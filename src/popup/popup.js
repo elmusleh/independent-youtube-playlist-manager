@@ -1,5 +1,5 @@
 /// <reference path="./popup.d.ts" />
-/// <reference path="../../playlist-editor/src/types/services.d.ts" />
+/// <reference path="../playlist-editor/src/types/services.d.ts" />
 
 /**
  * @typedef {import("webextension-polyfill").Tabs.Tab} Tab

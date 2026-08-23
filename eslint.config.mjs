@@ -8,7 +8,7 @@ export default [
       "node_modules/**",
       "src/editor/**",
       "src/browser-polyfill.min.js",
-      "playlist-editor/**",
+      "src/playlist-editor/**",
       "web/**",
     ],
   },

@@ -26,7 +26,7 @@ jobs:
       - name: Install Dependencies
         run: |
           npm ci
-          cd playlist-editor && npm ci
+          cd src/playlist-editor && npm ci
 
       - name: Sync Versions (manifests to package.json)
         run: node scripts/sync-version.js

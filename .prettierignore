@@ -2,7 +2,7 @@ dist/
 node_modules/
 src/editor/
 src/browser-polyfill.min.js
-playlist-editor/public/
+src/playlist-editor/public/
 web/.next/
 web/out/
 *.min.js

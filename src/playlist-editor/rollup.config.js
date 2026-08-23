@@ -32,7 +32,7 @@ export default {
     sourcemap: !production,
     format: "es",
     name: "app",
-    dir: production ? "../src/editor/" : "public/build/",
+    dir: production ? "../editor/" : "public/build/",
     entryFileNames: "[name].js",
     chunkFileNames: "chunks/[name]-[hash].js",
   },
@@ -98,7 +98,7 @@ export default {
     production && terser(),
     production && copy({
       targets: [
-        { src: "public/global.css", dest: "../src/editor" },
+        { src: "public/global.css", dest: "../editor" },
       ],
     }),
   ],
