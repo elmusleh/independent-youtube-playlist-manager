@@ -48,14 +48,24 @@ git add \
   package.json \
   apps/browser-extension/playlist-manager/package.json \
   apps/web-portal/package.json
-git commit -m "chore(release): bump version to $VERSION"
+# Only commit if there are actual changes (avoid empty commit)
+if git diff --cached --quiet; then
+  echo "⚠  No version changes to commit. Skipping commit step."
+else
+  git commit -m "chore(release): bump version to $VERSION"
+fi
 
-# 4. Create annotated tag
-echo "🏷   Tagging $TAG..."
-git tag -a "$TAG" -m "Release $TAG"
+# 4. Create annotated tag (skip if already exists)
+if git rev-parse "$TAG" >/dev/null 2>&1; then
+  echo "⚠  Tag $TAG already exists – skipping tag creation."
+else
+  echo "🏷   Tagging $TAG..."
+  git tag -a "$TAG" -m "Release $TAG"
+fi
 
 echo ""
 echo "✅  Done! Push to trigger GitHub Actions:"
 echo ""
 echo "    git push && git push origin $TAG"
+# dummy change for release test
 echo ""
