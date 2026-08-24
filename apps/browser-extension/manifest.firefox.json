@@ -63,7 +63,7 @@
   },
   "browser_specific_settings": {
     "gecko": {
-      "id": "independent-yt-playlist-manager@el-musleh.github.io",
+      "id": "independent-yt-playlist-manager@elmusleh.github.io",
       "strict_min_version": "140.0",
       "data_collection_permissions": {
         "required": [

@@ -74,6 +74,6 @@ You maintain 100% control over your data:
 
 ## 7. Licensing, Changes & Contact
 
-Independent YouTube Playlist Manager is open-source software distributed under the [MIT License](LICENSE) — the complete codebase can be audited at [github.com/el-musleh/independent-youtube-playlist-manager](https://github.com/el-musleh/independent-youtube-playlist-manager).
+Independent YouTube Playlist Manager is open-source software distributed under the [MIT License](LICENSE) — the complete codebase can be audited at [github.com/elmusleh/independent-youtube-playlist-manager](https://github.com/elmusleh/independent-youtube-playlist-manager).
 
 Material changes to this policy will be reflected in this file (with an updated date) in the repository. For questions or bug reports, please open an issue on the repository.

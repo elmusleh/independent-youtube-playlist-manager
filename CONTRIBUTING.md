@@ -18,7 +18,7 @@ The repository has three layers:
 
 ```bash
 # 1. Clone with submodules
-git clone --recurse-submodules https://github.com/el-musleh/independent-youtube-playlist-manager.git
+git clone --recurse-submodules https://github.com/elmusleh/independent-youtube-playlist-manager.git
 cd independent-youtube-playlist-manager
 
 # 2. Install dependencies

@@ -1,4 +1,4 @@
-<p align="center"><a href="https://iypm.vercel.app" target="_blank" rel="noreferrer noopener"><img width="128" alt="IYPM logo" src="https://raw.githubusercontent.com/el-musleh/independent-youtube-playlist-manager/main/apps/web-portal/public/icon.png"></a></p>
+<p align="center"><a href="https://github.com/elmusleh/independent-youtube-playlist-manager" target="_blank" rel="noreferrer noopener"><img width="128" alt="IYPM logo" src="https://raw.githubusercontent.com/elmusleh/independent-youtube-playlist-manager/main/apps/web-portal/public/icon.png"></a></p>
 <p align="center">Independent YouTube Playlist Manager (IYPM) <strong>organizes</strong> and <strong>manages</strong> YouTube playlists client-side with <strong>privacy by default</strong>.</p>
 <br/>
 <p align="center">
@@ -19,7 +19,7 @@
 ## Questions & Discussions
 
 Most questions can be answered by reading the [Support & FAQ](docs/SUPPORT.md) page or the [User Guide](docs/USER_GUIDE.md).
-If you have other questions, open a new [discussion](https://github.com/el-musleh/independent-youtube-playlist-manager/discussions) or submit an [issue](https://github.com/el-musleh/independent-youtube-playlist-manager/issues).
+If you have other questions, open a new [discussion](https://github.com/elmusleh/independent-youtube-playlist-manager/discussions) or submit an [issue](https://github.com/elmusleh/independent-youtube-playlist-manager/issues).
 
 ## Supported Browsers
 
@@ -72,7 +72,7 @@ Building IYPM requires a JavaScript runtime. We recommend **Node.js** (LTS or hi
 ### 1. Download the source code
 ```bash
 # Clone with submodules (required for validation assets)
-git clone --recurse-submodules https://github.com/el-musleh/independent-youtube-playlist-manager.git
+git clone --recurse-submodules https://github.com/elmusleh/independent-youtube-playlist-manager.git
 cd independent-youtube-playlist-manager
 ```
 

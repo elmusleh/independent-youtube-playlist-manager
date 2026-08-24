@@ -2,7 +2,7 @@
   "name": "independent-youtube-playlist-manager",
   "version": "2.12.24",
   "description": "Generate YouTube playlists from bookmarks and URL lists",
-  "author": "el-musleh",
+  "author": "elmusleh",
   "license": "MIT",
   "scripts": {
     "build": "cd apps/browser-extension/playlist-editor && npm install && npm run build && cd ../../.. && node packages/build-tools/patch-innerhtml.js && npm run build-chrome && npm run build-firefox && node packages/build-tools/validate-manifests.js",
@@ -25,13 +25,14 @@
     "format:check": "prettier --check ."
   },
   "devDependencies": {
-    "@types/firefox-webext-browser": "^143.0.0",
-    "notyf": "^3.10.0",
-    "webextension-polyfill": "^0.12.0",
     "@eslint/js": "^9.0.0",
+    "@types/firefox-webext-browser": "^143.0.0",
     "eslint": "^9.0.0",
     "globals": "^15.0.0",
-    "prettier": "^3.0.0"
+    "notyf": "^3.10.0",
+    "playwright": "^1.62.1",
+    "prettier": "^3.0.0",
+    "webextension-polyfill": "^0.12.0"
   },
   "contributors": [
     "Soufiane Sakhi <soufiane.sakhi.js@gmail.com> (original upstream)"

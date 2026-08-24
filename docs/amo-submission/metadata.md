@@ -36,19 +36,19 @@ youtube, playlist, video, manager, editor, tool, productivity, helper
 
 ## Homepage
 
-https://github.com/el-musleh/independent-youtube-playlist-manager
+https://github.com/elmusleh/independent-youtube-playlist-manager
 
 ---
 
 ## Support / Contributions URL
 
-https://github.com/el-musleh/independent-youtube-playlist-manager/issues
+https://github.com/elmusleh/independent-youtube-playlist-manager/issues
 
 ---
 
 ## Privacy Policy URL
 
-https://github.com/el-musleh/independent-youtube-playlist-manager/blob/main/docs/PRIVACY_POLICY.md
+https://github.com/elmusleh/independent-youtube-playlist-manager/blob/main/docs/PRIVACY_POLICY.md
 
 ---
 

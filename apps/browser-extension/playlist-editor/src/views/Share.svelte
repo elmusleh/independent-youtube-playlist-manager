@@ -16,7 +16,7 @@
   import ViewHeader from "../components/ViewHeader.svelte";
   import { toast } from "../stores/toast";
 
-  const shareUrl = "https://github.com/el-musleh/independent-youtube-playlist-manager";
+  const shareUrl = "https://github.com/elmusleh/independent-youtube-playlist-manager";
   const shareTitle = "Playlist Manager";
   const shareText =
     "Check out this extension! Turn open YouTube tabs and RSS feeds into organized playlists with Playlist Manager!";

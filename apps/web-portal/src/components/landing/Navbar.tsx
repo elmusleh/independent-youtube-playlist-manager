@@ -19,7 +19,7 @@ export function Navbar() {
   }, []);
 
   useEffect(() => {
-    fetch("https://api.github.com/repos/el-musleh/independent-youtube-playlist-manager")
+    fetch("https://api.github.com/repos/elmusleh/independent-youtube-playlist-manager")
       .then((res) => res.json())
       .then((data) => {
         if (data && typeof data.stargazers_count === "number") {
@@ -55,7 +55,7 @@ export function Navbar() {
 
         {/* GitHub Star Button — inline at every breakpoint */}
         <a
-          href="https://github.com/el-musleh/independent-youtube-playlist-manager"
+          href="https://github.com/elmusleh/independent-youtube-playlist-manager"
           target="_blank"
           rel="noreferrer"
           className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg border border-zinc-200 bg-white text-xs font-semibold text-zinc-700 hover:text-zinc-950 hover:bg-zinc-50 hover:border-zinc-300 transition-colors shadow-sm touch-target-44"

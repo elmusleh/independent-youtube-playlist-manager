@@ -69,7 +69,7 @@ export default function Home() {
               variant="outline"
               size="lg"
               className="w-full sm:w-auto h-11 px-6 font-semibold text-xs sm:text-sm bg-white border-zinc-200 hover:bg-zinc-50 hover:border-zinc-300 text-zinc-800 touch-target-44 gap-2"
-              onClick={() => window.open("https://github.com/el-musleh/independent-youtube-playlist-manager", "_blank")}
+              onClick={() => window.open("https://github.com/elmusleh/independent-youtube-playlist-manager", "_blank")}
             >
               <GithubIcon className="h-4 w-4 flex-shrink-0" />
               View Source
