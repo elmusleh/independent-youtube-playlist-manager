@@ -29,7 +29,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.0.0",
-    "@sveltejs/vite-plugin-svelte": "^2.0.0",
+    "@sveltejs/vite-plugin-svelte": "^7.3.0",
     "@testing-library/jest-dom": "^6.0.0",
     "@testing-library/user-event": "^14.0.0",
     "@types/firefox-webext-browser": "^143.0.0",
@@ -41,7 +41,7 @@
     "notyf": "^3.10.0",
     "playwright": "^1.62.1",
     "prettier": "^3.0.0",
-    "vitest": "^1.0.0",
+    "vitest": "^3.2.6",
     "webextension-polyfill": "^0.12.0"
   },
   "lint-staged": {
