@@ -38,7 +38,7 @@ export function Footer() {
         </nav>
 
         <div className="mt-6 pt-6 border-t border-zinc-200/70 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-zinc-400">
-          <p>© 2026 Independent YouTube Playlist Manager. Not affiliated with YouTube™ or Google LLC.</p>
+          <p>© 2026 Independent YouTube Playlist Manager.</p>
           <p>Last updated: {LAST_UPDATED}</p>
         </div>
       </div>
