@@ -1,6 +1,7 @@
 // Captures real screenshots of the built Chrome extension (headed Chromium via Xvfb).
 // Seeds a realistic demo playlist into the extension's local storage so the
 // editor/saved views render actual content, then screenshots each view.
+/* global browser, indexedDB */
 const { chromium } = require("playwright");
 const fs = require("fs");
 const path = require("path");

@@ -28,8 +28,23 @@ jobs:
           npm ci
           cd apps/browser-extension/playlist-editor && npm ci
 
-      - name: Sync Versions (manifests to package.json)
-        run: node packages/build-tools/sync-version.js
+      - name: Sync Versions from Tag
+        run: |
+          TAG_NAME="${{ github.ref_name }}"
+          if [[ "$TAG_NAME" =~ ^v[0-9] ]]; then
+            VERSION="${TAG_NAME#v}"
+            echo "Enforcing version: $VERSION from tag $TAG_NAME"
+            node packages/build-tools/sync-version.mjs --set "$VERSION"
+          else
+            echo "Triggered by branch/dispatch. Syncing standard versions."
+            node packages/build-tools/sync-version.mjs
+          fi
+
+      - name: Run Svelte Diagnostics (Typecheck)
+        run: cd apps/browser-extension/playlist-editor && npx svelte-check
+
+      - name: Run Linter
+        run: npm run lint
 
       - name: Package Chrome and Firefox Extensions
         run: npm run pack

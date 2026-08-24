@@ -79,7 +79,7 @@ jobs:
 
       - name: Check Version Sync
         run: |
-          node packages/build-tools/sync-version.js
+          node packages/build-tools/sync-version.mjs
           git diff --exit-code apps/browser-extension/manifest.chrome.json apps/browser-extension/manifest.firefox.json package.json || (echo 'Version mismatch detected -- run: npm run sync-version' && exit 1)
 
       - name: Run Svelte Diagnostics (Typecheck)

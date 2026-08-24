@@ -18,7 +18,7 @@
     "web": "npm --prefix apps/web-portal run dev",
     "web:build": "npm --prefix apps/web-portal run build",
     "web:test": "npm --prefix apps/web-portal run test:e2e",
-    "sync-version": "node packages/build-tools/sync-version.js",
+    "sync-version": "node packages/build-tools/sync-version.mjs",
     "lint": "eslint apps/browser-extension/ packages/build-tools/ --ext .js",
     "lint:fix": "eslint apps/browser-extension/ packages/build-tools/ --ext .js --fix",
     "format": "prettier --write .",
