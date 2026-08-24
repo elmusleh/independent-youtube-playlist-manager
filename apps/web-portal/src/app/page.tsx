@@ -54,7 +54,12 @@ export default function Home() {
               variant="glow"
               size="lg"
               className="w-full sm:w-auto h-11 px-6 font-bold text-xs sm:text-sm shadow-md shadow-red-600/10 touch-target-44"
-              onClick={() => window.open("https://chromewebstore.google.com/", "_blank")}
+              onClick={() =>
+                window.open(
+                  "https://chromewebstore.google.com/detail/dapjjdcnolpmfcnobilphjfpkmmokgid",
+                  "_blank"
+                )
+              }
             >
               <Image
                 src="/chrome.svg"

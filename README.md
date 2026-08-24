@@ -2,7 +2,7 @@
 <p align="center">Independent YouTube Playlist Manager (IYPM) helps you <strong>save YouTube videos for later viewing</strong> by creating custom playlists from your open tabs. Store playlists locally or optionally sync with your YouTube account—<strong>no login required</strong> for basic use.</p>
 <br/>
 <p align="center">
-  <a rel="noreferrer noopener" href="https://chromewebstore.google.com/"><img alt="Chrome Web Store" src="https://img.shields.io/badge/Chrome-141e24.svg?&style=for-the-badge&logo=google-chrome&logoColor=white"></a>
+  <a rel="noreferrer noopener" href="https://chromewebstore.google.com/detail/dapjjdcnolpmfcnobilphjfpkmmokgid"><img alt="Chrome Web Store" src="https://img.shields.io/badge/Chrome-141e24.svg?&style=for-the-badge&logo=google-chrome&logoColor=white"></a>
   <a rel="noreferrer noopener" href="https://addons.mozilla.org/en-US/firefox/addon/iypm/"><img alt="Firefox Add-ons" src="https://img.shields.io/badge/Firefox-141e24.svg?&style=for-the-badge&logo=firefox-browser&logoColor=white"></a>
 </p>
 
