@@ -2,7 +2,7 @@
   "name": "Independent YouTube Playlist Manager",
   "short_name": "Playlist Manager",
   "description": "An independent system to create and manage YouTube playlists from open tabs, RSS feeds, and subscriptions with a persistent bottom dock.",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "manifest_version": 3,
   "icons": {
     "16": "assets/icons/icon_16.png",
@@ -19,20 +19,13 @@
     "default_popup": "popup/popup.html"
   },
   "background": {
-    "scripts": [
-      "background/index.js"
-    ],
+    "scripts": ["background/index.js"],
     "type": "module"
   },
   "content_scripts": [
     {
-      "matches": [
-        "*://www.youtube.com/watch*"
-      ],
-      "js": [
-        "assets/browser-polyfill.min.js",
-        "content-scripts/watch-tracker.js"
-      ],
+      "matches": ["*://www.youtube.com/watch*"],
+      "js": ["assets/browser-polyfill.min.js", "content-scripts/watch-tracker.js"],
       "run_at": "document_idle"
     }
   ],
@@ -65,14 +58,8 @@
   },
   "web_accessible_resources": [
     {
-      "resources": [
-        "assets/*",
-        "editor/*",
-        "popup/*"
-      ],
-      "matches": [
-        "*://*/*"
-      ]
+      "resources": ["assets/*", "editor/*", "popup/*"],
+      "matches": ["*://*/*"]
     }
   ],
   "browser_specific_settings": {
@@ -80,9 +67,7 @@
       "id": "independent-yt-playlist-manager@elmusleh.github.io",
       "strict_min_version": "140.0",
       "data_collection_permissions": {
-        "required": [
-          "none"
-        ]
+        "required": ["none"]
       }
     },
     "gecko_android": {
