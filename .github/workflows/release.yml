@@ -49,16 +49,18 @@ jobs:
       - name: Package Chrome and Firefox Extensions
         run: npm run pack
 
-      - name: Create Source Code ZIP (git archive)
-        run: git archive --format=zip --output=release-source.zip HEAD
+      - name: Create and Move Source Code ZIP
+        run: |
+          git archive --format=zip --output=release-source.zip HEAD
+          mkdir -p dist
+          mv release-source.zip dist/source-code.zip
 
       - name: Upload Store ZIP Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: independent-youtube-playlist-manager-extensions
           path: |
-            dist/independent-youtube-playlist-manager-chrome.zip
-            dist/independent-youtube-playlist-manager-firefox.zip
+            dist/*.zip
           retention-days: 30
 
       - name: Create GitHub Release (on tag push)
@@ -66,9 +68,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            dist/independent-youtube-playlist-manager-chrome.zip
-            dist/independent-youtube-playlist-manager-firefox.zip
-            release-source.zip
+            dist/*.zip
           generate_release_notes: true
           draft: false
           prerelease: false
