@@ -1,5 +1,6 @@
 import { writable } from "svelte/store";
-import { browser } from "$app/env";
+// Simple check if running in a browser context
+const isBrowser = typeof window !== "undefined" && typeof window.document !== "undefined";
 
 /**
  * Feature flags for enabling/disabling experimental features.
@@ -15,7 +16,7 @@ class FeatureFlagService {
   };
 
   constructor() {
-    if (browser) {
+    if (isBrowser) {
       this.loadFlags();
     }
   }
