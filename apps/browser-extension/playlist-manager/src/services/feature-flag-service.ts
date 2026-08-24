@@ -1,6 +1,7 @@
 import { writable } from "svelte/store";
+declare const browser: any;
 // Simple check if running in a browser context
-const isBrowser = typeof window !== "undefined" && typeof window.document !== "undefined";
+const isBrowser = typeof browser !== "undefined";
 
 /**
  * Feature flags for enabling/disabling experimental features.
