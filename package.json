@@ -22,7 +22,10 @@
     "lint": "eslint apps/browser-extension/ packages/build-tools/ --ext .js",
     "lint:fix": "eslint apps/browser-extension/ packages/build-tools/ --ext .js --fix",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "test": "vitest run --config vitest.config.mjs",
+    "test:watch": "vitest --config vitest.config.mjs",
+    "prepare": "husky install"
   },
   "devDependencies": {
     "@eslint/js": "^9.0.0",
@@ -32,6 +35,22 @@
     "notyf": "^3.10.0",
     "playwright": "^1.62.1",
     "prettier": "^3.0.0",
-    "webextension-polyfill": "^0.12.0"
+    "webextension-polyfill": "^0.12.0",
+    "vitest": "^1.0.0",
+    "@sveltejs/vite-plugin-svelte": "^2.0.0",
+    "@testing-library/jest-dom": "^6.0.0",
+    "@testing-library/user-event": "^14.0.0",
+    "jsdom": "^22.0.0",
+    "husky": "^8.0.0",
+    "lint-staged": "^15.0.0"
+  },
+  "lint-staged": {
+    "*.{js,ts,tsx,jsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,css,md,html,svelte}": [
+      "prettier --write"
+    ]
   }
 }

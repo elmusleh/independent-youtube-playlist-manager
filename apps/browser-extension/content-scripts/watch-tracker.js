@@ -1,9 +1,9 @@
+/* eslint-disable no-console */
 (function () {
   const logPrefix = "[Watch Tracker]";
 
   let currentVideoId = null;
   let currentPlaylistId = null;
-  let currentPlaylist = null;
   let trackedVideoEl = null;
   let rules = {};
 
@@ -19,7 +19,7 @@
   let isSaving = false;
 
   async function log(level, message, /** @type {any} */ details = null) {
-    console.log("%s [%s] %s", logPrefix, level, message, details || "");
+    // // console.log("%s [%s] %s", logPrefix, level, message, details || "");
     try {
       await browser.runtime.sendMessage({
         cmd: "log-event",
@@ -27,7 +27,9 @@
         message: `${logPrefix} ${message}`,
         details,
       });
-    } catch (e) { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }
 
   async function getSettings() {
@@ -61,25 +63,15 @@
 
   async function teardown() {
     if (trackedVideoEl) {
-      if (boundHandlers.pause)
-        trackedVideoEl.removeEventListener("pause", boundHandlers.pause);
-      if (boundHandlers.ended)
-        trackedVideoEl.removeEventListener("ended", boundHandlers.ended);
+      if (boundHandlers.pause) trackedVideoEl.removeEventListener("pause", boundHandlers.pause);
+      if (boundHandlers.ended) trackedVideoEl.removeEventListener("ended", boundHandlers.ended);
       if (boundHandlers.timeupdate)
-        trackedVideoEl.removeEventListener(
-          "timeupdate",
-          boundHandlers.timeupdate,
-        );
-      if (boundHandlers.play)
-        trackedVideoEl.removeEventListener("play", boundHandlers.play);
+        trackedVideoEl.removeEventListener("timeupdate", boundHandlers.timeupdate);
+      if (boundHandlers.play) trackedVideoEl.removeEventListener("play", boundHandlers.play);
     }
     if (boundHandlers.visibilitychange)
-      document.removeEventListener(
-        "visibilitychange",
-        boundHandlers.visibilitychange,
-      );
-    if (boundHandlers.pagehide)
-      window.removeEventListener("pagehide", boundHandlers.pagehide);
+      document.removeEventListener("visibilitychange", boundHandlers.visibilitychange);
+    if (boundHandlers.pagehide) window.removeEventListener("pagehide", boundHandlers.pagehide);
     if (boundHandlers.ytnavstart)
       window.removeEventListener("yt-navigate-start", boundHandlers.ytnavstart);
 
@@ -169,7 +161,9 @@
             });
           }
         }
-      } catch (e) { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     }
 
     startProgressTracking();
@@ -181,15 +175,10 @@
     try {
       const result = await browser.storage.local.get(LOCAL_PLAYLISTS_KEY);
       const playlists = result[LOCAL_PLAYLISTS_KEY] || [];
-      currentPlaylist =
-        playlists.find((p) => p.id === currentPlaylistId) || null;
+      playlists.find((p) => p.id === currentPlaylistId);
     } catch (e) {
-      await log(
-        "ERROR",
-        "Failed to load local playlists for cleanup context",
-        e,
-      );
-      currentPlaylist = null;
+      await log("ERROR", "Failed to load local playlists for cleanup context", e);
+      // No cleanup needed
     }
   }
 
@@ -226,10 +215,7 @@
 
     trackedVideoEl.addEventListener("pause", boundHandlers.pause);
     trackedVideoEl.addEventListener("play", boundHandlers.play);
-    document.addEventListener(
-      "visibilitychange",
-      boundHandlers.visibilitychange,
-    );
+    document.addEventListener("visibilitychange", boundHandlers.visibilitychange);
     window.addEventListener("pagehide", boundHandlers.pagehide);
     window.addEventListener("yt-navigate-start", boundHandlers.ytnavstart);
     trackedVideoEl.addEventListener("ended", boundHandlers.ended);
@@ -286,18 +272,12 @@
       const t = trackedVideoEl.currentTime;
 
       // Don't save if it's invalid, zero, or if we haven't advanced since the last save (unless it's a completion event)
-      if (
-        !dur ||
-        isNaN(dur) ||
-        t === 0 ||
-        (t === lastSavedTimeValue && triggerType !== "ended")
-      )
+      if (!dur || isNaN(dur) || t === 0 || (t === lastSavedTimeValue && triggerType !== "ended"))
         return;
 
       // A video is completed if the 'ended' event fired OR it passed the threshold
       const pct = (t / dur) * 100;
-      const isCompleted =
-        triggerType === "ended" || pct >= rules.ruleCompletionThreshold;
+      const isCompleted = triggerType === "ended" || pct >= rules.ruleCompletionThreshold;
 
       lastSaveTimestamp = now;
       lastSavedTimeValue = t;
@@ -309,19 +289,15 @@
         const titleEl =
           document.querySelector("h1.ytd-watch-metadata") ||
           document.querySelector(".title.ytd-video-primary-info-renderer");
-        videoTitle = titleEl
-          ? /** @type {HTMLElement} */ (titleEl).innerText.trim()
-          : "";
+        videoTitle = titleEl ? /** @type {HTMLElement} */ (titleEl).innerText.trim() : "";
 
         const channelEl =
           document.querySelector("#text.ytd-channel-name") ||
-          document.querySelector(
-            "ytd-video-owner-renderer #channel-name #text",
-          );
-        channelName = channelEl
-          ? /** @type {HTMLElement} */ (channelEl).innerText.trim()
-          : "";
-      } catch (e) { /* ignore */ }
+          document.querySelector("ytd-video-owner-renderer #channel-name #text");
+        channelName = channelEl ? /** @type {HTMLElement} */ (channelEl).innerText.trim() : "";
+      } catch {
+        /* ignore */
+      }
 
       try {
         await browser.runtime.sendMessage({
@@ -373,17 +349,14 @@
   async function handleCompletion() {
     await log(
       "INFO",
-      `Completion threshold reached (${rules.ruleCompletionThreshold}%) for video ${currentVideoId}`,
+      `Completion threshold reached (${rules.ruleCompletionThreshold}%) for video ${currentVideoId}`
     );
 
     // Always save history one last time so we know it's done
     await onSaveTrigger("ended");
 
     if (rules.ruleAutoDelete && currentPlaylistId) {
-      await log(
-        "INFO",
-        `Triggering auto-delete from playlist ${currentPlaylistId}`,
-      );
+      await log("INFO", `Triggering auto-delete from playlist ${currentPlaylistId}`);
       try {
         await browser.runtime.sendMessage({
           cmd: "cleanup-watched-video",

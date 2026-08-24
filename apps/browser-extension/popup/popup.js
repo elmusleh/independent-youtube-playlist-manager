@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /// <reference path="./popup.d.ts" />
 /// <reference path="../playlist-editor/src/types/services.d.ts" />
 
@@ -29,7 +30,7 @@ const YOUTUBE_REGEX =
  * @param {any} [details]
  */
 async function log(level, message, details = null) {
-  console.log(`[${level}] ${message}`, details || "");
+  // // console.log(`[${level}] ${message}`, details || "");
   if (window.logSystemEvent) {
     try {
       await window.logSystemEvent(level, message, details);
@@ -84,9 +85,7 @@ async function init() {
       const settings = await window.getSettings();
       let theme = settings.themeChoice;
       if (theme == "device") {
-        theme = window.matchMedia?.("(prefers-color-scheme: dark)").matches
-          ? "dark"
-          : "light";
+        theme = window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light";
       }
       document.documentElement.dataset.theme = theme;
 
@@ -160,7 +159,7 @@ function setupUI() {
 
       if (!channelInfo) {
         return alert(
-          "Could not detect channel information. Please make sure you're on a YouTube channel page.",
+          "Could not detect channel information. Please make sure you're on a YouTube channel page."
         );
       }
 
@@ -199,21 +198,15 @@ function setupUI() {
       /** @type {any} */ const tabId = activeTab.id;
       await log("INFO", `Popup: Fetching video IDs from tab ${tabId}`);
 
-      const result = await /** @type {any} */ (browser).scripting.executeScript(
-        {
-          target: { tabId },
-          files: ["/content-scripts/injectors/get-playlist-video-ids.js"],
-        },
-      );
+      const result = await /** @type {any} */ (browser).scripting.executeScript({
+        target: { tabId },
+        files: ["/content-scripts/injectors/get-playlist-video-ids.js"],
+      });
 
       // Handle both old format (string[]) and new format (objects with id/title/channel/durationLabel)
       const rawResult = result[0].result;
       let videoIds;
-      if (
-        rawResult.length > 0 &&
-        typeof rawResult[0] === "object" &&
-        rawResult[0].id
-      ) {
+      if (rawResult.length > 0 && typeof rawResult[0] === "object" && rawResult[0].id) {
         // New format: extract IDs from objects
         videoIds = rawResult.map((v) => v.id);
       } else {
@@ -226,10 +219,7 @@ function setupUI() {
         return alert("The current tab is not a YouTube playlist tab");
       }
 
-      await log(
-        "INFO",
-        `Popup: Found ${videoIds.length} videos. Generating playlist object...`,
-      );
+      await log("INFO", `Popup: Found ${videoIds.length} videos. Generating playlist object...`);
       const playlist = await videoService.generatePlaylist(videoIds);
       const signedIn = await window.isSignedIn();
 
@@ -238,15 +228,10 @@ function setupUI() {
         syncToYoutube: signedIn,
       });
 
-      await log(
-        "INFO",
-        `Popup: Playlist saved with ID: ${id}. Opening editor...`,
-      );
+      await log("INFO", `Popup: Playlist saved with ID: ${id}. Opening editor...`);
       const savedParam = id.startsWith("local-") ? "local=true" : "saved=true";
       await browser.tabs.create({
-        url: browser.runtime.getURL(
-          `/editor/index.html?id=${id}&${savedParam}#/editor`,
-        ),
+        url: browser.runtime.getURL(`/editor/index.html?id=${id}&${savedParam}#/editor`),
       });
       window.close();
     } catch (e) {
@@ -309,31 +294,28 @@ function setupUI() {
       case "left":
         videoTabs = await getVideoTabsInWindow(
           currentTab.windowId,
-          (tab) => tab.index < currentIndex,
+          (tab) => tab.index < currentIndex
         );
-        if (videoTabs.length === 0)
-          return alert("No YouTube video tabs found to the left");
+        if (videoTabs.length === 0) return alert("No YouTube video tabs found to the left");
         break;
 
       case "right":
         videoTabs = await getVideoTabsInWindow(
           currentTab.windowId,
-          (tab) => tab.index > currentIndex,
+          (tab) => tab.index > currentIndex
         );
-        if (videoTabs.length === 0)
-          return alert("No YouTube video tabs found to the right");
+        if (videoTabs.length === 0) return alert("No YouTube video tabs found to the right");
         break;
 
       case "all-this-window-include":
         videoTabs = await getVideoTabsInWindow(currentTab.windowId, () => true);
-        if (videoTabs.length === 0)
-          return alert("No YouTube video tabs found in this window");
+        if (videoTabs.length === 0) return alert("No YouTube video tabs found in this window");
         break;
 
       case "all-this-window-exclude":
         videoTabs = await getVideoTabsInWindow(
           currentTab.windowId,
-          (tab) => tab.index !== currentIndex,
+          (tab) => tab.index !== currentIndex
         );
         if (videoTabs.length === 0)
           return alert("No other YouTube video tabs found in this window");
@@ -349,9 +331,7 @@ function setupUI() {
     }
 
     await scrapeMetadataFromTabs(videoTabs);
-    const videoIds = videoTabs
-      .map((tab) => parseYoutubeId(tab.url))
-      .filter(isNotNull);
+    const videoIds = videoTabs.map((tab) => parseYoutubeId(tab.url)).filter(isNotNull);
     const uniqueIds = removeDuplicates(videoIds);
     if (uniqueIds.length === 0) return alert("No YouTube video tabs found");
     await addVideosToResolvedPlaylist(uniqueIds, videoTabs);
@@ -397,9 +377,7 @@ async function scrapeMetadataFromTabs(tabs) {
       // Helper to convert ISO 8601 to seconds
       const isoToSeconds = (iso) => {
         if (!iso) return 0;
-        const match = iso.match(
-          /P(?:(\d+)D)?T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+(?:\.\d+)?)S)?/,
-        );
+        const match = iso.match(/P(?:(\d+)D)?T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+(?:\.\d+)?)S)?/);
         if (!match) return 0;
         const d = parseInt(match[1] || "0", 10);
         const h = parseInt(match[2] || "0", 10);
@@ -419,10 +397,7 @@ async function scrapeMetadataFromTabs(tabs) {
       });
 
       await browser.storage.local.set({ [VIDEO_META_CACHE_KEY]: map });
-      await log(
-        "INFO",
-        `Popup: Persisted metadata for ${results.length} videos from tabs`,
-      );
+      await log("INFO", `Popup: Persisted metadata for ${results.length} videos from tabs`);
     } catch (e) {
       console.error("[YPH] Failed to save metadata to cache:", e);
     }
@@ -432,14 +407,8 @@ async function scrapeMetadataFromTabs(tabs) {
 }
 
 function updateTargetUI() {
-  getById("btn-target-fav").classList.toggle(
-    "active",
-    activeTargetMode === "favorite",
-  );
-  getById("btn-target-latest").classList.toggle(
-    "active",
-    activeTargetMode === "latest",
-  );
+  getById("btn-target-fav").classList.toggle("active", activeTargetMode === "favorite");
+  getById("btn-target-latest").classList.toggle("active", activeTargetMode === "latest");
   const select = getById("select-target-playlist");
   if (activeTargetMode === "custom") {
     select.classList.add("active");
@@ -457,14 +426,14 @@ async function getSmartDefaultPlaylistName() {
     month: "short",
     day: "numeric",
   });
-  
+
   try {
     const activeTab = await getActiveTab();
     if (activeTab && activeTab.title) {
       let title = activeTab.title.trim();
       title = title.replace(/\s*[-–—]\s*YouTube$/i, "");
       title = title.replace(/^\(\d+\)\s*/, "");
-      
+
       if (title) {
         if (title.length > 40) {
           title = title.substring(0, 37) + "...";
@@ -475,7 +444,7 @@ async function getSmartDefaultPlaylistName() {
   } catch (e) {
     console.warn("Failed to get smart playlist name:", e);
   }
-  
+
   return `Playlist (${dateStr})`;
 }
 
@@ -497,9 +466,7 @@ async function initTargetData() {
     const select = getById("select-target-playlist");
 
     // Sort by timestamp (newest first) - "My playlists" appears at top
-    const sorted = [...playlists].sort(
-      (a, b) => (b.timestamp || 0) - (a.timestamp || 0),
-    );
+    const sorted = [...playlists].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 
     // Show default playlist based on settings or default to latest
     const settingsObj = window.getSettings ? await window.getSettings() : null;
@@ -536,8 +503,6 @@ async function initTargetData() {
 
     // Update UI to reflect the default selection
     updateTargetUI();
-
-
   } catch (e) {
     await log("ERROR", "Failed to init target data", e);
   }
@@ -549,10 +514,7 @@ async function handleCloseAddedTabs(tabsToClose) {
     if (settings.closeAddedTabs && tabsToClose.length > 0) {
       const tabIds = tabsToClose.map((t) => t.id).filter(isNotNull);
       if (tabIds.length > 0) {
-        await log(
-          "INFO",
-          `Popup: Closing ${tabIds.length} tabs as per closeAddedTabs setting`,
-        );
+        await log("INFO", `Popup: Closing ${tabIds.length} tabs as per closeAddedTabs setting`);
         await browser.tabs.remove(tabIds);
       }
     }
@@ -581,7 +543,7 @@ async function addVideosToResolvedPlaylist(videoIds, videoTabs = []) {
     if (activeTargetMode === "create") {
       await log("INFO", "Popup: Auto-creating new playlist on add...");
       const title = await getSmartDefaultPlaylistName();
-      
+
       const newId = await window.savePlaylist(
         {
           id: "",
@@ -591,20 +553,20 @@ async function addVideosToResolvedPlaylist(videoIds, videoTabs = []) {
           isLocal: true,
           saved: true,
         },
-        { syncToYoutube: false },
+        { syncToYoutube: false }
       );
-      
+
       const select = getById("select-target-playlist");
       const opt = document.createElement("option");
       opt.value = newId;
       opt.textContent = title;
       select.appendChild(opt);
       select.value = newId;
-      
+
       selectedPlaylistId = newId;
       activeTargetMode = "custom";
       updateTargetUI();
-      
+
       targetPlaylist = await window.getPlaylist(newId);
     } else if (activeTargetMode === "favorite") {
       await log("INFO", "Popup: Resolving favorite playlist...");
@@ -622,9 +584,7 @@ async function addVideosToResolvedPlaylist(videoIds, videoTabs = []) {
         }
         return alert("No playlists found. Create one first!");
       }
-      targetPlaylist = [...playlists].sort(
-        (a, b) => b.timestamp - a.timestamp,
-      )[0];
+      targetPlaylist = [...playlists].sort((a, b) => b.timestamp - a.timestamp)[0];
     } else {
       if (!selectedPlaylistId) {
         if (btnExecute) {
@@ -640,15 +600,10 @@ async function addVideosToResolvedPlaylist(videoIds, videoTabs = []) {
     if (!targetPlaylist) throw new Error("Target playlist not found.");
 
     const position = settings.addToLatestPosition || "bottom";
-    await log(
-      "INFO",
-      `Popup: Adding to ${targetPlaylist.title} at ${position}`,
-    );
+    await log("INFO", `Popup: Adding to ${targetPlaylist.title} at ${position}`);
 
     // Filter out videos already in the playlist
-    const newVideoIds = videoIds.filter(
-      (id) => !targetPlaylist.videos.includes(id),
-    );
+    const newVideoIds = videoIds.filter((id) => !targetPlaylist.videos.includes(id));
 
     if (newVideoIds.length === 0) {
       if (btnExecute) {
@@ -656,10 +611,7 @@ async function addVideosToResolvedPlaylist(videoIds, videoTabs = []) {
         btnExecute.style.opacity = "1";
         setIcon(btnExecute, "fa-solid fa-plus");
       }
-      return alert(
-        `Videos are already in the playlist: ${targetPlaylist.title}`,
-        true,
-      );
+      return alert(`Videos are already in the playlist: ${targetPlaylist.title}`, true);
     }
 
     const updatedVideos = [...targetPlaylist.videos];
@@ -683,10 +635,7 @@ async function addVideosToResolvedPlaylist(videoIds, videoTabs = []) {
       await handleCloseAddedTabs(videoTabs);
     }
 
-    alert(
-      `Added ${newVideoIds.length} video(s) to ${targetPlaylist.title}`,
-      true,
-    );
+    alert(`Added ${newVideoIds.length} video(s) to ${targetPlaylist.title}`, true);
     window.close();
   } catch (e) {
     if (btnExecute) {
@@ -711,13 +660,12 @@ async function loadDefaultTabScope() {
 
     if (window.getSettings) {
       const settings = await window.getSettings();
-      const defaultScope =
-        settings.defaultTabScope || "all-this-window-include";
+      const defaultScope = settings.defaultTabScope || "all-this-window-include";
       getById("select-tab-scope").value = defaultScope;
     } else {
       getById("select-tab-scope").value = "all-this-window-include";
     }
-  } catch (e) {
+  } catch {
     getById("select-tab-scope").value = "all-this-window-include";
   }
 }
@@ -729,12 +677,11 @@ async function getVideoTabsInWindow(windowId, filterFn) {
     try {
       const url = new URL(tab.url);
       const hostname = url.hostname.toLowerCase();
-      const isYoutube =
-        hostname === "youtube.com" || hostname.endsWith(".youtube.com");
+      const isYoutube = hostname === "youtube.com" || hostname.endsWith(".youtube.com");
       const isShort = hostname === "youtu.be";
       const isVideo = (isYoutube && url.pathname.includes("/watch")) || isShort;
       return isVideo && (!filterFn || filterFn(tab));
-    } catch (e) {
+    } catch {
       return false;
     }
   });
@@ -747,11 +694,10 @@ async function getAllVideoTabsAcrossWindows() {
     try {
       const url = new URL(tab.url);
       const hostname = url.hostname.toLowerCase();
-      const isYoutube =
-        hostname === "youtube.com" || hostname.endsWith(".youtube.com");
+      const isYoutube = hostname === "youtube.com" || hostname.endsWith(".youtube.com");
       const isShort = hostname === "youtu.be";
       return (isYoutube && url.pathname.includes("/watch")) || isShort;
-    } catch (e) {
+    } catch {
       return false;
     }
   });
@@ -776,41 +722,9 @@ function isYoutubeTab(tab) {
     const url = new URL(tab.url || "");
     const hostname = url.hostname.toLowerCase();
     return (
-      hostname === "youtube.com" ||
-      hostname.endsWith(".youtube.com") ||
-      hostname === "youtu.be"
+      hostname === "youtube.com" || hostname.endsWith(".youtube.com") || hostname === "youtu.be"
     );
-  } catch (e) {
-    return false;
-  }
-}
-
-/**
- * Check if the current tab is on a YouTube channel page
- */
-function isChannelPage(tab) {
-  try {
-    const url = new URL(tab.url || "");
-    const hostname = url.hostname.toLowerCase();
-    const pathname = url.pathname.toLowerCase();
-
-    if (!isYoutubeTab(tab)) return false;
-
-    // Channel page patterns
-    const channelPatterns = [
-      /^\/channel\//, // /channel/UCxxxx
-      /^\/c\//, // /c/channelname
-      /^\/user\//, // /user/username
-      /^\/@/, // /handle
-      /^\/videos$/, // /videos
-      /^\/shorts$/, // /shorts
-      /^\/streams$/, // /streams
-      /^\/playlists$/, // /playlists
-      /^\/featured$/, // /featured
-    ];
-
-    return channelPatterns.some((pattern) => pattern.test(pathname));
-  } catch (e) {
+  } catch {
     return false;
   }
 }
@@ -884,16 +798,12 @@ async function detectChannelFromDOM(tab) {
     if (metadata && metadata.channelId && metadata.channelName) {
       await log(
         "INFO",
-        `Popup: Detected channel from DOM: ${metadata.channelName} (${metadata.channelId})`,
+        `Popup: Detected channel from DOM: ${metadata.channelName} (${metadata.channelId})`
       );
       return metadata;
     }
   } catch (e) {
-    await log(
-      "WARN",
-      "Popup: Failed to detect channel from DOM",
-      getErrorMessage(e),
-    );
+    await log("WARN", "Popup: Failed to detect channel from DOM", getErrorMessage(e));
   }
   return null;
 }
@@ -938,8 +848,6 @@ function detectChannelFromURL(url) {
 async function handleChannelImport() {
   const confirmBtn = getById("confirm-import");
   const progressSection = getById("progress-section");
-  const progressText = getById("progress-text");
-  const progressFill = getById("progress-fill");
   const channelInfo = getById("channel-info");
 
   try {
@@ -951,10 +859,7 @@ async function handleChannelImport() {
     const quantity = parseInt(getById("input-quantity").value, 10) || 25;
     const order = getById("select-order").value;
 
-    await log(
-      "INFO",
-      `Popup: Starting page import - Quantity: ${quantity}, Order: ${order}`,
-    );
+    await log("INFO", `Popup: Starting page import - Quantity: ${quantity}, Order: ${order}`);
 
     // Get active tab
     updateProgress(10, "Detecting page...");
@@ -1007,18 +912,10 @@ async function handleChannelImport() {
           target: { tabId: activeTab.id },
           files: ["/content-scripts/injectors/scrape-youtube-links.js"],
         });
-        await log(
-          "INFO",
-          `Popup: Script execution result: ${JSON.stringify(result)}`,
-        );
+        await log("INFO", `Popup: Script execution result: ${JSON.stringify(result)}`);
       } catch (e) {
-        await log(
-          "ERROR",
-          `Popup: Script execution failed: ${getErrorMessage(e)}`,
-        );
-        throw new Error(
-          `Failed to execute scraping script: ${getErrorMessage(e)}`,
-        );
+        await log("ERROR", `Popup: Script execution failed: ${getErrorMessage(e)}`);
+        throw new Error(`Failed to execute scraping script: ${getErrorMessage(e)}`);
       }
 
       scrapeResult = result[0]?.result || {
@@ -1027,14 +924,8 @@ async function handleChannelImport() {
         url: activeTab.url,
         title: activeTab.title,
       };
-      await log(
-        "INFO",
-        `Popup: Scrape result: ${JSON.stringify(scrapeResult)}`,
-      );
-      await log(
-        "INFO",
-        `Popup: Found ${scrapeResult.count} YouTube links on page`,
-      );
+      await log("INFO", `Popup: Scrape result: ${JSON.stringify(scrapeResult)}`);
+      await log("INFO", `Popup: Found ${scrapeResult.count} YouTube links on page`);
 
       videoIds = scrapeResult.links.map((link) => link.id);
       pageTitle = scrapeResult.title || "Page Links";
@@ -1062,10 +953,7 @@ async function handleChannelImport() {
       filteredIds = filteredIds.reverse();
     }
 
-    await log(
-      "INFO",
-      `Popup: Processing ${filteredIds.length} videos after filtering`,
-    );
+    await log("INFO", `Popup: Processing ${filteredIds.length} videos after filtering`);
     updateProgress(50, `Processing ${filteredIds.length} videos...`);
 
     // Create playlist
@@ -1082,17 +970,12 @@ async function handleChannelImport() {
     updateProgress(80, "Playlist created...");
 
     updateProgress(100, "Import complete!");
-    await log(
-      "INFO",
-      `Popup: Successfully imported ${filteredIds.length} videos`,
-    );
+    await log("INFO", `Popup: Successfully imported ${filteredIds.length} videos`);
 
     // Open the editor
     const savedParam = id.startsWith("local-") ? "local=true" : "saved=true";
     await browser.tabs.create({
-      url: browser.runtime.getURL(
-        `/editor/index.html?id=${id}&${savedParam}#/editor`,
-      ),
+      url: browser.runtime.getURL(`/editor/index.html?id=${id}&${savedParam}#/editor`),
     });
 
     window.close();
@@ -1117,16 +1000,10 @@ function isYoutubeChannelPage(url) {
 
     if (hostname !== "youtube.com" && !hostname.endsWith(".youtube.com")) return false;
 
-    const channelPatterns = [
-      /^\/channel\//,
-      /^\/c\//,
-      /^\/user\//,
-      /^\/@/,
-      /^\/videos$/,
-    ];
+    const channelPatterns = [/^\/channel\//, /^\/c\//, /^\/user\//, /^\/@/, /^\/videos$/];
 
     return channelPatterns.some((pattern) => pattern.test(pathname));
-  } catch (e) {
+  } catch {
     return false;
   }
 }

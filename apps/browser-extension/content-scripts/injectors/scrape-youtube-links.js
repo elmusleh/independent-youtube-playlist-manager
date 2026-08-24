@@ -2,7 +2,6 @@
   // More flexible regex to match YouTube video IDs
   const youtubeRegex =
     /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
-  const videoIdRegex = /([a-zA-Z0-9_-]{11})/;
   const videoIds = new Set();
   const links = [];
 
@@ -31,10 +30,7 @@
   // Wait for dynamic content to load on YouTube pages
   async function waitForContent() {
     // If this is a YouTube watch page, wait a bit for related videos to load
-    if (
-      window.location.hostname === "www.youtube.com" &&
-      window.location.pathname === "/watch"
-    ) {
+    if (window.location.hostname === "www.youtube.com" && window.location.pathname === "/watch") {
       await new Promise((resolve) => setTimeout(resolve, 2000));
 
       // Try to scroll to trigger lazy loading of related videos
@@ -65,11 +61,11 @@
             source: "link",
           });
         }
-      } catch (e) {
+      } catch {
         // Skip individual link errors
       }
     });
-  } catch (e) {
+  } catch {
     // Continue if querySelectorAll fails
   }
 
@@ -90,11 +86,11 @@
             source: "iframe",
           });
         }
-      } catch (e) {
+      } catch {
         // Skip individual iframe errors
       }
     });
-  } catch (e) {
+  } catch {
     // Continue if querySelectorAll fails
   }
 
@@ -115,7 +111,7 @@
         });
       }
     }
-  } catch (e) {
+  } catch {
     // Continue if body text extraction fails
   }
 

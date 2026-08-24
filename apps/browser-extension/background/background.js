@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 // Detect Firefox for Android (Fenix) — contextMenus and identity APIs are unavailable there
 const isAndroid = () => /Android/i.test(navigator.userAgent);
 
@@ -15,19 +16,31 @@ const addVideoToPlaylistPageItemPrefix = `${addVideoToPlaylistPageId}${idSep}`;
 // Mutex: set synchronously before the first await so concurrent calls bail out.
 let _initRunning = false;
 
+/**
+ * Initialize the extension background service worker
+ * @returns {Promise<void>}
+ */
 async function init() {
-  if (_initRunning) return;
-  _initRunning = true;
+  const start = Date.now();
   try {
-    if (window.logSystemEvent)
-      await window.logSystemEvent("INFO", "Background: Initializing...");
-    if (!isAndroid()) {
-      await browser.contextMenus.removeAll();
-      const settings = await window.getSettings();
-      await buildContextMenus(settings);
+    if (_initRunning) return;
+    _initRunning = true;
+    try {
+      if (window.logSystemEvent) await window.logSystemEvent("INFO", "Background: Initializing...");
+      if (!isAndroid()) {
+        await browser.contextMenus.removeAll();
+        const settings = await window.getSettings();
+        await buildContextMenus(settings);
+      }
+    } finally {
+      _initRunning = false;
     }
   } finally {
-    _initRunning = false;
+    const end = Date.now();
+    const duration = end - start;
+    if (duration > 100 && window.logSystemEvent) {
+      window.logSystemEvent("PERF", `init took ${duration}ms`);
+    }
   }
 }
 
@@ -40,54 +53,77 @@ init();
  *
  * @param {import("../playlist-editor/src/types/model").Settings} settings
  */
+/**
+ * Build context menus based on settings
+ * @param {import("../playlist-editor/src/types/model").Settings} settings - Extension settings
+ * @returns {Promise<void>}
+ */
 async function buildContextMenus(settings) {
-  if (isAndroid()) return;
-  if (!settings.disableContextBuilder) {
-    browser.contextMenus.create({
-      id: playlistBuilderId,
-      title: "Add video to the playlist builder",
-      contexts: ["link", "video"],
-    });
-    browser.contextMenus.create({
-      id: playlistBuilderPageId,
-      title: "Add video to the playlist builder",
-      contexts: ["page"],
-      documentUrlPatterns: ["https://www.youtube.com/watch*"],
-    });
-  }
+  const start = Date.now();
+  try {
+    if (isAndroid()) return;
+    if (!settings.disableContextBuilder) {
+      browser.contextMenus.create({
+        id: playlistBuilderId,
+        title: "Add video to the playlist builder",
+        contexts: ["link", "video"],
+      });
+      browser.contextMenus.create({
+        id: playlistBuilderPageId,
+        title: "Add video to the playlist builder",
+        contexts: ["page"],
+        documentUrlPatterns: ["https://www.youtube.com/watch*"],
+      });
+    }
 
-  if (!settings.disableContextSaved) {
-    browser.contextMenus.create({
-      id: addVideoToPlaylistId,
-      title: "Add video to saved playlist",
-      contexts: ["link", "video"],
-    });
-    browser.contextMenus.create({
-      id: addVideoToPlaylistPageId,
-      title: "Add video to saved playlist",
-      contexts: ["page"],
-      documentUrlPatterns: ["https://www.youtube.com/watch*"],
-    });
-    await buildAddVideoToPlaylistItems();
+    if (!settings.disableContextSaved) {
+      browser.contextMenus.create({
+        id: addVideoToPlaylistId,
+        title: "Add video to saved playlist",
+        contexts: ["link", "video"],
+      });
+      browser.contextMenus.create({
+        id: addVideoToPlaylistPageId,
+        title: "Add video to saved playlist",
+        contexts: ["page"],
+        documentUrlPatterns: ["https://www.youtube.com/watch*"],
+      });
+      await buildAddVideoToPlaylistItems();
+    }
+  } finally {
+    const end = Date.now();
+    const duration = end - start;
+    if (duration > 100 && window.logSystemEvent) {
+      window.logSystemEvent("PERF", `buildContextMenus took ${duration}ms`);
+    }
   }
 }
 
 async function buildAddVideoToPlaylistItems() {
-  if (isAndroid()) return;
-  const playlists = await window.getPlaylists();
-  for (const playlist of playlists) {
-    const contextId = `${addVideoToPlaylistItemPrefix}${playlist.id}`;
-    const pageContextId = `${addVideoToPlaylistPageItemPrefix}${playlist.id}`;
-    browser.contextMenus.create({
-      id: contextId,
-      title: playlist.title,
-      parentId: addVideoToPlaylistId,
-    });
-    browser.contextMenus.create({
-      id: pageContextId,
-      title: playlist.title,
-      parentId: addVideoToPlaylistPageId,
-    });
+  const start = Date.now();
+  try {
+    if (isAndroid()) return;
+    const playlists = await window.getPlaylists();
+    for (const playlist of playlists) {
+      const contextId = `${addVideoToPlaylistItemPrefix}${playlist.id}`;
+      const pageContextId = `${addVideoToPlaylistPageItemPrefix}${playlist.id}`;
+      browser.contextMenus.create({
+        id: contextId,
+        title: playlist.title,
+        parentId: addVideoToPlaylistId,
+      });
+      browser.contextMenus.create({
+        id: pageContextId,
+        title: playlist.title,
+        parentId: addVideoToPlaylistPageId,
+      });
+    }
+  } finally {
+    const end = Date.now();
+    const duration = end - start;
+    if (duration > 100 && window.logSystemEvent) {
+      window.logSystemEvent("PERF", `buildAddVideoToPlaylistItems took ${duration}ms`);
+    }
   }
 }
 
@@ -95,28 +131,30 @@ async function clearAddVideoToPlaylistItems() {
   await init();
 }
 
+/**
+ * Remove all context menus (not available on Android)
+ * @returns {Promise<void>}
+ */
 async function clearContextMenus() {
   if (!isAndroid()) await browser.contextMenus.removeAll();
 }
 
-if (!isAndroid()) browser.contextMenus.onClicked.addListener(async (info, tab) => {
-  const clickedMenuId = info.menuItemId.toString();
-  try {
-    if (
-      clickedMenuId == playlistBuilderId ||
-      clickedMenuId == playlistBuilderPageId
-    ) {
-      addVideoToPlaylistBuilder(info);
-    } else if (
-      clickedMenuId.startsWith(addVideoToPlaylistItemPrefix) ||
-      clickedMenuId.startsWith(addVideoToPlaylistPageItemPrefix)
-    ) {
-      addVideoToPlaylist(info, clickedMenuId);
+if (!isAndroid())
+  browser.contextMenus.onClicked.addListener(async (info, _tab) => {
+    const clickedMenuId = info.menuItemId.toString();
+    try {
+      if (clickedMenuId == playlistBuilderId || clickedMenuId == playlistBuilderPageId) {
+        addVideoToPlaylistBuilder(info);
+      } else if (
+        clickedMenuId.startsWith(addVideoToPlaylistItemPrefix) ||
+        clickedMenuId.startsWith(addVideoToPlaylistPageItemPrefix)
+      ) {
+        addVideoToPlaylist(info, clickedMenuId);
+      }
+    } catch (error_inner) {
+      handleError(error_inner);
     }
-  } catch (error) {
-    handleError(error);
-  }
-});
+  });
 
 // Handle keyboard shortcut commands
 if (browser.commands?.onCommand) {
@@ -125,7 +163,9 @@ if (browser.commands?.onCommand) {
       try {
         const tabs = await browser.tabs.query({ active: true, currentWindow: true });
         if (tabs.length > 0 && tabs[0].url) {
-          const videoId = window.videoService ? window.videoService.parseYoutubeId(tabs[0].url) : null;
+          const videoId = window.videoService
+            ? window.videoService.parseYoutubeId(tabs[0].url)
+            : null;
           if (videoId) {
             const playlistBuilder = await fetchBuilder();
             playlistBuilder.push(videoId);
@@ -143,10 +183,7 @@ if (browser.commands?.onCommand) {
 
 browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (window.logSystemEvent)
-    window.logSystemEvent(
-      "INFO",
-      `Background: Received message: ${request.cmd}`,
-    );
+    window.logSystemEvent("INFO", `Background: Received message: ${request.cmd}`);
 
   if (request.cmd === "get-playlist-builder") {
     fetchBuilder().then(sendResponse);
@@ -182,19 +219,14 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
     createPlaylist(request.videoIds, request.title)
       .then(() => {
         if (window.logSystemEvent)
-          window.logSystemEvent(
-            "INFO",
-            "Background: Playlist created successfully",
-          );
+          window.logSystemEvent("INFO", "Background: Playlist created successfully");
         sendResponse(true);
       })
       .catch((e) => {
         if (window.logSystemEvent)
-          window.logSystemEvent(
-            "ERROR",
-            "Background: Failed to create playlist",
-            { error: e.message },
-          );
+          window.logSystemEvent("ERROR", "Background: Failed to create playlist", {
+            error: e.message,
+          });
         sendResponse({ error: e.message });
       });
     return true;
@@ -214,7 +246,7 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
       request.dur,
       request.title,
       request.channel,
-      request.isCompleted,
+      request.isCompleted
     ).then(sendResponse);
     return true;
   } else if (request.cmd === "get-yph-history") {
@@ -239,14 +271,20 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true;
   } else if (request.cmd === "supabase-trigger-sync") {
     if (window.syncEngine) {
-      window.syncEngine.triggerSync().then(sendResponse).catch((err) => sendResponse({ success: false, error: err.message }));
+      window.syncEngine
+        .triggerSync()
+        .then(sendResponse)
+        .catch((err) => sendResponse({ success: false, error: err.message }));
     } else {
       sendResponse({ success: false, error: "Sync engine not mounted" });
     }
     return true;
   } else if (request.cmd === "supabase-get-session") {
     if (window.supabaseGetSession) {
-      window.supabaseGetSession().then(sendResponse).catch(() => sendResponse(null));
+      window
+        .supabaseGetSession()
+        .then(sendResponse)
+        .catch(() => sendResponse(null));
     } else {
       sendResponse(null);
     }
@@ -265,64 +303,64 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
  * @param  {string} [title]
  */
 async function createPlaylist(videoIds, title) {
-  if (videoIds.length == 0) {
-    if (window.logSystemEvent)
-      await window.logSystemEvent(
-        "WARN",
-        "Background: createPlaylist called with 0 videos",
-      );
-    return;
-  }
+  const start = Date.now();
+  try {
+    if (videoIds.length == 0) {
+      if (window.logSystemEvent)
+        await window.logSystemEvent("WARN", "Background: createPlaylist called with 0 videos");
+      return;
+    }
 
-  if (window.logSystemEvent)
-    await window.logSystemEvent(
-      "INFO",
-      `Background: Creating playlist with ${videoIds.length} videos`,
-    );
-
-  const playlist = await window.videoService.generatePlaylist(videoIds, title);
-  const settings = await window.getSettings();
-  const signedIn = await window.isSignedIn();
-
-  // Always save the playlist (at least locally)
-  const shouldSync = settings.saveCreatedPlaylists && signedIn;
-  if (window.logSystemEvent)
-    await window.logSystemEvent(
-      "INFO",
-      `Background: Saving playlist (Sync: ${shouldSync})`,
-    );
-  const playlistId = await window.savePlaylist(playlist, {
-    syncToYoutube: shouldSync,
-  });
-
-  if (settings.openPlaylistEditorAfterCreation) {
     if (window.logSystemEvent)
       await window.logSystemEvent(
         "INFO",
-        `Background: Opening editor for playlist: ${playlistId}`,
+        `Background: Creating playlist with ${videoIds.length} videos`
       );
-    const isLocal = playlistId.startsWith("local-");
-    const url = isLocal
-      ? `/editor/index.html?id=${playlistId}&local=true#/editor`
-      : `/editor/index.html?id=${playlistId}#/editor`;
 
-    await browser.tabs.create({
-      url: browser.runtime.getURL(url),
+    const playlist = await window.videoService.generatePlaylist(videoIds, title);
+    const settings = await window.getSettings();
+    const signedIn = await window.isSignedIn();
+
+    // Always save the playlist (at least locally)
+    const shouldSync = settings.saveCreatedPlaylists && signedIn;
+    if (window.logSystemEvent)
+      await window.logSystemEvent("INFO", `Background: Saving playlist (Sync: ${shouldSync})`);
+    const playlistId = await window.savePlaylist(playlist, {
+      syncToYoutube: shouldSync,
     });
-  } else {
-    if (window.logSystemEvent)
-      await window.logSystemEvent(
-        "INFO",
-        "Background: Playing playlist immediately (no editor)",
-      );
-    await window.videoService.openPlaylist(videoIds, playlistId);
+
+    if (settings.openPlaylistEditorAfterCreation) {
+      if (window.logSystemEvent)
+        await window.logSystemEvent(
+          "INFO",
+          `Background: Opening editor for playlist: ${playlistId}`
+        );
+      const isLocal = playlistId.startsWith("local-");
+      const url = isLocal
+        ? `/editor/index.html?id=${playlistId}&local=true#/editor`
+        : `/editor/index.html?id=${playlistId}#/editor`;
+
+      await browser.tabs.create({
+        url: browser.runtime.getURL(url),
+      });
+    } else {
+      if (window.logSystemEvent)
+        await window.logSystemEvent("INFO", "Background: Playing playlist immediately (no editor)");
+      await window.videoService.openPlaylist(videoIds, playlistId);
+    }
+  } finally {
+    const end = Date.now();
+    const duration = end - start;
+    if (duration > 100 && window.logSystemEvent) {
+      window.logSystemEvent("PERF", `createPlaylist took ${duration}ms`);
+    }
   }
 }
 
 async function fetchBuilder() {
   try {
     const items = await browser.storage.local.get(playlistBuilderId);
-    console.log("Raw data from storage (builder):", items[playlistBuilderId]);
+    // // console.log() removed:", items[playlistBuilderId]);
     if (items && items[playlistBuilderId] != null) {
       return items[playlistBuilderId] || [];
     }
@@ -333,7 +371,7 @@ async function fetchBuilder() {
 }
 
 async function saveBuilder(playlistBuilder) {
-  console.log("Saving to storage (builder):", playlistBuilder);
+  // // console.log() removed:", playlistBuilder);
   const items = {};
   items[playlistBuilderId] = playlistBuilder;
   try {
@@ -356,20 +394,29 @@ fetchBuilder().then((playlistBuilder) => {
  * @param {browser.contextMenus.OnClickData} info
  */
 async function addVideoToPlaylistBuilder(info) {
-  const videoId = parseVideoId(info);
-  const playlistBuilder = await fetchBuilder();
-  playlistBuilder.push(videoId);
-  updateBadge("" + playlistBuilder.length);
-  await saveBuilder(playlistBuilder);
-  const settings = await window.getSettings();
-  /** @type {browser.tabs.Tab[]} */
-  let builderTabs = [];
-  if (settings.openPlaylistBuilderAfterAdd) {
-    builderTabs = await openPlaylistBuilderTab();
-  } else {
-    builderTabs = await getPlaylistBuilderTab();
+  const start = Date.now();
+  try {
+    const videoId = parseVideoId(info);
+    const playlistBuilder = await fetchBuilder();
+    playlistBuilder.push(videoId);
+    updateBadge("" + playlistBuilder.length);
+    await saveBuilder(playlistBuilder);
+    const settings = await window.getSettings();
+    /** @type {browser.tabs.Tab[]} */
+    let builderTabs = [];
+    if (settings.openPlaylistBuilderAfterAdd) {
+      builderTabs = await openPlaylistBuilderTab();
+    } else {
+      builderTabs = await getPlaylistBuilderTab();
+    }
+    builderTabs.forEach((tab) => browser.tabs.reload(tab.id));
+  } finally {
+    const end = Date.now();
+    const duration = end - start;
+    if (duration > 100 && window.logSystemEvent) {
+      window.logSystemEvent("PERF", `addVideoToPlaylistBuilder took ${duration}ms`);
+    }
   }
-  builderTabs.forEach((tab) => browser.tabs.reload(tab.id));
 }
 
 /**
@@ -377,26 +424,33 @@ async function addVideoToPlaylistBuilder(info) {
  * @param {string} clickedMenuId
  */
 async function addVideoToPlaylist(info, clickedMenuId) {
-  const videoId = parseVideoId(info);
-  const playlistId = clickedMenuId.split(idSep)[1];
-  const playlist = await window.getPlaylist(playlistId);
-  if (!playlist.videos.includes(videoId)) {
-    playlist.videos.push(videoId);
-  }
+  const start = Date.now();
+  try {
+    const videoId = parseVideoId(info);
+    const playlistId = clickedMenuId.split(idSep)[1];
+    const playlist = await window.getPlaylist(playlistId);
+    if (!playlist.videos.includes(videoId)) {
+      playlist.videos.push(videoId);
+    }
 
-  const signedIn = await window.isSignedIn();
-  // Don't sync if it's a local playlist
-  const isLocal = playlistId.startsWith("local-");
-  await window.savePlaylist(playlist, { syncToYoutube: signedIn && !isLocal });
+    const signedIn = await window.isSignedIn();
+    // Don't sync if it's a local playlist
+    const isLocal = playlistId.startsWith("local-");
+    await window.savePlaylist(playlist, { syncToYoutube: signedIn && !isLocal });
 
-  const settings = await window.getSettings();
-  if (settings.openSavedPlaylistAfterAdd) {
-    const localParam = isLocal ? "local=true" : "saved=true";
-    await browser.tabs.create({
-      url: browser.runtime.getURL(
-        `/editor/index.html?id=${playlistId}&${localParam}#/editor`,
-      ),
-    });
+    const settings = await window.getSettings();
+    if (settings.openSavedPlaylistAfterAdd) {
+      const localParam = isLocal ? "local=true" : "saved=true";
+      await browser.tabs.create({
+        url: browser.runtime.getURL(`/editor/index.html?id=${playlistId}&${localParam}#/editor`),
+      });
+    }
+  } finally {
+    const end = Date.now();
+    const duration = end - start;
+    if (duration > 100 && window.logSystemEvent) {
+      window.logSystemEvent("PERF", `addVideoToPlaylist took ${duration}ms`);
+    }
   }
 }
 
@@ -416,9 +470,7 @@ async function getPlaylistBuilderTab() {
   const tabs = await browser.tabs.query({
     url: browser.runtime.getURL(`/editor/index.html`),
   });
-  return tabs.filter(
-    (tab) => tab.url && new URL(tab.url).hash === "#/playlist-builder",
-  );
+  return tabs.filter((tab) => tab.url && new URL(tab.url).hash === "#/playlist-builder");
 }
 
 async function openPlaylistBuilderTab() {
@@ -453,116 +505,162 @@ async function alert(message, isInfo) {
 
 const HISTORY_KEY = "local_yt_history";
 
+/**
+ * Save video watch history
+ * @param {string} videoId - YouTube video ID
+ * @param {number} timestamp - Watch position in seconds
+ * @param {number} duration - Video duration in seconds
+ * @param {string} title - Video title
+ * @param {string} channel - Channel name
+ * @param {boolean} isCompleted - Whether video was watched to completion
+ * @returns {Promise<boolean>}
+ */
 async function saveHistory(videoId, t, dur, title, channel, isCompleted) {
-  if (window.logSystemEvent)
-    await window.logSystemEvent(
-      "INFO",
-      `Background: Saving history for ${videoId} at ${t}s (Completed: ${isCompleted})`,
-    );
-  const data = await browser.storage.local.get(HISTORY_KEY);
-  const history = data[HISTORY_KEY] || {};
-
-  const existing = history[videoId] || {};
-
-  history[videoId] = {
-    title: title || existing.title || "Unknown Title",
-    channel: channel || existing.channel || "Unknown Channel",
-    timestamp: t,
-    duration: dur,
-    isCompleted: !!isCompleted,
-    lastWatchedAt: Date.now(),
-  };
-  await browser.storage.local.set({ [HISTORY_KEY]: history });
-  return true;
-}
-
-async function getHistory(videoId) {
-  const data = await browser.storage.local.get(HISTORY_KEY);
-  const history = data[HISTORY_KEY] || {};
-  const item = history[videoId] || null;
-  if (item) {
-    // Map back to 't' for internal consumption if needed, but we'll try to use standard names
-    return {
-      ...item,
-      t: item.timestamp,
-      dur: item.duration,
-      ts: item.lastWatchedAt,
-    };
-  }
-  return null;
-}
-
-async function handleCleanupWatchedVideo(videoId, playlistId) {
-  const settings = await window.getSettings();
-  if (!settings.ruleAutoDelete) {
+  const start = Date.now();
+  try {
     if (window.logSystemEvent)
       await window.logSystemEvent(
         "INFO",
-        `Background: Skipping cleanup for ${videoId} (ruleAutoDelete is false)`,
+        `Background: Saving history for ${videoId} at ${t}s (Completed: ${isCompleted})`
       );
-    return false;
+    const data = await browser.storage.local.get(HISTORY_KEY);
+    const history = data[HISTORY_KEY] || {};
+
+    const existing = history[videoId] || {};
+
+    history[videoId] = {
+      title: title || existing.title || "Unknown Title",
+      channel: channel || existing.channel || "Unknown Channel",
+      timestamp: t,
+      duration: dur,
+      isCompleted: !!isCompleted,
+      lastWatchedAt: Date.now(),
+    };
+    await browser.storage.local.set({ [HISTORY_KEY]: history });
+    return true;
+  } finally {
+    const end = Date.now();
+    const duration = end - start;
+    if (duration > 100 && window.logSystemEvent) {
+      window.logSystemEvent("PERF", `saveHistory took ${duration}ms`);
+    }
   }
+}
 
-  if (window.logSystemEvent)
-    await window.logSystemEvent(
-      "INFO",
-      `Background: Running cleanup for ${videoId} in playlist ${playlistId}`,
-    );
+async function getHistory(videoId) {
+  const start = Date.now();
+  try {
+    /**
+     * Get video watch history
+     * @param {string} videoId - YouTube video ID
+     * @returns {Object|null} History object or null if not found
+     */
+    const data = await browser.storage.local.get(HISTORY_KEY);
+    const history = data[HISTORY_KEY] || {};
+    const item = history[videoId] || null;
+    if (item) {
+      // Map back to 't' for internal consumption if needed, but we'll try to use standard names
+      return {
+        ...item,
+        t: item.timestamp,
+        dur: item.duration,
+        ts: item.lastWatchedAt,
+      };
+    }
+    return null;
+  } finally {
+    const end = Date.now();
+    const duration = end - start;
+    if (duration > 100 && window.logSystemEvent) {
+      window.logSystemEvent("PERF", `getHistory took ${duration}ms`);
+    }
+  }
+}
 
-  // Fetch the local playlists
-  const LOCAL_PLAYLISTS_KEY = "yph_local_playlists";
-  const result = await browser.storage.local.get(LOCAL_PLAYLISTS_KEY);
-  const playlists = result[LOCAL_PLAYLISTS_KEY] || [];
-
-  const index = playlists.findIndex((p) => p.id === playlistId);
-  if (index >= 0) {
-    const playlist = playlists[index];
-
-    // SAFEGUARD: Skip auto-delete for permanent playlists
-    if (playlist.isPermanent) {
+async function handleCleanupWatchedVideo(videoId, playlistId) {
+  const start = Date.now();
+  try {
+    /**
+     * Handle auto-deletion of watched videos based on settings
+     * @param {string} videoId - YouTube video ID
+     * @param {string} playlistId - Playlist ID
+     * @returns {Promise<void>}
+     */
+    const settings = await window.getSettings();
+    if (!settings.ruleAutoDelete) {
       if (window.logSystemEvent)
         await window.logSystemEvent(
           "INFO",
-          `[CLEANUP] Skipping permanent playlist`,
-          { videoId, playlistId },
+          `Background: Skipping cleanup for ${videoId} (ruleAutoDelete is false)`
         );
       return false;
     }
 
-    const initialLength = playlist.videos.length;
-    playlist.videos = playlist.videos.filter((id) => id !== videoId);
-
-    if (playlist.videos.length < initialLength) {
-      await browser.storage.local.set({ [LOCAL_PLAYLISTS_KEY]: playlists });
-      if (window.logSystemEvent)
-        await window.logSystemEvent(
-          "INFO",
-          `[CLEANUP] Video removed from local playlist`,
-          { videoId, playlistId },
-        );
-
-      // Clear cache to reflect changes in editor
-      if (window.invalidatePlaylistCache) {
-        window.invalidatePlaylistCache();
-      }
-
-      // Optionally notify editor pages to update
-      try {
-        browser.runtime
-          .sendMessage({ cmd: "update-saved-playlists" })
-          .catch(() => {});
-      } catch (e) { /* ignore */ }
-
-      return true;
-    }
-  } else {
     if (window.logSystemEvent)
       await window.logSystemEvent(
-        "WARN",
-        `Background: Playlist ${playlistId} not found during cleanup`,
+        "INFO",
+        `Background: Running cleanup for ${videoId} in playlist ${playlistId}`
       );
+
+    // Fetch the local playlists
+    const LOCAL_PLAYLISTS_KEY = "yph_local_playlists";
+    const result = await browser.storage.local.get(LOCAL_PLAYLISTS_KEY);
+    const playlists = result[LOCAL_PLAYLISTS_KEY] || [];
+
+    const index = playlists.findIndex((p) => p.id === playlistId);
+    if (index >= 0) {
+      const playlist = playlists[index];
+
+      // SAFEGUARD: Skip auto-delete for permanent playlists
+      if (playlist.isPermanent) {
+        if (window.logSystemEvent)
+          await window.logSystemEvent("INFO", `[CLEANUP] Skipping permanent playlist`, {
+            videoId,
+            playlistId,
+          });
+        return false;
+      }
+
+      const initialLength = playlist.videos.length;
+      playlist.videos = playlist.videos.filter((id) => id !== videoId);
+
+      if (playlist.videos.length < initialLength) {
+        await browser.storage.local.set({ [LOCAL_PLAYLISTS_KEY]: playlists });
+        if (window.logSystemEvent)
+          await window.logSystemEvent("INFO", `[CLEANUP] Video removed from local playlist`, {
+            videoId,
+            playlistId,
+          });
+
+        // Clear cache to reflect changes in editor
+        if (window.invalidatePlaylistCache) {
+          window.invalidatePlaylistCache();
+        }
+
+        // Optionally notify editor pages to update
+        try {
+          browser.runtime.sendMessage({ cmd: "update-saved-playlists" }).catch(() => {});
+        } catch {
+          /* ignore */
+        }
+
+        return true;
+      }
+    } else {
+      if (window.logSystemEvent)
+        await window.logSystemEvent(
+          "WARN",
+          `Background: Playlist ${playlistId} not found during cleanup`
+        );
+    }
+    return false;
+  } finally {
+    const end = Date.now();
+    const duration = end - start;
+    if (duration > 100 && window.logSystemEvent) {
+      window.logSystemEvent("PERF", `handleCleanupWatchedVideo took ${duration}ms`);
+    }
   }
-  return false;
 }
 
 async function pruneHistory() {
@@ -588,11 +686,11 @@ async function pruneHistory() {
       if (window.logSystemEvent)
         await window.logSystemEvent(
           "INFO",
-          `Background: Pruned ${deletedCount} stale history records`,
+          `Background: Pruned ${deletedCount} stale history records`
         );
     }
-  } catch (e) {
-    console.error("Failed to prune history:", e);
+  } catch (e_inner) {
+    console.error("Failed to prune history:", e_inner);
   }
 }
 
@@ -616,7 +714,7 @@ async function pruneStaleMetadataCache() {
           const key = String(cursor.key);
           if (key.startsWith("yph:meta:")) {
             const val = cursor.value;
-            if (val && val.lastCachedAt && (now - val.lastCachedAt > MAX_AGE_MS)) {
+            if (val && val.lastCachedAt && now - val.lastCachedAt > MAX_AGE_MS) {
               cursor.delete();
             }
           }
@@ -641,7 +739,9 @@ browser.alarms.onAlarm.addListener(async (alarm) => {
     await pruneStaleMetadataCache();
   } else if (alarm.name === "supabase-cloud-sync") {
     if (window.syncEngine) {
-      await window.syncEngine.triggerSync().catch((e) => console.warn("[Background] Supabase auto-sync error:", e));
+      await window.syncEngine
+        .triggerSync()
+        .catch((e) => console.warn("[Background] Supabase auto-sync error:", e));
     }
   } else if (alarm.name.startsWith("sync-retry-")) {
     const localPlaylistId = alarm.name.replace("sync-retry-", "");
@@ -651,7 +751,7 @@ browser.alarms.onAlarm.addListener(async (alarm) => {
 
 async function handleSyncRetry(localPlaylistId) {
   const alarmName = `sync-retry-${localPlaylistId}`;
-  
+
   if (window.logSystemEvent) {
     await window.logSystemEvent(
       "INFO",
@@ -662,9 +762,9 @@ async function handleSyncRetry(localPlaylistId) {
   // Use message passing to editor page to perform sync
   // Find any open editor tab
   const editorTabs = await browser.tabs.query({
-    url: browser.runtime.getURL("/editor/index.html*")
+    url: browser.runtime.getURL("/editor/index.html*"),
   });
-  
+
   if (editorTabs.length === 0) {
     // No editor tab open - reschedule for later
     if (window.logSystemEvent) {
@@ -683,9 +783,9 @@ async function handleSyncRetry(localPlaylistId) {
     const response = await browser.tabs.sendMessage(targetTab.id, {
       cmd: "resume-sync",
       localPlaylistId: localPlaylistId,
-      alarmName: alarmName
+      alarmName: alarmName,
     });
-    
+
     if (response && response.success) {
       if (window.logSystemEvent) {
         await window.logSystemEvent(
@@ -704,20 +804,23 @@ async function handleSyncRetry(localPlaylistId) {
         const allStates = result[SYNC_STATE_KEY] || {};
         const syncState = allStates[localPlaylistId];
         const retryCount = syncState?.retryCount || 0;
-        
-        if (retryCount >= 7) { // ~1 week max (7 retries * 24 hours)
+
+        if (retryCount >= 7) {
+          // ~1 week max (7 retries * 24 hours)
           await browser.alarms.clear(alarmName);
           // Clear sync state
           if (allStates[localPlaylistId]) {
             delete allStates[localPlaylistId];
             await browser.storage.local.set({ [SYNC_STATE_KEY]: allStates });
           }
-          await browser.notifications.create({
-            type: "basic",
-            title: "Playlist Manager",
-            message: `Playlist sync failed after ${retryCount} attempts. Please try manually.`,
-            ...(isAndroid() ? {} : { iconUrl: "icons/icon_48.png" }),
-          }).catch((e) => console.warn("Notification failed:", e));
+          await browser.notifications
+            .create({
+              type: "basic",
+              title: "Playlist Manager",
+              message: `Playlist sync failed after ${retryCount} attempts. Please try manually.`,
+              ...(isAndroid() ? {} : { iconUrl: "icons/icon_48.png" }),
+            })
+            .catch((e) => console.warn("Notification failed:", e));
         } else {
           // Increment retry count and reschedule
           if (syncState) {
@@ -727,12 +830,14 @@ async function handleSyncRetry(localPlaylistId) {
             await browser.storage.local.set({ [SYNC_STATE_KEY]: allStates });
           }
           await browser.alarms.create(alarmName, { delayInMinutes: 24 * 60 });
-          await browser.notifications.create({
-            type: "basic",
-            title: "Playlist Manager",
-            message: `Playlist sync paused due to API quota. Retry ${retryCount + 1}/7 - will try again in 24h.`,
-            ...(isAndroid() ? {} : { iconUrl: "icons/icon_48.png" }),
-          }).catch((e) => console.warn("Notification failed:", e));
+          await browser.notifications
+            .create({
+              type: "basic",
+              title: "Playlist Manager",
+              message: `Playlist sync paused due to API quota. Retry ${retryCount + 1}/7 - will try again in 24h.`,
+              ...(isAndroid() ? {} : { iconUrl: "icons/icon_48.png" }),
+            })
+            .catch((e) => console.warn("Notification failed:", e));
         }
       } else if (response.error === "not_signed_in") {
         // Not signed in - reschedule for later
@@ -740,36 +845,45 @@ async function handleSyncRetry(localPlaylistId) {
       } else if (response.error === "auto_retry_disabled") {
         // Auto-retry disabled - clear alarm to stop infinite loop
         await browser.alarms.clear(alarmName);
-        await browser.notifications.create({
-          type: "basic",
-          title: "Playlist Manager",
-          message: `Auto-retry is disabled. Click Sync to resume manually when ready.`,
-          ...(isAndroid() ? {} : { iconUrl: "icons/icon_48.png" }),
-        }).catch((e) => console.warn("Notification failed:", e));
+        await browser.notifications
+          .create({
+            type: "basic",
+            title: "Playlist Manager",
+            message: `Auto-retry is disabled. Click Sync to resume manually when ready.`,
+            ...(isAndroid() ? {} : { iconUrl: "icons/icon_48.png" }),
+          })
+          .catch((e) => console.warn("Notification failed:", e));
       } else {
         // Other error - clear alarm
         await browser.alarms.clear(alarmName);
-        await browser.notifications.create({
-          type: "basic",
-          title: "Playlist Manager: Error",
-          message: `Failed to resume sync: ${response.error}`,
-          ...(isAndroid() ? {} : { iconUrl: "icons/icon_48.png" }),
-        }).catch((e) => console.warn("Notification failed:", e));
+        await browser.notifications
+          .create({
+            type: "basic",
+            title: "Playlist Manager: Error",
+            message: `Failed to resume sync: ${response.error}`,
+            ...(isAndroid() ? {} : { iconUrl: "icons/icon_48.png" }),
+          })
+          .catch((e) => console.warn("Notification failed:", e));
       }
     }
-  } catch (e) {
+  } catch (e_inner) {
     // Tab didn't respond - reschedule
     if (window.logSystemEvent) {
       await window.logSystemEvent(
         "WARN",
         `Background: Editor tab didn't respond for ${localPlaylistId}, rescheduling`,
-        { error: e.message }
+        { error: e_inner.message }
       );
     }
     await browser.alarms.create(alarmName, { delayInMinutes: 30 });
   }
 }
 
+/**
+ * Update the extension badge with the given text
+ * @param {string} text - Text to display on badge (empty string to hide)
+ * @returns {Promise<void>}
+ */
 function updateBadge(text) {
   const actionApi = browser.action || browser.browserAction;
   if (actionApi && typeof actionApi.setBadgeText === "function") {

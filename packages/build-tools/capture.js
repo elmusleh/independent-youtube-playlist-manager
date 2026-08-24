@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 // Captures real screenshots of the built Chrome extension (headed Chromium via Xvfb).
 // Seeds a realistic demo playlist into the extension's local storage so the
 // editor/saved views render actual content, then screenshots each view.
@@ -15,13 +16,7 @@ const DEMO_PLAYLISTS = [
   {
     id: "local-demo-mix",
     title: "My Coding Mix",
-    videos: [
-      "8aGhZQkoFbQ",
-      "30LWjhZzg50",
-      "i53Gi_K3o7I",
-      "w7i4amO_zaE",
-      "dQw4w9WgXcQ",
-    ],
+    videos: ["8aGhZQkoFbQ", "30LWjhZzg50", "i53Gi_K3o7I", "w7i4amO_zaE", "dQw4w9WgXcQ"],
     loadedVideos: [
       {
         id: "8aGhZQkoFbQ",
@@ -140,7 +135,10 @@ async function seed(page) {
           durationSeconds: v.durationSeconds,
           viewCount: v.viewCount,
           publishedAt: v.publishedAt,
-          isPrivate: false, isDeleted: false, isBroken: false, isLive: false,
+          isPrivate: false,
+          isDeleted: false,
+          isBroken: false,
+          isLive: false,
           lastCachedAt: Date.now(),
         };
       }
@@ -164,7 +162,7 @@ async function seed(page) {
       req.onerror = () => reject(req.error);
     });
   }, DEMO_PLAYLISTS);
-  console.log("[seed] wrote", DEMO_PLAYLISTS.length, "demo playlists + metadata");
+  // // console.log("[seed] wrote", DEMO_PLAYLISTS.length, "demo playlists + metadata");
 }
 
 (async () => {
@@ -185,9 +183,9 @@ async function seed(page) {
   try {
     let [bg] = context.serviceWorkers();
     if (!bg) bg = await context.waitForEvent("serviceworker", { timeout: 10000 });
-    console.log("[init] service worker:", bg.url());
+    // // console.log("[init] service worker:", bg.url());
     extId = bg.url().split("/")[2];
-    console.log("[init] dynamically resolved extension ID:", extId);
+    // // console.log("[init] dynamically resolved extension ID:", extId);
   } catch (e) {
     console.warn("[init] warning: service worker event not caught, proceeding anyway:", e.message);
   }
@@ -215,10 +213,12 @@ async function seed(page) {
       await page.goto(`${base}${hash}`, { waitUntil: "domcontentloaded", timeout: 30000 });
       await page.waitForTimeout(3500);
       // Dismiss any skeleton loaders by waiting for them to clear.
-      await page.waitForSelector(".skeleton-shimmer", { state: "detached", timeout: 8000 }).catch(() => {});
+      await page
+        .waitForSelector(".skeleton-shimmer", { state: "detached", timeout: 8000 })
+        .catch(() => {});
       await page.waitForTimeout(800);
       await page.screenshot({ path: path.resolve(OUT, `screenshot-${name}.png`) });
-      console.log("[capture]", name, "ok");
+      // // console.log("[capture]", name, "ok");
     } catch (e) {
       console.error("[capture]", name, "FAILED:", e.message);
     }
@@ -230,14 +230,14 @@ async function seed(page) {
       name: "marquee-promo-1400x560.png",
       template: "../../docs/assets/templates/marquee-promo-1400x560.html",
       width: 1400,
-      height: 560
+      height: 560,
     },
     {
       name: "small-promo-440x280.png",
       template: "../../docs/assets/templates/small-promo-440x280.html",
       width: 440,
-      height: 280
-    }
+      height: 280,
+    },
   ];
 
   const promoPage = await context.newPage();
@@ -249,12 +249,12 @@ async function seed(page) {
       await promoPage.waitForTimeout(1000); // Allow fonts/images to fully settle
       const outPath = path.resolve(__dirname, "../../docs/assets", promo.name);
       await promoPage.screenshot({ path: outPath });
-      console.log("[capture] promo banner", promo.name, "ok");
+      // // console.log("[capture] promo banner", promo.name, "ok");
     } catch (e) {
       console.error("[capture] promo banner", promo.name, "FAILED:", e.message);
     }
   }
 
   await context.close();
-  console.log("done");
+  // // console.log("done");
 })();

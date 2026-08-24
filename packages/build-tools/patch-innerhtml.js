@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /**
  * Post-build patch to eliminate the Svelte-5 `innerHTML` assignment in the
  * compiled bundle that triggers Firefox addon-validation warnings.
@@ -21,15 +22,14 @@ const path = require("path");
 
 const ROOT = path.resolve(__dirname, "../..");
 
-const SAFE =
-  'Object.getOwnPropertyDescriptor(Element.prototype,"innerHTML").set.call';
+const SAFE = 'Object.getOwnPropertyDescriptor(Element.prototype,"innerHTML").set.call';
 
 function patchMainJs() {
   const file = path.join(ROOT, "apps", "browser-extension", "editor", "main.js");
   let content = fs.readFileSync(file, "utf-8");
 
   if (content.includes(SAFE)) {
-    console.log("[patch-innerhtml] apps/browser-extension/editor/main.js already correctly patched");
+    // // console.log("[patch-innerhtml] apps/browser-extension/editor/main.js already correctly patched");
     return;
   }
 
@@ -50,11 +50,13 @@ function patchMainJs() {
 
   fs.writeFileSync(file, content, "utf-8");
   if (before > 0 && after === 0) {
-    console.log("[patch-innerhtml] Patched apps/browser-extension/editor/main.js (innerHTML -> safe setter)");
+    // // console.log("[patch-innerhtml] Patched apps/browser-extension/editor/main.js (innerHTML -> safe setter)");
   } else if (before === 0) {
-    console.log("[patch-innerhtml] apps/browser-extension/editor/main.js has no innerHTML assignment to patch (OK)");
+    // // console.log("[patch-innerhtml] apps/browser-extension/editor/main.js has no innerHTML assignment to patch (OK)");
   } else {
-    console.warn(`[patch-innerhtml] WARNING: ${before} -> ${after} assignments remaining; pattern may have changed`);
+    console.warn(
+      `[patch-innerhtml] WARNING: ${before} -> ${after} assignments remaining; pattern may have changed`
+    );
   }
 }
 
@@ -65,7 +67,7 @@ function patchUtilsJs() {
 
   const replacements = [
     ['c.innerHTML=e.message||""', 'c.textContent=e.message||""'],
-    ['l.innerHTML=new String(o).valueOf()', 'l.textContent=new String(o).valueOf()'],
+    ["l.innerHTML=new String(o).valueOf()", "l.textContent=new String(o).valueOf()"],
   ];
 
   let changed = false;
@@ -78,9 +80,9 @@ function patchUtilsJs() {
 
   if (changed) {
     fs.writeFileSync(file, content, "utf-8");
-    console.log("[patch-innerhtml] Patched apps/browser-extension/editor/utils.js");
+    // // console.log("[patch-innerhtml] Patched apps/browser-extension/editor/utils.js");
   } else {
-    console.log("[patch-innerhtml] apps/browser-extension/editor/utils.js already patched or clean");
+    // // console.log("[patch-innerhtml] apps/browser-extension/editor/utils.js already patched or clean");
   }
 }
 
@@ -108,7 +110,7 @@ function createIndexHtml() {
 </html>`;
 
   fs.writeFileSync(file, html, "utf-8");
-  console.log("[patch-innerhtml] Created apps/browser-extension/editor/index.html");
+  // // console.log("[patch-innerhtml] Created apps/browser-extension/editor/index.html");
 }
 
 createIndexHtml();
