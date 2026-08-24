@@ -54,7 +54,7 @@ The extension works fully offline without any Google account. This section is **
 ---
 
 ## 3. Update the Extension Credentials
-1. Open [`apps/browser-extension/playlist-editor/src/services/youtube-auth.ts`](../apps/browser-extension/playlist-editor/src/services/youtube-auth.ts).
+1. Open [`apps/browser-extension/playlist-manager/src/services/youtube-auth.ts`](../apps/browser-extension/playlist-manager/src/services/youtube-auth.ts).
 2. Update the `CLIENT_ID` constant with your new **Client ID** from Step 2.
 3. Run `npm run build` and **Reload** the extension in your browser.
 

@@ -25,13 +25,13 @@ jobs:
           cache: 'npm'
           cache-dependency-path: |
             apps/web-portal/package-lock.json
-            apps/browser-extension/playlist-editor/package-lock.json
+            apps/browser-extension/playlist-manager/package-lock.json
             package-lock.json
 
       - name: Install Project & Extension Dependencies
         run: |
           npm ci
-          cd apps/browser-extension/playlist-editor && npm ci
+          cd apps/browser-extension/playlist-manager && npm ci
 
       - name: Build Extension (Chrome & Firefox Bundles)
         run: npm run build
@@ -75,7 +75,7 @@ jobs:
         run: npm ci
 
       - name: Install Playlist Editor Dependencies
-        run: cd apps/browser-extension/playlist-editor && npm ci
+        run: cd apps/browser-extension/playlist-manager && npm ci
 
       - name: Check Version Sync
         run: |
@@ -83,7 +83,7 @@ jobs:
           git diff --exit-code apps/browser-extension/manifest.chrome.json apps/browser-extension/manifest.firefox.json package.json || (echo 'Version mismatch detected -- run: npm run sync-version' && exit 1)
 
       - name: Run Svelte Diagnostics (Typecheck)
-        run: cd apps/browser-extension/playlist-editor && npx svelte-check
+        run: cd apps/browser-extension/playlist-manager && npx svelte-check
 
       - name: Build Extension (Chrome & Firefox Bundles)
         run: npm run build

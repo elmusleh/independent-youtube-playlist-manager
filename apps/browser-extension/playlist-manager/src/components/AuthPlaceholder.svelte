@@ -36,7 +36,7 @@
 <div class="auth-placeholder">
   <div class="content">
     <div class="icon">
-      <img src="../icons/icon_128.png" alt="Independent YouTube Playlist Manager" width="48" height="48" />
+      <img src="../assets/icons/icon_128.png" alt="Independent YouTube Playlist Manager" width="48" height="48" />
     </div>
     <p>{message}</p>
     <LargeButton onclick={handleSignIn} bgcolor="#4285F4" disabled={loading}>

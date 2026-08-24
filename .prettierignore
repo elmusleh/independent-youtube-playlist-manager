@@ -2,7 +2,7 @@ dist/
 node_modules/
 apps/browser-extension/editor/
 apps/browser-extension/assets/browser-polyfill.min.js
-apps/browser-extension/playlist-editor/public/
+apps/browser-extension/playlist-manager/public/
 apps/web-portal/.next/
 apps/web-portal/out/
 *.min.js

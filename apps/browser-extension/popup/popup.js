@@ -1,6 +1,6 @@
 /* eslint-disable no-console */
 /// <reference path="./popup.d.ts" />
-/// <reference path="../playlist-editor/src/types/services.d.ts" />
+/// <reference path="../playlist-manager/src/types/services.d.ts" />
 
 /**
  * @typedef {import("webextension-polyfill").Tabs.Tab} Tab
@@ -1040,7 +1040,7 @@ async function alert(message, isInfo) {
     type: "basic",
     title: "Playlist Manager" + (isInfo ? "" : ": Error"),
     message: message,
-    ...(isAndroid ? {} : { iconUrl: "../icons/icon_48.png" }),
+    ...(isAndroid ? {} : { iconUrl: "../assets/icons/icon_48.png" }),
   });
 }
 

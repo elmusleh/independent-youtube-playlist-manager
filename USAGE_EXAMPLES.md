@@ -29,7 +29,7 @@ This document provides examples of how to use and extend the Independent YouTube
 │   │   ├── background/             # Service worker scripts
 │   │   ├── content-scripts/        # Content scripts injected into pages
 │   │   ├── popup/                  # Extension popup UI
-│   │   └── playlist-editor/        # Main Svelte SPA (editor UI)
+│   │   └── playlist-manager/        # Main Svelte SPA (editor UI)
 │   └── web-portal/                 # Next.js web application
 ├── docs/                           # Documentation and assets
 └── packages/                       # Build tools and utilities
@@ -46,19 +46,19 @@ This document provides examples of how to use and extend the Independent YouTube
 
 ### Key Services
 
-1. **Video Service** (`apps/browser-extension/playlist-editor/src/services/video-service.ts`)
+1. **Video Service** (`apps/browser-extension/playlist-manager/src/services/video-service.ts`)
    - Fetches video metadata using multiple strategies
    - Fallback chain: Cache → Innertube → Embed → oEmbed → API → Piped/Invidious
 
-2. **Storage Service** (`apps/browser-extension/playlist-editor/src/services/storage-service.ts`)
+2. **Storage Service** (`apps/browser-extension/playlist-manager/src/services/storage-service.ts`)
    - Manages playlist persistence with debounced saves
    - Handles local and synced playlists
 
-3. **Supabase Sync** (`apps/browser-extension/playlist-editor/src/services/supabase-sync.ts`)
+3. **Supabase Sync** (`apps/browser-extension/playlist-manager/src/services/supabase-sync.ts`)
    - Cross-device synchronization
    - Last-write-wins conflict resolution
 
-4. **Database Service** (`apps/browser-extension/playlist-editor/src/services/db-service.ts`)
+4. **Database Service** (`apps/browser-extension/playlist-manager/src/services/db-service.ts`)
    - IndexedDB wrapper for video metadata
    - Exponential backoff retry mechanism
 
@@ -123,14 +123,14 @@ else if (clickedMenuId === NEW_MENU_ID) {
 
 #### Adding a New Settings Option
 
-1. Add to Settings type in `apps/browser-extension/playlist-editor/src/types/model.ts`
-2. Add UI control in `apps/browser-extension/playlist-editor/src/components/Settings.svelte`
+1. Add to Settings type in `apps/browser-extension/playlist-manager/src/types/model.ts`
+2. Add UI control in `apps/browser-extension/playlist-manager/src/components/Settings.svelte`
 3. Update `storage-service.ts` to handle the new setting
 4. Use the setting in your code via `await window.getSettings()`
 
 #### Adding a New Metadata Source
 
-1. Edit `apps/browser-extension/playlist-editor/src/services/video-service.ts`
+1. Edit `apps/browser-extension/playlist-manager/src/services/video-service.ts`
 2. Add your source to the fetch chain in `fetchVideoMetadata()`
 3. Add configuration options in `storage-service.ts` if needed
 4. Update the manifest if new permissions are required

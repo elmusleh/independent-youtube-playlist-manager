@@ -8,7 +8,7 @@
 
 The codebase is split into two primary layers:
 
-1. **`apps/browser-extension/apps/browser-extension/playlist-editor/` (Frontend SPA Extension UI)**
+1. **`apps/browser-extension/apps/browser-extension/playlist-manager/` (Frontend SPA Extension UI)**
    - Built with **Svelte 4 / 5 + TypeScript + Rollup**.
    - Compiles into `apps/browser-extension/editor/` (`main.js`, `bundle.css`, `index.html`).
    - Location of all UI views (`App.svelte`, `PlaylistEditor.svelte`, `Saved.svelte`, `Settings.svelte`, `History.svelte`, `Search.svelte`) and data services (`video-service.ts`, `youtube-api.ts`, `storage-service.ts`, `sync-service.ts`).
@@ -41,9 +41,9 @@ The project target platforms are **Google Chrome**, **Mozilla Firefox Desktop (1
 ## 💾 Storage, Normalization & Backup Architecture
 
 ### 1. Per-Video Metadata Storage & Transactional CRUD (`IndexedDB`)
-- **Database & Store:** Dedicated database `yph_metadata_db_v2` with object store `metadata` managed natively via `apps/browser-extension/apps/browser-extension/playlist-editor/apps/browser-extension/services/db-service.ts` (zero external library conflicts, atomic batch transactions, memory fallback).
+- **Database & Store:** Dedicated database `yph_metadata_db_v2` with object store `metadata` managed natively via `apps/browser-extension/apps/browser-extension/playlist-manager/apps/browser-extension/services/db-service.ts` (zero external library conflicts, atomic batch transactions, memory fallback).
 - **Key Pattern:** `yph:meta:<videoId>` managed via `db-service.ts` with exponential backoff retry.
-- **Strict Normalization:** All metadata and playlist writes are sanitized and enforced through `apps/browser-extension/apps/browser-extension/playlist-editor/apps/browser-extension/services/schema-normalizer.ts` (`normalizeVideoMeta`, `normalizePlaylist`, `normalizeHistoryRecord`).
+- **Strict Normalization:** All metadata and playlist writes are sanitized and enforced through `apps/browser-extension/apps/browser-extension/playlist-manager/apps/browser-extension/services/schema-normalizer.ts` (`normalizeVideoMeta`, `normalizePlaylist`, `normalizeHistoryRecord`).
 - **Rule for AI Agents:** NEVER store large arrays of video metadata in `browser.storage.local`. High-frequency video metadata MUST be queried and written via `db-service.ts` to utilize the multi-gigabyte `unlimitedStorage` IndexedDB capacity without item quota limits.
 
 ### 2. Playlist & App State (`browser.storage.local`)
@@ -67,7 +67,7 @@ The project target platforms are **Google Chrome**, **Mozilla Firefox Desktop (1
 
 ## 🔄 Video Metadata Fetching & Scraping Pipeline
 
-Metadata fetching occurs in `apps/browser-extension/apps/browser-extension/playlist-editor/apps/browser-extension/services/video-service.ts` and `youtube-api.ts` configured via User Settings (`metadataExecutionStrategy: "free_first" | "api_first"`):
+Metadata fetching occurs in `apps/browser-extension/apps/browser-extension/playlist-manager/apps/browser-extension/services/video-service.ts` and `youtube-api.ts` configured via User Settings (`metadataExecutionStrategy: "free_first" | "api_first"`):
 
 ### Default Execution Order (Free / Zero-Quota First):
 1. **IndexedDB Local Cache Hit:** Read `yph:meta:<videoId>` (24h valid TTL, 5min negative TTL).
@@ -91,7 +91,7 @@ All commands must be executed from the **repository root**:
 
 ```bash
 # 1. Type-check Svelte SPA
-cd apps/browser-extension/playlist-editor && npx svelte-check && cd ..
+cd apps/browser-extension/playlist-manager && npx svelte-check && cd ..
 
 # 2. Complete production build (Compiles SPA -> apps/browser-extension/editor/, copies to dist/chrome/ and dist/firefox/, patches innerHTML, validates manifests)
 npm run build
@@ -107,7 +107,7 @@ npm run watch
 
 ## 🚨 Guidelines & Rules for AI Agents
 
-1. **Run Verification Commands:** Always run `npm run build` and `cd apps/browser-extension/playlist-editor && npx svelte-check` after making code modifications to ensure no compilation or manifest validation errors.
+1. **Run Verification Commands:** Always run `npm run build` and `cd apps/browser-extension/playlist-manager && npx svelte-check` after making code modifications to ensure no compilation or manifest validation errors.
 2. **Preserve Compatibility:** Maintain Android (Fenix) compatibility guard checks (`isAndroid()` user-agent detection) before using desktop-only extension APIs (`contextMenus`, `identity.launchWebAuthFlow`).
 3. **Keep Manifests Clean:** Never add `apps/browser-extension/manifest.json`. Only edit `apps/browser-extension/manifest.chrome.json` and `apps/browser-extension/manifest.firefox.json`.
 4. **Debounced Saves:** Ensure UI edits to playlists trigger the debounced autosave in `storage-service.ts`.

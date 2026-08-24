@@ -94,7 +94,7 @@ Technical Overview:
 
 Build Instructions (for source review):
 npm install
-cd apps/browser-extension/playlist-editor && npm install && npm run build && cd ..
+cd apps/browser-extension/playlist-manager && npm install && npm run build && cd ..
 npm run build-firefox
 
 The built Firefox extension will be in dist/firefox/.

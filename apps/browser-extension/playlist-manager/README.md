@@ -15,7 +15,7 @@ The Svelte 5 + TypeScript single-page application that powers the extension's pl
 ```bash
 npm run watch                                  # Dev: Rollup watcher, rebuilds into src/editor/
 npm run build                                  # Production build (extension + dist/ folders)
-cd playlist-editor && npx svelte-check         # Type-check the SPA
+cd playlist-manager && npx svelte-check         # Type-check the SPA
 ```
 
 ## Conventions

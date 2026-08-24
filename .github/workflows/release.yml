@@ -26,7 +26,7 @@ jobs:
       - name: Install Dependencies
         run: |
           npm ci
-          cd apps/browser-extension/playlist-editor && npm ci
+          cd apps/browser-extension/playlist-manager && npm ci
 
       - name: Sync Versions from Tag
         run: |
@@ -41,7 +41,7 @@ jobs:
           fi
 
       - name: Run Svelte Diagnostics (Typecheck)
-        run: cd apps/browser-extension/playlist-editor && npx svelte-check
+        run: cd apps/browser-extension/playlist-manager && npx svelte-check
 
       - name: Run Linter
         run: npm run lint

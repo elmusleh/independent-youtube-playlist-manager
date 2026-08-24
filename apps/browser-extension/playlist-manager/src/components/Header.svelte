@@ -479,7 +479,7 @@
       >
         <img
           alt="YPH Logo"
-          src="../icons/icon_128.png"
+          src="../assets/icons/icon_128.png"
           class="brand-logo"
           width="32"
           height="32"

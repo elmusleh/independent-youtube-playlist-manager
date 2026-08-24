@@ -185,7 +185,7 @@ class SyncService {
       type: 'basic',
       title: 'YPH: Synchronization Error',
       message: message,
-      ...(isAndroid ? {} : { iconUrl: browser.runtime.getURL('icons/icon_128.png') })
+      ...(isAndroid ? {} : { iconUrl: browser.runtime.getURL('assets/icons/icon_128.png') })
     });
   }
 

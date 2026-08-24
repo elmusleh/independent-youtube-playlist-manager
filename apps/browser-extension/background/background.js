@@ -51,11 +51,11 @@ init();
 
 /**
  *
- * @param {import("../playlist-editor/src/types/model").Settings} settings
+ * @param {import("../playlist-manager/src/types/model").Settings} settings
  */
 /**
  * Build context menus based on settings
- * @param {import("../playlist-editor/src/types/model").Settings} settings - Extension settings
+ * @param {import("../playlist-manager/src/types/model").Settings} settings - Extension settings
  * @returns {Promise<void>}
  */
 async function buildContextMenus(settings) {
@@ -497,7 +497,7 @@ async function alert(message, isInfo) {
     type: "basic",
     title: "Playlist Manager" + (isInfo ? "" : ": Error"),
     message: message,
-    ...(isAndroid() ? {} : { iconUrl: "icons/icon_48.png" }),
+    ...(isAndroid() ? {} : { iconUrl: "assets/icons/icon_48.png" }),
   });
 }
 
@@ -818,7 +818,7 @@ async function handleSyncRetry(localPlaylistId) {
               type: "basic",
               title: "Playlist Manager",
               message: `Playlist sync failed after ${retryCount} attempts. Please try manually.`,
-              ...(isAndroid() ? {} : { iconUrl: "icons/icon_48.png" }),
+              ...(isAndroid() ? {} : { iconUrl: "assets/icons/icon_48.png" }),
             })
             .catch((e) => console.warn("Notification failed:", e));
         } else {
@@ -835,7 +835,7 @@ async function handleSyncRetry(localPlaylistId) {
               type: "basic",
               title: "Playlist Manager",
               message: `Playlist sync paused due to API quota. Retry ${retryCount + 1}/7 - will try again in 24h.`,
-              ...(isAndroid() ? {} : { iconUrl: "icons/icon_48.png" }),
+              ...(isAndroid() ? {} : { iconUrl: "assets/icons/icon_48.png" }),
             })
             .catch((e) => console.warn("Notification failed:", e));
         }
@@ -850,7 +850,7 @@ async function handleSyncRetry(localPlaylistId) {
             type: "basic",
             title: "Playlist Manager",
             message: `Auto-retry is disabled. Click Sync to resume manually when ready.`,
-            ...(isAndroid() ? {} : { iconUrl: "icons/icon_48.png" }),
+            ...(isAndroid() ? {} : { iconUrl: "assets/icons/icon_48.png" }),
           })
           .catch((e) => console.warn("Notification failed:", e));
       } else {
@@ -861,7 +861,7 @@ async function handleSyncRetry(localPlaylistId) {
             type: "basic",
             title: "Playlist Manager: Error",
             message: `Failed to resume sync: ${response.error}`,
-            ...(isAndroid() ? {} : { iconUrl: "icons/icon_48.png" }),
+            ...(isAndroid() ? {} : { iconUrl: "assets/icons/icon_48.png" }),
           })
           .catch((e) => console.warn("Notification failed:", e));
       }

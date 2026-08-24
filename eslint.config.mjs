@@ -8,7 +8,7 @@ export default [
       "node_modules/**",
       "apps/browser-extension/editor/**",
       "apps/browser-extension/assets/browser-polyfill.min.js",
-      "apps/browser-extension/playlist-editor/**",
+      "apps/browser-extension/playlist-manager/**",
       "apps/web-portal/**",
     ],
   },

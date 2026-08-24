@@ -10,7 +10,7 @@ All contributors must follow our [Code of Conduct](CODE_OF_CONDUCT.md). Please r
 
 The repository has three layers:
 
-- **`apps/browser-extension/apps/browser-extension/playlist-editor/`** — Svelte 5 + TypeScript SPA that compiles into `apps/browser-extension/editor/`. All extension UI lives here.
+- **`apps/browser-extension/apps/browser-extension/playlist-manager/`** — Svelte 5 + TypeScript SPA that compiles into `apps/browser-extension/editor/`. All extension UI lives here.
 - **`apps/browser-extension/`** — Plain JS WebExtension shell (background service worker, popup, content scripts) plus the compiled editor output.
 - **`apps/web-portal/`** — Next.js 15 marketing site and dashboard (`npm run web` / `npm run web:build`).
 
@@ -23,7 +23,7 @@ cd independent-youtube-playlist-manager
 
 # 2. Install dependencies
 npm install
-cd apps/browser-extension/playlist-editor && npm install && cd ..
+cd apps/browser-extension/playlist-manager && npm install && cd ..
 cd web && npm install && cd ..
 ```
 
@@ -33,7 +33,7 @@ All commands run from the repository root:
 
 ```bash
 # Type-check the Svelte SPA
-cd apps/browser-extension/playlist-editor && npx svelte-check && cd ..
+cd apps/browser-extension/playlist-manager && npx svelte-check && cd ..
 
 # Full production build (extension + dist/)
 npm run build

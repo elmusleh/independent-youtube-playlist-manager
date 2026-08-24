@@ -834,7 +834,7 @@
 
         <!-- Playlist Editor -->
         <section class="card">
-          <h3><Fa icon={faListCheck} /> Playlist Editor</h3>
+          <h3><Fa icon={faListCheck} /> Playlist Manager</h3>
           <div class="toggle-row">
             <div class="toggle-info">
               <span>Open editor after creation</span>

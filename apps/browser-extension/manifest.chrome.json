@@ -62,6 +62,18 @@
       "description": "Quick add current YouTube video to Playlist Builder"
     }
   },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "assets/*",
+        "editor/*",
+        "popup/*"
+      ],
+      "matches": [
+        "*://*/*"
+      ]
+    }
+  ],
   "browser_specific_settings": {
     "gecko": {
       "id": "{c3d5f138-77cb-461e-b553-f82bf70fecf7}",

@@ -63,6 +63,18 @@
       "description": "Quick add current YouTube video to Playlist Builder"
     }
   },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "assets/*",
+        "editor/*",
+        "popup/*"
+      ],
+      "matches": [
+        "*://*/*"
+      ]
+    }
+  ],
   "browser_specific_settings": {
     "gecko": {
       "id": "independent-yt-playlist-manager@elmusleh.github.io",
