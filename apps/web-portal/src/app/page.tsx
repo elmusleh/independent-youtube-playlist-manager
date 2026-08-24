@@ -22,7 +22,13 @@ export default function Home() {
 
           {/* Official Logo */}
           <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-2xl overflow-hidden shadow-md flex items-center justify-center border border-zinc-200 bg-white group hover:scale-105 transition-transform duration-300">
-            <Image src="/icon.png" alt="Independent YouTube Playlist Manager logo" width={56} height={56} className="object-contain" />
+            <Image
+              src="/icon.png"
+              alt="Independent YouTube Playlist Manager logo"
+              width={56}
+              height={56}
+              className="object-contain"
+            />
           </div>
 
           {/* Top Badge */}
@@ -37,8 +43,8 @@ export default function Home() {
               Independent YouTube Playlist Manager
             </h1>
             <p className="text-zinc-600 text-xs sm:text-sm max-w-xl mx-auto leading-relaxed">
-              Build, edit, and sync YouTube playlists directly in your browser — no server dependencies, 
-              no API quota limits, and 100% client-side privacy.
+              Build, edit, and sync YouTube playlists directly in your browser — no server
+              dependencies, no API quota limits, and 100% client-side privacy.
             </p>
           </div>
 
@@ -50,26 +56,47 @@ export default function Home() {
               className="w-full sm:w-auto h-11 px-6 font-bold text-xs sm:text-sm shadow-md shadow-red-600/10 touch-target-44"
               onClick={() => window.open("https://chromewebstore.google.com/", "_blank")}
             >
-              <Image src="/chrome.svg" alt="Chrome Logo" width={16} height={16} className="mr-2 flex-shrink-0" />
+              <Image
+                src="/chrome.svg"
+                alt="Chrome Logo"
+                width={16}
+                height={16}
+                className="mr-2 flex-shrink-0"
+              />
               Add to Chrome
             </Button>
             <Button
               variant="outline"
               size="lg"
               className="w-full sm:w-auto h-11 px-6 font-semibold text-xs sm:text-sm bg-white border-zinc-200 hover:bg-zinc-50 hover:border-zinc-300 text-zinc-800 touch-target-44"
-              onClick={() => window.open("https://addons.mozilla.org/firefox/addon/independent-youtube-playlist-manager/", "_blank")}
+              onClick={() =>
+                window.open("https://addons.mozilla.org/en-US/firefox/addon/iypm/", "_blank")
+              }
             >
-              <Image src="/firefox.svg" alt="Firefox Logo" width={16} height={16} className="mr-2 flex-shrink-0" />
+              <Image
+                src="/firefox.svg"
+                alt="Firefox Logo"
+                width={16}
+                height={16}
+                className="mr-2 flex-shrink-0"
+              />
               <span className="flex flex-col items-start leading-none">
                 <span>Add to Firefox</span>
-                <span className="mt-1 text-[10px] font-normal text-zinc-500">Desktop &amp; Android</span>
+                <span className="mt-1 text-[10px] font-normal text-zinc-500">
+                  Desktop &amp; Android
+                </span>
               </span>
             </Button>
             <Button
               variant="outline"
               size="lg"
               className="w-full sm:w-auto h-11 px-6 font-semibold text-xs sm:text-sm bg-white border-zinc-200 hover:bg-zinc-50 hover:border-zinc-300 text-zinc-800 touch-target-44 gap-2"
-              onClick={() => window.open("https://github.com/elmusleh/independent-youtube-playlist-manager", "_blank")}
+              onClick={() =>
+                window.open(
+                  "https://github.com/elmusleh/independent-youtube-playlist-manager",
+                  "_blank"
+                )
+              }
             >
               <GithubIcon className="h-4 w-4 flex-shrink-0" />
               View Source
