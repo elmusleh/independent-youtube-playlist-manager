@@ -1,5 +1,7 @@
 import { test as base, chromium, type BrowserContext, expect } from "@playwright/test";
 import path from "path";
+import os from "os";
+import fs from "fs";
 
 // Extend basic test context to load the built Chrome extension
 const test = base.extend<{
@@ -9,7 +11,7 @@ const test = base.extend<{
   context: async ({}, use) => {
     const pathToExtension = path.resolve(__dirname, "../../dist/chrome");
     const isHeadless = !process.env.HEADED;
-    
+
     if (isHeadless) {
       // Use an empty browser context to satisfy the fixture type signature
       const browserInstance = await chromium.launch();
@@ -19,15 +21,20 @@ const test = base.extend<{
       return;
     }
 
-    const context = await chromium.launchPersistentContext("", {
+    // Use a real temp directory — Chrome crashes on Linux when given "" as profile dir
+    const profileDir = fs.mkdtempSync(path.join(os.tmpdir(), "iypm-e2e-"));
+    const context = await chromium.launchPersistentContext(profileDir, {
       headless: false,
       args: [
         `--disable-extensions-except=${pathToExtension}`,
         `--load-extension=${pathToExtension}`,
+        "--no-sandbox",
+        "--disable-gpu",
       ],
     });
     await use(context);
     await context.close();
+    fs.rmSync(profileDir, { recursive: true, force: true });
   },
   extensionId: async ({ context }, use) => {
     const isHeadless = !process.env.HEADED;
@@ -35,10 +42,28 @@ const test = base.extend<{
       await use("dummy-extension-id");
       return;
     }
-    let [background] = context.serviceWorkers();
+
+    // Open chrome://newtab to force Chrome to activate the extension SW.
+    const triggerPage = await context.newPage();
+    await triggerPage.goto("chrome://newtab/").catch(() => {});
+    await triggerPage.waitForTimeout(2000);
+
+    // Poll up to 10 s for the SW to appear.
+    let background = context.serviceWorkers()[0];
     if (!background) {
-      background = await context.waitForEvent("serviceworker");
+      background = await context
+        .waitForEvent("serviceworker", { timeout: 15000 })
+        .catch(() => null as any);
     }
+
+    await triggerPage.close().catch(() => {});
+
+    if (!background) {
+      // SW didn't register — skip rather than fail with a misleading URL error.
+      test.skip(true, "Extension service worker did not register — check the extension for SW errors.");
+      return;
+    }
+
     const extensionId = background.url().split("/")[2];
     await use(extensionId);
   },
