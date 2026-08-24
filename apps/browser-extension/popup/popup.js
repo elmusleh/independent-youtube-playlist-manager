@@ -282,7 +282,6 @@ function setupUI() {
     }
 
     const currentIndex = currentTab.index;
-    let videoTabs = [];
 
     switch (scope) {
       case "current":
@@ -291,50 +290,74 @@ function setupUI() {
         await addVideosToResolvedPlaylist([videoId], [currentTab]);
         return;
 
-      case "left":
-        videoTabs = await getVideoTabsInWindow(
+      case "left": {
+        const videoTabs = await getVideoTabsInWindow(
           currentTab.windowId,
           (tab) => tab.index < currentIndex
         );
         if (videoTabs.length === 0) return alert("No YouTube video tabs found to the left");
-        break;
+        await scrapeMetadataFromTabs(videoTabs);
+        const videoIds = videoTabs.map((tab) => parseYoutubeId(tab.url)).filter(isNotNull);
+        const uniqueIds = removeDuplicates(videoIds);
+        if (uniqueIds.length === 0) return alert("No YouTube video tabs found");
+        await addVideosToResolvedPlaylist(uniqueIds, videoTabs);
+        return;
+      }
 
-      case "right":
-        videoTabs = await getVideoTabsInWindow(
+      case "right": {
+        const videoTabs = await getVideoTabsInWindow(
           currentTab.windowId,
           (tab) => tab.index > currentIndex
         );
         if (videoTabs.length === 0) return alert("No YouTube video tabs found to the right");
-        break;
+        await scrapeMetadataFromTabs(videoTabs);
+        const videoIds = videoTabs.map((tab) => parseYoutubeId(tab.url)).filter(isNotNull);
+        const uniqueIds = removeDuplicates(videoIds);
+        if (uniqueIds.length === 0) return alert("No YouTube video tabs found");
+        await addVideosToResolvedPlaylist(uniqueIds, videoTabs);
+        return;
+      }
 
-      case "all-this-window-include":
-        videoTabs = await getVideoTabsInWindow(currentTab.windowId, () => true);
+      case "all-this-window-include": {
+        const videoTabs = await getVideoTabsInWindow(currentTab.windowId, () => true);
         if (videoTabs.length === 0) return alert("No YouTube video tabs found in this window");
-        break;
+        await scrapeMetadataFromTabs(videoTabs);
+        const videoIds = videoTabs.map((tab) => parseYoutubeId(tab.url)).filter(isNotNull);
+        const uniqueIds = removeDuplicates(videoIds);
+        if (uniqueIds.length === 0) return alert("No YouTube video tabs found");
+        await addVideosToResolvedPlaylist(uniqueIds, videoTabs);
+        return;
+      }
 
-      case "all-this-window-exclude":
-        videoTabs = await getVideoTabsInWindow(
+      case "all-this-window-exclude": {
+        const videoTabs = await getVideoTabsInWindow(
           currentTab.windowId,
           (tab) => tab.index !== currentIndex
         );
         if (videoTabs.length === 0)
           return alert("No other YouTube video tabs found in this window");
-        break;
+        await scrapeMetadataFromTabs(videoTabs);
+        const videoIds = videoTabs.map((tab) => parseYoutubeId(tab.url)).filter(isNotNull);
+        const uniqueIds = removeDuplicates(videoIds);
+        if (uniqueIds.length === 0) return alert("No YouTube video tabs found");
+        await addVideosToResolvedPlaylist(uniqueIds, videoTabs);
+        return;
+      }
 
-      case "all-windows":
-        videoTabs = await getAllVideoTabsAcrossWindows();
+      case "all-windows": {
+        const videoTabs = await getAllVideoTabsAcrossWindows();
         if (videoTabs.length === 0) return alert("No YouTube video tabs found");
-        break;
+        await scrapeMetadataFromTabs(videoTabs);
+        const videoIds = videoTabs.map((tab) => parseYoutubeId(tab.url)).filter(isNotNull);
+        const uniqueIds = removeDuplicates(videoIds);
+        if (uniqueIds.length === 0) return alert("No YouTube video tabs found");
+        await addVideosToResolvedPlaylist(uniqueIds, videoTabs);
+        return;
+      }
 
       default:
         return alert("Invalid scope selected");
     }
-
-    await scrapeMetadataFromTabs(videoTabs);
-    const videoIds = videoTabs.map((tab) => parseYoutubeId(tab.url)).filter(isNotNull);
-    const uniqueIds = removeDuplicates(videoIds);
-    if (uniqueIds.length === 0) return alert("No YouTube video tabs found");
-    await addVideosToResolvedPlaylist(uniqueIds, videoTabs);
   };
 
   initTargetData();
