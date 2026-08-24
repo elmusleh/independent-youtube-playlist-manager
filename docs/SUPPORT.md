@@ -27,7 +27,7 @@ This is usually a metadata-resolution issue. Check **Settings → Video Metadata
 
 ### YouTube sync says "API quota exceeded"
 
-The YouTube Data API v3 has a daily quota (default 10,000 units). Large playlists (500+ videos) can take 2–3 days to fully sync. The extension saves progress and auto-retries after 24 hours. See `USER_GUIDE.md` in the repository.
+The YouTube Data API v3 has a daily quota (default 10,000 units). Large playlists (500+ videos) can take 2–3 days to fully sync. The extension saves progress and auto-retries after 24 hours. See [`USER_GUIDE.md`](USER_GUIDE.md) in the repository.
 
 ### Sign-in fails with "redirect_uri_mismatch"
 
@@ -51,9 +51,9 @@ Context menus are desktop-only. On Android/Fenix they are skipped by design.
 
 ## Documentation
 
-- **Setup & API configuration:** `USER_GUIDE.md` in the repository.
-- **Architecture & build:** `AGENTS.md`.
-- **Release history:** `RELEASE_NOTES.md`.
+- **Setup & API configuration:** [`USER_GUIDE.md`](USER_GUIDE.md) in the repository.
+- **Architecture & build:** [`AGENTS.md`](../AGENTS.md).
+- **Release history:** [`RELEASE_NOTES.md`](RELEASE_NOTES.md).
 
 ## Still stuck?
 

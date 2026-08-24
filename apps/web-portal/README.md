@@ -28,4 +28,4 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=...
 
 Without these, the site runs in graceful offline/demo mode.
 
-See the [root README](../README.md) and [AGENTS.md](../docs/AGENTS.md) for the full project architecture.
+See the [root README](../README.md) and [AGENTS.md](../../AGENTS.md) for the full project architecture.

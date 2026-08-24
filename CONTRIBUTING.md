@@ -49,7 +49,7 @@ npm run watch
 
 - **TypeScript** for the SPA; **plain JS** for the extension shell.
 - Follow existing file conventions and naming.
-- Metadata writes must go through `db-service.ts` (IndexedDB), never `browser.storage.local` (see `docs/AGENTS.md` storage rules).
+- Metadata writes must go through `db-service.ts` (IndexedDB), never `browser.storage.local` (see `AGENTS.md` storage rules).
 - Run `npm run build` and `svelte-check` before submitting — CI enforces both.
 - Keep manifests clean: never add `apps/browser-extension/manifest.json`; only `manifest.chrome.json` and `manifest.firefox.json` exist.
 

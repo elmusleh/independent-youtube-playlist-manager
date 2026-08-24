@@ -102,7 +102,7 @@
   <div class="view-body">
     <div class="share-intro">
       <p>
-        Love using Playlist Helper? Help others discover it by sharing
+        Love using Independent YouTube Playlist Manager? Help others discover it by sharing
         it with your friends and network.
       </p>
     </div>

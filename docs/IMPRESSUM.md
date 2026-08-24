@@ -4,23 +4,18 @@
 
 ## Provider
 
-**Provider Name:** [Provider Name]
+**Provider Name:** Mohammad El-Musleh (elmusleh)
 
-**Address:** [Street and Number]
-[Postal Code and City]
-[Country]
+**Address:** Available upon request (contact via email)
 
-**Contact Email:** [contact@example.com]
-
-**Phone (optional):** [Phone Number]
+**Contact Email:** elmusleh.mohammad@gmail.com
 
 ## Responsible for Content
 
 **Responsible person (§ 18 Abs. 2 MStV):**
 
-[Name of the responsible person]
-
-[Address]
+Mohammad El-Musleh (elmusleh)
+Contact via: elmusleh.mohammad@gmail.com
 
 ## Dispute Resolution (ODR)
 
@@ -42,6 +37,4 @@ Our offer may contain links to external third-party websites over whose content 
 
 The contents and works created by the operator of this site are subject to copyright law. Reproduction, editing, distribution, and any kind of use outside the limits of copyright law require the written consent of the respective author or creator.
 
----
 
-> **Note:** This template uses placeholder fields. Replace `[Provider Name]`, address, and contact details with the actual operator's information before publication.

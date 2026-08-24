@@ -1,5 +1,5 @@
 // logger-service.ts
-// Centralized system logger for the Playlist Helper extension
+// Centralized system logger for the Independent YouTube Playlist Manager extension
 // Provides .info, .warn, .error methods with structured format and storage cap.
 
 interface LogEntry {

@@ -2,7 +2,7 @@
 
 The Svelte 5 + TypeScript single-page application that powers the extension's playlist editor UI. It compiles via Rollup into `../src/editor/` (`main.js`, `bundle.css`, `index.html`), which the extension shell loads.
 
-> **Do not run commands from this directory for building the extension.** All build commands run from the **repository root** — see the [root README](../README.md) and [AGENTS.md](../docs/AGENTS.md).
+> **Do not run commands from this directory for building the extension.** All build commands run from the **repository root** — see the [root README](../README.md) and [AGENTS.md](../../../AGENTS.md).
 
 ## Structure
 
@@ -21,5 +21,5 @@ cd playlist-editor && npx svelte-check         # Type-check the SPA
 ## Conventions
 
 - All storage writes go through `schema-normalizer.ts` sanitizers.
-- High-frequency video metadata belongs in IndexedDB via `db-service.ts`, never in `browser.storage.local` (see [AGENTS.md](../docs/AGENTS.md) storage rules).
+- High-frequency video metadata belongs in IndexedDB via `db-service.ts`, never in `browser.storage.local` (see [AGENTS.md](../../../AGENTS.md) storage rules).
 - UI edits to playlists must trigger the debounced autosave in `storage-service.ts`.

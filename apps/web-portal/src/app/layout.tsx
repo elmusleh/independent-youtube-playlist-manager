@@ -13,6 +13,7 @@ export const metadata: Metadata = {
   keywords: [
     "YouTube playlist editor",
     "YouTube playlist helper",
+    "independent youtube playlist manager",
     "offline YouTube playlists",
     "browser extension",
     "Chrome Web Store",

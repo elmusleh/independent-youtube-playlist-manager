@@ -56,7 +56,7 @@ test.describe("YPH WebExtension E2E Tests (Chromium)", () => {
     
     // Verify the title or main elements of the popup
     await expect(page.locator("body")).toBeVisible();
-    await expect(page.getByText("Playlist Helper", { exact: true })).toBeVisible();
+    await expect(page.getByText("Playlist Manager", { exact: true })).toBeVisible();
   });
 
   test("2. Playlist Editor SPA dashboard loads successfully", async ({ page, extensionId }) => {

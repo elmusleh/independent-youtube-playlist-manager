@@ -3,7 +3,7 @@
   "name": "Independent YouTube Playlist Manager",
   "short_name": "Playlist Manager",
   "description": "An independent system to create and manage YouTube playlists from open tabs, RSS feeds, and subscriptions with a persistent bottom dock.",
-  "version": "2.12.10",
+  "version": "1.0.0",
   "manifest_version": 3,
   "icons": {
     "48": "assets/icons/icon_48.png",
@@ -51,7 +51,7 @@
         "default": "Alt+Shift+Y",
         "mac": "Alt+Shift+Y"
       },
-      "description": "Open Playlist Helper Popup"
+      "description": "Open Playlist Manager Popup"
     },
     "quick_add_active_video": {
       "suggested_key": {

@@ -7,7 +7,7 @@ const path = require("path");
 
 const EXT_ID = "lppdplclfhchgkgckfmkopomahlpfjok"; // locked via manifest `key`
 const pathToExtension = path.resolve(__dirname, "../../dist/chrome");
-const OUT = path.resolve(__dirname, "../screenshots");
+const OUT = path.resolve(__dirname, "../../docs/screenshots");
 fs.mkdirSync(OUT, { recursive: true });
 
 const DEMO_PLAYLISTS = [
@@ -176,13 +176,18 @@ async function seed(page) {
       `--disable-extensions-except=${pathToExtension}`,
       `--load-extension=${pathToExtension}`,
       "--no-sandbox",
+      "--disable-gpu",
     ],
   });
 
   // Wait for the extension's service worker so storage APIs are ready.
-  let [bg] = context.serviceWorkers();
-  if (!bg) bg = await context.waitForEvent("serviceworker", { timeout: 30000 });
-  console.log("[init] service worker:", bg.url());
+  try {
+    let [bg] = context.serviceWorkers();
+    if (!bg) bg = await context.waitForEvent("serviceworker", { timeout: 10000 });
+    console.log("[init] service worker:", bg.url());
+  } catch (e) {
+    console.warn("[init] warning: service worker event not caught, proceeding anyway:", e.message);
+  }
 
   const page = await context.newPage();
   await page.setViewportSize({ width: 1280, height: 800 });
@@ -213,6 +218,37 @@ async function seed(page) {
       console.log("[capture]", name, "ok");
     } catch (e) {
       console.error("[capture]", name, "FAILED:", e.message);
+    }
+  }
+
+  // Capture promotional store banners from HTML templates
+  const promoRoutes = [
+    {
+      name: "marquee-promo-1400x560.png",
+      template: "../../docs/assets/templates/marquee-promo-1400x560.html",
+      width: 1400,
+      height: 560
+    },
+    {
+      name: "small-promo-440x280.png",
+      template: "../../docs/assets/templates/small-promo-440x280.html",
+      width: 440,
+      height: 280
+    }
+  ];
+
+  const promoPage = await context.newPage();
+  for (const promo of promoRoutes) {
+    try {
+      const templatePath = path.resolve(__dirname, promo.template);
+      await promoPage.setViewportSize({ width: promo.width, height: promo.height });
+      await promoPage.goto("file://" + templatePath, { waitUntil: "networkidle", timeout: 30000 });
+      await promoPage.waitForTimeout(1000); // Allow fonts/images to fully settle
+      const outPath = path.resolve(__dirname, "../../docs/assets", promo.name);
+      await promoPage.screenshot({ path: outPath });
+      console.log("[capture] promo banner", promo.name, "ok");
+    } catch (e) {
+      console.error("[capture] promo banner", promo.name, "FAILED:", e.message);
     }
   }
 
