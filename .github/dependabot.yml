@@ -1,25 +1,20 @@
 version: 2
 updates:
   - package-ecosystem: "npm"
-    directory: "/apps/browser-extension/playlist-manager"
+    directory: "/"
     schedule:
       interval: "weekly"
-    open-pull-requests-limit: 0  # no limit
     groups:
-      rollup-plugins:
-        patterns: ["@rollup/plugin-*"]
-      svelte-ecosystem:
-        patterns: ["svelte-*"]
-      fortawesome:
-        patterns: ["@fortawesome/*"]
-      minor-and-patch:
-        update-types: ["minor", "patch"]
-        exclude-patterns: ["svelte", "svelte-spa-router", "rollup", "@rollup/plugin-*", "@fortawesome/*"]
+      npm_and_yarn:
+        patterns:
+          - "*"
     ignore:
-      # Pinned major versions — see CLAUDE.md Dependency Hygiene
+      # Svelte 5 requires full migration from Svelte 4 (runes syntax breaking change)
       - dependency-name: "svelte"
         update-types: ["version-update:semver-major"]
-      - dependency-name: "svelte-spa-router"
+      # Vite 6/7 has breaking config API changes; pin to v5.x until ready
+      - dependency-name: "vite"
         update-types: ["version-update:semver-major"]
-      - dependency-name: "rollup"
+      # esbuild major bumps often need explicit vite/rollup compatibility checks
+      - dependency-name: "esbuild"
         update-types: ["version-update:semver-major"]
