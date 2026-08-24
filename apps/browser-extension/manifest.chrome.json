@@ -1,7 +1,7 @@
 {
   "name": "Independent YouTube Playlist Manager",
   "short_name": "Playlist Manager",
-  "description": "Create and manage YouTube playlists from open tabs, RSS feeds, and subscriptions with a bottom dock.",
+  "description": "Manage YouTube playlists locally: create, edit, sync, and track history. Save videos to watch later. No login required.",
   "version": "1.0.1",
   "manifest_version": 3,
   "icons": {
