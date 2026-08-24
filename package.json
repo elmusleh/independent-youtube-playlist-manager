@@ -26,6 +26,7 @@
     "format:check": "prettier --check .",
     "test": "vitest run --config vitest.config.mjs",
     "test:watch": "vitest --config vitest.config.mjs",
+    "audit": "npm audit --audit-level=high",
     "prepare": "husky install"
   },
   "devDependencies": {
