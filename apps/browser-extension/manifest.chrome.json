@@ -1,7 +1,7 @@
 {
   "name": "Independent YouTube Playlist Manager",
   "short_name": "Playlist Manager",
-  "description": "An independent system to create and manage YouTube playlists from open tabs, RSS feeds, and subscriptions with a persistent bottom dock.",
+  "description": "Create and manage YouTube playlists from open tabs, RSS feeds, and subscriptions with a bottom dock.",
   "version": "1.0.1",
   "manifest_version": 3,
   "icons": {
