@@ -1,6 +1,6 @@
 {
   "name": "independent-youtube-playlist-manager",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "Generate YouTube playlists from bookmarks and URL lists",
   "author": "Mohammad El-Musleh <elmusleh.mohammad@gmail.com>",
   "license": "MIT",

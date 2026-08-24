@@ -2,7 +2,7 @@
   "name": "Independent YouTube Playlist Manager",
   "short_name": "Playlist Manager",
   "description": "Manage YouTube playlists locally: create, edit, sync, and track history. Save videos to watch later. No login required.",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "manifest_version": 3,
   "icons": {
     "16": "assets/icons/icon_16.png",
