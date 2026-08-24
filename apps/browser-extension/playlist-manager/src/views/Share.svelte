@@ -19,7 +19,7 @@
   const shareUrl = "https://github.com/elmusleh/independent-youtube-playlist-manager";
   const shareTitle = "Playlist Manager";
   const shareText =
-    "Check out this extension! Turn open YouTube tabs and RSS feeds into organized playlists with Playlist Manager!";
+    "Check out this extension! Organize your open YouTube tabs into custom playlists with Playlist Manager!";
 
   let copied = $state(false);
 
