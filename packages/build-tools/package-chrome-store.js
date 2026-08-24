@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 const fs = require("fs");
 const path = require("path");
-const { execSync } = require("child_process");
+const { execFileSync } = require("child_process");
 
 const root = path.join(__dirname, "../..");
 const chromeDir = path.join(root, "dist/chrome");
@@ -27,8 +27,8 @@ fs.rmSync(tmpDir, { recursive: true, force: true });
 fs.cpSync(chromeDir, tmpDir, { recursive: true });
 fs.writeFileSync(path.join(tmpDir, "manifest.json"), JSON.stringify(manifest, null, 2) + "\n");
 
-execSync(`cd ${tmpDir} && zip -r -FS ../independent-youtube-playlist-manager-chrome.zip .`, {
-  cwd: root,
+execFileSync("zip", ["-r", "-FS", "../independent-youtube-playlist-manager-chrome.zip", "."], {
+  cwd: tmpDir,
   stdio: "inherit",
 });
 

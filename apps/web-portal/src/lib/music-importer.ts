@@ -20,31 +20,69 @@ export interface ImportResult {
  * - "Daft Punk - Get Lucky [Official Audio]"
  */
 export function parseTextTracklist(text: string): ImportResult {
-  const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  // Guard against ReDoS: limit input to a reasonable size (100 KB)
+  const MAX_INPUT = 100_000;
+  const safeText = text.slice(0, MAX_INPUT);
+
+  const lines = safeText
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean);
   const tracks: TrackItem[] = [];
 
   for (const line of lines) {
     // Strip leading track numbers like "1. ", "01 - ", "[1] "
-    const cleaned = line.replace(/^\s*(\d+[\.\-\)]\s*|\[\d+\]\s*)/, "");
+    const cleaned = line.replace(/^\s*(\d+[.\-)]\s*|\[\d+\]\s*)/, "");
 
-    // Split on dash, hyphen, or en-dash
-    const parts = cleaned.split(/\s+[\-\–\—]\s+/);
-    if (parts.length >= 2) {
-      const artist = parts[0].trim();
-      // Remove trailing duration like "(3:45)" or "[4:12]"
-      const title = parts.slice(1).join(" - ").replace(/\s*[\(\[]\d+:\d+[\)\]]/, "").trim();
+    // Split on the first occurrence of " - " or similar separator
+    // Use indexOf instead of a backtracking regex split to avoid ReDoS
+    const SEPARATORS = [" – ", " — ", " - "];
+    let artist = "";
+    let title = "";
 
-      if (artist && title) {
-        tracks.push({ artist, title, rawLine: line });
-        continue;
+    for (const sep of SEPARATORS) {
+      const idx = cleaned.indexOf(sep);
+      if (idx > 0) {
+        artist = cleaned.slice(0, idx).trim();
+        title = cleaned.slice(idx + sep.length).trim();
+        break;
       }
+    }
+
+    if (artist && title) {
+      // Remove trailing duration like "(3:45)" or "[4:12]" using
+      // fixed-string indexOf to avoid ReDoS
+      const parenIdx = title.lastIndexOf("(");
+      const bracketIdx = title.lastIndexOf("[");
+      const cutoff = Math.max(parenIdx >= 0 ? parenIdx : -1, bracketIdx >= 0 ? bracketIdx : -1);
+      if (cutoff >= 0) {
+        const suffix = title.slice(cutoff);
+        if (/^[\(\[]\d+:\d+[\)\]]$/.test(suffix)) {
+          title = title.slice(0, cutoff).trim();
+        }
+      }
+
+      tracks.push({ artist, title, rawLine: line });
+      continue;
     }
 
     // Single item without clear dash
     if (cleaned.length > 2) {
+      // Strip duration suffix using indexOf (same as above)
+      let rawTitle = cleaned;
+      const parenIdx = rawTitle.lastIndexOf("(");
+      const bracketIdx = rawTitle.lastIndexOf("[");
+      const cutoff = Math.max(parenIdx >= 0 ? parenIdx : -1, bracketIdx >= 0 ? bracketIdx : -1);
+      if (cutoff >= 0) {
+        const suffix = rawTitle.slice(cutoff);
+        if (/^[\(\[]\d+:\d+[\)\]]$/.test(suffix)) {
+          rawTitle = rawTitle.slice(0, cutoff).trim();
+        }
+      }
+
       tracks.push({
         artist: "Various",
-        title: cleaned.replace(/\s*[\(\[]\d+:\d+[\)\]]/, "").trim(),
+        title: rawTitle,
         rawLine: line,
       });
     }

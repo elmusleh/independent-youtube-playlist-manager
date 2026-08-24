@@ -10,6 +10,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
   quality-security:
     name: Quality & Security (Lint, Format, Audit, Unit Tests)
@@ -49,6 +52,9 @@ jobs:
   test-web:
     name: Web & Extension E2E Integration (Typecheck, Build, E2E)
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: write
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4

@@ -93,11 +93,16 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // Reconstruct the target from the validated parsed URL to prevent
+  // URL manipulation bypass (SSRF). The raw user-supplied target string
+  // could contain encoded characters or null bytes that re-resolve after the check.
+  const safeTarget = parsedTarget.origin + parsedTarget.pathname + parsedTarget.search;
+
   // Log the request
-  console.log(`[PROXY] ${req.method} ${req.url} -> ${target}`);
+  console.log(`[PROXY] ${req.method} ${req.url} -> ${safeTarget}`);
 
   // Perform the proxying
-  proxy.web(req, res, { target }, (err) => {
+  proxy.web(req, res, { target: safeTarget }, (err) => {
     console.error(`[PROXY ERROR] ${err.message}`);
     res.writeHead(502, { "Content-Type": "text/plain" });
     res.end(`Proxy Error: ${err.message}`);
