@@ -32,6 +32,7 @@ The codebase is split into two primary layers:
 The project target platforms are **Google Chrome**, **Mozilla Firefox Desktop (140.0+)**, and **Firefox for Android / Fenix (142.0+)**.
 
 ### Critical Manifest Rules:
+
 - **Chrome (`manifest.chrome.json`):** Uses `"service_worker": "background/index.js"`. Requires public `"key"` field to lock extension ID `lppdplclfhchgkgckfmkopomahlpfjok`.
 - **Firefox (`manifest.firefox.json`):** Uses `"background": {"scripts": ["background/index.js"], "type": "module"}`. Must **NOT** contain a `"key"` field. Uses Gecko extension ID `independent-yt-playlist-manager@elmusleh.github.io`.
 - **Never put `apps/browser-extension/manifest.json` in `apps/browser-extension/`!** Build scripts validate that only `manifest.chrome.json` and `manifest.firefox.json` exist in `apps/browser-extension/`. `npm run build` generates `dist/chrome/manifest.json` and `dist/firefox/manifest.json`.
@@ -41,12 +42,14 @@ The project target platforms are **Google Chrome**, **Mozilla Firefox Desktop (1
 ## 💾 Storage, Normalization & Backup Architecture
 
 ### 1. Per-Video Metadata Storage & Transactional CRUD (`IndexedDB`)
+
 - **Database & Store:** Dedicated database `yph_metadata_db_v2` with object store `metadata` managed natively via `apps/browser-extension/playlist-manager/src/services/db-service.ts` (zero external library conflicts, atomic batch transactions, memory fallback).
 - **Key Pattern:** `yph:meta:<videoId>` managed via `db-service.ts` with exponential backoff retry.
 - **Strict Normalization:** All metadata and playlist writes are sanitized and enforced through `apps/browser-extension/playlist-manager/src/services/schema-normalizer.ts` (`normalizeVideoMeta`, `normalizePlaylist`, `normalizeHistoryRecord`).
 - **Rule for AI Agents:** NEVER store large arrays of video metadata in `browser.storage.local`. High-frequency video metadata MUST be queried and written via `db-service.ts` to utilize the multi-gigabyte `unlimitedStorage` IndexedDB capacity without item quota limits.
 
 ### 2. Playlist & App State (`browser.storage.local`)
+
 - **Key Keys:**
   - `playlists` / `yph_local_playlists`: Array of local and saved playlist objects.
   - `local_yt_history`: Watch history timestamp records per video ID.
@@ -54,10 +57,12 @@ The project target platforms are **Google Chrome**, **Mozilla Firefox Desktop (1
   - `yph_sync_state`: Partial sync resume states across daily API quota limits.
 
 ### 3. Full Database Backup & Portability Pipeline (`backup-service.ts`)
+
 - **Export (`exportFullDatabaseBackup`):** Generates portable JSON backup (`schemaVersion: 2`) capturing all playlists, complete IndexedDB video metadata cache, watch history, and settings.
 - **Import (`importFullDatabaseBackup`):** Validates schema, resolves duplicates, and supports both non-destructive `merge` and clean `overwrite` restore modes.
 
 ### 4. Supabase Cloud Sync & Global Catalog Architecture (`supabase-client.ts`, `supabase-sync.ts`)
+
 - **Authentication:** Supabase OAuth (`launchWebAuthFlow`) and Email/Password with session storage bridge to `browser.storage.local`.
 - **Bidirectional Delta-Sync:** Background sync manager executing Last-Write-Wins (LWW) resolution and soft-delete tombstoning (`deleted_at`).
 - **Global Video Catalog (`videos_catalog`):** Cross-user deduplicated metadata cache in PostgreSQL that resolves metadata before querying YouTube API quotas.
@@ -70,6 +75,7 @@ The project target platforms are **Google Chrome**, **Mozilla Firefox Desktop (1
 Metadata fetching occurs in `apps/browser-extension/playlist-manager/src/services/video-service.ts` and `youtube-api.ts` configured via User Settings (`metadataExecutionStrategy: "free_first" | "api_first"`):
 
 ### Default Execution Order (Free / Zero-Quota First):
+
 1. **IndexedDB Local Cache Hit:** Read `yph:meta:<videoId>` (24h valid TTL, 5min negative TTL).
 2. **Tier 1 — Multi-Client Innertube Engine (Zero Quota):** Queries `https://www.youtube.com/youtubei/v1/player` using modern `MWEB` (`clientVersion: "2.20240801.01.00"`), `WEB`, and `TVHTML5_SIMPLY_EMBEDDED_PLAYER` client profiles (bypasses bot verification and PO tokens).
 3. **Tier 2 — Embed Page Headless Scraper (Zero Quota):** Extracts `ytInitialPlayerResponse` JSON directly from `https://www.youtube.com/embed/{id}` HTML.
@@ -79,6 +85,7 @@ Metadata fetching occurs in `apps/browser-extension/playlist-manager/src/service
 7. **Open Tab Scraping:** Direct metadata extraction from open tabs via `apps/browser-extension/content-packages/build-tools/injectors/getVideoMetadata.js`.
 
 ### Scraping Settings Keys (`browser.storage.sync` / `Settings`):
+
 - `metadataExecutionStrategy`: `"free_first"` (default) or `"api_first"`.
 - `enableInnertubeScraping`, `enableEmbedScraping`, `enableOEmbedScraping`, `enableInvidiousPiped`: Individual boolean engine toggles.
 - `customInvidiousInstances`, `customPipedInstances`: Custom self-hosted instance URLs.
@@ -110,4 +117,5 @@ npm run watch
 1. **Run Verification Commands:** Always run `npm run build` and `cd apps/browser-extension/playlist-manager && npx svelte-check` after making code modifications to ensure no compilation or manifest validation errors.
 2. **Preserve Compatibility:** Maintain Android (Fenix) compatibility guard checks (`isAndroid()` user-agent detection) before using desktop-only extension APIs (`contextMenus`, `identity.launchWebAuthFlow`).
 3. **Keep Manifests Clean:** Never add `apps/browser-extension/manifest.json`. Only edit `apps/browser-extension/manifest.chrome.json` and `apps/browser-extension/manifest.firefox.json`.
-4. **Debounced Saves:** Ensure UI edits to playlists trigger the debounced autosave in `storage-service.ts`.
+4. Debounced Saves: Ensure UI edits to playlists trigger the debounced autosave in `storage-service.ts`.
+5. Manual Pushes: AI agents are NEVER permitted to run `git push`. Always stage and commit your changes, then notify the user to handle the push manually.
