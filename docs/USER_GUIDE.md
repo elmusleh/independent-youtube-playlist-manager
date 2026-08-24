@@ -20,7 +20,7 @@ npm run build
 1. Open Firefox and navigate to `about:debugging#/runtime/this-firefox`.
 2. Click **Load Temporary Add-on...**.
 3. Select `dist/firefox/manifest.json`.
-4. The Extension ID is defined in `manifest.firefox.json` as `{790842fe-fecb-4375-a127-95c1c1d35d3e}`.
+4. The Extension ID is defined in `manifest.firefox.json` as `independent-yt-playlist-manager@elmusleh.github.io`.
 
 ---
 
@@ -47,7 +47,7 @@ The extension works fully offline without any Google account. This section is **
 3. Select **Application type: Web application**.
 4. Add the following **Authorized redirect URIs**:
     * **For Chrome:** `https://<YOUR_CHROME_ID>.chromiumapp.org/` (e.g. `https://lppdplclfhchgkgckfmkopomahlpfjok.chromiumapp.org/`).
-    * **For Firefox (Desktop/Android):** `https://{790842fe-fecb-4375-a127-95c1c1d35d3e}.extensions.allizom.org/`
+    * **For Firefox (Desktop/Android):** `https://independent-yt-playlist-manager@elmusleh.github.io.extensions.allizom.org/`
 5. Click **Create**.
 6. Copy the **Client ID**.
 

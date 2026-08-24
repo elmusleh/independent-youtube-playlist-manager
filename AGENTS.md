@@ -8,7 +8,7 @@
 
 The codebase is split into two primary layers:
 
-1. **`apps/browser-extension/apps/browser-extension/playlist-manager/` (Frontend SPA Extension UI)**
+1. **`apps/browser-extension/playlist-manager/` (Frontend SPA Extension UI)**
    - Built with **Svelte 4 / 5 + TypeScript + Rollup**.
    - Compiles into `apps/browser-extension/editor/` (`main.js`, `bundle.css`, `index.html`).
    - Location of all UI views (`App.svelte`, `PlaylistEditor.svelte`, `Saved.svelte`, `Settings.svelte`, `History.svelte`, `Search.svelte`) and data services (`video-service.ts`, `youtube-api.ts`, `storage-service.ts`, `sync-service.ts`).
@@ -20,8 +20,8 @@ The codebase is split into two primary layers:
 
 3. **`apps/browser-extension/` (Extension Shell)**
    - Plain JavaScript WebExtension shell (MV3).
-   - `background-worker.js` / `background.js` — Service worker / background script.
-   - `actions/` — Content script injectables (`watch-tracker.js`, `getVideoMetadata.js`, `scrapeYouTubeLinks.js`, `getChannelVideoIds.js`, `getPlaylistVideoIds.js`).
+   - `background/index.js` — Module entry point that imports `background/background.js` (service worker for Chrome, background scripts for Firefox).
+   - `content-scripts/` — Content script injectables (`watch-tracker.js`, and injectors for `getVideoMetadata.js`, `scrapeYouTubeLinks.js`, `getChannelVideoIds.js`, `getPlaylistVideoIds.js`).
    - `popup/` — Quick-add popup toolbar interface.
    - Manifest templates: `manifest.chrome.json` and `manifest.firefox.json`.
 
@@ -32,8 +32,8 @@ The codebase is split into two primary layers:
 The project target platforms are **Google Chrome**, **Mozilla Firefox Desktop (140.0+)**, and **Firefox for Android / Fenix (142.0+)**.
 
 ### Critical Manifest Rules:
-- **Chrome (`manifest.chrome.json`):** Uses `"service_worker": "background-worker.js"`. Requires public `"key"` field to lock extension ID `lppdplclfhchgkgckfmkopomahlpfjok`.
-- **Firefox (`manifest.firefox.json`):** Uses `"background.scripts": ["background-worker.js"]`. Must **NOT** contain a `"key"` field. Uses Gecko extension ID `{790842fe-fecb-4375-a127-95c1c1d35d3e}`.
+- **Chrome (`manifest.chrome.json`):** Uses `"service_worker": "background/index.js"`. Requires public `"key"` field to lock extension ID `lppdplclfhchgkgckfmkopomahlpfjok`.
+- **Firefox (`manifest.firefox.json`):** Uses `"background": {"scripts": ["background/index.js"], "type": "module"}`. Must **NOT** contain a `"key"` field. Uses Gecko extension ID `independent-yt-playlist-manager@elmusleh.github.io`.
 - **Never put `apps/browser-extension/manifest.json` in `apps/browser-extension/`!** Build scripts validate that only `manifest.chrome.json` and `manifest.firefox.json` exist in `apps/browser-extension/`. `npm run build` generates `dist/chrome/manifest.json` and `dist/firefox/manifest.json`.
 
 ---
@@ -41,9 +41,9 @@ The project target platforms are **Google Chrome**, **Mozilla Firefox Desktop (1
 ## 💾 Storage, Normalization & Backup Architecture
 
 ### 1. Per-Video Metadata Storage & Transactional CRUD (`IndexedDB`)
-- **Database & Store:** Dedicated database `yph_metadata_db_v2` with object store `metadata` managed natively via `apps/browser-extension/apps/browser-extension/playlist-manager/apps/browser-extension/services/db-service.ts` (zero external library conflicts, atomic batch transactions, memory fallback).
+- **Database & Store:** Dedicated database `yph_metadata_db_v2` with object store `metadata` managed natively via `apps/browser-extension/playlist-manager/src/services/db-service.ts` (zero external library conflicts, atomic batch transactions, memory fallback).
 - **Key Pattern:** `yph:meta:<videoId>` managed via `db-service.ts` with exponential backoff retry.
-- **Strict Normalization:** All metadata and playlist writes are sanitized and enforced through `apps/browser-extension/apps/browser-extension/playlist-manager/apps/browser-extension/services/schema-normalizer.ts` (`normalizeVideoMeta`, `normalizePlaylist`, `normalizeHistoryRecord`).
+- **Strict Normalization:** All metadata and playlist writes are sanitized and enforced through `apps/browser-extension/playlist-manager/src/services/schema-normalizer.ts` (`normalizeVideoMeta`, `normalizePlaylist`, `normalizeHistoryRecord`).
 - **Rule for AI Agents:** NEVER store large arrays of video metadata in `browser.storage.local`. High-frequency video metadata MUST be queried and written via `db-service.ts` to utilize the multi-gigabyte `unlimitedStorage` IndexedDB capacity without item quota limits.
 
 ### 2. Playlist & App State (`browser.storage.local`)
@@ -67,7 +67,7 @@ The project target platforms are **Google Chrome**, **Mozilla Firefox Desktop (1
 
 ## 🔄 Video Metadata Fetching & Scraping Pipeline
 
-Metadata fetching occurs in `apps/browser-extension/apps/browser-extension/playlist-manager/apps/browser-extension/services/video-service.ts` and `youtube-api.ts` configured via User Settings (`metadataExecutionStrategy: "free_first" | "api_first"`):
+Metadata fetching occurs in `apps/browser-extension/playlist-manager/src/services/video-service.ts` and `youtube-api.ts` configured via User Settings (`metadataExecutionStrategy: "free_first" | "api_first"`):
 
 ### Default Execution Order (Free / Zero-Quota First):
 1. **IndexedDB Local Cache Hit:** Read `yph:meta:<videoId>` (24h valid TTL, 5min negative TTL).

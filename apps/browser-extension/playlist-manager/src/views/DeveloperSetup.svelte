@@ -40,8 +40,17 @@
 
   (async () => {
     try {
-      // Firefox URI is deterministic from the gecko ID in manifest — always the same
-      redirectUri = "https://790842fe-fecb-4375-a127-95c1c1d35d3e.extensions.allizom.org/";
+      // Firefox URI: derive from the gecko ID in the loaded manifest
+      const manifest = browser.runtime.getManifest();
+      const geckoId = manifest?.browser_specific_settings?.gecko?.id;
+      if (geckoId) {
+        // UUID-style IDs (e.g. {abcd-...}) get the braces stripped for the URL
+        const cleanId = geckoId.replace(/^\{|\}$/g, "");
+        redirectUri = `https://${cleanId}.extensions.allizom.org/`;
+      } else {
+        // Fallback if gecko ID not found in manifest
+        redirectUri = "";
+      }
       // Chrome URI is derived from the actual runtime extension ID Chrome assigned
       const isFirefox = navigator.userAgent.includes("Firefox");
       if (!isFirefox) {

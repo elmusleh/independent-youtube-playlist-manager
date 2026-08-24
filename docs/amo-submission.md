@@ -9,7 +9,7 @@ This document is the consolidated single point of truth for submitting the **Ind
 Copy-paste these fields into the AMO **"Describe Add-on"** and **"Additional Details"** forms:
 
 - **App Name**: Independent YouTube Playlist Manager
-- **Gecko Extension ID**: `independent-yt-playlist-manager@el-musleh.github.io`
+- **Gecko Extension ID**: `independent-yt-playlist-manager@elmusleh.github.io`
 - **Gecko Min Version**: Desktop `140.0`+, Android `142.0`+ (prevents validator warnings)
 - **Manifest Target**: [`manifest.firefox.json`](../apps/browser-extension/manifest.firefox.json)
 - **Homepage**: `https://github.com/el-musleh/independent-youtube-playlist-manager`
@@ -159,7 +159,7 @@ No data is transmitted to any server except Google's YouTube Data API v3 when th
 
 ### Background Script
 
-- `background-worker.js` (service worker on Manifest V3):
+- `background/index.js` (module entry point):
   - Handles context-menu clicks.
   - Manages alarms for periodic sync.
   - Routes messages between popup, content script, and editor.

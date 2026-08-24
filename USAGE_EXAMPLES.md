@@ -37,7 +37,7 @@ This document provides examples of how to use and extend the Independent YouTube
 
 ### Extension Architecture
 
-- **Manifest V3**: Uses service worker (`background-worker.js`)
+- **Manifest V3**: Uses service worker (`background/index.js`)
 - **Storage**:
   - IndexedDB for video metadata (`db-service.ts`)
   - `browser.storage.local` for playlist/app state
@@ -182,7 +182,7 @@ To enable cross-device sync:
 ### Extension Not Working
 
 1. Check if the service worker is running (chrome://extensions → Service worker)
-2. Look for errors in the service worker console (Inspect views → background-worker.js)
+2. Look for errors in the service worker console (Inspect views → background/index.js)
 3. Verify manifest validity (no `manifest.json` in extension root)
 4. Ensure required permissions are granted
 
