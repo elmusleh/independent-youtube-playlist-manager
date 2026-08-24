@@ -11,6 +11,41 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  quality-security:
+    name: Quality & Security (Lint, Format, Audit, Unit Tests)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: |
+            package-lock.json
+            apps/browser-extension/playlist-manager/package-lock.json
+
+      - name: Install Root Dependencies
+        run: npm ci
+
+      - name: Install Playlist Editor Dependencies
+        run: cd apps/browser-extension/playlist-manager && npm ci
+
+      - name: Run Lint
+        run: npm run lint
+
+      - name: Check Formatting
+        run: npm run format:check
+
+      - name: Run Unit Tests
+        run: npm run test
+
+      - name: Audit Dependencies
+        run: npm audit --audit-level=high
+        continue-on-error: true
+
   test-web:
     name: Web & Extension E2E Integration (Typecheck, Build, E2E)
     runs-on: ubuntu-latest
