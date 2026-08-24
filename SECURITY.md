@@ -6,8 +6,8 @@ We provide security updates for the latest released version.
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 2.12.x  | :white_check_mark: |
-| < 2.12  | :x:                |
+| 1.x     | :white_check_mark: |
+| < 1.0   | :x:                |
 
 ## Reporting a Vulnerability
 
