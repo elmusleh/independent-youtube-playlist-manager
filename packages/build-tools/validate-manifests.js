@@ -6,8 +6,7 @@ function validate(path, shouldHaveKey, shouldHaveScripts) {
   const manifest = JSON.parse(fs.readFileSync(path, 'utf8'));
   
   if (shouldHaveKey && !manifest.key) {
-    console.error(`FAIL: ${path} missing "key"`);
-    errors++;
+    console.warn(`WARN: ${path} missing "key" (extension ID will be dynamic)`);
   }
   if (!shouldHaveKey && manifest.key) {
     console.error(`FAIL: ${path} should NOT have "key"`);

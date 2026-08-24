@@ -6,7 +6,7 @@ const { chromium } = require("playwright");
 const fs = require("fs");
 const path = require("path");
 
-const EXT_ID = "lppdplclfhchgkgckfmkopomahlpfjok"; // locked via manifest `key`
+let extId = "lppdplclfhchgkgckfmkopomahlpfjok"; // default fallback
 const pathToExtension = path.resolve(__dirname, "../../dist/chrome");
 const OUT = path.resolve(__dirname, "../../docs/screenshots");
 fs.mkdirSync(OUT, { recursive: true });
@@ -186,6 +186,8 @@ async function seed(page) {
     let [bg] = context.serviceWorkers();
     if (!bg) bg = await context.waitForEvent("serviceworker", { timeout: 10000 });
     console.log("[init] service worker:", bg.url());
+    extId = bg.url().split("/")[2];
+    console.log("[init] dynamically resolved extension ID:", extId);
   } catch (e) {
     console.warn("[init] warning: service worker event not caught, proceeding anyway:", e.message);
   }
@@ -194,7 +196,7 @@ async function seed(page) {
   await page.setViewportSize({ width: 1280, height: 800 });
 
   // Seed then load the editor
-  const base = `chrome-extension://${EXT_ID}/editor/index.html`;
+  const base = `chrome-extension://${extId}/editor/index.html`;
   await page.goto(`${base}#/settings`, { waitUntil: "domcontentloaded", timeout: 30000 });
   await page.waitForTimeout(1500);
   await seed(page);

@@ -1,5 +1,4 @@
 {
-  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAvjS55M/Hb1oFvilNOQv8flRzZTGnjoTBp+iXjmDQwEyTmNMbcQqsnlDlNllp1mrIYr2ALaAwP4/tsenWHdmC9m9Dq7AeEfoZWBtt8lJv2XHv33ePPd8xwe4Sg1Esj6LyctnpkOB+588xDf5dExD4/Doddo65B8rDSbPKTNVcfxQpQ1cBDTaazPNXNd9Ye1gVafZwbHkUUyie51mSVNAOTMYVxYOn1ruux8lC2aUtie992J1xDASupDEP0H2kp5/vBRGGShNszdiJDD+rSK1RxmY8zHd1PfNmHx6v/YJ2Eduycxe7v8wEfaGOx7iHsXxUmwmyoSuPf6FOckBIDey9EwIDAQAB",
   "name": "Independent YouTube Playlist Manager",
   "short_name": "Playlist Manager",
   "description": "An independent system to create and manage YouTube playlists from open tabs, RSS feeds, and subscriptions with a persistent bottom dock.",
