@@ -52,7 +52,7 @@ git add \
 if git diff --cached --quiet; then
   echo "⚠  No version changes to commit. Skipping commit step."
 else
-  git commit -m "chore(release): bump version to $VERSION"
+  HUSKY=0 git commit -m "chore(release): bump version to $VERSION"
 fi
 
 # 4. Create annotated tag (skip if already exists)
