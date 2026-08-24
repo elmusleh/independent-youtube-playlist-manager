@@ -41,7 +41,7 @@
     "notyf": "^3.10.0",
     "playwright": "^1.62.1",
     "prettier": "^3.0.0",
-    "vitest": "^1.0.0",
+    "vitest": "^3.2.6",
     "webextension-polyfill": "^0.12.0"
   },
   "lint-staged": {
