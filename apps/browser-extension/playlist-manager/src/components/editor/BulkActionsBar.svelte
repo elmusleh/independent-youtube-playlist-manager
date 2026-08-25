@@ -4,6 +4,7 @@
     faArrowUp,
     faArrowDown,
     faListCheck,
+    faCheckDouble,
     faChevronDown,
     faLayerGroup,
     faArrowsUpDown,
@@ -87,6 +88,15 @@
       </SimpleButton>
       {#if showMarkMenu}
         <div class="dropdown-menu">
+          <button
+            onclick={() => {
+              onToggleSelectAll();
+              closeAll();
+            }}
+          >
+            <Fa icon={faCheckDouble} fw />
+            <span>{isAllSelected ? "Deselect all" : "Select all"}</span>
+          </button>
           <button
             onclick={() => {
               onSelectFirst50();
