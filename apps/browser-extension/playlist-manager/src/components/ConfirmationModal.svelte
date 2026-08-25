@@ -13,6 +13,12 @@
     }
   }
 
+  // Default focus to the safe (Cancel) action so Enter never confirms
+  // an irreversible destructive action unless the user explicitly tabs to it.
+  function focusSafeAction(node: HTMLButtonElement) {
+    node.focus();
+  }
+
   window.addEventListener("keydown", handleKeydown);
   onDestroy(() => {
     window.removeEventListener("keydown", handleKeydown);
@@ -32,7 +38,7 @@
       <h3 id="modal-title">{$activeConfirmation.title}</h3>
       <p style="white-space: pre-line">{$activeConfirmation.message}</p>
       <div class="actions">
-        <button class="cancel" onclick={executeCancel}>
+        <button class="cancel" onclick={executeCancel} use:focusSafeAction>
           {$activeConfirmation.cancelLabel || "Cancel"}
         </button>
         <button class="confirm {$activeConfirmation.color}" onclick={executeConfirm}>

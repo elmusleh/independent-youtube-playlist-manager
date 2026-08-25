@@ -34,6 +34,7 @@
   import AuthPlaceholder from "./AuthPlaceholder.svelte";
   import { requestConfirm } from "../stores/confirmation.js";
   import { editorSearch } from "../stores/playlists-filters";
+  import { undoStore } from "../stores/undo";
 
   // Sub-components
   import EditorToolbar from "./editor/EditorToolbar.svelte";
@@ -42,6 +43,7 @@
   import MultiSortModal from "./editor/MultiSortModal.svelte";
   import RangeSelectModal from "./RangeSelectModal.svelte";
   import SimpleButton from "../components/SimpleButton.svelte";
+  import UndoToast from "./UndoToast.svelte";
 
   // Utils
   import * as utils from "../utils/playlist-utils";
@@ -379,6 +381,7 @@
   onDestroy(() => {
     window.removeEventListener("beforeunload", handleBeforeUnload);
     document.removeEventListener("click", handleNavClick, true);
+    undoStore.clear();
   });
 
   // Keyboard Shortcuts
@@ -387,6 +390,17 @@
       e.preventDefault();
       if (isDirty) savePlaylist();
       else window.info("No changes to save");
+    }
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z" && showUndoToast) {
+      // Don't hijack text-editing undo when the user is typing in a field.
+      const target = e.target as HTMLElement | null;
+      const isTyping =
+        target &&
+        (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable);
+      if (!isTyping) {
+        e.preventDefault();
+        performUndoRestore();
+      }
     }
   }
   window.addEventListener("keydown", handleKeyDown);
@@ -404,6 +418,42 @@
   function toggleSelectAll() {
     if (selectedVideoIds.size === videos.length) selectedVideoIds = new Set();
     else selectedVideoIds = new Set(videos.map((v) => v.id));
+  }
+
+  // Undo state
+  let showUndoToast = $state(false);
+  let undoCount = $state(0);
+
+  function performUndoRestore() {
+    const snapshot = undoStore.restore();
+    if (!snapshot) {
+      showUndoToast = false;
+      return;
+    }
+
+    // Restore videos at their exact original indices. Insert in ascending
+    // index order so earlier insertions don't shift later target positions.
+    const updated = [...videos];
+    const sortedIndices = [...snapshot.originalIndices.entries()].sort((a, b) => a[1] - b[1]);
+    for (const [id, index] of sortedIndices) {
+      const video = snapshot.removedVideos.find((v) => v.id === id);
+      if (video !== undefined) {
+        updated.splice(Math.min(index, updated.length), 0, video);
+      }
+    }
+
+    videos = updated;
+    showUndoToast = false;
+    undoCount = 0;
+    updateDirtyState();
+    loadPageVideos(currentPage);
+    window.success("Deletion undone");
+  }
+
+  function commitUndoDeletion() {
+    undoStore.clear();
+    showUndoToast = false;
+    undoCount = 0;
   }
 
   // Count-based range selection (via BulkActionsBar dropdown)
@@ -1143,7 +1193,20 @@
     if (action === "top") videos = [...selected, ...remaining];
     else if (action === "bottom") videos = [...remaining, ...selected];
     else if (action === "delete") {
+      // Capture removed videos and their original positions before removal
+      // so the deletion can be undone (restore to exact indices).
+      const originalIndices = new Map<string | number, number>();
+      videos.forEach((v, i) => {
+        if (selectedVideoIds.has(v.id)) originalIndices.set(v.id, i);
+      });
+
       videos = remaining;
+
+      if (selected.length > 0) {
+        undoStore.pushSnapshot(selected, originalIndices);
+        undoCount = selected.length;
+        showUndoToast = true;
+      }
     }
 
     updateDirtyState();
@@ -1153,7 +1216,7 @@
     selectedVideoIds = new Set();
     isSelectMode = false;
 
-    window.success("Action complete");
+    if (action !== "delete") window.success("Action complete");
   }
 
   function handleBatchSelect(type: string) {
@@ -1366,7 +1429,20 @@
         {status}
         {isDirty}
         onSave={handleManualSave}
-      />
+      >
+        {#snippet rightActions()}
+          {#if showUndoToast}
+            <SimpleButton
+              secondary
+              iconOnly
+              onclick={performUndoRestore}
+              title="Undo last deletion"
+            >
+              <Fa icon={faUndo} fw />
+            </SimpleButton>
+          {/if}
+        {/snippet}
+      </ViewHeader>
     {/snippet}
     {#snippet subBar()}
       {#if playlist?.isPermanent}
@@ -1391,9 +1467,11 @@
             onMoveToBottom={() => handleBulkAction("bottom")}
             onDelete={() =>
               requestConfirm({
-                title: "Delete?",
-                message: "Delete selected videos?",
+                title: "Delete Videos",
+                message: `Are you sure you want to remove ${selectedVideoIds.size} video${selectedVideoIds.size !== 1 ? "s" : ""} from this playlist?`,
                 color: "danger",
+                confirmLabel: "Delete",
+                cancelLabel: "Cancel",
                 onConfirm: async () => {
                   await handleBulkAction("delete");
                 },
@@ -1456,8 +1534,14 @@
           >
             <PlaylistVideo
               ondelete={(v) => {
+                const idx = videos.findIndex((x) => x.id === v.id);
+                const originalIndices = new Map<string | number, number>();
+                if (idx !== -1) originalIndices.set(v.id, idx);
                 videos = videos.filter((x) => x.id !== v.id);
                 updateDirtyState();
+                undoStore.pushSnapshot([v], originalIndices);
+                undoCount = 1;
+                showUndoToast = true;
               }}
               ontoggleSelect={toggleSelect}
               onplayfromhere={playFromHere}
@@ -1536,6 +1620,10 @@
 
 {#if isLoading}
   <LoadingModal />
+{/if}
+
+{#if showUndoToast}
+  <UndoToast count={undoCount} onUndo={performUndoRestore} onExpire={commitUndoDeletion} />
 {/if}
 
 {#if showProgressModal}
