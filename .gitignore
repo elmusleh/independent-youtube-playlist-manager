@@ -35,3 +35,4 @@ apps/browser-extension/editor/*
 .env*
 .vercel/
 .vercel
+.worktrees/

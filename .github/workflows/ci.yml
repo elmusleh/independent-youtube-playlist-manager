@@ -36,14 +36,8 @@ jobs:
       - name: Install Playlist Editor Dependencies
         run: cd apps/browser-extension/playlist-manager && npm ci
 
-      - name: Run Lint
-        run: npm run lint
-
-      - name: Check Formatting
-        run: npm run format:check
-
-      - name: Run Unit Tests
-        run: npm run test
+      - name: Run Full Quality Check (lint + format + test + svelte-check)
+        run: npm run check
 
       - name: Audit Dependencies
         run: npm audit --audit-level=high

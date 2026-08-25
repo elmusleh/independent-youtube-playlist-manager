@@ -8,6 +8,10 @@
 
 <h2 align="center">Independent YouTube Playlist Manager (IYPM)</h2>
 
+<p align="center">
+  <img src="docs/architecture.png" alt="Architecture of Independent YouTube Playlist Manager" width="800"/>
+</p>
+
 IYPM is an **open-source**, privacy-first **browser extension** designed to replace and enhance YouTube's native playlist management. It operates entirely **client-side**, storing your data locally and syncing on-demand to your YouTube account without any intermediate third-party servers.
 
 ---
@@ -51,11 +55,11 @@ All data is stored locally by default, and we never share your data with third p
 
 ### Comparison: IYPM vs Native YouTube Playlists
 
-| Capability                   | Independent YouTube Playlist Manager (IYPM)                                      | Native YouTube Playlists                                 |
-| ---------------------------- | -------------------------------------------------------------------------------- | -------------------------------------------------------- |
-| **Creating playlists**       | ✅ Create **unlimited playlists** with a few clicks. Batch-add dozens of videos. | ⚠️ Add videos one by one manually (very slow).           |
-| **Adding open browser tabs** | ✅ Harvester grabs open YouTube tabs from **all browser windows** automatically. | ❌ Not possible.                                         |
-| **Text & HTML Scraping**     | ✅ Extract video IDs from raw HTML source, clipboard paste, or text blocks.      | ❌ Not possible.                                         |
-| **Bulk Edit Tools**          | ✅ Merge, split, reverse, sort, and de-duplicate. Bulk select and delete.        | ❌ Manual per-video deletion only. No merge/split tools. |
-| **Works Offline**            | ✅ Yes, data is stored in IndexedDB and local storage.                           | ❌ Requires active connection and YouTube session.       |
-| **Data Portability**         | ✅ 1-click export to **JSON**, **CSV**, and **M3U** (VLC).                       | ❌ Locked into Google ecosystem.                         |
+|| Capability                   | Independent YouTube Playlist Manager (IYPM)                                      | Native YouTube Playlists                                 |
+|| ---------------------------- | -------------------------------------------------------------------------------- | -------------------------------------------------------- |
+|| **Creating playlists**       | ✅ Create **unlimited playlists** with a few clicks. Batch-add dozens of videos. | ⚠️ Add videos one by one manually (very slow).           |
+|| **Adding open browser tabs** | ✅ Harvester grabs open YouTube tabs from **all browser windows** automatically. | ❌ Not possible.                                         |
+|| **Text & HTML Scraping**     | ✅ Extract video IDs from raw HTML source, clipboard paste, or text blocks.      | ❌ Not possible.                                         |
+|| **Bulk Edit Tools**          | ✅ Merge, split, reverse, sort, and de-duplicate. Bulk select and delete.        | ❌ Manual per-video deletion only. No merge/split tools. |
+|| **Works Offline**            | ✅ Yes, data is stored in IndexedDB and local storage.                           | ❌ Requires active connection and YouTube session.       |
+|| **Data Portability**         | ✅ 1-click export to **JSON**, **CSV**, and **M3U** (VLC).                       | ❌ Locked into Google ecosystem.                         |
