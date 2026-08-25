@@ -4,12 +4,7 @@ import { push } from "svelte-spa-router";
 const browser = (window as any).browser || (window as any).chrome;
 
 export type ShortcutAction =
-  | "newPlaylist"
-  | "manage"
-  | "history"
-  | "favorite"
-  | "saved"
-  | "settings";
+  "newPlaylist" | "manage" | "history" | "favorite" | "saved" | "settings";
 
 export interface ShortcutKey {
   key: string;

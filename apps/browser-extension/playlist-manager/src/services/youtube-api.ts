@@ -14,10 +14,9 @@ const YPH_TAG = "[YPH]";
 const YT_API = "https://www.googleapis.com/youtube/v3";
 let _innertubeCircuitOpenUntil = 0;
 
-
 async function ytFetch(path: string, options: RequestInit = {}, retryCount = 0): Promise<any> {
   const token = await window.getYouTubeToken();
-  
+
   let finalPath = path;
   try {
     const result = await browser.storage.local.get("custom_yt_credentials");
@@ -27,7 +26,8 @@ async function ytFetch(path: string, options: RequestInit = {}, retryCount = 0):
     }
   } catch (e) {
     console.warn("Failed to read custom API key", e);
-    if (window.logSystemEvent) await window.logSystemEvent("WARN", "[YOUTUBE-API] Failed to read custom API key");
+    if (window.logSystemEvent)
+      await window.logSystemEvent("WARN", "[YOUTUBE-API] Failed to read custom API key");
   }
 
   const controller = new AbortController();
@@ -46,27 +46,33 @@ async function ytFetch(path: string, options: RequestInit = {}, retryCount = 0):
       },
     });
   } catch (e) {
-    const isTimeout = e instanceof Error && e.name === 'AbortError';
-    const errMsg = isTimeout ? `Request timed out after ${timeoutMs}ms` : (e instanceof Error ? e.message : String(e));
-    
+    const isTimeout = e instanceof Error && e.name === "AbortError";
+    const errMsg = isTimeout
+      ? `Request timed out after ${timeoutMs}ms`
+      : e instanceof Error
+        ? e.message
+        : String(e);
+
     if (window.logSystemEvent) {
       await window.logSystemEvent(
-        isTimeout ? "WARN" : "ERROR", 
-        `[YOUTUBE-API] ${isTimeout ? 'Timeout' : 'Network error'} on ${options.method || "GET"} ${finalPath}: ${errMsg}`
+        isTimeout ? "WARN" : "ERROR",
+        `[YOUTUBE-API] ${isTimeout ? "Timeout" : "Network error"} on ${options.method || "GET"} ${finalPath}: ${errMsg}`
       );
     }
     throw new Error(isTimeout ? "Timeout" : `Network error: ${errMsg}`);
   } finally {
     clearTimeout(timeoutId);
   }
-  
+
   if (res.status === 204) return null;
-  
+
   // Handle rate limiting (429) or temporary server errors (500, 503) with exponential backoff
   if ((res.status === 429 || res.status >= 500) && retryCount < 3) {
     const delay = Math.pow(2, retryCount) * 1000 + Math.random() * 1000;
-    console.warn(`YouTube API ${res.status}. Retrying in ${delay}ms... (Attempt ${retryCount + 1})`);
-    await new Promise(resolve => setTimeout(resolve, delay));
+    console.warn(
+      `YouTube API ${res.status}. Retrying in ${delay}ms... (Attempt ${retryCount + 1})`
+    );
+    await new Promise((resolve) => setTimeout(resolve, delay));
     return ytFetch(path, options, retryCount + 1);
   }
 
@@ -77,7 +83,7 @@ async function ytFetch(path: string, options: RequestInit = {}, retryCount = 0):
       await window.logSystemEvent("ERROR", `YouTube API Failure: ${msg}`, {
         path,
         method: options.method || "GET",
-        body: options.body
+        body: options.body,
       });
     }
     throw new Error(msg);
@@ -88,8 +94,12 @@ async function ytFetch(path: string, options: RequestInit = {}, retryCount = 0):
 (window as any).ytFetch = ytFetch;
 
 // Create a new private playlist. Returns the YouTube playlist ID (e.g. PLxxxxx).
-window.ytCreatePlaylist = async (title: string, privacyStatus: "private" | "unlisted" | "public" = "private"): Promise<string> => {
-  const validatedTitle = title && title.trim().length > 0 ? title : "New Playlist " + new Date().toLocaleDateString();
+window.ytCreatePlaylist = async (
+  title: string,
+  privacyStatus: "private" | "unlisted" | "public" = "private"
+): Promise<string> => {
+  const validatedTitle =
+    title && title.trim().length > 0 ? title : "New Playlist " + new Date().toLocaleDateString();
   const data = await ytFetch("/playlists?part=snippet,status", {
     method: "POST",
     body: JSON.stringify({
@@ -101,10 +111,7 @@ window.ytCreatePlaylist = async (title: string, privacyStatus: "private" | "unli
 };
 
 // Update the title of an existing extension playlist.
-window.ytUpdatePlaylist = async (
-  ytId: string,
-  title: string
-): Promise<void> => {
+window.ytUpdatePlaylist = async (ytId: string, title: string): Promise<void> => {
   if (ytId === "WL") return;
   const validatedTitle = title && title.trim().length > 0 ? title : "Untitled Playlist";
   await ytFetch("/playlists?part=snippet", {
@@ -236,15 +243,15 @@ window.ytListAllPlaylists = async (): Promise<YtPlaylistInfoExtended[]> => {
 // - Cannot fetch user's "Watch History" via API (only local extension tracking)
 
 // Type definitions for available playlist sources
-export type PlaylistSource = 
-  | "my-playlists"      // Playlists created by the user (marked with [YPH])
-  | "all-playlists"     // All playlists owned by the user
-  | "watch-later"       // Watch Later playlist
-  | "liked-videos"      // Liked Videos playlist
-  | "uploaded-videos"  // User's uploaded videos
-  | "subscriptions"    // Channels the user subscribes to
-  | "activities"       // User's channel activities
-  | "by-id";            // Any playlist by its ID
+export type PlaylistSource =
+  | "my-playlists" // Playlists created by the user (marked with [YPH])
+  | "all-playlists" // All playlists owned by the user
+  | "watch-later" // Watch Later playlist
+  | "liked-videos" // Liked Videos playlist
+  | "uploaded-videos" // User's uploaded videos
+  | "subscriptions" // Channels the user subscribes to
+  | "activities" // User's channel activities
+  | "by-id"; // Any playlist by its ID
 
 // ============================================================================
 // LIKED VIDEOS
@@ -263,7 +270,7 @@ window.ytGetLikedVideos = async (): Promise<YtPlaylistItem[]> => {
   if (!likesId) {
     return []; // User doesn't have a Liked Videos playlist
   }
-  
+
   const items: YtPlaylistItem[] = [];
   let pageToken = "";
   do {
@@ -286,7 +293,7 @@ window.ytGetLikedVideos = async (): Promise<YtPlaylistItem[]> => {
     }
     pageToken = data.nextPageToken ?? "";
   } while (pageToken);
-  
+
   return items;
 };
 
@@ -307,7 +314,7 @@ window.ytGetUploadedVideos = async (): Promise<YtPlaylistItem[]> => {
   if (!uploadsId) {
     return []; // User doesn't have an uploads playlist
   }
-  
+
   const items: YtPlaylistItem[] = [];
   let pageToken = "";
   do {
@@ -330,7 +337,7 @@ window.ytGetUploadedVideos = async (): Promise<YtPlaylistItem[]> => {
     }
     pageToken = data.nextPageToken ?? "";
   } while (pageToken);
-  
+
   return items;
 };
 
@@ -339,10 +346,12 @@ window.ytGetUploadedVideos = async (): Promise<YtPlaylistItem[]> => {
 // ============================================================================
 
 // Get the user's channel subscriptions
-window.ytListSubscriptions = async (): Promise<{ channelId: string; title: string; thumbnail: string }[]> => {
+window.ytListSubscriptions = async (): Promise<
+  { channelId: string; title: string; thumbnail: string }[]
+> => {
   const result: { channelId: string; title: string; thumbnail: string }[] = [];
   let pageToken = "";
-  
+
   do {
     const params = new URLSearchParams({
       part: "snippet",
@@ -351,17 +360,18 @@ window.ytListSubscriptions = async (): Promise<{ channelId: string; title: strin
       ...(pageToken ? { pageToken } : {}),
     });
     const data = await ytFetch(`/subscriptions?${params}`);
-    
+
     for (const item of data.items ?? []) {
       result.push({
         channelId: item.snippet.resourceId.channelId,
         title: item.snippet.title,
-        thumbnail: item.snippet.thumbnails?.medium?.url ?? item.snippet.thumbnails?.default?.url ?? "",
+        thumbnail:
+          item.snippet.thumbnails?.medium?.url ?? item.snippet.thumbnails?.default?.url ?? "",
       });
     }
     pageToken = data.nextPageToken ?? "";
   } while (pageToken);
-  
+
   return result;
 };
 
@@ -370,16 +380,26 @@ window.ytListSubscriptions = async (): Promise<{ channelId: string; title: strin
 // ============================================================================
 
 // Get the user's channel activities (likes, uploads, comments, etc.)
-window.ytListActivities = async (maxResults: number = 20): Promise<{
-  type: string;
-  title: string;
-  videoId?: string;
-  channelId: string;
-  timestamp: string;
-}[]> => {
-  const result: { type: string; title: string; videoId?: string; channelId: string; timestamp: string }[] = [];
+window.ytListActivities = async (
+  maxResults: number = 20
+): Promise<
+  {
+    type: string;
+    title: string;
+    videoId?: string;
+    channelId: string;
+    timestamp: string;
+  }[]
+> => {
+  const result: {
+    type: string;
+    title: string;
+    videoId?: string;
+    channelId: string;
+    timestamp: string;
+  }[] = [];
   let pageToken = "";
-  
+
   do {
     const params = new URLSearchParams({
       part: "snippet",
@@ -388,24 +408,24 @@ window.ytListActivities = async (maxResults: number = 20): Promise<{
       ...(pageToken ? { pageToken } : {}),
     });
     const data = await ytFetch(`/activities?${params}`);
-    
+
     for (const item of data.items ?? []) {
       const snippet = item.snippet;
       let videoId: string | undefined;
       let title = snippet.description || "";
-      
+
       // Extract video ID from different activity types
       if (snippet.type === "like" || snippet.type === "favorite") {
         videoId = snippet.resourceId?.videoId;
       } else if (snippet.type === "upload") {
         videoId = snippet.resourceId?.videoId;
       }
-      
+
       // Use the video title if available
       if (snippet.title) {
         title = snippet.title;
       }
-      
+
       result.push({
         type: snippet.type || "unknown",
         title,
@@ -416,7 +436,7 @@ window.ytListActivities = async (maxResults: number = 20): Promise<{
     }
     pageToken = data.nextPageToken ?? "";
   } while (pageToken && result.length < maxResults);
-  
+
   return result;
 };
 
@@ -424,22 +444,27 @@ window.ytListActivities = async (maxResults: number = 20): Promise<{
 // SEARCH
 // ============================================================================
 
-window.ytSearch = async (query: string, maxResults: number = 20): Promise<{
-  videoId: string;
-  title: string;
-  channelTitle: string;
-  thumbnail: string;
-  publishedAt: string;
-}[]> => {
+window.ytSearch = async (
+  query: string,
+  maxResults: number = 20
+): Promise<
+  {
+    videoId: string;
+    title: string;
+    channelTitle: string;
+    thumbnail: string;
+    publishedAt: string;
+  }[]
+> => {
   if (!query) return [];
   const params = new URLSearchParams({
     part: "snippet",
     q: query,
     maxResults: String(Math.min(maxResults, 50)),
-    type: "video"
+    type: "video",
   });
   const data = await ytFetch(`/search?${params}`);
-  
+
   return (data.items ?? []).map((item: any) => ({
     videoId: item.id.videoId,
     title: item.snippet.title,
@@ -453,20 +478,24 @@ window.ytSearch = async (query: string, maxResults: number = 20): Promise<{
 // COMMENTS (Read-only)
 // ============================================================================
 
-window.ytListComments = async (maxResults: number = 20): Promise<{
-  id: string;
-  textDisplay: string;
-  videoId: string;
-  authorDisplayName: string;
-  publishedAt: string;
-}[]> => {
+window.ytListComments = async (
+  maxResults: number = 20
+): Promise<
+  {
+    id: string;
+    textDisplay: string;
+    videoId: string;
+    authorDisplayName: string;
+    publishedAt: string;
+  }[]
+> => {
   // YouTube Data API doesn't have a simple "my comments" endpoint.
   // We can fetch commentThreads related to the user's channel as a fallback.
   try {
     const channelIdParams = new URLSearchParams({ part: "id", mine: "true" });
     const channelData = await ytFetch(`/channels?${channelIdParams}`);
     const channelId = channelData.items?.[0]?.id;
-    
+
     if (!channelId) return [];
 
     const params = new URLSearchParams({
@@ -474,9 +503,9 @@ window.ytListComments = async (maxResults: number = 20): Promise<{
       allThreadsRelatedToChannelId: channelId,
       maxResults: String(Math.min(maxResults, 50)),
     });
-    
+
     const data = await ytFetch(`/commentThreads?${params}`);
-    
+
     return (data.items ?? []).map((item: any) => {
       const comment = item.snippet.topLevelComment.snippet;
       return {
@@ -505,7 +534,7 @@ window.ytGetPlaylist = async (id: string): Promise<YtPlaylistInfo | null> => {
     let title = "Watch Later";
     if (id === "LIKED") title = "Liked Videos";
     else if (id === "UPLOADS") title = "Uploaded Videos";
-    
+
     return {
       id, // Keep using the internal ID (WL/LIKED/UPLOADS)
       title,
@@ -541,11 +570,11 @@ window.ytGetPlaylistItems = async (ytId: string): Promise<YtPlaylistItem[]> => {
     if (ytId === "WL") actualId = await window.ytGetWatchLaterPlaylistId();
     else if (ytId === "LIKED") actualId = await window.ytGetLikedVideosPlaylistId();
     else if (ytId === "UPLOADS") actualId = await window.ytGetUploadedVideosPlaylistId();
-    
+
     if (!actualId) return [];
     playlistId = actualId;
   }
-  
+
   const items: YtPlaylistItem[] = [];
   let pageToken = "";
   do {
@@ -569,18 +598,14 @@ window.ytGetPlaylistItems = async (ytId: string): Promise<YtPlaylistItem[]> => {
 
 // Append a video to a playlist at a specific position (0-indexed).
 // If position is omitted, the video is added to the end.
-window.ytAddVideo = async (
-  ytId: string,
-  videoId: string,
-  position?: number
-): Promise<void> => {
+window.ytAddVideo = async (ytId: string, videoId: string, position?: number): Promise<void> => {
   let playlistId = ytId;
   if (ytId === "WL" || ytId === "LIKED" || ytId === "UPLOADS") {
     let actualId: string | null = null;
     if (ytId === "WL") actualId = await window.ytGetWatchLaterPlaylistId();
     else if (ytId === "LIKED") actualId = await window.ytGetLikedVideosPlaylistId();
     else if (ytId === "UPLOADS") actualId = await window.ytGetUploadedVideosPlaylistId();
-    
+
     if (!actualId) throw new Error(`Could not find actual ID for ${ytId}`);
     playlistId = actualId;
   }
@@ -597,7 +622,7 @@ window.ytAddVideo = async (
   });
 
   // Small delay to prevent hitting rate limits during bulk additions
-  await new Promise(resolve => setTimeout(resolve, 150));
+  await new Promise((resolve) => setTimeout(resolve, 150));
 };
 
 // Remove a specific playlist item by its playlistItem ID.
@@ -621,13 +646,13 @@ window.ytMoveItem = async (
       snippet: {
         playlistId,
         resourceId: { kind: "youtube#video", videoId },
-        position
-      }
-    })
+        position,
+      },
+    }),
   });
 
   // Small delay to prevent hitting rate limits
-  await new Promise(resolve => setTimeout(resolve, 150));
+  await new Promise((resolve) => setTimeout(resolve, 150));
 };
 
 // Return the current user's channel information (thumbnail, title, and handle).
@@ -645,14 +670,22 @@ window.ytGetMyChannel = async (): Promise<{ title: string; thumbnail: string; ha
 };
 
 // Save user profile to local storage for persistence
-window.saveUserProfile = async (profile: { title: string; thumbnail: string; handle: string }): Promise<void> => {
+window.saveUserProfile = async (profile: {
+  title: string;
+  thumbnail: string;
+  handle: string;
+}): Promise<void> => {
   if (typeof browser !== "undefined") {
     await browser.storage.local.set({ userProfile: profile });
   }
 };
 
 // Get cached user profile from local storage
-window.getUserProfile = async (): Promise<{ title: string; thumbnail: string; handle: string } | null> => {
+window.getUserProfile = async (): Promise<{
+  title: string;
+  thumbnail: string;
+  handle: string;
+} | null> => {
   if (typeof browser !== "undefined") {
     const result = await browser.storage.local.get("userProfile");
     return result.userProfile ?? null;
@@ -669,7 +702,7 @@ const PIPED_INSTANCES = [
   "https://pipedapi.kavin.rocks",
   "https://api.piped.private.coffee",
   "https://pipedapi.tokhmi.xyz",
-  "https://piped-api.garudalinux.org"
+  "https://piped-api.garudalinux.org",
 ];
 
 const INVIDIOUS_INSTANCES = [
@@ -677,7 +710,7 @@ const INVIDIOUS_INSTANCES = [
   "https://yewtu.be",
   "https://invidious.privacydev.net",
   "https://inv.tux.pizza",
-  "https://invidious.no-logs.com"
+  "https://invidious.no-logs.com",
 ];
 
 // Session-level cache: Map<videoId, metadata | null>
@@ -708,11 +741,7 @@ function secsToISO(secs: number): string {
 }
 
 // Split known public client key to avoid GitHub secret scanning false positives
-const INNERTUBE_API_KEY = [
-  "AIzaSyA8eiZmM1",
-  "FaDVjRy-df2KTy",
-  "Q_vz_yYM39w"
-].join("");
+const INNERTUBE_API_KEY = ["AIzaSyA8eiZmM1", "FaDVjRy-df2KTy", "Q_vz_yYM39w"].join("");
 const INNERTUBE_BASE_URL = "https://www.youtube.com/youtubei/v1/player";
 
 // Multi-Client Contexts for Innertube (bypasses bot verification by using mobile/web/TV player profiles)
@@ -724,9 +753,9 @@ const INNERTUBE_CLIENTS = [
         clientName: "MWEB",
         clientVersion: "2.20240801.01.00",
         hl: "en",
-        gl: "US"
-      }
-    }
+        gl: "US",
+      },
+    },
   },
   {
     name: "WEB",
@@ -735,9 +764,9 @@ const INNERTUBE_CLIENTS = [
         clientName: "WEB",
         clientVersion: "2.20240801.01.00",
         hl: "en",
-        gl: "US"
-      }
-    }
+        gl: "US",
+      },
+    },
   },
   {
     name: "TVHTML5_SIMPLY_EMBEDDED_PLAYER",
@@ -747,12 +776,12 @@ const INNERTUBE_CLIENTS = [
         clientVersion: "2.0",
         clientScreen: "EMBED",
         hl: "en",
-        gl: "US"
+        gl: "US",
       },
       thirdParty: {
-        embedUrl: "https://www.youtube.com"
-      }
-    }
+        embedUrl: "https://www.youtube.com",
+      },
+    },
   },
   {
     name: "ANDROID_VR",
@@ -763,10 +792,10 @@ const INNERTUBE_CLIENTS = [
         deviceModel: "Quest 3",
         androidSdkVersion: 32,
         hl: "en",
-        gl: "US"
-      }
-    }
-  }
+        gl: "US",
+      },
+    },
+  },
 ];
 
 interface InnertubeResponse {
@@ -839,7 +868,9 @@ async function fetchMetadataFromYouTubeDataAPI(videoIds: string[]): Promise<Map<
         if (hasAuth) {
           data = await ytFetch(`/videos?${params}`);
         } else if (apiKey) {
-          const res = await fetch(`https://www.googleapis.com/youtube/v3/videos?${params}&key=${apiKey}`);
+          const res = await fetch(
+            `https://www.googleapis.com/youtube/v3/videos?${params}&key=${apiKey}`
+          );
           if (res.ok) {
             data = await res.json();
           }
@@ -889,7 +920,20 @@ async function fetchMetadataFromYouTubeDataAPI(videoIds: string[]): Promise<Map<
 /**
  * Tier 2: Multi-Client Innertube Engine (iOS, TV Embed, Android VR, Web Embed)
  */
-window.fetchVideoMetadataInnertube = async (videoId: string): Promise<{ title: string; channel: string; duration: string; lengthSeconds: number; viewCount?: number; publishedAt?: string; isPrivate?: boolean; isDeleted?: boolean; isBroken?: boolean; isLive?: boolean } | null> => {
+window.fetchVideoMetadataInnertube = async (
+  videoId: string
+): Promise<{
+  title: string;
+  channel: string;
+  duration: string;
+  lengthSeconds: number;
+  viewCount?: number;
+  publishedAt?: string;
+  isPrivate?: boolean;
+  isDeleted?: boolean;
+  isBroken?: boolean;
+  isLive?: boolean;
+} | null> => {
   for (const clientConfig of INNERTUBE_CLIENTS) {
     try {
       const controller = new AbortController();
@@ -924,8 +968,10 @@ window.fetchVideoMetadataInnertube = async (videoId: string): Promise<{ title: s
       const { videoDetails, playabilityStatus, microformat } = data;
       const lengthSeconds = parseInt(videoDetails.lengthSeconds || "0", 10);
       const viewCount = videoDetails.viewCount ? parseInt(videoDetails.viewCount, 10) : undefined;
-      const publishedAt = microformat?.playerMicroformatRenderer?.publishDate || microformat?.playerMicroformatRenderer?.uploadDate;
-      
+      const publishedAt =
+        microformat?.playerMicroformatRenderer?.publishDate ||
+        microformat?.playerMicroformatRenderer?.uploadDate;
+
       let isPrivate = false;
       let isDeleted = false;
       let isBroken = false;
@@ -953,7 +999,9 @@ window.fetchVideoMetadataInnertube = async (videoId: string): Promise<{ title: s
         else isDeleted = true;
       }
 
-      const isLive = videoDetails.isLiveContent === true || (lengthSeconds === 0 && !isDeleted && !isPrivate && !isBroken);
+      const isLive =
+        videoDetails.isLiveContent === true ||
+        (lengthSeconds === 0 && !isDeleted && !isPrivate && !isBroken);
       const durationStr = isLive ? "LIVE" : secsToISO(lengthSeconds);
 
       return {
@@ -1009,7 +1057,20 @@ window.fetchMetadataInnertube = async (videoIds: string[]): Promise<Map<string, 
  * Tier 3: YouTube Embed Headless Parser (/embed/{id})
  * Extracts ytInitialPlayerResponse JSON from script tags
  */
-window.fetchVideoMetadataEmbedPage = async (videoId: string): Promise<{ title: string; channel: string; duration: string; lengthSeconds: number; viewCount?: number; publishedAt?: string; isPrivate?: boolean; isDeleted?: boolean; isBroken?: boolean; isLive?: boolean } | null> => {
+window.fetchVideoMetadataEmbedPage = async (
+  videoId: string
+): Promise<{
+  title: string;
+  channel: string;
+  duration: string;
+  lengthSeconds: number;
+  viewCount?: number;
+  publishedAt?: string;
+  isPrivate?: boolean;
+  isDeleted?: boolean;
+  isBroken?: boolean;
+  isLive?: boolean;
+} | null> => {
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 6000);
@@ -1022,24 +1083,32 @@ window.fetchVideoMetadataEmbedPage = async (videoId: string): Promise<{ title: s
     if (!res.ok || res.status === 401 || res.status === 403 || res.status === 429) return null;
     const html = await res.text();
 
-    const match = html.match(/ytInitialPlayerResponse\s*=\s*({.+?});(?:<\/script>|\s*var)/s)
-      || html.match(/var\s+ytInitialPlayerResponse\s*=\s*({.+?});/s);
+    const match =
+      html.match(/ytInitialPlayerResponse\s*=\s*({.+?});(?:<\/script>|\s*var)/s) ||
+      html.match(/var\s+ytInitialPlayerResponse\s*=\s*({.+?});/s);
     if (match && match[1]) {
       const data = JSON.parse(match[1]);
       const details = data.videoDetails;
       if (details && details.title) {
         const lengthSeconds = parseInt(details.lengthSeconds || "0", 10);
-        const isLive = details.isLiveContent === true || (lengthSeconds === 0 && details.title && details.author);
+        const isLive =
+          details.isLiveContent === true ||
+          (lengthSeconds === 0 && details.title && details.author);
         return {
           title: details.title,
           channel: details.author || "",
           duration: isLive ? "LIVE" : secsToISO(lengthSeconds),
           lengthSeconds,
           viewCount: details.viewCount ? parseInt(details.viewCount, 10) : undefined,
-          publishedAt: data.microformat?.playerMicroformatRenderer?.publishDate || data.microformat?.playerMicroformatRenderer?.uploadDate,
+          publishedAt:
+            data.microformat?.playerMicroformatRenderer?.publishDate ||
+            data.microformat?.playerMicroformatRenderer?.uploadDate,
           isPrivate: data.playabilityStatus?.status === "LOGIN_REQUIRED",
           isDeleted: data.playabilityStatus?.status === "ERROR",
-          isBroken: data.playabilityStatus?.status !== "OK" && data.playabilityStatus?.status !== "LOGIN_REQUIRED" && data.playabilityStatus?.status !== "ERROR",
+          isBroken:
+            data.playabilityStatus?.status !== "OK" &&
+            data.playabilityStatus?.status !== "LOGIN_REQUIRED" &&
+            data.playabilityStatus?.status !== "ERROR",
           isLive,
         };
       }
@@ -1054,14 +1123,30 @@ window.fetchVideoMetadataEmbedPage = async (videoId: string): Promise<{ title: s
  * Tier 4: Direct Official YouTube oEmbed API (/oembed)
  * Official, fast, unauthenticated Google endpoint guaranteeing title & channel
  */
-window.fetchVideoMetadataOEmbed = async (videoId: string): Promise<{ title: string; channel: string; duration: string; lengthSeconds: number; viewCount?: number; publishedAt?: string; isPrivate?: boolean; isDeleted?: boolean; isBroken?: boolean; isLive?: boolean } | null> => {
+window.fetchVideoMetadataOEmbed = async (
+  videoId: string
+): Promise<{
+  title: string;
+  channel: string;
+  duration: string;
+  lengthSeconds: number;
+  viewCount?: number;
+  publishedAt?: string;
+  isPrivate?: boolean;
+  isDeleted?: boolean;
+  isBroken?: boolean;
+  isLive?: boolean;
+} | null> => {
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000);
-    const res = await fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`, {
-      signal: controller.signal,
-      credentials: "omit",
-    });
+    const res = await fetch(
+      `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`,
+      {
+        signal: controller.signal,
+        credentials: "omit",
+      }
+    );
     clearTimeout(timeoutId);
     if (!res.ok || res.status === 401 || res.status === 403 || res.status === 429) return null;
     const json = await res.json();
@@ -1100,7 +1185,18 @@ window.fetchVideoMetadataInvidious = async (
   videoId: string,
   customPiped?: string[],
   customInvidious?: string[]
-): Promise<{ title: string; channel: string; duration: string; lengthSeconds: number; viewCount?: number; publishedAt?: string; isPrivate?: boolean; isDeleted?: boolean; isBroken?: boolean; isLive?: boolean } | null> => {
+): Promise<{
+  title: string;
+  channel: string;
+  duration: string;
+  lengthSeconds: number;
+  viewCount?: number;
+  publishedAt?: string;
+  isPrivate?: boolean;
+  isDeleted?: boolean;
+  isBroken?: boolean;
+  isLive?: boolean;
+} | null> => {
   const pipedPool = [...(customPiped || []), ...PIPED_INSTANCES];
   const invidiousPool = [...(customInvidious || []), ...INVIDIOUS_INSTANCES];
 
@@ -1112,7 +1208,7 @@ window.fetchVideoMetadataInvidious = async (
       const res = await fetch(`${baseUrl}/streams/${videoId}`, {
         signal: controller.signal,
         credentials: "omit",
-        headers: { "Accept": "application/json" }
+        headers: { Accept: "application/json" },
       });
       clearTimeout(timeoutId);
       if (!res.ok || res.status === 401 || res.status === 403 || res.status === 429) continue;
@@ -1146,13 +1242,14 @@ window.fetchVideoMetadataInvidious = async (
       const res = await fetch(`${baseUrl}/api/v1/videos/${videoId}`, {
         signal: controller.signal,
         credentials: "omit",
-        headers: { "Accept": "application/json" }
+        headers: { Accept: "application/json" },
       });
       clearTimeout(timeoutId);
       if (!res.ok || res.status === 401 || res.status === 403 || res.status === 429) continue;
       const data = await res.json();
       if (data && data.videoId) {
-        const isLive = data.liveNow === true || (data.lengthSeconds === 0 && data.title && data.author);
+        const isLive =
+          data.liveNow === true || (data.lengthSeconds === 0 && data.title && data.author);
         const durationStr = isLive ? "LIVE" : secsToISO(data.lengthSeconds || 0);
         return {
           title: data.title || "",
@@ -1160,7 +1257,9 @@ window.fetchVideoMetadataInvidious = async (
           duration: durationStr,
           lengthSeconds: data.lengthSeconds || 0,
           viewCount: data.viewCount,
-          publishedAt: data.publishedDate ? new Date(data.publishedDate * 1000).toISOString() : undefined,
+          publishedAt: data.publishedDate
+            ? new Date(data.publishedDate * 1000).toISOString()
+            : undefined,
           isPrivate: false,
           isDeleted: false,
           isBroken: false,
@@ -1190,7 +1289,11 @@ window.fetchDurationsInvidious = async (
     const outcomes = await Promise.all(
       batch.map(async (videoId) => {
         try {
-          const metadata = await window.fetchVideoMetadataInvidious(videoId, customPiped, customInvidious);
+          const metadata = await window.fetchVideoMetadataInvidious(
+            videoId,
+            customPiped,
+            customInvidious
+          );
           return { videoId, metadata };
         } catch {
           return { videoId, metadata: null };
@@ -1225,9 +1328,7 @@ window.ytFetchVideoDurations = async (videoIds: string[]): Promise<Map<string, a
     } else if (_metadataInFlight.has(id)) {
       const inFlight = _metadataInFlight.get(id);
       if (inFlight) {
-        inFlightWaits.push(
-          inFlight.then((meta) => ({ id, meta }))
-        );
+        inFlightWaits.push(inFlight.then((meta) => ({ id, meta })));
       }
     } else {
       toFetch.push(id);
@@ -1263,7 +1364,9 @@ window.ytFetchVideoDurations = async (videoIds: string[]): Promise<Map<string, a
   const customPiped = parseCustomInstances(settings?.customPipedInstances);
 
   if (window.logSystemEvent) {
-    await window.logSystemEvent("INFO", `[YOUTUBE-API] Starting metadata fetch (${strategy})`, { count: toFetch.length });
+    await window.logSystemEvent("INFO", `[YOUTUBE-API] Starting metadata fetch (${strategy})`, {
+      count: toFetch.length,
+    });
   }
 
   // 4. Batch promise executing configured tiers
@@ -1272,7 +1375,11 @@ window.ytFetchVideoDurations = async (videoIds: string[]): Promise<Map<string, a
     const runInnertube = async () => {
       if (!enableInnertube) return;
       if (Date.now() < _innertubeCircuitOpenUntil) {
-        if (window.logSystemEvent) await window.logSystemEvent("INFO", "[YPH] Innertube circuit breaker is open (tripped). Fast-skipping to Tier 2 (Embed).");
+        if (window.logSystemEvent)
+          await window.logSystemEvent(
+            "INFO",
+            "[YPH] Innertube circuit breaker is open (tripped). Fast-skipping to Tier 2 (Embed)."
+          );
         return;
       }
       const missing = toFetch.filter((id) => !result.has(id));
@@ -1287,7 +1394,9 @@ window.ytFetchVideoDurations = async (videoIds: string[]): Promise<Map<string, a
         const msg = String(e?.message || e);
         if (msg.includes("429") || msg.includes("403") || msg.includes("Blocked")) {
           _innertubeCircuitOpenUntil = Date.now() + 15 * 60 * 1000; // Trip circuit for 15 mins
-          console.warn("[YPH] Innertube rate-limited (429/403). Circuit breaker tripped for 15 minutes.");
+          console.warn(
+            "[YPH] Innertube rate-limited (429/403). Circuit breaker tripped for 15 minutes."
+          );
         } else {
           console.warn("[YPH] Innertube failed:", e);
         }
@@ -1361,7 +1470,11 @@ window.ytFetchVideoDurations = async (videoIds: string[]): Promise<Map<string, a
       const missing = toFetch.filter((id) => !result.has(id));
       if (!missing.length) return;
       try {
-        const invidiousResults = await window.fetchDurationsInvidious(missing, customPiped, customInvidious);
+        const invidiousResults = await window.fetchDurationsInvidious(
+          missing,
+          customPiped,
+          customInvidious
+        );
         invidiousResults.forEach((meta: any, videoId: string) => {
           result.set(videoId, meta);
           _metadataSessionCache.set(videoId, meta);
@@ -1413,7 +1526,10 @@ window.ytFetchVideoDurations = async (videoIds: string[]): Promise<Map<string, a
   })();
 
   for (const id of toFetch) {
-    _metadataInFlight.set(id, batchPromise.then((r) => r.get(id)));
+    _metadataInFlight.set(
+      id,
+      batchPromise.then((r) => r.get(id))
+    );
   }
 
   try {
@@ -1429,7 +1545,7 @@ window.ytFetchVideoDurations = async (videoIds: string[]): Promise<Map<string, a
       requested: videoIds.length,
       fetched: toFetch.length,
       found: result.size,
-      missing: videoIds.length - result.size
+      missing: videoIds.length - result.size,
     });
   }
 
@@ -1437,4 +1553,3 @@ window.ytFetchVideoDurations = async (videoIds: string[]): Promise<Map<string, a
 };
 
 export {};
-

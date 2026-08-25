@@ -70,10 +70,7 @@
     await status.save(async () => {
       await window.storeObject(key, value);
       if (window.logSystemEvent)
-        await window.logSystemEvent(
-          "INFO",
-          `[MANAGE-VIEW] Saved setting: ${key}`,
-        );
+        await window.logSystemEvent("INFO", `[MANAGE-VIEW] Saved setting: ${key}`);
       if (key === "manageSortBy" || key === "deleteAfterMerge") {
         triggerRefresh();
       }
@@ -85,24 +82,15 @@
       signedIn = await window.isSignedIn();
       const settings = await window.getSettings();
       sortBy = settings.manageSortBy || "newest";
-      deleteAfterMerge =
-        settings.deleteAfterMerge !== undefined
-          ? settings.deleteAfterMerge
-          : true;
+      deleteAfterMerge = settings.deleteAfterMerge !== undefined ? settings.deleteAfterMerge : true;
       favoritePlaylistId = settings.watchLaterPlaylistId ?? null;
       if (window.logSystemEvent)
-        await window.logSystemEvent(
-          "INFO",
-          `[MANAGE-VIEW] Initialized: signedIn=${signedIn}`,
-        );
+        await window.logSystemEvent("INFO", `[MANAGE-VIEW] Initialized: signedIn=${signedIn}`);
     } catch (e) {
       const errMsg = e instanceof Error ? e.message : String(e);
       console.error("Auth check failed", e);
       if (window.logSystemEvent)
-        await window.logSystemEvent(
-          "ERROR",
-          `[MANAGE-VIEW] Auth check failed: ${errMsg}`,
-        );
+        await window.logSystemEvent("ERROR", `[MANAGE-VIEW] Auth check failed: ${errMsg}`);
     }
     await loadPlaylists();
   })();
@@ -172,33 +160,28 @@
           default:
             return 0;
         }
-      }),
+      })
   );
 
   let allSelected = $derived(
-    filteredPlaylists.length > 0 &&
-      filteredPlaylists.every((p) => selectedIds.has(p.id)),
+    filteredPlaylists.length > 0 && filteredPlaylists.every((p) => selectedIds.has(p.id))
   );
 
   let someSelected = $derived(selectedIds.size > 0 && !allSelected);
 
-  const selectedPlaylists = $derived(
-    allPlaylists.filter((p) => selectedIds.has(p.id)),
-  );
+  const selectedPlaylists = $derived(allPlaylists.filter((p) => selectedIds.has(p.id)));
 
   // Only allow privacy change for YouTube (non-local) playlists
   const canChangePrivacy = $derived(
-    selectedPlaylists.length > 0 && selectedPlaylists.some((p) => !p.isLocal),
+    selectedPlaylists.length > 0 && selectedPlaylists.some((p) => !p.isLocal)
   );
-  const selectedYoutubeCount = $derived(
-    selectedPlaylists.filter((p) => !p.isLocal).length,
-  );
+  const selectedYoutubeCount = $derived(selectedPlaylists.filter((p) => !p.isLocal).length);
 
   // Disable dropdown when mixed YouTube + offline playlists selected
   const isPrivacyMixed = $derived(
     selectedPlaylists.length > 0 &&
       selectedPlaylists.some((p) => !p.isLocal) &&
-      selectedPlaylists.some((p) => p.isLocal),
+      selectedPlaylists.some((p) => p.isLocal)
   );
 
   // Privacy change state
@@ -242,18 +225,15 @@
       if (window.logSystemEvent)
         await window.logSystemEvent(
           "INFO",
-          `[MANAGE-VIEW] Changed privacy to ${statusToSet} for ${targets.length} playlists`,
+          `[MANAGE-VIEW] Changed privacy to ${statusToSet} for ${targets.length} playlists`
         );
       window.success(
-        `Privacy changed to ${statusToSet} for ${targets.length} playlist${targets.length !== 1 ? "s" : ""}.`,
+        `Privacy changed to ${statusToSet} for ${targets.length} playlist${targets.length !== 1 ? "s" : ""}.`
       );
     } catch (e) {
       const errMsg = e instanceof Error ? e.message : String(e);
       if (window.logSystemEvent)
-        await window.logSystemEvent(
-          "ERROR",
-          `[MANAGE-VIEW] Change privacy failed: ${errMsg}`,
-        );
+        await window.logSystemEvent("ERROR", `[MANAGE-VIEW] Change privacy failed: ${errMsg}`);
       prog = {
         ...prog,
         done: true,
@@ -266,9 +246,7 @@
 
   const isMergeTypeCompatible = $derived(
     selectedPlaylists.length < 2 ||
-      selectedPlaylists.every(
-        (p) => p.isLocal === selectedPlaylists[0].isLocal,
-      ),
+      selectedPlaylists.every((p) => p.isLocal === selectedPlaylists[0].isLocal)
   );
 
   let canMerge = $derived(selectedPlaylists.length >= 2);
@@ -283,9 +261,7 @@
   });
 
   // Merge is also allowed when merging 1+ playlists INTO the favorite (1 or more selected + fav as target)
-  const canMergeIntoFav = $derived(
-    !!favMergeTarget && selectedPlaylists.length >= 1,
-  );
+  const canMergeIntoFav = $derived(!!favMergeTarget && selectedPlaylists.length >= 1);
 
   const isFavMergeTypeCompatible = $derived.by(() => {
     if (!favMergeTarget) return true;
@@ -307,22 +283,16 @@
   let mergeTitle = $state("");
   let mergeTargetId = $state("new");
 
-  let mergeRawTotal = $derived(
-    selectedPlaylists.reduce((s, p) => s + (p.videoCount || 0), 0),
-  );
+  let mergeRawTotal = $derived(selectedPlaylists.reduce((s, p) => s + (p.videoCount || 0), 0));
 
   // ─── Save Offline dialog ───────────────────────────────────────────────────
   let showSaveOffline = $state(false);
-  let offlinePlaylists = $state<
-    { yt: YtPlaylistInfoExtended; local: Playlist | null }[]
-  >([]);
+  let offlinePlaylists = $state<{ yt: YtPlaylistInfoExtended; local: Playlist | null }[]>([]);
   let offlineSaveMode = $state<Record<string, "sync" | "new" | "skip">>({});
   let offlineTitles = $state<Record<string, string>>({});
   let savingOffline = $state(false);
 
-  let canSaveOffline = $derived(
-    selectedPlaylists.filter((p) => !p.isLocal).length > 0,
-  );
+  let canSaveOffline = $derived(selectedPlaylists.filter((p) => !p.isLocal).length > 0);
 
   function openSaveOffline() {
     const targets = selectedPlaylists.filter((p) => !p.isLocal);
@@ -339,12 +309,9 @@
         .then((pls) => pls.filter((p) => p.isLocal));
       for (const yt of targets) {
         const existingLocal = localPlaylists.find(
-          (p) => p.title.toLowerCase() === yt.title.toLowerCase(),
+          (p) => p.title.toLowerCase() === yt.title.toLowerCase()
         );
-        offlinePlaylists = [
-          ...offlinePlaylists,
-          { yt, local: existingLocal || null },
-        ];
+        offlinePlaylists = [...offlinePlaylists, { yt, local: existingLocal || null }];
         if (existingLocal) {
           offlineSaveMode[yt.id] = "sync";
         } else {
@@ -358,9 +325,7 @@
 
   async function executeSaveOffline() {
     showSaveOffline = false;
-    const targets = offlinePlaylists.filter(
-      (p) => offlineSaveMode[p.yt.id] !== "skip",
-    );
+    const targets = offlinePlaylists.filter((p) => offlineSaveMode[p.yt.id] !== "skip");
     if (targets.length === 0) return;
 
     prog = {
@@ -432,18 +397,13 @@
       if (window.logSystemEvent)
         await window.logSystemEvent(
           "INFO",
-          `[MANAGE-VIEW] Saved offline: ${targets.length} playlists`,
+          `[MANAGE-VIEW] Saved offline: ${targets.length} playlists`
         );
-      window.success(
-        `${targets.length} playlist${targets.length !== 1 ? "s" : ""} saved offline.`,
-      );
+      window.success(`${targets.length} playlist${targets.length !== 1 ? "s" : ""} saved offline.`);
     } catch (e) {
       const errMsg = e instanceof Error ? e.message : String(e);
       if (window.logSystemEvent)
-        await window.logSystemEvent(
-          "ERROR",
-          `[MANAGE-VIEW] Save offline failed: ${errMsg}`,
-        );
+        await window.logSystemEvent("ERROR", `[MANAGE-VIEW] Save offline failed: ${errMsg}`);
       prog = {
         ...prog,
         done: true,
@@ -454,10 +414,7 @@
     stopTick();
   }
 
-  function generateUniqueTitle(
-    baseTitle: string,
-    usedTitles: string[],
-  ): string {
+  function generateUniqueTitle(baseTitle: string, usedTitles: string[]): string {
     let counter = 1;
     let newTitle = baseTitle;
     while (usedTitles.includes(newTitle)) {
@@ -470,12 +427,10 @@
   function handleModeChange(ytId: string, mode: "sync" | "new" | "skip") {
     offlineSaveMode[ytId] = mode;
     if (mode === "new") {
-      const usedTitles = Object.keys(offlineTitles).map(
-        (id) => offlineTitles[id],
-      );
+      const usedTitles = Object.keys(offlineTitles).map((id) => offlineTitles[id]);
       offlineTitles[ytId] = generateUniqueTitle(
         offlinePlaylists.find((p) => p.yt.id === ytId)?.yt.title || "",
-        usedTitles,
+        usedTitles
       );
     }
   }
@@ -505,9 +460,7 @@
   });
 
   let progressPct = $derived(
-    prog.total > 0
-      ? Math.min(100, Math.round((prog.current / prog.total) * 100))
-      : 0,
+    prog.total > 0 ? Math.min(100, Math.round((prog.current / prog.total) * 100)) : 0
   );
 
   let elapsedDisplay = $state("0:00");
@@ -528,8 +481,7 @@
           etaDisplay = "< 1s";
         } else {
           const rs = Math.round(rem / 1000);
-          etaDisplay =
-            rs < 60 ? `~${rs}s` : `~${Math.floor(rs / 60)}m ${rs % 60}s`;
+          etaDisplay = rs < 60 ? `~${rs}s` : `~${Math.floor(rs / 60)}m ${rs % 60}s`;
         }
       }
     }, 1000);
@@ -548,28 +500,20 @@
     if (allPlaylists.length === 0) loading = true;
     syncing = true;
     if (window.logSystemEvent)
-      await window.logSystemEvent(
-        "INFO",
-        "[MANAGE-VIEW] Loading managed playlists",
-      );
+      await window.logSystemEvent("INFO", "[MANAGE-VIEW] Loading managed playlists");
     try {
       const all = await window.getAccountPlaylists();
       allPlaylists = all.filter(
-        (p) =>
-          !["WL", "LIKED", "UPLOADS"].includes(p.id) ||
-          p.id === favoritePlaylistId,
+        (p) => !["WL", "LIKED", "UPLOADS"].includes(p.id) || p.id === favoritePlaylistId
       );
       if (window.logSystemEvent)
         await window.logSystemEvent(
           "INFO",
-          `[MANAGE-VIEW] Loaded ${allPlaylists.length} managed playlists`,
+          `[MANAGE-VIEW] Loaded ${allPlaylists.length} managed playlists`
         );
     } catch {
       if (window.logSystemEvent)
-        await window.logSystemEvent(
-          "ERROR",
-          "[MANAGE-VIEW] Failed to load playlists",
-        );
+        await window.logSystemEvent("ERROR", "[MANAGE-VIEW] Failed to load playlists");
       window.error("Failed to load playlists");
     } finally {
       loading = false;
@@ -582,17 +526,14 @@
       if (window.logSystemEvent)
         await window.logSystemEvent(
           "INFO",
-          "[MANAGE-VIEW] Refreshing playlists (cache invalidated)",
+          "[MANAGE-VIEW] Refreshing playlists (cache invalidated)"
         );
       window.invalidatePlaylistCache();
       await loadPlaylists();
     });
   }
 
-  function handleStorage(
-    changes: Record<string, { newValue?: any }>,
-    area: string,
-  ) {
+  function handleStorage(changes: Record<string, { newValue?: any }>, area: string) {
     if (area === "sync") {
       const featureKeys = [
         "enableLikedVideos",
@@ -619,7 +560,7 @@
 
     const relevantKeys = ["yt_playlist_cache_v1", "saved_playlists"];
     const hasPlaylistChanges = Object.keys(changes).some(
-      (key) => relevantKeys.includes(key) || key.startsWith("playlist_"),
+      (key) => relevantKeys.includes(key) || key.startsWith("playlist_")
     );
 
     if (hasPlaylistChanges) {
@@ -668,21 +609,21 @@
           if (window.logSystemEvent)
             await window.logSystemEvent(
               "INFO",
-              `[MANAGE-VIEW] Importing ${data.length} playlists from file`,
+              `[MANAGE-VIEW] Importing ${data.length} playlists from file`
             );
           await window.importPlaylists(data);
           await loadPlaylists();
           if (window.logSystemEvent)
             await window.logSystemEvent(
               "INFO",
-              `[MANAGE-VIEW] Import successful: ${data.length} playlists`,
+              `[MANAGE-VIEW] Import successful: ${data.length} playlists`
             );
           window.success("Playlists imported successfully");
         } catch {
           if (window.logSystemEvent)
             await window.logSystemEvent(
               "ERROR",
-              "[MANAGE-VIEW] Import failed: file incorrectly formatted",
+              "[MANAGE-VIEW] Import failed: file incorrectly formatted"
             );
           window.error("File is incorrectly formatted");
         }
@@ -769,19 +710,14 @@
       if (window.logSystemEvent)
         await window.logSystemEvent(
           "INFO",
-          `[MANAGE-VIEW] Export successful: ${result.length} playlists`,
+          `[MANAGE-VIEW] Export successful: ${result.length} playlists`
         );
-      window.success(
-        `${result.length} playlist${result.length !== 1 ? "s" : ""} exported.`,
-      );
+      window.success(`${result.length} playlist${result.length !== 1 ? "s" : ""} exported.`);
     } catch (e) {
       prog.active = false;
       const errMsg = e instanceof Error ? e.message : String(e);
       if (window.logSystemEvent)
-        await window.logSystemEvent(
-          "ERROR",
-          `[MANAGE-VIEW] Export failed: ${errMsg}`,
-        );
+        await window.logSystemEvent("ERROR", `[MANAGE-VIEW] Export failed: ${errMsg}`);
       window.error("Export failed: " + (e as Error).message);
     }
     stopTick();
@@ -802,10 +738,7 @@
   async function executeDelete() {
     const targets = [...selectedPlaylists];
     if (window.logSystemEvent)
-      await window.logSystemEvent(
-        "INFO",
-        `[MANAGE-VIEW] Deleting ${targets.length} playlists`,
-      );
+      await window.logSystemEvent("INFO", `[MANAGE-VIEW] Deleting ${targets.length} playlists`);
     prog = {
       active: true,
       title: `Deleting ${targets.length} playlist${targets.length !== 1 ? "s" : ""}…`,
@@ -820,11 +753,9 @@
     startTick();
     try {
       const fullPlaylists = await Promise.all(
-        targets.map((p: YtPlaylistInfoExtended) => window.getPlaylist(p.id)),
+        targets.map((p: YtPlaylistInfoExtended) => window.getPlaylist(p.id))
       );
-      await window.removePlaylists(
-        fullPlaylists.filter((p: any) => p !== null),
-      );
+      await window.removePlaylists(fullPlaylists.filter((p: any) => p !== null));
       await loadPlaylists();
 
       selectedIds = new Set();
@@ -832,18 +763,13 @@
       if (window.logSystemEvent)
         await window.logSystemEvent(
           "INFO",
-          `[MANAGE-VIEW] Deleted ${targets.length} playlists successfully`,
+          `[MANAGE-VIEW] Deleted ${targets.length} playlists successfully`
         );
-      window.success(
-        `${targets.length} playlist${targets.length !== 1 ? "s" : ""} deleted.`,
-      );
+      window.success(`${targets.length} playlist${targets.length !== 1 ? "s" : ""} deleted.`);
     } catch (e) {
       const errMsg = e instanceof Error ? e.message : String(e);
       if (window.logSystemEvent)
-        await window.logSystemEvent(
-          "ERROR",
-          `[MANAGE-VIEW] Delete failed: ${errMsg}`,
-        );
+        await window.logSystemEvent("ERROR", `[MANAGE-VIEW] Delete failed: ${errMsg}`);
       prog = {
         ...prog,
         done: true,
@@ -867,7 +793,7 @@
           if (window.logSystemEvent)
             await window.logSystemEvent(
               "INFO",
-              `[MANAGE-VIEW] Deleted playlist: ${p.title} (${p.id})`,
+              `[MANAGE-VIEW] Deleted playlist: ${p.title} (${p.id})`
             );
         } catch (e) {
           const errMsg = e instanceof Error ? e.message : String(e);
@@ -875,7 +801,7 @@
           if (window.logSystemEvent)
             await window.logSystemEvent(
               "ERROR",
-              `[MANAGE-VIEW] Single delete failed for ${p.id}: ${errMsg}`,
+              `[MANAGE-VIEW] Single delete failed for ${p.id}: ${errMsg}`
             );
           window.error("Failed to delete playlist");
         }
@@ -898,7 +824,7 @@
     if (window.logSystemEvent)
       await window.logSystemEvent(
         "INFO",
-        `[MANAGE-VIEW] Merging ${targets.length} playlists (target=${isNew ? "new" : mergeTargetId})`,
+        `[MANAGE-VIEW] Merging ${targets.length} playlists (target=${isNew ? "new" : mergeTargetId})`
       );
 
     // Determine title for progress
@@ -908,15 +834,10 @@
         favMergeTarget?.title ||
         "Existing Playlist";
 
-    const initialTotal =
-      targets.length +
-      (isNew ? 1 : 0) +
-      (deleteAfterMerge ? targets.length : 0);
+    const initialTotal = targets.length + (isNew ? 1 : 0) + (deleteAfterMerge ? targets.length : 0);
     prog = {
       active: true,
-      title: isNew
-        ? `Merging ${targets.length} playlists…`
-        : `Merging into "${destTitle}"…`,
+      title: isNew ? `Merging ${targets.length} playlists…` : `Merging into "${destTitle}"…`,
       phase: "loading",
       message: "",
       current: 0,
@@ -988,10 +909,7 @@
         };
         if (signedIn) {
           const settings = await window.getSettings();
-          targetId = await window.ytCreatePlaylist(
-            mergeTitle,
-            settings.defaultPrivacy,
-          );
+          targetId = await window.ytCreatePlaylist(mergeTitle, settings.defaultPrivacy);
         } else {
           targetId = await window.generatePlaylistId();
         }
@@ -1060,18 +978,15 @@
       if (window.logSystemEvent)
         await window.logSystemEvent(
           "INFO",
-          `[MANAGE-VIEW] Merge complete: ${videoIds.length} unique videos, ${dupes} duplicates removed`,
+          `[MANAGE-VIEW] Merge complete: ${videoIds.length} unique videos, ${dupes} duplicates removed`
         );
       window.success(
-        `Done! ${videoIds.length} unique video${videoIds.length !== 1 ? "s" : ""} merged${dupes > 0 ? `, ${dupes} duplicate${dupes !== 1 ? "s" : ""} removed` : ""}.`,
+        `Done! ${videoIds.length} unique video${videoIds.length !== 1 ? "s" : ""} merged${dupes > 0 ? `, ${dupes} duplicate${dupes !== 1 ? "s" : ""} removed` : ""}.`
       );
     } catch (e) {
       const errMsg = e instanceof Error ? e.message : String(e);
       if (window.logSystemEvent)
-        await window.logSystemEvent(
-          "ERROR",
-          `[MANAGE-VIEW] Merge failed: ${errMsg}`,
-        );
+        await window.logSystemEvent("ERROR", `[MANAGE-VIEW] Merge failed: ${errMsg}`);
       prog = {
         ...prog,
         done: true,
@@ -1110,10 +1025,7 @@
       <div class="prog-container">
         <p class="dialog-msg">{prog.message}</p>
         <div class="prog-track">
-          <div
-            class="prog-fill"
-            style="transform: scaleX({progressPct / 100})"
-          ></div>
+          <div class="prog-fill" style="transform: scaleX({progressPct / 100})"></div>
         </div>
         <div class="prog-meta">
           <span>{prog.current} / {prog.total} steps ({progressPct}%)</span>
@@ -1125,9 +1037,8 @@
       {#if prog.error}<p class="dialog-error">{prog.error}</p>{/if}
       {#if prog.done}
         <div class="dialog-actions">
-          <SimpleButton
-            onclick={() => (prog = { ...prog, active: false })}
-            primary>Close</SimpleButton
+          <SimpleButton onclick={() => (prog = { ...prog, active: false })} primary
+            >Close</SimpleButton
           >
         </div>
       {/if}
@@ -1138,12 +1049,7 @@
 <!-- ─── Merge dialog ─────────────────────────────────────────────────────── -->
 {#if showMerge}
   <div class="overlay">
-    <div
-      class="dialog"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="merge-dialog-title"
-    >
+    <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="merge-dialog-title">
       <h2 class="dialog-title" id="merge-dialog-title">
         Merge {selectedIds.size} Playlists
       </h2>
@@ -1156,13 +1062,13 @@
         <select id="mergeTarget" bind:value={mergeTargetId} class="text-input">
           <option value="new">✚ Create New Playlist</option>
           {#each selectedPlaylists as p}
-            <option value={p.id}
-              >{p.title} {p.isLocal ? "(Offline)" : "(YouTube)"}</option
-            >
+            <option value={p.id}>{p.title} {p.isLocal ? "(Offline)" : "(YouTube)"}</option>
           {/each}
           {#if favMergeTarget}
             <option value={favMergeTarget.id}
-              >⭐ {favMergeTarget.title} (Favorite {favMergeTarget.isLocal ? "· Offline" : "· YouTube"})</option
+              >⭐ {favMergeTarget.title} (Favorite {favMergeTarget.isLocal
+                ? "· Offline"
+                : "· YouTube"})</option
             >
           {/if}
         </select>
@@ -1191,9 +1097,7 @@
         Delete source playlists after merge
       </label>
       <div class="dialog-actions">
-        <SimpleButton onclick={() => (showMerge = false)} secondary
-          >Cancel</SimpleButton
-        >
+        <SimpleButton onclick={() => (showMerge = false)} secondary>Cancel</SimpleButton>
         <SimpleButton
           onclick={executeMerge}
           primary
@@ -1210,17 +1114,10 @@
 <!-- ─── Save Offline dialog ─────────────────────────────────────────────── -->
 {#if showSaveOffline}
   <div class="overlay">
-    <div
-      class="dialog"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="offline-dialog-title"
-    >
+    <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="offline-dialog-title">
       <h2 class="dialog-title" id="offline-dialog-title">Save Offline</h2>
       <p class="dialog-info">
-        {offlinePlaylists.length} playlist{offlinePlaylists.length !== 1
-          ? "s"
-          : ""} selected
+        {offlinePlaylists.length} playlist{offlinePlaylists.length !== 1 ? "s" : ""} selected
       </p>
 
       <div class="offline-playlist-list">
@@ -1279,15 +1176,11 @@
       </div>
 
       <div class="dialog-actions">
-        <SimpleButton onclick={() => (showSaveOffline = false)} secondary
-          >Cancel</SimpleButton
-        >
+        <SimpleButton onclick={() => (showSaveOffline = false)} secondary>Cancel</SimpleButton>
         <SimpleButton
           onclick={executeSaveOffline}
           primary
-          disabled={offlinePlaylists.every(
-            (p) => offlineSaveMode[p.yt.id] === "skip",
-          )}
+          disabled={offlinePlaylists.every((p) => offlineSaveMode[p.yt.id] === "skip")}
         >
           <Fa icon={faCloudArrowDown} fw />
           Save Offline
@@ -1308,12 +1201,10 @@
     onSave={refresh}
   >
     <div class="header-actions-inline">
-      <SimpleButton
-        onclick={exportAll}
-        secondary
-        disabled={allPlaylists.length === 0}
-      >
-        <Fa icon={faFileExport} fw /><span>{selectedIds.size > 0 ? "Export Selected" : "Export All"}</span>
+      <SimpleButton onclick={exportAll} secondary disabled={allPlaylists.length === 0}>
+        <Fa icon={faFileExport} fw /><span
+          >{selectedIds.size > 0 ? "Export Selected" : "Export All"}</span
+        >
       </SimpleButton>
 
       <SimpleButton onclick={importPlaylists} secondary>
@@ -1333,14 +1224,10 @@
       <div class="empty-state">
         <Fa icon={faBoxArchive} size="3x" />
         <p>
-          {$manageSearch
-            ? "No playlists match your search."
-            : "No managed playlists found."}
+          {$manageSearch ? "No playlists match your search." : "No managed playlists found."}
         </p>
         {#if !$manageSearch}
-          <SimpleButton onclick={() => push("/new")} primary
-            >Create New Playlist</SimpleButton
-          >
+          <SimpleButton onclick={() => push("/new")} primary>Create New Playlist</SimpleButton>
         {/if}
       </div>
     {:else}
@@ -1361,10 +1248,7 @@
               {#if selectedIds.size > 0}
                 {selectedIds.size} of {filteredPlaylists.length} selected
               {:else}
-                {filteredPlaylists.length} playlist{filteredPlaylists.length !==
-                1
-                  ? "s"
-                  : ""}
+                {filteredPlaylists.length} playlist{filteredPlaylists.length !== 1 ? "s" : ""}
               {/if}
             </span>
             {#if selectedIds.size > 0}
@@ -1403,7 +1287,11 @@
                   disabled={!isFavMergeTypeCompatible}
                   title={favMergeTitle}
                 >
-                  <Fa icon={faStar} fw /><span>{favMergeTarget ? `Merge into "${favMergeTarget.title.length > 20 ? favMergeTarget.title.slice(0, 18) + '…' : favMergeTarget.title}"` : 'Merge into Favorite'}</span>
+                  <Fa icon={faStar} fw /><span
+                    >{favMergeTarget
+                      ? `Merge into "${favMergeTarget.title.length > 20 ? favMergeTarget.title.slice(0, 18) + "…" : favMergeTarget.title}"`
+                      : "Merge into Favorite"}</span
+                  >
                 </SimpleButton>
               {/if}
               <SimpleButton onclick={requestDelete} danger>
@@ -1459,16 +1347,10 @@
                 role="button"
                 tabindex="-1"
                 onclick={() => editPlaylist(p.id)}
-                onkeydown={(e) =>
-                  (e.key === "Enter" || e.key === " ") && editPlaylist(p.id)}
+                onkeydown={(e) => (e.key === "Enter" || e.key === " ") && editPlaylist(p.id)}
               >
                 {#if p.thumbnailUrl}
-                  <img
-                    class="thumb"
-                    src={p.thumbnailUrl}
-                    alt=""
-                    loading="lazy"
-                  />
+                  <img class="thumb" src={p.thumbnailUrl} alt="" loading="lazy" />
                 {:else}
                   <div class="thumb thumb-empty">
                     <Fa icon={faBoxArchive} />
@@ -1484,27 +1366,24 @@
                 role="button"
                 tabindex="-1"
                 onclick={() => editPlaylist(p.id)}
-                onkeydown={(e) =>
-                  (e.key === "Enter" || e.key === " ") && editPlaylist(p.id)}
+                onkeydown={(e) => (e.key === "Enter" || e.key === " ") && editPlaylist(p.id)}
               >
                 <div class="row-title-line">
                   <span class="row-title">{p.title || "Untitled Playlist"}</span>
                   {#if p.id === favoritePlaylistId}
-                    <span class="fav-badge" title="Favorite Playlist" aria-label="Favorite Playlist">
+                    <span
+                      class="fav-badge"
+                      title="Favorite Playlist"
+                      aria-label="Favorite Playlist"
+                    >
                       <Fa icon={faStar} fw />
                     </span>
                   {/if}
                 </div>
                 <div class="row-meta">
-                  <span class="row-count"
-                    >{p.videoCount} video{p.videoCount !== 1 ? "s" : ""}</span
-                  >
+                  <span class="row-count">{p.videoCount} video{p.videoCount !== 1 ? "s" : ""}</span>
                   <SyncStatusIndicator
-                    status={p.isLocal
-                      ? "local"
-                      : p.isTagged
-                        ? "synced"
-                        : "online"}
+                    status={p.isLocal ? "local" : p.isTagged ? "synced" : "online"}
                     size="sm"
                   />
                   {#if !p.isLocal && p.privacyStatus}
@@ -1517,9 +1396,7 @@
                     </span>
                   {/if}
                   {#if p.timestamp}
-                    <span class="row-date"
-                      >{new Date(p.timestamp).toLocaleDateString()}</span
-                    >
+                    <span class="row-date">{new Date(p.timestamp).toLocaleDateString()}</span>
                   {/if}
                 </div>
               </div>

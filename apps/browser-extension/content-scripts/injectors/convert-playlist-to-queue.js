@@ -11,23 +11,15 @@
   document.querySelector("ytd-compact-video-renderer #menu yt-icon").click();
   await wait(500);
 
-  document
-    .querySelector("ytd-popup-container #items yt-formatted-string")
-    .click();
+  document.querySelector("ytd-popup-container #items yt-formatted-string").click();
 
   await wait(1000);
 
-  lastSelector(
-    "#content ytd-playlist-panel-video-renderer ytd-menu-renderer yt-icon"
-  ).click();
+  lastSelector("#content ytd-playlist-panel-video-renderer ytd-menu-renderer yt-icon").click();
 
   await wait(500);
 
-  [
-    ...document.querySelectorAll(
-      "ytd-popup-container #items yt-formatted-string"
-    ),
-  ]
+  [...document.querySelectorAll("ytd-popup-container #items yt-formatted-string")]
     .filter((e) => e.textContent.toLowerCase().includes("remove"))
     .shift()
     .click();

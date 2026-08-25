@@ -1,11 +1,6 @@
 <script lang="ts">
   import Fa from "svelte-fa";
-  import {
-    faBell,
-    faBellSlash,
-    faXmark,
-    faRotateRight,
-  } from "@fortawesome/free-solid-svg-icons";
+  import { faBell, faBellSlash, faXmark, faRotateRight } from "@fortawesome/free-solid-svg-icons";
   import SimpleButton from "./SimpleButton.svelte";
   import { onDestroy } from "svelte";
 
@@ -34,9 +29,7 @@
 
   async function loadCachedNotifications() {
     try {
-      const result = await browser.storage.local.get(
-        "yph_cached_notifications",
-      );
+      const result = await browser.storage.local.get("yph_cached_notifications");
       const cached = result.yph_cached_notifications || {
         ids: [],
         activities: [],
@@ -61,11 +54,9 @@
 
       // Filter to show only new notifications (not in cache)
       const newActivities = activitiesData.filter(
-        (a: any) => !cachedNotificationIds.has(a.id || a.videoId),
+        (a: any) => !cachedNotificationIds.has(a.id || a.videoId)
       );
-      const newComments = commentsData.filter(
-        (c: any) => !cachedNotificationIds.has(c.id),
-      );
+      const newComments = commentsData.filter((c: any) => !cachedNotificationIds.has(c.id));
 
       activities = newActivities;
       comments = newComments;
@@ -123,11 +114,7 @@
       <div class="notification-header">
         <span>Notifications</span>
         <div class="header-actions">
-          <button
-            class="refresh-btn"
-            onclick={refreshNotifications}
-            title="Refresh notifications"
-          >
+          <button class="refresh-btn" onclick={refreshNotifications} title="Refresh notifications">
             <Fa icon={faRotateRight} />
           </button>
           <button class="close-btn" onclick={closeDropdown}>

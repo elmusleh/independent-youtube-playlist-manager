@@ -36,7 +36,9 @@
     aria-modal="true"
     aria-labelledby="release-notes-title"
     tabindex="-1"
-    onmousedown={(e) => { if (e.target === e.currentTarget) closeModal(); }}
+    onmousedown={(e) => {
+      if (e.target === e.currentTarget) closeModal();
+    }}
   >
     <div class="modal-content">
       <div class="modal-header">
@@ -51,7 +53,13 @@
       <div class="modal-body">
         <div class="release-notes">
           <h3>All notable changes to this project are documented here.</h3>
-          <p>Format follows <a href="https://keepachangelog.com/en/1.0.0/" target="_blank" rel="noopener noreferrer">Keep a Changelog</a>.</p>
+          <p>
+            Format follows <a
+              href="https://keepachangelog.com/en/1.0.0/"
+              target="_blank"
+              rel="noopener noreferrer">Keep a Changelog</a
+            >.
+          </p>
 
           <hr />
 
@@ -59,53 +67,176 @@
             <h4>[Unreleased]</h4>
             <h5>Added</h5>
             <ul>
-              <li>You can now mark any playlist as a Favorite and add videos to it with a single click from the popup
-                <ul><li><em>Technical: Implemented <code>Favorite Playlist ⭐️</code> with automatic recreation if deleted, <code>[FAV]</code> tag in description, and visual gold highlighting in <code>Saved.svelte</code></em></li></ul>
+              <li>
+                You can now mark any playlist as a Favorite and add videos to it with a single click
+                from the popup
+                <ul>
+                  <li>
+                    <em
+                      >Technical: Implemented <code>Favorite Playlist ⭐️</code> with automatic
+                      recreation if deleted, <code>[FAV]</code> tag in description, and visual gold
+                      highlighting in <code>Saved.svelte</code></em
+                    >
+                  </li>
+                </ul>
               </li>
-              <li>A new "Default Quick Add Target" setting lets you choose which playlist receives videos when using Quick Add
-                <ul><li><em>Technical: Added <code>defaultQuickAddTarget</code> setting persisted in <code>browser.storage.local</code>, bound to popup dropdown in <code>Settings.svelte</code></em></li></ul>
+              <li>
+                A new "Default Quick Add Target" setting lets you choose which playlist receives
+                videos when using Quick Add
+                <ul>
+                  <li>
+                    <em
+                      >Technical: Added <code>defaultQuickAddTarget</code> setting persisted in
+                      <code>browser.storage.local</code>, bound to popup dropdown in
+                      <code>Settings.svelte</code></em
+                    >
+                  </li>
+                </ul>
               </li>
-              <li>Settings and playlist manager now show a visual indicator when changes are auto-saved</li>
-              <li>A new "Add to latest" position setting controls whether videos are added to the top or bottom of a playlist</li>
-              <li>Full YouTube API integration with OAuth2 authentication — sign in with your Google account to create and manage playlists directly on YouTube
-                <ul><li><em>Technical: Added <code>youtube-auth.js</code> and <code>youtube-api.js</code> services injected onto <code>window</code>, with token storage in <code>browser.storage.local</code></em></li></ul>
+              <li>
+                Settings and playlist manager now show a visual indicator when changes are
+                auto-saved
               </li>
-              <li>A new "Max log lines" setting limits how many diagnostic entries are kept in the extension log</li>
-              <li>A cloud sync icon now appears when playlists are being synchronised with YouTube</li>
-              <li>Playlist creation now suggests a smart default title based on the source content</li>
-              <li>Keyboard and screen reader accessibility improved across all interactive controls
-                <ul><li><em>Technical: Added ARIA roles, labels, and keyboard event handlers to <code>ToggleSwitch</code>, dropdowns, and action buttons</em></li></ul>
+              <li>
+                A new "Add to latest" position setting controls whether videos are added to the top
+                or bottom of a playlist
               </li>
-              <li>Dynamic context menu items now update based on your current saved playlists — no restart needed</li>
-              <li>Playlist opening now falls back gracefully for signed-in users when direct navigation fails</li>
+              <li>
+                Full YouTube API integration with OAuth2 authentication — sign in with your Google
+                account to create and manage playlists directly on YouTube
+                <ul>
+                  <li>
+                    <em
+                      >Technical: Added <code>youtube-auth.js</code> and <code>youtube-api.js</code>
+                      services injected onto <code>window</code>, with token storage in
+                      <code>browser.storage.local</code></em
+                    >
+                  </li>
+                </ul>
+              </li>
+              <li>
+                A new "Max log lines" setting limits how many diagnostic entries are kept in the
+                extension log
+              </li>
+              <li>
+                A cloud sync icon now appears when playlists are being synchronised with YouTube
+              </li>
+              <li>
+                Playlist creation now suggests a smart default title based on the source content
+              </li>
+              <li>
+                Keyboard and screen reader accessibility improved across all interactive controls
+                <ul>
+                  <li>
+                    <em
+                      >Technical: Added ARIA roles, labels, and keyboard event handlers to <code
+                        >ToggleSwitch</code
+                      >, dropdowns, and action buttons</em
+                    >
+                  </li>
+                </ul>
+              </li>
+              <li>
+                Dynamic context menu items now update based on your current saved playlists — no
+                restart needed
+              </li>
+              <li>
+                Playlist opening now falls back gracefully for signed-in users when direct
+                navigation fails
+              </li>
             </ul>
             <h5>Fixed</h5>
             <ul>
-              <li>Creating or resetting the Favorite Playlist no longer produces duplicates if triggered more than once
-                <ul><li><em>Technical: Made <code>resetOrCreate</code> idempotent by checking for existing <code>[YPH][FAV]</code>-tagged playlists before creating</em></li></ul>
+              <li>
+                Creating or resetting the Favorite Playlist no longer produces duplicates if
+                triggered more than once
+                <ul>
+                  <li>
+                    <em
+                      >Technical: Made <code>resetOrCreate</code> idempotent by checking for
+                      existing <code>[YPH][FAV]</code>-tagged playlists before creating</em
+                    >
+                  </li>
+                </ul>
               </li>
-              <li>Favorite Playlist now persists correctly across browser sessions and works fully offline</li>
-              <li>Favorite Playlist entry appears in the UI immediately after creation without requiring a page refresh</li>
-              <li>The sort dropdown in the Saved view no longer gets clipped by the card container</li>
-              <li>Confirmation dialogs now appear before destructive actions to prevent accidental data loss</li>
-              <li>YouTube API error handling improved — invalid or overly long playlist titles now show a clear message</li>
+              <li>
+                Favorite Playlist now persists correctly across browser sessions and works fully
+                offline
+              </li>
+              <li>
+                Favorite Playlist entry appears in the UI immediately after creation without
+                requiring a page refresh
+              </li>
+              <li>
+                The sort dropdown in the Saved view no longer gets clipped by the card container
+              </li>
+              <li>
+                Confirmation dialogs now appear before destructive actions to prevent accidental
+                data loss
+              </li>
+              <li>
+                YouTube API error handling improved — invalid or overly long playlist titles now
+                show a clear message
+              </li>
             </ul>
             <h5>Changed</h5>
             <ul>
-              <li>The popup has been redesigned with a consolidated Quick Add workflow — adding a video now takes fewer taps
-                <ul><li><em>Technical: Merged separate "Add" and "Quick Add" paths into a single flow in <code>popup/</code></em></li></ul>
+              <li>
+                The popup has been redesigned with a consolidated Quick Add workflow — adding a
+                video now takes fewer taps
+                <ul>
+                  <li>
+                    <em
+                      >Technical: Merged separate "Add" and "Quick Add" paths into a single flow in <code
+                        >popup/</code
+                      ></em
+                    >
+                  </li>
+                </ul>
               </li>
-              <li>Playlist card titles in the Saved view are now consistent in length and truncation style</li>
-              <li>The Settings page layout now wraps dynamically based on screen width instead of using a fixed grid</li>
-              <li>All playlists (both YPH-managed and unmanaged) are now shown in a single unified Saved view with a clear managed badge
-                <ul><li><em>Technical: <code>Saved.svelte</code> unified view replaces the separate managed/all-playlists split; unmanaged playlists show a wrench badge</em></li></ul>
+              <li>
+                Playlist card titles in the Saved view are now consistent in length and truncation
+                style
               </li>
-              <li>Offline playlists and YouTube-synced playlists are now kept in sync via a hybrid storage model
-                <ul><li><em>Technical: <code>storage-service</code> now maintains a local cache with TTL and a YouTube-side source of truth, merged on load</em></li></ul>
+              <li>
+                The Settings page layout now wraps dynamically based on screen width instead of
+                using a fixed grid
+              </li>
+              <li>
+                All playlists (both YPH-managed and unmanaged) are now shown in a single unified
+                Saved view with a clear managed badge
+                <ul>
+                  <li>
+                    <em
+                      >Technical: <code>Saved.svelte</code> unified view replaces the separate managed/all-playlists
+                      split; unmanaged playlists show a wrench badge</em
+                    >
+                  </li>
+                </ul>
+              </li>
+              <li>
+                Offline playlists and YouTube-synced playlists are now kept in sync via a hybrid
+                storage model
+                <ul>
+                  <li>
+                    <em
+                      >Technical: <code>storage-service</code> now maintains a local cache with TTL and
+                      a YouTube-side source of truth, merged on load</em
+                    >
+                  </li>
+                </ul>
               </li>
               <li>The "close tabs after adding" setting has been renamed for clarity</li>
-              <li>The standalone editor module has been removed in favour of the unified playlist view
-                <ul><li><em>Technical: <code>editor/</code> route and module deleted; all editing now done via <code>PlaylistEditor.svelte</code> in the SPA</em></li></ul>
+              <li>
+                The standalone editor module has been removed in favour of the unified playlist view
+                <ul>
+                  <li>
+                    <em
+                      >Technical: <code>editor/</code> route and module deleted; all editing now
+                      done via <code>PlaylistEditor.svelte</code> in the SPA</em
+                    >
+                  </li>
+                </ul>
               </li>
             </ul>
           </section>
@@ -139,7 +270,9 @@
             <h5>Changed</h5>
             <ul><li>Notification design updated across the editor and settings pages</li></ul>
             <h5>Removed</h5>
-            <ul><li>Recent playlists panel removed (superseded by the Saved playlists view)</li></ul>
+            <ul>
+              <li>Recent playlists panel removed (superseded by the Saved playlists view)</li>
+            </ul>
           </section>
 
           <hr />
@@ -168,7 +301,9 @@
           <section>
             <h4>[2.10.0] - 2023-07-30</h4>
             <h5>Added</h5>
-            <ul><li>Right-click context menu option to add a video directly to a saved playlist</li></ul>
+            <ul>
+              <li>Right-click context menu option to add a video directly to a saved playlist</li>
+            </ul>
           </section>
 
           <hr />
@@ -248,7 +383,9 @@
             <h4>[2.4.0] - 2021-08-26</h4>
             <h5>Added</h5>
             <ul>
-              <li>Scan the current browser tab for YouTube links and create a playlist from them</li>
+              <li>
+                Scan the current browser tab for YouTube links and create a playlist from them
+              </li>
               <li>Convert the current YouTube playlist tab into a YouTube queue</li>
             </ul>
           </section>
@@ -333,7 +470,12 @@
           <section>
             <h4>[1.4.0] - 2021-02-19</h4>
             <h5>Changed</h5>
-            <ul><li>Playlist tabs are now excluded by default when building playlists (option to include them still available)</li></ul>
+            <ul>
+              <li>
+                Playlist tabs are now excluded by default when building playlists (option to include
+                them still available)
+              </li>
+            </ul>
           </section>
 
           <hr />
@@ -343,7 +485,9 @@
             <h5>Added</h5>
             <ul>
               <li>Create a playlist from YouTube video thumbnails on the current page</li>
-              <li>Automatically splits into multiple playlists when a playlist would exceed 50 videos</li>
+              <li>
+                Automatically splits into multiple playlists when a playlist would exceed 50 videos
+              </li>
             </ul>
           </section>
 
@@ -384,7 +528,11 @@
           <section>
             <h4>[1.0.2] - 2020-04-23</h4>
             <h5>Changed</h5>
-            <ul><li>Bookmark folders now list parent folders before children for clearer structure</li></ul>
+            <ul>
+              <li>
+                Bookmark folders now list parent folders before children for clearer structure
+              </li>
+            </ul>
           </section>
 
           <hr />

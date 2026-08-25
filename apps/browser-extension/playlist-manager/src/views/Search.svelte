@@ -41,9 +41,7 @@
     location.href = `${base}?id=${encodeURIComponent(videoId)}#/editor`;
   }
 
-  let searchMessage = $derived(
-    `No videos found for "${query}". Try a different search term.`,
-  );
+  let searchMessage = $derived(`No videos found for "${query}". Try a different search term.`);
 
   checkAuth();
 </script>
@@ -51,24 +49,23 @@
 <main>
   <div class="view-header">
     <div class="top-left">
-      <ViewHeader
-        icon={faSearch}
-        title="YouTube Search"
-        count={results.length}
-      />
+      <ViewHeader icon={faSearch} title="YouTube Search" count={results.length} />
     </div>
     <div class="btn-group right-align">
       {#if query && results.length > 0}
-        <SimpleButton secondary onclick={() => { query = ""; results = []; }} title="Clear search">
+        <SimpleButton
+          secondary
+          onclick={() => {
+            query = "";
+            results = [];
+          }}
+          title="Clear search"
+        >
           <Fa icon={faXmark} fw />
           <span>Clear</span>
         </SimpleButton>
       {/if}
-      <SaveStatus
-        onclick={handleSearch}
-        {status}
-        title="Refresh"
-      />
+      <SaveStatus onclick={handleSearch} {status} title="Refresh" />
     </div>
   </div>
 
@@ -95,11 +92,7 @@
           {/each}
         </div>
       {:else if results.length === 0 && query}
-        <EmptyState
-          icon={faSearch}
-          title="No Results Found"
-          message={searchMessage}
-        />
+        <EmptyState icon={faSearch} title="No Results Found" message={searchMessage} />
       {:else}
         <div class="playlist-grid">
           {#each results as video}
@@ -110,11 +103,7 @@
                 onclick={() => openVideo(video.videoId)}
               >
                 {#if video.thumbnail}
-                  <img
-                    src={video.thumbnail}
-                    alt={video.title}
-                    class="thumbnail-img"
-                  />
+                  <img src={video.thumbnail} alt={video.title} class="thumbnail-img" />
                 {:else}
                   <div class="thumbnail-placeholder">
                     <Fa icon={faListUl} size="2x" />
@@ -125,10 +114,7 @@
                 </div>
               </button>
               <div class="playlist-details">
-                <button
-                  class="playlist-title"
-                  onclick={() => openVideo(video.videoId)}
-                >
+                <button class="playlist-title" onclick={() => openVideo(video.videoId)}>
                   {video.title}
                 </button>
                 <div class="playlist-meta">{video.channelTitle}</div>
@@ -152,7 +138,6 @@
 </main>
 
 <style>
-
   .search-bar {
     display: flex;
     gap: 8px;
@@ -287,6 +272,4 @@
   .playlist-actions {
     display: flex;
   }
-
-
 </style>

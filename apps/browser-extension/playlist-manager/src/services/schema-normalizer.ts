@@ -54,13 +54,26 @@ export function normalizeVideoMeta(raw: any, fallbackId = ""): NormalizedVideoMe
   const rawTitle = typeof raw.title === "string" ? raw.title.trim() : "";
   const title = rawTitle === "undefined" || rawTitle === "null" ? "" : rawTitle;
 
-  const rawChannel = typeof raw.channel === "string" ? raw.channel.trim() : (typeof raw.author === "string" ? raw.author.trim() : "");
+  const rawChannel =
+    typeof raw.channel === "string"
+      ? raw.channel.trim()
+      : typeof raw.author === "string"
+        ? raw.author.trim()
+        : "";
   const channel = rawChannel === "undefined" || rawChannel === "null" ? "" : rawChannel;
 
   let durationSeconds = 0;
-  if (typeof raw.durationSeconds === "number" && !isNaN(raw.durationSeconds) && raw.durationSeconds >= 0) {
+  if (
+    typeof raw.durationSeconds === "number" &&
+    !isNaN(raw.durationSeconds) &&
+    raw.durationSeconds >= 0
+  ) {
     durationSeconds = Math.round(raw.durationSeconds);
-  } else if (typeof raw.lengthSeconds === "number" && !isNaN(raw.lengthSeconds) && raw.lengthSeconds >= 0) {
+  } else if (
+    typeof raw.lengthSeconds === "number" &&
+    !isNaN(raw.lengthSeconds) &&
+    raw.lengthSeconds >= 0
+  ) {
     durationSeconds = Math.round(raw.lengthSeconds);
   } else if (typeof raw.lengthSeconds === "string" && !isNaN(parseInt(raw.lengthSeconds, 10))) {
     durationSeconds = Math.max(0, parseInt(raw.lengthSeconds, 10));
@@ -70,7 +83,11 @@ export function normalizeVideoMeta(raw: any, fallbackId = ""): NormalizedVideoMe
     durationSeconds = isoToSecs(raw.duration);
   }
 
-  let isLive = raw.isLive === true || raw.isLiveContent === true || raw.duration === "LIVE" || raw.durationISO === "LIVE";
+  let isLive =
+    raw.isLive === true ||
+    raw.isLiveContent === true ||
+    raw.duration === "LIVE" ||
+    raw.durationISO === "LIVE";
   let isPrivate = raw.isPrivate === true;
   let isDeleted = raw.isDeleted === true;
   let isBroken = raw.isBroken === true;
@@ -101,13 +118,13 @@ export function normalizeVideoMeta(raw: any, fallbackId = ""): NormalizedVideoMe
     publishedAt = raw.publishedAt.trim();
   }
 
-  const lastCachedAt = typeof raw.lastCachedAt === "number" && raw.lastCachedAt > 0
-    ? raw.lastCachedAt
-    : Date.now();
+  const lastCachedAt =
+    typeof raw.lastCachedAt === "number" && raw.lastCachedAt > 0 ? raw.lastCachedAt : Date.now();
 
-  const lastFetchAttempt = typeof raw.lastFetchAttempt === "number" && raw.lastFetchAttempt > 0
-    ? raw.lastFetchAttempt
-    : undefined;
+  const lastFetchAttempt =
+    typeof raw.lastFetchAttempt === "number" && raw.lastFetchAttempt > 0
+      ? raw.lastFetchAttempt
+      : undefined;
 
   return {
     videoId,
@@ -142,7 +159,7 @@ export function normalizePlaylist(raw: any, fallbackId = ""): Playlist {
   if (Array.isArray(raw.videos)) {
     const seen = new Set<string>();
     for (const v of raw.videos) {
-      const vid = sanitizeVideoId(typeof v === "string" ? v : (v?.videoId || ""));
+      const vid = sanitizeVideoId(typeof v === "string" ? v : v?.videoId || "");
       if (vid && !seen.has(vid)) {
         seen.add(vid);
         videos.push(vid);
@@ -150,9 +167,8 @@ export function normalizePlaylist(raw: any, fallbackId = ""): Playlist {
     }
   }
 
-  const timestamp = typeof raw.timestamp === "number" && raw.timestamp > 0
-    ? raw.timestamp
-    : Date.now();
+  const timestamp =
+    typeof raw.timestamp === "number" && raw.timestamp > 0 ? raw.timestamp : Date.now();
 
   return {
     id,
@@ -170,14 +186,26 @@ export function normalizePlaylist(raw: any, fallbackId = ""): Playlist {
 /**
  * Validates watch history entries
  */
-export function normalizeHistoryRecord(raw: any, videoId: string): { videoId: string; t: number; dur: number; lastUpdated: number; isCompleted: boolean; title?: string; channel?: string } {
+export function normalizeHistoryRecord(
+  raw: any,
+  videoId: string
+): {
+  videoId: string;
+  t: number;
+  dur: number;
+  lastUpdated: number;
+  isCompleted: boolean;
+  title?: string;
+  channel?: string;
+} {
   if (!raw || typeof raw !== "object") {
     raw = {};
   }
   const cleanId = sanitizeVideoId(videoId || raw.videoId || "");
   const t = Math.max(0, typeof raw.t === "number" ? raw.t : 0);
   const dur = Math.max(0, typeof raw.dur === "number" ? raw.dur : 0);
-  const lastUpdated = typeof raw.lastUpdated === "number" && raw.lastUpdated > 0 ? raw.lastUpdated : Date.now();
+  const lastUpdated =
+    typeof raw.lastUpdated === "number" && raw.lastUpdated > 0 ? raw.lastUpdated : Date.now();
   const isCompleted = raw.isCompleted === true || (dur > 0 && t >= dur * 0.95);
 
   return {

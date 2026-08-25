@@ -37,12 +37,7 @@
     {/if}
 
     {#if onRefresh}
-      <SimpleButton
-        onclick={onRefresh}
-        secondary
-        disabled={loading}
-        title="Refresh list"
-      >
+      <SimpleButton onclick={onRefresh} secondary disabled={loading} title="Refresh list">
         {#if loading}
           <Fa icon={faSpinner} class="spin-icon" fw />
         {:else}

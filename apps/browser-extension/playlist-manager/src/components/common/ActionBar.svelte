@@ -8,7 +8,7 @@
     onRefresh = undefined,
     standardActions,
     bulkActions,
-    children
+    children,
   }: {
     isSelectMode?: boolean;
     onRefresh?: () => void;
@@ -26,7 +26,7 @@
   {:else}
     <div class="toolbar-group standard">
       {@render standardActions?.()}
-      
+
       {#if children}
         {@render children()}
       {/if}
@@ -68,8 +68,14 @@
   }
 
   @keyframes slideIn {
-    from { opacity: 0; transform: translateY(-5px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+      opacity: 0;
+      transform: translateY(-5px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
   @media (max-width: 768px) {
@@ -77,7 +83,7 @@
       flex-direction: column;
       align-items: stretch;
     }
-    
+
     .toolbar-group.right {
       margin-left: 0;
     }

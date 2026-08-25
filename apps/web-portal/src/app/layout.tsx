@@ -37,7 +37,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="light scroll-smooth">
-      <body className={`${inter.className} bg-zinc-50 text-zinc-900 min-h-screen antialiased selection:bg-red-500/10 selection:text-red-900`}>
+      <body
+        className={`${inter.className} bg-zinc-50 text-zinc-900 min-h-screen antialiased selection:bg-red-500/10 selection:text-red-900`}
+      >
         {children}
         <Analytics />
         <SpeedInsights />

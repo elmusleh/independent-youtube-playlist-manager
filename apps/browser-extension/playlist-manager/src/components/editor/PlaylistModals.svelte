@@ -1,12 +1,6 @@
 <script lang="ts">
   import Fa from "svelte-fa";
-  import {
-    faCopy,
-    faPlus,
-    faCut,
-    faInfoCircle,
-    faCode,
-  } from "@fortawesome/free-solid-svg-icons";
+  import { faCopy, faPlus, faCut, faInfoCircle, faCode } from "@fortawesome/free-solid-svg-icons";
   import Modal from "../Modal.svelte";
   import SimpleButton from "../SimpleButton.svelte";
   import type { Playlist } from "../../types/model";
@@ -70,8 +64,7 @@
   {#if modalType === "Export"}
     <div class="modal-container">
       <h3>Export Video URLs</h3>
-      <textarea bind:value={exportText} bind:this={exportTextArea} readonly
-      ></textarea>
+      <textarea bind:value={exportText} bind:this={exportTextArea} readonly></textarea>
       <div class="modal-footer">
         <SimpleButton onclick={handleExport} secondary>
           <Fa icon={faCopy} fw />
@@ -85,16 +78,11 @@
       <h3>Import Videos</h3>
       <textarea
         bind:value={importText}
-        placeholder="Paste one or more YouTube URLs or Video IDs here (one per line)…"
-      ></textarea>
+        placeholder="Paste one or more YouTube URLs or Video IDs here (one per line)…"></textarea>
       <div class="import-footer">
         <div class="import-options">
           <label class="check-label">
-            <input
-              aria-label="Add to top"
-              type="checkbox"
-              bind:checked={importAtTop}
-            />
+            <input aria-label="Add to top" type="checkbox" bind:checked={importAtTop} />
             <span>Add to top of playlist</span>
           </label>
         </div>
@@ -132,11 +120,7 @@
           <span class="label">Destination</span>
           <div class="dest-options">
             <label class="radio-label">
-              <input
-                type="radio"
-                bind:group={copyMoveCreateNew}
-                value={false}
-              />
+              <input type="radio" bind:group={copyMoveCreateNew} value={false} />
               <span>Existing playlist</span>
             </label>
             <label class="radio-label">
@@ -171,11 +155,7 @@
                 <span>Add to top</span>
               </label>
               <label class="radio-label">
-                <input
-                  type="radio"
-                  bind:group={copyMovePosition}
-                  value="bottom"
-                />
+                <input type="radio" bind:group={copyMovePosition} value="bottom" />
                 <span>Add to bottom</span>
               </label>
             </div>
@@ -208,21 +188,20 @@
       <h3>About Temporary Playlists</h3>
       <div class="info-scroll">
         <p>
-          Because this playlist is generated on the fly, it will always default
-          to <strong>"Untitled List"</strong> on YouTube.
+          Because this playlist is generated on the fly, it will always default to <strong
+            >"Untitled List"</strong
+          > on YouTube.
         </p>
         <ul>
           <li>
-            <strong>Ephemeral:</strong> Queue URLs expire periodically. Share the
-            base generator link instead.
+            <strong>Ephemeral:</strong> Queue URLs expire periodically. Share the base generator link
+            instead.
           </li>
           <li>
-            <strong>No Privacy Controls:</strong> Concept does not apply to anonymous
-            queues.
+            <strong>No Privacy Controls:</strong> Concept does not apply to anonymous queues.
           </li>
           <li>
-            <strong>Locked Order:</strong> Once generated, the order is fixed in
-            the URL.
+            <strong>Locked Order:</strong> Once generated, the order is fixed in the URL.
           </li>
         </ul>
       </div>

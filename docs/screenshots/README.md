@@ -6,14 +6,14 @@ AMO requires **at least one screenshot** for a listed add-on. A strong set of sc
 
 ## Required Specs
 
-| Property | Requirement |
-|----------|-------------|
-| **Format** | PNG or JPG |
+| Property              | Requirement         |
+| --------------------- | ------------------- |
+| **Format**            | PNG or JPG          |
 | **Recommended sizes** | 1280×800 or 640×400 |
-| **Aspect ratio** | ~16:10 |
-| **Max file size** | 4 MB per image |
-| **Min count** | 1 |
-| **Recommended count** | 4–5 |
+| **Aspect ratio**      | ~16:10              |
+| **Max file size**     | 4 MB per image      |
+| **Min count**         | 1                   |
+| **Recommended count** | 4–5                 |
 
 ---
 

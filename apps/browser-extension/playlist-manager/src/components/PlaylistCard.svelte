@@ -62,12 +62,7 @@
 </script>
 
 <div class="playlist-card">
-  <button
-    type="button"
-    class="playlist-thumbnail"
-    onclick={onOpen}
-    aria-label="Open {title}"
-  >
+  <button type="button" class="playlist-thumbnail" onclick={onOpen} aria-label="Open {title}">
     {#if thumbnailUrl}
       <img src={thumbnailUrl} alt={title} class="thumbnail-img" />
     {:else}

@@ -4,9 +4,7 @@ import type { PlaylistsSorting } from "../types/model.js";
 const playlistsSortingStorageKey = "playlistsSorting";
 const defaultPlaylistsSorting: PlaylistsSorting = "date-created-desc";
 
-export const playlistsSorting = writable<PlaylistsSorting>(
-  defaultPlaylistsSorting
-);
+export const playlistsSorting = writable<PlaylistsSorting>(defaultPlaylistsSorting);
 export const playlistsSearch = writable("");
 export const historySearch = writable("");
 export const manageSearch = writable("");

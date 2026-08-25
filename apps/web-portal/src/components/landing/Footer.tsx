@@ -7,7 +7,10 @@ const REPO_BLOB = "https://github.com/elmusleh/independent-youtube-playlist-mana
 const FOOTER_LINKS = [
   { label: "Support & FAQ", href: `${REPO_BLOB}/docs/SUPPORT.md` },
   { label: "Release Notes", href: `${REPO_BLOB}/docs/RELEASE_NOTES.md` },
-  { label: "Bug Reports", href: "https://github.com/elmusleh/independent-youtube-playlist-manager/issues" },
+  {
+    label: "Bug Reports",
+    href: "https://github.com/elmusleh/independent-youtube-playlist-manager/issues",
+  },
   { label: "Contributing", href: `${REPO_BLOB}/CONTRIBUTING.md` },
   { label: "Security Policy", href: `${REPO_BLOB}/SECURITY.md` },
   { label: "Privacy Policy", href: `${REPO_BLOB}/docs/PRIVACY_POLICY.md` },

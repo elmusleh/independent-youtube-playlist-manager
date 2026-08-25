@@ -64,7 +64,11 @@ function getDb(): Promise<IDBDatabase> {
 /**
  * Execute an async database operation with automatic reconnection on transaction failure
  */
-async function withRetry<T>(operation: (db: IDBDatabase) => Promise<T>, maxRetries = 3, initialDelayMs = 100): Promise<T> {
+async function withRetry<T>(
+  operation: (db: IDBDatabase) => Promise<T>,
+  maxRetries = 3,
+  initialDelayMs = 100
+): Promise<T> {
   let attempt = 0;
   let delay = initialDelayMs;
 
@@ -79,7 +83,10 @@ async function withRetry<T>(operation: (db: IDBDatabase) => Promise<T>, maxRetri
         console.error(`[DB-SERVICE] Operation failed after ${attempt} attempts:`, err);
         throw err;
       }
-      console.warn(`[DB-SERVICE] Operation attempt ${attempt} failed, retrying in ${delay}ms...`, err);
+      console.warn(
+        `[DB-SERVICE] Operation attempt ${attempt} failed, retrying in ${delay}ms...`,
+        err
+      );
       await new Promise((resolve) => setTimeout(resolve, delay));
       delay *= 2;
     }
@@ -191,7 +198,9 @@ export async function dbGetMetadata(videoId: string): Promise<NormalizedVideoMet
 /**
  * Batch retrieves metadata records for multiple video IDs in a single transaction
  */
-export async function dbGetMetadataBatch(videoIds: string[]): Promise<Record<string, NormalizedVideoMeta>> {
+export async function dbGetMetadataBatch(
+  videoIds: string[]
+): Promise<Record<string, NormalizedVideoMeta>> {
   const validIds = videoIds.map((id) => sanitizeVideoId(id)).filter(Boolean);
   if (validIds.length === 0) return {};
 

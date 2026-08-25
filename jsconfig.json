@@ -5,5 +5,12 @@
     "strict": true,
     "noImplicitAny": false
   },
-  "exclude": ["node_modules", "**/node_modules/*", "apps/browser-extension/playlist-manager", "apps/browser-extension", "dist", "apps/web-portal"]
+  "exclude": [
+    "node_modules",
+    "**/node_modules/*",
+    "apps/browser-extension/playlist-manager",
+    "apps/browser-extension",
+    "dist",
+    "apps/web-portal"
+  ]
 }

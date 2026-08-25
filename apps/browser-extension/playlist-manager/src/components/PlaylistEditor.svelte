@@ -104,12 +104,7 @@
       return;
     }
     const currentHash = calculateStateHash();
-    console.log(
-      "updateDirtyState: currentHash =",
-      currentHash,
-      "initialHash =",
-      initialHash,
-    );
+    console.log("updateDirtyState: currentHash =", currentHash, "initialHash =", initialHash);
     if (currentHash !== initialHash) {
       isDirty = true;
       status.markDirty();
@@ -142,27 +137,20 @@
       .catch(() => {});
   };
   window.addEventListener("settings-changed", handleSettingsChange);
-  onDestroy(() =>
-    window.removeEventListener("settings-changed", handleSettingsChange),
-  );
+  onDestroy(() => window.removeEventListener("settings-changed", handleSettingsChange));
 
   // Auto-save logic
   let saveTimeout: any;
   $effect(() => {
     if (isDirty && status.lastChange > 0 && dataLoaded && autoSaveEditor) {
       if (saveTimeout) clearTimeout(saveTimeout);
-      saveTimeout = setTimeout(
-        () => savePlaylist({ silent: true }),
-        autoSaveInterval * 1000,
-      );
+      saveTimeout = setTimeout(() => savePlaylist({ silent: true }), autoSaveInterval * 1000);
     }
   });
 
   // Reactive properties
   let isLocal = $derived(!playlist?.id || playlist.id.startsWith("local-"));
-  let isUnmanagedYT = $derived(
-    !isLocal && playlist?.id !== "WL" && !playlist?.isTagged,
-  );
+  let isUnmanagedYT = $derived(!isLocal && playlist?.id !== "WL" && !playlist?.isTagged);
 
   // Pagination
   let currentPage = $state(1);
@@ -185,8 +173,7 @@
       const end = Math.min(page * pageSize, videos.length);
 
       for (let i = start; i < end; i++) {
-        if (videos[i].title === "")
-          indicesToLoad.push(i);
+        if (videos[i].title === "") indicesToLoad.push(i);
       }
 
       if (indicesToLoad.length > 0) {
@@ -196,7 +183,7 @@
           ensureMetadataLoaded(pageVideos, true);
         } else {
           window.info(
-            `${indicesToLoad.length} video(s) on this page are missing metadata. Enable "Auto-fetch metadata" in Settings or use Clean → Refetch Metadata.`,
+            `${indicesToLoad.length} video(s) on this page are missing metadata. Enable "Auto-fetch metadata" in Settings or use Clean → Refetch Metadata.`
           );
         }
       }
@@ -208,7 +195,9 @@
   let loadedPlaylistKey = $state<string>("");
 
   $effect(() => {
-    const currentKey = playlist ? `${playlist.id || "new"}:${(playlist.videos || []).join(",")}` : "";
+    const currentKey = playlist
+      ? `${playlist.id || "new"}:${(playlist.videos || []).join(",")}`
+      : "";
     if (playlist && playlist.videos && (!dataLoaded || currentKey !== loadedPlaylistKey)) {
       loadedPlaylistKey = currentKey;
       initializeVideos();
@@ -225,7 +214,10 @@
     const metaBatch = await dbGetMetadataBatch(playlist.videos);
     videos = playlist.videos.map((id) => {
       const cached = metaBatch[id];
-      if (cached && (cached.title || cached.channel || cached.durationISO || cached.durationSeconds)) {
+      if (
+        cached &&
+        (cached.title || cached.channel || cached.durationISO || cached.durationSeconds)
+      ) {
         return {
           id: window.videoIdCount++,
           videoId: id,
@@ -234,15 +226,16 @@
           channel: cached.channel,
           duration: cached.durationISO,
           durationISO: cached.durationISO,
-          durationSeconds:
-            cached.durationSeconds || window.isoToSecs(cached.durationISO),
+          durationSeconds: cached.durationSeconds || window.isoToSecs(cached.durationISO),
           viewCount: cached.viewCount,
           publishedAt: cached.publishedAt,
           isPrivate: cached.isPrivate,
           isDeleted: cached.isDeleted,
           isBroken: cached.isBroken,
           isLive: cached.isLive,
-          thumbnailUrl: window.videoService?.getVideoThumbnailUrl(id) || `https://i.ytimg.com/vi/${id}/default.jpg`,
+          thumbnailUrl:
+            window.videoService?.getVideoThumbnailUrl(id) ||
+            `https://i.ytimg.com/vi/${id}/default.jpg`,
         };
       }
       return {
@@ -251,7 +244,9 @@
         url: (window.videoService?.YOUTUBE_URL_PREFIX || "https://www.youtube.com/watch?v=") + id,
         title: "",
         channel: "",
-        thumbnailUrl: window.videoService?.getVideoThumbnailUrl(id) || `https://i.ytimg.com/vi/${id}/default.jpg`,
+        thumbnailUrl:
+          window.videoService?.getVideoThumbnailUrl(id) ||
+          `https://i.ytimg.com/vi/${id}/default.jpg`,
       };
     });
 
@@ -274,14 +269,13 @@
       if (!$editorSearch) return true;
       const q = $editorSearch.toLowerCase();
       return (
-        (v.title || "").toLowerCase().includes(q) ||
-        (v.channel || "").toLowerCase().includes(q)
+        (v.title || "").toLowerCase().includes(q) || (v.channel || "").toLowerCase().includes(q)
       );
-    }),
+    })
   );
 
   let paginatedVideos = $derived(
-    paginate({ items: filteredVideos, pageSize, currentPage }) as Video[],
+    paginate({ items: filteredVideos, pageSize, currentPage }) as Video[]
   );
 
   function updatePaginationPage(e: any) {
@@ -404,10 +398,7 @@
   }
 
   // Keep isFavoritePlaylist in sync if watchLaterPlaylistId is changed from another page (e.g. Settings)
-  function handleFavoriteStorageChange(
-    changes: Record<string, { newValue?: any }>,
-    area: string,
-  ) {
+  function handleFavoriteStorageChange(changes: Record<string, { newValue?: any }>, area: string) {
     if (area !== "sync" && area !== "local") return;
     if ("watchLaterPlaylistId" in changes) {
       if (!playlist?.id) return;
@@ -415,17 +406,13 @@
     }
   }
   browser.storage.onChanged.addListener(handleFavoriteStorageChange);
-  onDestroy(() =>
-    browser.storage.onChanged.removeListener(handleFavoriteStorageChange),
-  );
+  onDestroy(() => browser.storage.onChanged.removeListener(handleFavoriteStorageChange));
 
   async function openCopyMove() {
     copyMoveLoading = true;
     try {
       const all = await window.getPlaylists();
-      copyMoveTargetPlaylists = all.filter(
-        (p) => p.id !== playlist?.id && p.id !== "WL",
-      );
+      copyMoveTargetPlaylists = all.filter((p) => p.id !== playlist?.id && p.id !== "WL");
       modalType = "CopyMove";
       displayModal = true;
     } finally {
@@ -437,15 +424,13 @@
     if (selectedVideoIds.size === 0) return;
     copyMoveLoading = true;
     try {
-      const selectedApiIds = videos
-        .filter((v) => selectedVideoIds.has(v.id))
-        .map((v) => v.videoId);
+      const selectedApiIds = videos.filter((v) => selectedVideoIds.has(v.id)).map((v) => v.videoId);
       let target: Playlist;
       if (copyMoveCreateNew) {
         target = window.videoService
           ? await window.videoService.generatePlaylist(
               selectedApiIds,
-              copyMoveNewPlaylistTitle.trim(),
+              copyMoveNewPlaylistTitle.trim()
             )
           : {
               id: "local-" + Date.now(),
@@ -463,9 +448,7 @@
         }
         const currentV = target.videos.map((v: any) => v.videoId || v);
         target.videos =
-          copyMovePosition === "top"
-            ? [...newV, ...currentV]
-            : [...currentV, ...newV];
+          copyMovePosition === "top" ? [...newV, ...currentV] : [...currentV, ...newV];
       }
 
       await window.savePlaylist(target, { syncToYoutube: false });
@@ -475,9 +458,7 @@
         selectedVideoIds = new Set();
         isSelectMode = false;
       }
-      window.success(
-        `${copyMoveAction === "copy" ? "Copied" : "Moved"} to ${target.title}`,
-      );
+      window.success(`${copyMoveAction === "copy" ? "Copied" : "Moved"} to ${target.title}`);
       displayModal = false;
     } catch (e) {
       window.error("Operation failed");
@@ -487,9 +468,7 @@
   }
 
   // Core Actions
-  async function savePlaylist(
-    options: { forceSync?: boolean; silent?: boolean } = {},
-  ) {
+  async function savePlaylist(options: { forceSync?: boolean; silent?: boolean } = {}) {
     if (status.saving) return;
     const videoIds = videos.map((v) => v.videoId.toString());
     const data = { ...playlist, videos: videoIds } as Playlist;
@@ -553,8 +532,7 @@
           ...(wasLocal && sync ? { isLocal: false, isTagged: true, saved: true } : {}),
         };
         loadedPlaylistKey = `${playlist.id}:${(playlist.videos || []).join(",")}`;
-        if (isPlaylistBuilder)
-          await browser.runtime.sendMessage({ cmd: "clear-playlist-builder" });
+        if (isPlaylistBuilder) await browser.runtime.sendMessage({ cmd: "clear-playlist-builder" });
         initialHash = calculateStateHash();
         isDirty = false;
         if (!silent) {
@@ -562,7 +540,7 @@
           if (isNew || isPlaylistBuilder) handleNavigate("#/saved");
         }
       },
-      { silent },
+      { silent }
     );
   }
 
@@ -573,7 +551,11 @@
         ...new Set(
           window.videoService
             ? window.videoService.parseYoutubeIds(importText)
-            : [...importText.matchAll(/(?:youtu\.be\/|v=|\/embed\/|\/shorts\/)([a-zA-Z0-9_-]{11})/g)].map((m) => m[1])
+            : [
+                ...importText.matchAll(
+                  /(?:youtu\.be\/|v=|\/embed\/|\/shorts\/)([a-zA-Z0-9_-]{11})/g
+                ),
+              ].map((m) => m[1])
         ),
       ];
       let imported = (
@@ -581,7 +563,13 @@
           rawIds.map((id) =>
             window.videoService
               ? window.videoService.fetchVideo(id)
-              : Promise.resolve({ id: window.videoIdCount++, videoId: id, url: `https://www.youtube.com/watch?v=${id}`, title: "", channel: "" })
+              : Promise.resolve({
+                  id: window.videoIdCount++,
+                  videoId: id,
+                  url: `https://www.youtube.com/watch?v=${id}`,
+                  title: "",
+                  channel: "",
+                })
           )
         )
       ).filter((v) => v != null);
@@ -592,9 +580,7 @@
         imported = imported.filter((v) => !existing.has(v.videoId));
       }
 
-      videos = importAtTop
-        ? [...imported, ...videos]
-        : [...videos, ...imported];
+      videos = importAtTop ? [...imported, ...videos] : [...videos, ...imported];
       updateDirtyState();
       displayModal = false;
       importText = "";
@@ -632,7 +618,13 @@
           videoIds.map((id) =>
             window.videoService
               ? window.videoService.fetchVideo(id)
-              : Promise.resolve({ id: window.videoIdCount++, videoId: id, url: `https://www.youtube.com/watch?v=${id}`, title: "", channel: "" })
+              : Promise.resolve({
+                  id: window.videoIdCount++,
+                  videoId: id,
+                  url: `https://www.youtube.com/watch?v=${id}`,
+                  title: "",
+                  channel: "",
+                })
           )
         )
       ).filter((v) => v != null);
@@ -658,13 +650,15 @@
   }
 
   async function handleSort(type: string) {
-    const isFetchNeededSort = type === "views" || type === "date" || type === "duration" || type === "channel";
+    const isFetchNeededSort =
+      type === "views" || type === "date" || type === "duration" || type === "channel";
 
     // 1. Identify videos missing critical metadata for this sort
     const missing = videos.filter((v) => {
       if (type === "views") return v.viewCount === undefined;
       if (type === "date") return v.publishedAt === undefined;
-      if (type === "duration") return v.durationSeconds === undefined && v.durationISO === undefined;
+      if (type === "duration")
+        return v.durationSeconds === undefined && v.durationISO === undefined;
       if (type === "channel") return !v.channel || v.channel === "undefined";
       return false;
     });
@@ -672,9 +666,7 @@
     // 2. Aggressively fetch missing data if needed
     if (isFetchNeededSort && missing.length > 0) {
       if (!signedIn && (type === "views" || type === "date")) {
-        window.info(
-          "Sign in to fetch more accurate video statistics for all videos.",
-        );
+        window.info("Sign in to fetch more accurate video statistics for all videos.");
       }
 
       const success = await ensureMetadataLoaded(missing);
@@ -689,10 +681,7 @@
       const validCount = videos.filter((v) => {
         if (type === "views") return v.viewCount !== undefined;
         if (type === "date")
-          return (
-            v.publishedAt !== undefined &&
-            !isNaN(new Date(v.publishedAt).getTime())
-          );
+          return v.publishedAt !== undefined && !isNaN(new Date(v.publishedAt).getTime());
         return true;
       }).length;
 
@@ -737,14 +726,14 @@
       const missing = videos.filter((v) => {
         const title = (v.title || "").trim();
         const channel = (v.channel || "").trim();
-        
+
         const hasTitle = title && title !== "undefined";
         const hasChannel = channel && channel !== "undefined";
         const hasDuration = v.durationISO || v.isLive || v.isPrivate || v.isDeleted || v.isBroken;
-        
+
         return !hasTitle || !hasChannel || !hasDuration;
       });
-      
+
       if (missing.length > 0) {
         const success = await ensureMetadataLoaded(missing);
         if (!success) {
@@ -758,9 +747,9 @@
       videos = videos.filter((v) => {
         const titleLower = (v.title || "").toLowerCase();
         const channelLower = (v.channel || "").toLowerCase();
-        
-        const isBroken = 
-          titleLower === "undefined" || 
+
+        const isBroken =
+          titleLower === "undefined" ||
           channelLower === "undefined" ||
           titleLower.includes("deleted video") ||
           titleLower.includes("private video") ||
@@ -768,7 +757,7 @@
           v.isDeleted === true ||
           v.isBroken === true ||
           !v.title;
-          
+
         return !isBroken;
       });
     } else if (type === "live") {
@@ -778,11 +767,11 @@
       const missingMetadataVideos = videos.filter((v) => {
         const title = (v.title || "").trim();
         const channel = (v.channel || "").trim();
-        
+
         const hasTitle = title && title !== "undefined";
         const hasChannel = channel && channel !== "undefined";
         const hasDuration = v.durationISO || v.isLive || v.isPrivate || v.isDeleted || v.isBroken;
-        
+
         return !hasTitle || !hasChannel || !hasDuration;
       });
 
@@ -793,7 +782,7 @@
           color: "primary",
           confirmLabel: "Force Refetch",
           cancelLabel: "Cancel",
-          onConfirm: () => startRefetchProcess(videos, true)
+          onConfirm: () => startRefetchProcess(videos, true),
         });
       } else {
         requestConfirm({
@@ -802,7 +791,7 @@
           color: "primary",
           confirmLabel: "Fetch Missing",
           cancelLabel: "Cancel",
-          onConfirm: () => startRefetchProcess(missingMetadataVideos, false)
+          onConfirm: () => startRefetchProcess(missingMetadataVideos, false),
         });
       }
     } else {
@@ -823,7 +812,11 @@
     }
   }
 
-  async function ensureMetadataLoaded(targetVideos: Video[], silent = false, force = false): Promise<boolean> {
+  async function ensureMetadataLoaded(
+    targetVideos: Video[],
+    silent = false,
+    force = false
+  ): Promise<boolean> {
     if (_isLoadingMetadata) return false;
     _isLoadingMetadata = true;
 
@@ -892,8 +885,22 @@
           if (!meta) return v;
           return {
             ...v,
-            title: meta.title || v.title || (meta.isPrivate ? "Private video" : meta.isDeleted ? "Deleted video" : "Unknown Video"),
-            channel: meta.channel || v.channel || (meta.isPrivate ? "Private channel" : meta.isDeleted ? "Deleted channel" : "Unknown Channel"),
+            title:
+              meta.title ||
+              v.title ||
+              (meta.isPrivate
+                ? "Private video"
+                : meta.isDeleted
+                  ? "Deleted video"
+                  : "Unknown Video"),
+            channel:
+              meta.channel ||
+              v.channel ||
+              (meta.isPrivate
+                ? "Private channel"
+                : meta.isDeleted
+                  ? "Deleted channel"
+                  : "Unknown Channel"),
             duration: meta.duration || v.duration,
             durationISO: meta.duration || v.durationISO,
             durationSeconds: meta.duration ? window.isoToSecs(meta.duration) : v.durationSeconds,
@@ -923,9 +930,13 @@
       if (!silent) {
         if (unavailableIds.length > 0) {
           console.warn("[EDITOR] Unavailable videos after metadata fetch:", unavailableIds);
-          window.success(`Updated ${foundCount}/${videoIds.length} videos. ${unavailableIds.length} unavailable (see console).`);
+          window.success(
+            `Updated ${foundCount}/${videoIds.length} videos. ${unavailableIds.length} unavailable (see console).`
+          );
         } else {
-          window.success(`Metadata fetch complete: ${foundCount}/${videoIds.length} videos updated.`);
+          window.success(
+            `Metadata fetch complete: ${foundCount}/${videoIds.length} videos updated.`
+          );
         }
       }
 
@@ -1008,8 +1019,7 @@
   // Misc
   async function refresh(options: { skipSave?: boolean } = {}) {
     await status.refresh(async () => {
-      if (!options.skipSave && isDirty && dataLoaded)
-        await savePlaylist({ silent: true });
+      if (!options.skipSave && isDirty && dataLoaded) await savePlaylist({ silent: true });
       window.invalidatePlaylistCache();
       loadPageVideos(currentPage);
     });
@@ -1030,10 +1040,7 @@
             playlist = loadedPlaylist;
             await initializeVideos();
             initialHash = calculateStateHash();
-            console.log(
-              "After initializeVideos, initialHash after:",
-              initialHash,
-            );
+            console.log("After initializeVideos, initialHash after:", initialHash);
             // Force reactivity by resetting status and local isDirty
             isDirty = false;
             status.isDirty = false;
@@ -1044,7 +1051,7 @@
               "Discard changes completed, isDirty:",
               isDirty,
               "initialHash:",
-              initialHash,
+              initialHash
             );
           }
           isDiscarding = false;
@@ -1072,7 +1079,7 @@
       if (window.videoService) {
         await window.videoService.openPlaylist(
           videos.map((v) => v.videoId),
-          playlist?.id,
+          playlist?.id
         );
       }
     } finally {
@@ -1161,9 +1168,7 @@
 {#if playlist?.isPermanent}
   <div class="permanent-notice">
     <Fa icon={faLock} fw />
-    <span
-      >This playlist is permanent. Videos won't be automatically deleted.</span
-    >
+    <span>This playlist is permanent. Videos won't be automatically deleted.</span>
   </div>
 {/if}
 
@@ -1315,11 +1320,11 @@
     <div class="progress-modal-content">
       <h4>{progressTitle}</h4>
       <p class="progress-status-text">{progressText}</p>
-      
+
       <div class="progress-bar-container">
         <div class="progress-bar-fill" style="width: {progressPercent}%"></div>
       </div>
-      
+
       <div class="progress-stats">
         <span>{progressCurrent} / {progressTotal} videos</span>
         <span>{progressPercent}%</span>

@@ -16,8 +16,7 @@
   let loading = $state(true);
   let errorMessage = $state("");
   const status = new StatusManager();
-  let subscriptions: { channelId: string; title: string; thumbnail: string }[] =
-    $state([]);
+  let subscriptions: { channelId: string; title: string; thumbnail: string }[] = $state([]);
 
   async function checkAuth() {
     signedIn = await window.isSignedIn();
@@ -50,10 +49,8 @@
 
   let displayedSubscriptions = $derived(
     subscriptions.filter(
-      (s) =>
-        !$playlistsSearch ||
-        s.title.toLowerCase().includes($playlistsSearch.toLowerCase()),
-    ),
+      (s) => !$playlistsSearch || s.title.toLowerCase().includes($playlistsSearch.toLowerCase())
+    )
   );
 
   checkAuth();
@@ -62,11 +59,7 @@
 <main>
   <div class="view-header">
     <div class="top-left">
-      <ViewHeader
-        icon={faUsers}
-        title="Subscriptions"
-        count={subscriptions.length}
-      />
+      <ViewHeader icon={faUsers} title="Subscriptions" count={subscriptions.length} />
     </div>
     <div class="btn-group right-align">
       <SaveStatus onclick={refresh} {status} title="Refresh" />
@@ -83,28 +76,16 @@
         {/each}
       </div>
     {:else if errorMessage}
-      <ErrorState
-        message={errorMessage}
-        onRetry={loadData}
-        showSettings={true}
-      />
+      <ErrorState message={errorMessage} onRetry={loadData} showSettings={true} />
     {:else if displayedSubscriptions.length === 0}
-      <EmptyState
-        icon={faUsers}
-        title="No Subscriptions"
-        message="No subscriptions found."
-      />
+      <EmptyState icon={faUsers} title="No Subscriptions" message="No subscriptions found." />
     {:else}
       <div class="playlist-grid">
         {#each displayedSubscriptions as sub (sub.channelId)}
           <div class="playlist-card channel-card">
             <div class="playlist-thumbnail circular">
               {#if sub.thumbnail}
-                <img
-                  src={sub.thumbnail}
-                  alt={sub.title}
-                  class="thumbnail-img"
-                />
+                <img src={sub.thumbnail} alt={sub.title} class="thumbnail-img" />
               {/if}
             </div>
             <div class="playlist-details">
@@ -112,7 +93,8 @@
               <div class="playlist-actions">
                 <SimpleButton
                   secondary
-                  onclick={() => window.open(`https://www.youtube.com/channel/${sub.channelId}`, '_blank')}
+                  onclick={() =>
+                    window.open(`https://www.youtube.com/channel/${sub.channelId}`, "_blank")}
                   title="Visit Channel"
                 >
                   <Fa icon={faYoutube} fw />
@@ -128,7 +110,6 @@
 </main>
 
 <style>
-
   .playlist-grid {
     display: flex;
     flex-wrap: wrap;
@@ -182,6 +163,4 @@
   .playlist-actions {
     display: flex;
   }
-
-
 </style>

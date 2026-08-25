@@ -24,13 +24,8 @@
   },
   "content_scripts": [
     {
-      "matches": [
-        "*://www.youtube.com/watch*"
-      ],
-      "js": [
-        "assets/browser-polyfill.min.js",
-        "content-scripts/watch-tracker.js"
-      ],
+      "matches": ["*://www.youtube.com/watch*"],
+      "js": ["assets/browser-polyfill.min.js", "content-scripts/watch-tracker.js"],
       "run_at": "document_idle"
     }
   ],
@@ -64,14 +59,8 @@
   },
   "web_accessible_resources": [
     {
-      "resources": [
-        "assets/*",
-        "editor/*",
-        "popup/*"
-      ],
-      "matches": [
-        "*://*/*"
-      ]
+      "resources": ["assets/*", "editor/*", "popup/*"],
+      "matches": ["*://*/*"]
     }
   ],
   "browser_specific_settings": {

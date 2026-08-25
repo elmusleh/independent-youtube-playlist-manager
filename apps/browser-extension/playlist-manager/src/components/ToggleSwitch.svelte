@@ -1,5 +1,9 @@
 <script lang="ts">
-  let { checked = $bindable(false), id = "", onchange }: {
+  let {
+    checked = $bindable(false),
+    id = "",
+    onchange,
+  }: {
     checked?: boolean;
     id?: string;
     onchange?: (checked: boolean) => void;
@@ -11,7 +15,16 @@
   }
 </script>
 
-<div class="toggle-container" onclick={toggle} role="switch" aria-checked={checked} tabindex="0" onkeydown={(e) => { if(e.key === 'Enter' || e.key === ' ') toggle(); }}>
+<div
+  class="toggle-container"
+  onclick={toggle}
+  role="switch"
+  aria-checked={checked}
+  tabindex="0"
+  onkeydown={(e) => {
+    if (e.key === "Enter" || e.key === " ") toggle();
+  }}
+>
   <input aria-label="Toggle switch" type="checkbox" {id} bind:checked style="display: none;" />
   <div class="toggle-track" class:checked>
     <div class="toggle-thumb" class:checked></div>
@@ -29,7 +42,9 @@
   }
 
   .toggle-container:focus-visible .toggle-track {
-    box-shadow: 0 0 0 2px var(--background-color), 0 0 0 4px var(--primary-color);
+    box-shadow:
+      0 0 0 2px var(--background-color),
+      0 0 0 4px var(--primary-color);
   }
 
   .toggle-track {
@@ -53,8 +68,8 @@
     height: 16px;
     background-color: #fff;
     border-radius: 50%;
-    transition: transform 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
-    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
   }
 
   .toggle-thumb.checked {

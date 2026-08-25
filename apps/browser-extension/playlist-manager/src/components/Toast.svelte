@@ -1,16 +1,25 @@
 <script lang="ts">
-  import { toast } from '../stores/toast';
-  import { fade, fly } from 'svelte/transition';
-  import { faCheckCircle, faExclamationCircle, faInfoCircle, faXmark } from '@fortawesome/free-solid-svg-icons';
-  import Fa from 'svelte-fa';
+  import { toast } from "../stores/toast";
+  import { fade, fly } from "svelte/transition";
+  import {
+    faCheckCircle,
+    faExclamationCircle,
+    faInfoCircle,
+    faXmark,
+  } from "@fortawesome/free-solid-svg-icons";
+  import Fa from "svelte-fa";
 
-  let icon = $derived($toast.type === 'success' ? faCheckCircle
-          : $toast.type === 'error' ? faExclamationCircle
-          : faInfoCircle);
+  let icon = $derived(
+    $toast.type === "success"
+      ? faCheckCircle
+      : $toast.type === "error"
+        ? faExclamationCircle
+        : faInfoCircle
+  );
 </script>
 
 {#if $toast.visible}
-  <div class="toast-container" transition:fly="{{ y: 50, duration: 300 }}">
+  <div class="toast-container" transition:fly={{ y: 50, duration: 300 }}>
     <div class="toast {$toast.type}" role="alert" aria-live="assertive">
       <div class="toast-icon">
         <Fa {icon} />
@@ -55,9 +64,15 @@
     background: #282828;
   }
 
-  .toast.success .toast-icon { color: #4caf50; }
-  .toast.error .toast-icon { color: #f44336; }
-  .toast.info .toast-icon { color: #2196f3; }
+  .toast.success .toast-icon {
+    color: #4caf50;
+  }
+  .toast.error .toast-icon {
+    color: #f44336;
+  }
+  .toast.info .toast-icon {
+    color: #2196f3;
+  }
 
   .toast-message {
     flex: 1;
@@ -75,7 +90,9 @@
     align-items: center;
     justify-content: center;
     border-radius: 50%;
-    transition: background-color 0.2s, color 0.2s;
+    transition:
+      background-color 0.2s,
+      color 0.2s;
   }
 
   .toast-close:hover {

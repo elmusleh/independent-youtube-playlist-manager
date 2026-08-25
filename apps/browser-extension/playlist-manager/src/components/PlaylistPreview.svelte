@@ -5,7 +5,8 @@
 
   const videoService = window.videoService;
 
-  let { playlist, disableThumbnails = false }: { playlist: Playlist; disableThumbnails?: boolean } = $props();
+  let { playlist, disableThumbnails = false }: { playlist: Playlist; disableThumbnails?: boolean } =
+    $props();
   const videos = $derived(playlist.videos);
 
   async function previewClicked() {
@@ -24,7 +25,8 @@
 <button type="button" class="playlist-card" onclick={previewClicked}>
   <div class="thumbnail-container">
     {#if !disableThumbnails && videos.length > 0}
-      <img alt={playlist.title}
+      <img
+        alt={playlist.title}
         class="main-thumbnail"
         src={videoService.getVideoThumbnailUrl(videos[0])}
         loading="lazy"

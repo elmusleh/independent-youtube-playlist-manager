@@ -41,9 +41,18 @@ if (typeof window !== "undefined" && typeof window.document !== "undefined") {
   };
 } else {
   // Mock implementations for background worker to prevent reference errors
-  window.error = (msg) => { console.error(msg); return () => {}; };
-  window.success = (msg) => { console.log("SUCCESS:", msg); return () => {}; };
-  window.info = (msg) => { console.log("INFO:", msg); return () => {}; };
+  window.error = (msg) => {
+    console.error(msg);
+    return () => {};
+  };
+  window.success = (msg) => {
+    console.log("SUCCESS:", msg);
+    return () => {};
+  };
+  window.info = (msg) => {
+    console.log("INFO:", msg);
+    return () => {};
+  };
 }
 
 let _pendingLogs: string[] = [];
@@ -79,11 +88,11 @@ async function flushLogsToStorage() {
 }
 
 window.logSystemEvent = async (level: "INFO" | "ERROR" | "WARN", message: any, details?: any) => {
-  const timestamp = new Date().toISOString().replace('T', ' ').slice(0, 19);
-  const msgStr = typeof message === 'object' ? JSON.stringify(message) : String(message);
+  const timestamp = new Date().toISOString().replace("T", " ").slice(0, 19);
+  const msgStr = typeof message === "object" ? JSON.stringify(message) : String(message);
   let logMessage = `[${timestamp}] [${level}] ${msgStr}`;
   if (details) {
-    const detailsStr = typeof details === 'object' ? JSON.stringify(details) : String(details);
+    const detailsStr = typeof details === "object" ? JSON.stringify(details) : String(details);
     logMessage += ` | ${detailsStr}`;
   }
   console.log(logMessage);

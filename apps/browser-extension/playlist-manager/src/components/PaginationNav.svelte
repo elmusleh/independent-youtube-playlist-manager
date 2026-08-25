@@ -39,9 +39,7 @@
   }
 
   :global([data-theme="dark"]) .custom-pagination-nav :global(.option.prev svg),
-  :global([data-theme="dark"])
-    .custom-pagination-nav
-    :global(.option.next svg) {
+  :global([data-theme="dark"]) .custom-pagination-nav :global(.option.next svg) {
     filter: invert();
   }
 </style>

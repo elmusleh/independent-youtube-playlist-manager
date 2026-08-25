@@ -19,17 +19,14 @@
       if (window.logSystemEvent)
         await window.logSystemEvent(
           "INFO",
-          `[NEW-VIEW] New playlist created with title: ${defaultTitle}`,
+          `[NEW-VIEW] New playlist created with title: ${defaultTitle}`
         );
       return { ...playlist, title: defaultTitle };
     } catch (e) {
       const errMsg = e instanceof Error ? e.message : String(e);
       console.error("[NEW-VIEW] Failed to create new playlist:", e);
       if (window.logSystemEvent)
-        await window.logSystemEvent(
-          "ERROR",
-          `[NEW-VIEW] Failed to create new playlist: ${errMsg}`,
-        );
+        await window.logSystemEvent("ERROR", `[NEW-VIEW] Failed to create new playlist: ${errMsg}`);
       throw e;
     }
   }

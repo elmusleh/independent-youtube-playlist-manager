@@ -1,7 +1,7 @@
 <script lang="ts">
   let {
     progress = 0,
-    text = ""
+    text = "",
   }: {
     progress?: number | null;
     text?: string;
@@ -9,14 +9,14 @@
 </script>
 
 {#if progress !== null && progress !== undefined}
-<div class="progress-container">
-  <div class="progress-bar-bg">
-    <div class="progress-bar-fill" style="width: {Math.max(0, Math.min(100, progress))}%"></div>
+  <div class="progress-container">
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" style="width: {Math.max(0, Math.min(100, progress))}%"></div>
+    </div>
+    {#if text}
+      <div class="progress-text">{text} ({Math.round(progress)}%)</div>
+    {/if}
   </div>
-  {#if text}
-    <div class="progress-text">{text} ({Math.round(progress)}%)</div>
-  {/if}
-</div>
 {/if}
 
 <style>

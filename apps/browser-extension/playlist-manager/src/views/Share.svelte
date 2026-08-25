@@ -8,11 +8,7 @@
     faReddit,
     faWhatsapp,
   } from "@fortawesome/free-brands-svg-icons";
-  import {
-    faShareNodes,
-    faLink,
-    faCheck,
-  } from "@fortawesome/free-solid-svg-icons";
+  import { faShareNodes, faLink, faCheck } from "@fortawesome/free-solid-svg-icons";
   import ViewHeader from "../components/ViewHeader.svelte";
   import { toast } from "../stores/toast";
 
@@ -28,11 +24,7 @@
     const height = 600;
     const left = window.innerWidth / 2 - width / 2;
     const top = window.innerHeight / 2 - height / 2;
-    window.open(
-      url,
-      "Share",
-      `width=${width},height=${height},top=${top},left=${left}`,
-    );
+    window.open(url, "Share", `width=${width},height=${height},top=${top},left=${left}`);
   }
 
   function shareTwitter() {
@@ -102,8 +94,8 @@
   <div class="view-body">
     <div class="share-intro">
       <p>
-        Love using Independent YouTube Playlist Manager? Help others discover it by sharing
-        it with your friends and network.
+        Love using Independent YouTube Playlist Manager? Help others discover it by sharing it with
+        your friends and network.
       </p>
     </div>
 
@@ -147,7 +139,6 @@
 </main>
 
 <style>
-
   .share-intro {
     text-align: center;
     margin-bottom: 40px;

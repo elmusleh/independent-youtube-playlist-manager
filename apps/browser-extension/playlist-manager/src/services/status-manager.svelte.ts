@@ -29,10 +29,7 @@ export class StatusManager {
     }
   }
 
-  async save<T>(
-    saveFn: () => Promise<T>,
-    options: { silent?: boolean } = {},
-  ): Promise<T> {
+  async save<T>(saveFn: () => Promise<T>, options: { silent?: boolean } = {}): Promise<T> {
     if (!options.silent) this.saving = true;
     this.error = null;
     try {

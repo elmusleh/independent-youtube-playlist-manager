@@ -36,5 +36,3 @@ Our offer may contain links to external third-party websites over whose content 
 ## Copyright
 
 The contents and works created by the operator of this site are subject to copyright law. Reproduction, editing, distribution, and any kind of use outside the limits of copyright law require the written consent of the respective author or creator.
-
-

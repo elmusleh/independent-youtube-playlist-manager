@@ -205,9 +205,7 @@
         secondary={isLocked}
         primary={!isLocked}
         onclick={onToggleLock}
-        title={isLocked
-          ? "Unlock: Allow auto-delete"
-          : "Lock: Prevent auto-delete"}
+        title={isLocked ? "Unlock: Allow auto-delete" : "Lock: Prevent auto-delete"}
       >
         <Fa icon={isLocked ? faLock : faLockOpen} fw />
       </SimpleButton>
@@ -229,11 +227,7 @@
       <SimpleButton
         primary
         className="btn-youtube"
-        onclick={() =>
-          window.open(
-            `https://www.youtube.com/playlist?list=${playlistId}`,
-            "_blank",
-          )}
+        onclick={() => window.open(`https://www.youtube.com/playlist?list=${playlistId}`, "_blank")}
         title="Open this playlist on YouTube"
       >
         <Fa icon={faYoutube} fw />
@@ -351,7 +345,9 @@
     align-items: center;
     justify-content: center;
     color: var(--text-muted, #888);
-    transition: transform 0.2s, color 0.2s;
+    transition:
+      transform 0.2s,
+      color 0.2s;
   }
 
   .favorite-star-btn:hover {
@@ -370,7 +366,9 @@
     align-items: center;
     justify-content: center;
     color: var(--text-muted, #888);
-    transition: transform 0.2s, color 0.2s;
+    transition:
+      transform 0.2s,
+      color 0.2s;
   }
 
   .edit-title-btn:hover {

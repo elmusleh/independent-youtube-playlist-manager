@@ -1,6 +1,16 @@
 import { dbGetAllMetadata, dbPutMetadataBatch, dbClearMetadata } from "./db-service.js";
-import { normalizePlaylist, normalizeVideoMeta, normalizeHistoryRecord } from "./schema-normalizer.js";
-import type { CompleteBackupFile, ImportResult, Playlist, Settings, NormalizedVideoMeta } from "../types/model.js";
+import {
+  normalizePlaylist,
+  normalizeVideoMeta,
+  normalizeHistoryRecord,
+} from "./schema-normalizer.js";
+import type {
+  CompleteBackupFile,
+  ImportResult,
+  Playlist,
+  Settings,
+  NormalizedVideoMeta,
+} from "../types/model.js";
 
 const BACKUP_FORMAT = "yph_full_backup";
 const CURRENT_SCHEMA_VERSION = 2;
@@ -90,11 +100,19 @@ export async function exportFullDatabaseBackup(): Promise<CompleteBackupFile> {
 /**
  * Validates the schema of an incoming backup file
  */
-export function validateBackupSchema(json: any): { valid: boolean; errors: string[]; schemaVersion: number } {
+export function validateBackupSchema(json: any): {
+  valid: boolean;
+  errors: string[];
+  schemaVersion: number;
+} {
   const errors: string[] = [];
 
   if (!json || typeof json !== "object") {
-    return { valid: false, errors: ["Invalid backup file: Payload is not a valid JSON object."], schemaVersion: 0 };
+    return {
+      valid: false,
+      errors: ["Invalid backup file: Payload is not a valid JSON object."],
+      schemaVersion: 0,
+    };
   }
 
   // Check if this is a legacy playlist array export
@@ -108,7 +126,7 @@ export function validateBackupSchema(json: any): { valid: boolean; errors: strin
 
   const schemaVersion = typeof json.schemaVersion === "number" ? json.schemaVersion : 1;
   if (!json.data || typeof json.data !== "object") {
-    errors.push("Missing \"data\" container in backup payload.");
+    errors.push('Missing "data" container in backup payload.');
   }
 
   return {
@@ -164,7 +182,7 @@ export async function importFullDatabaseBackup(
       for (const [id, incoming] of Object.entries(rawMetadata)) {
         const normalized = normalizeVideoMeta(incoming, id);
         const existing = metadataToSave[id];
-        if (!existing || (normalized.lastCachedAt >= (existing.lastCachedAt || 0))) {
+        if (!existing || normalized.lastCachedAt >= (existing.lastCachedAt || 0)) {
           metadataToSave[id] = normalized;
           importedMetadataCount++;
         }
@@ -194,7 +212,8 @@ export async function importFullDatabaseBackup(
 
     let finalPlaylists: Playlist[] = [];
     if (mode === "merge") {
-      const existingPlaylists = typeof window.getPlaylists === "function" ? await window.getPlaylists() : [];
+      const existingPlaylists =
+        typeof window.getPlaylists === "function" ? await window.getPlaylists() : [];
       const playlistMap = new Map<string, Playlist>();
       existingPlaylists.forEach((p) => playlistMap.set(p.id, normalizePlaylist(p)));
 
@@ -240,7 +259,11 @@ export async function importFullDatabaseBackup(
         for (const [id, incoming] of Object.entries(rawHistory)) {
           const normalizedIncoming = normalizeHistoryRecord(incoming, id);
           const existing = finalHistory[id];
-          if (!existing || normalizedIncoming.t > (existing.t || 0) || normalizedIncoming.lastUpdated > (existing.lastUpdated || 0)) {
+          if (
+            !existing ||
+            normalizedIncoming.t > (existing.t || 0) ||
+            normalizedIncoming.lastUpdated > (existing.lastUpdated || 0)
+          ) {
             finalHistory[id] = normalizedIncoming;
             importedHistoryCount++;
           }
@@ -263,7 +286,8 @@ export async function importFullDatabaseBackup(
       if (mode === "overwrite") {
         await browser.storage.sync.set(incomingSettings);
       } else {
-        const currentSettings = typeof window.getSettings === "function" ? await window.getSettings() : {};
+        const currentSettings =
+          typeof window.getSettings === "function" ? await window.getSettings() : {};
         await browser.storage.sync.set({ ...currentSettings, ...incomingSettings });
       }
     }

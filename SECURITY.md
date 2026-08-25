@@ -19,6 +19,7 @@ If you discover a security-related bug (such as issues with OAuth2 tokens, data 
 - **Response Time**: Please allow 48-72 hours for an initial acknowledgment.
 
 ### Our Process
+
 1. **Acknowledgment**: We will confirm receipt of your report.
 2. **Investigation**: We will verify the vulnerability and determine its impact.
 3. **Fix**: We will work on a patch for the supported versions.

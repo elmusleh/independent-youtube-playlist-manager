@@ -20,10 +20,8 @@
   let settings: Settings | null = $state(null);
   let signedIn = $state(false);
 
-  let {
-    drawerOpen = false,
-    onClose = () => {},
-  }: { drawerOpen?: boolean; onClose?: () => void } = $props();
+  let { drawerOpen = false, onClose = () => {} }: { drawerOpen?: boolean; onClose?: () => void } =
+    $props();
 
   function handleNavClick() {
     onClose();
@@ -64,7 +62,7 @@
 
   function handleStorageChange(
     changes: Record<string, { oldValue?: any; newValue?: any }>,
-    area: string,
+    area: string
   ) {
     if (area === "sync") {
       loadSettings();
@@ -88,44 +86,28 @@
     <div class="nav-group">
       <a
         href="#/saved"
-        class:active={isActive(
-          "/saved",
-          router.location,
-          router.querystring || "",
-        )}
+        class:active={isActive("/saved", router.location, router.querystring || "")}
       >
         <Fa icon={faListUl} fw />
         <span>All Playlists</span>
       </a>
       <a
         href="#/favorite"
-        class:active={isActive(
-          "/favorite",
-          router.location,
-          router.querystring || "",
-        )}
+        class:active={isActive("/favorite", router.location, router.querystring || "")}
       >
         <Fa icon={faStar} fw />
         <span>Favorite Playlist</span>
       </a>
       <a
         href="#/history"
-        class:active={isActive(
-          "/history",
-          router.location,
-          router.querystring || "",
-        )}
+        class:active={isActive("/history", router.location, router.querystring || "")}
       >
         <Fa icon={faClockRotateLeft} fw />
         <span>Watch History</span>
       </a>
       <a
         href="#/manage"
-        class:active={isActive(
-          "/manage",
-          router.location,
-          router.querystring || "",
-        )}
+        class:active={isActive("/manage", router.location, router.querystring || "")}
       >
         <Fa icon={faBoxArchive} fw />
         <span>Manage Playlists</span>
@@ -137,11 +119,7 @@
         {#if settings.enableSubscriptions}
           <a
             href="#/subscriptions"
-            class:active={isActive(
-              "/subscriptions",
-              router.location,
-              router.querystring || "",
-            )}
+            class:active={isActive("/subscriptions", router.location, router.querystring || "")}
           >
             <Fa icon={faUsers} fw />
             <span>Subscriptions</span>
@@ -151,11 +129,7 @@
         {#if settings.enableSearch}
           <a
             href="#/search"
-            class:active={isActive(
-              "/search",
-              router.location,
-              router.querystring || "",
-            )}
+            class:active={isActive("/search", router.location, router.querystring || "")}
           >
             <Fa icon={faSearch} fw />
             <span>YouTube Search</span>
@@ -165,12 +139,7 @@
         {#if settings.enableWatchLater}
           <a
             href="#/editor?id=WL"
-            class:active={isActive(
-              "/editor",
-              router.location,
-              router.querystring || "",
-              true,
-            )}
+            class:active={isActive("/editor", router.location, router.querystring || "", true)}
           >
             <Fa icon={faClock} fw />
             <span>Watch Later</span>
@@ -180,11 +149,7 @@
         {#if settings.enableOpenById}
           <a
             href="#/open-by-id"
-            class:active={isActive(
-              "/open-by-id",
-              router.location,
-              router.querystring || "",
-            )}
+            class:active={isActive("/open-by-id", router.location, router.querystring || "")}
           >
             <Fa icon={faLink} fw />
             <span>Open by ID</span>
@@ -201,11 +166,7 @@
 {#if drawerOpen}
   <div class="mobile-drawer" class:open={drawerOpen}>
     <div class="drawer-header">
-      <button
-        class="drawer-close"
-        onclick={() => onClose()}
-        aria-label="Close navigation"
-      >
+      <button class="drawer-close" onclick={() => onClose()} aria-label="Close navigation">
         <Fa icon={faXmark} size="lg" />
       </button>
     </div>
@@ -214,11 +175,7 @@
         <a
           href="#/saved"
           onclick={handleNavClick}
-          class:active={isActive(
-            "/saved",
-            router.location,
-            router.querystring || "",
-          )}
+          class:active={isActive("/saved", router.location, router.querystring || "")}
         >
           <Fa icon={faListUl} fw />
           <span>All Playlists</span>
@@ -226,11 +183,7 @@
         <a
           href="#/favorite"
           onclick={handleNavClick}
-          class:active={isActive(
-            "/favorite",
-            router.location,
-            router.querystring || "",
-          )}
+          class:active={isActive("/favorite", router.location, router.querystring || "")}
         >
           <Fa icon={faStar} fw />
           <span>Favorite Playlist</span>
@@ -238,11 +191,7 @@
         <a
           href="#/history"
           onclick={handleNavClick}
-          class:active={isActive(
-            "/history",
-            router.location,
-            router.querystring || "",
-          )}
+          class:active={isActive("/history", router.location, router.querystring || "")}
         >
           <Fa icon={faClockRotateLeft} fw />
           <span>Watch History</span>
@@ -250,11 +199,7 @@
         <a
           href="#/manage"
           onclick={handleNavClick}
-          class:active={isActive(
-            "/manage",
-            router.location,
-            router.querystring || "",
-          )}
+          class:active={isActive("/manage", router.location, router.querystring || "")}
         >
           <Fa icon={faBoxArchive} fw />
           <span>Manage Playlists</span>
@@ -267,11 +212,7 @@
             <a
               href="#/subscriptions"
               onclick={handleNavClick}
-              class:active={isActive(
-                "/subscriptions",
-                router.location,
-                router.querystring || "",
-              )}
+              class:active={isActive("/subscriptions", router.location, router.querystring || "")}
             >
               <Fa icon={faUsers} fw />
               <span>Subscriptions</span>
@@ -282,11 +223,7 @@
             <a
               href="#/search"
               onclick={handleNavClick}
-              class:active={isActive(
-                "/search",
-                router.location,
-                router.querystring || "",
-              )}
+              class:active={isActive("/search", router.location, router.querystring || "")}
             >
               <Fa icon={faSearch} fw />
               <span>YouTube Search</span>
@@ -297,12 +234,7 @@
             <a
               href="#/editor?id=WL"
               onclick={handleNavClick}
-              class:active={isActive(
-                "/editor",
-                router.location,
-                router.querystring || "",
-                true,
-              )}
+              class:active={isActive("/editor", router.location, router.querystring || "", true)}
             >
               <Fa icon={faClock} fw />
               <span>Watch Later</span>
@@ -313,11 +245,7 @@
             <a
               href="#/open-by-id"
               onclick={handleNavClick}
-              class:active={isActive(
-                "/open-by-id",
-                router.location,
-                router.querystring || "",
-              )}
+              class:active={isActive("/open-by-id", router.location, router.querystring || "")}
             >
               <Fa icon={faLink} fw />
               <span>Open by ID</span>

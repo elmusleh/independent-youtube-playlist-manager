@@ -2,30 +2,35 @@
   import { onDestroy } from "svelte";
   import type { Snippet } from "svelte";
 
-  let { display = $bindable(false), children }: {
+  let {
+    display = $bindable(false),
+    children,
+  }: {
     display?: boolean;
     children?: Snippet;
   } = $props();
 
   function handleKeydown(event: KeyboardEvent) {
-    if (display && event.key === 'Escape') {
+    if (display && event.key === "Escape") {
       display = false;
     }
   }
 
   if (typeof window !== "undefined") {
-    window.addEventListener('keydown', handleKeydown);
+    window.addEventListener("keydown", handleKeydown);
   }
   onDestroy(() => {
     if (typeof window !== "undefined") {
-      window.removeEventListener('keydown', handleKeydown);
+      window.removeEventListener("keydown", handleKeydown);
     }
   });
 </script>
 
 {#if display}
   <div
-    onmousedown={(e) => { if (e.target === e.currentTarget) display = false; }}
+    onmousedown={(e) => {
+      if (e.target === e.currentTarget) display = false;
+    }}
     class="modal"
     role="presentation"
   >

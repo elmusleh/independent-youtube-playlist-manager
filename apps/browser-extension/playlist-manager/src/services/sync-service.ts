@@ -18,14 +18,20 @@ class SyncService {
   private _isSyncing = false;
   private _syncLock = false;
 
-  private async updateGlobalStatus(status: { active: boolean, playlistId?: string, playlistTitle?: string, progress?: number, message?: string }) {
+  private async updateGlobalStatus(status: {
+    active: boolean;
+    playlistId?: string;
+    playlistTitle?: string;
+    progress?: number;
+    message?: string;
+  }) {
     if (typeof browser === "undefined") return;
     try {
       await browser.storage.local.set({
         yph_sync_status: {
           ...status,
-          lastUpdated: Date.now()
-        }
+          lastUpdated: Date.now(),
+        },
       });
     } catch (e) {
       console.warn("Failed to update global sync status", e);
@@ -40,25 +46,40 @@ class SyncService {
     const playlist = await window.getPlaylist(playlistId);
     if (!playlist) throw new Error("Playlist not found: " + playlistId);
     if (playlist.isLocal || playlist.id.startsWith("local-")) {
-      await SystemLogger.info('SyncService', 'syncPlaylist skipped (local-only)', { playlistId });
+      await SystemLogger.info("SyncService", "syncPlaylist skipped (local-only)", { playlistId });
       return;
     }
 
     this._isSyncing = true;
-    await this.updateGlobalStatus({ active: true, playlistId, playlistTitle: playlist.title, progress: 0, message: 'Starting...' });
-    await SystemLogger.info('SyncService', 'syncPlaylist start', { playlistId, videoCount: playlist.videos.length });
+    await this.updateGlobalStatus({
+      active: true,
+      playlistId,
+      playlistTitle: playlist.title,
+      progress: 0,
+      message: "Starting...",
+    });
+    await SystemLogger.info("SyncService", "syncPlaylist start", {
+      playlistId,
+      videoCount: playlist.videos.length,
+    });
 
     try {
       // 1. Fetch current YouTube state
-      await this.updateGlobalStatus({ active: true, playlistId, playlistTitle: playlist.title, progress: 5, message: 'Fetching YouTube state...' });
+      await this.updateGlobalStatus({
+        active: true,
+        playlistId,
+        playlistTitle: playlist.title,
+        progress: 5,
+        message: "Fetching YouTube state...",
+      });
       const ytItems = await window.ytGetPlaylistItems(playlistId);
-      const ytVideoIds = ytItems.map(item => item.videoId);
+      const ytVideoIds = ytItems.map((item) => item.videoId);
 
       // ─── Phase 0: Conflict Detection & Merging ────────────────────────
-      const baseSnapshot = await (window as any).getSyncSnapshot(playlistId) || [];
+      const baseSnapshot = (await (window as any).getSyncSnapshot(playlistId)) || [];
       const remoteAdded = ytVideoIds.filter((id: string) => !baseSnapshot.includes(id));
       const remoteRemoved = baseSnapshot.filter((id: string) => !ytVideoIds.includes(id));
-      
+
       let mergedVideos = [...playlist.videos];
       let mergeHappened = false;
 
@@ -67,7 +88,11 @@ class SyncService {
         if (!mergedVideos.includes(vid)) {
           mergedVideos.push(vid);
           mergeHappened = true;
-          if (window.logSystemEvent) await window.logSystemEvent("INFO", `Merge: Detected remote addition ${vid}. Merging into local state.`);
+          if (window.logSystemEvent)
+            await window.logSystemEvent(
+              "INFO",
+              `Merge: Detected remote addition ${vid}. Merging into local state.`
+            );
         }
       }
 
@@ -88,10 +113,11 @@ class SyncService {
 
       // 2. Identify required YouTube mutations to reach merged state
       const settings = await window.getSettings();
-      const keepWatchedOnCloud = playlist.syncSettings?.keepWatchedOnCloud ?? settings.globalKeepWatchedOnCloud;
+      const keepWatchedOnCloud =
+        playlist.syncSettings?.keepWatchedOnCloud ?? settings.globalKeepWatchedOnCloud;
 
       const toAdd = playlist.videos.filter((vid: string) => !ytVideoIds.includes(vid));
-      const toRemoveItems = ytItems.filter(item => {
+      const toRemoveItems = ytItems.filter((item) => {
         const isLocallyMissing = !playlist.videos.includes(item.videoId);
         return isLocallyMissing && !keepWatchedOnCloud;
       });
@@ -103,7 +129,13 @@ class SyncService {
       const report = async (msg: string) => {
         completedSteps++;
         const pct = Math.min(95, Math.round((completedSteps / totalSteps) * 100));
-        await this.updateGlobalStatus({ active: true, playlistId, playlistTitle: playlist.title, progress: pct, message: msg });
+        await this.updateGlobalStatus({
+          active: true,
+          playlistId,
+          playlistTitle: playlist.title,
+          progress: pct,
+          message: msg,
+        });
       };
 
       // ─── Phase A: Removals ─────────────────────────────────
@@ -131,19 +163,19 @@ class SyncService {
       } else {
         await report(`Fetching fresh state for reorder...`);
         const freshYtItems = await window.ytGetPlaylistItems(playlistId);
-        
+
         for (let i = 0; i < playlist.videos.length; i++) {
           const desiredVideoId = playlist.videos[i];
           const currentItem = freshYtItems[i];
 
           if (!currentItem || currentItem.videoId !== desiredVideoId) {
-            const currentIndex = freshYtItems.findIndex(item => item.videoId === desiredVideoId);
+            const currentIndex = freshYtItems.findIndex((item) => item.videoId === desiredVideoId);
             if (currentIndex !== -1) {
               const itemToMove = freshYtItems[currentIndex];
-              await report(`Ordering ${i+1}/${playlist.videos.length}...`);
+              await report(`Ordering ${i + 1}/${playlist.videos.length}...`);
               await window.ytMoveItem(itemToMove.itemId, playlistId, itemToMove.videoId, i);
               await this._pace();
-              
+
               const [moved] = freshYtItems.splice(currentIndex, 1);
               freshYtItems.splice(i, 0, moved);
             }
@@ -154,24 +186,32 @@ class SyncService {
       }
 
       // 4. Update local state
-      await this.updateGlobalStatus({ active: true, playlistId, playlistTitle: playlist.title, progress: 98, message: 'Finalizing...' });
+      await this.updateGlobalStatus({
+        active: true,
+        playlistId,
+        playlistTitle: playlist.title,
+        progress: 98,
+        message: "Finalizing...",
+      });
       const syncedPlaylist: Playlist = {
         ...playlist,
         isDirty: false,
-        lastSyncedAt: Date.now()
+        lastSyncedAt: Date.now(),
       };
-      
+
       await (window as any)._saveToLocalStorage(syncedPlaylist);
       // Update Snapshot
       await (window as any).saveSyncSnapshot(playlistId, [...syncedPlaylist.videos]);
       window.invalidateCacheAndNotify();
 
-      await SystemLogger.info('SyncService', 'syncPlaylist success', { playlistId });
-      await this.updateGlobalStatus({ active: false, progress: 100, message: 'Sync complete' });
+      await SystemLogger.info("SyncService", "syncPlaylist success", { playlistId });
+      await this.updateGlobalStatus({ active: false, progress: 100, message: "Sync complete" });
     } catch (e) {
-      await SystemLogger.error('SyncService', 'syncPlaylist failure', { playlistId, error: e });
-      await this.updateGlobalStatus({ active: false, progress: 0, message: 'Sync failed' });
-      this.notifyError(`Sync failed for "${playlist.title}": ${e instanceof Error ? e.message : String(e)}`);
+      await SystemLogger.error("SyncService", "syncPlaylist failure", { playlistId, error: e });
+      await this.updateGlobalStatus({ active: false, progress: 0, message: "Sync failed" });
+      this.notifyError(
+        `Sync failed for "${playlist.title}": ${e instanceof Error ? e.message : String(e)}`
+      );
       throw e;
     } finally {
       this._isSyncing = false;
@@ -182,10 +222,10 @@ class SyncService {
     if (typeof browser === "undefined" || !browser.notifications) return;
     const isAndroid = /Android/i.test(navigator.userAgent);
     browser.notifications.create({
-      type: 'basic',
-      title: 'YPH: Synchronization Error',
+      type: "basic",
+      title: "YPH: Synchronization Error",
       message: message,
-      ...(isAndroid ? {} : { iconUrl: browser.runtime.getURL('assets/icons/icon_128.png') })
+      ...(isAndroid ? {} : { iconUrl: browser.runtime.getURL("assets/icons/icon_128.png") }),
     });
   }
 
@@ -200,28 +240,33 @@ class SyncService {
 
     this._syncLock = true;
     try {
-      const playlists = await (window as any).getPlaylists() as Playlist[];
+      const playlists = (await (window as any).getPlaylists()) as Playlist[];
       const managed = playlists.filter((p) => p.isTagged && !p.isLocal && !p.isDirty);
-      
+
       if (managed.length === 0) return;
 
-      await SystemLogger.info('SyncService', 'refreshAllManaged start', { count: managed.length });
+      await SystemLogger.info("SyncService", "refreshAllManaged start", { count: managed.length });
 
       for (const p of managed) {
         try {
           const ytItems = await window.ytGetPlaylistItems(p.id);
-          const ytVideoIds = ytItems.map(item => item.videoId);
-          
+          const ytVideoIds = ytItems.map((item) => item.videoId);
+
           // Basic array equality check
-          const isSame = p.videos.length === ytVideoIds.length && 
-                         p.videos.every((val: string, index: number) => val === ytVideoIds[index]);
+          const isSame =
+            p.videos.length === ytVideoIds.length &&
+            p.videos.every((val: string, index: number) => val === ytVideoIds[index]);
 
           if (!isSame) {
             const updated = { ...p, videos: ytVideoIds, lastSyncedAt: Date.now() };
             await (window as any)._saveToLocalStorage(updated);
             // Update Snapshot
             await (window as any).saveSyncSnapshot(p.id, [...ytVideoIds]);
-            if (window.logSystemEvent) await window.logSystemEvent("INFO", `Background Refresh: Updated playlist "${p.title}" from YouTube`);
+            if (window.logSystemEvent)
+              await window.logSystemEvent(
+                "INFO",
+                `Background Refresh: Updated playlist "${p.title}" from YouTube`
+              );
           }
         } catch (e) {
           console.error(`Failed to refresh playlist ${p.id}`, e);
@@ -244,10 +289,10 @@ class SyncService {
     try {
       const playlists = await (window as any).getPlaylists();
       const dirty = playlists.filter((p: any) => p.isDirty && !p.isLocal);
-      
+
       if (dirty.length === 0) return;
 
-      await SystemLogger.info('SyncService', 'syncAllDirty start', { count: dirty.length });
+      await SystemLogger.info("SyncService", "syncAllDirty start", { count: dirty.length });
 
       for (const p of dirty) {
         try {
@@ -266,7 +311,7 @@ class SyncService {
   }
 
   private _pace(): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, SYNC_PACE_MS));
+    return new Promise((resolve) => setTimeout(resolve, SYNC_PACE_MS));
   }
 }
 

@@ -7,13 +7,20 @@
   let filteredPlaylists = $state([] as Playlist[]);
 
   let disableThumbnails = $state(false);
-  window.getSettings().then((settings) => {
-    disableThumbnails = settings.disableThumbnails;
-  }).catch(async (e) => {
-    const errMsg = e instanceof Error ? e.message : String(e);
-    console.error("[PLAYLIST-SELECTOR] Failed to load settings:", e);
-    if (window.logSystemEvent) await window.logSystemEvent("ERROR", `[PLAYLIST-SELECTOR] Failed to load settings: ${errMsg}`);
-  });
+  window
+    .getSettings()
+    .then((settings) => {
+      disableThumbnails = settings.disableThumbnails;
+    })
+    .catch(async (e) => {
+      const errMsg = e instanceof Error ? e.message : String(e);
+      console.error("[PLAYLIST-SELECTOR] Failed to load settings:", e);
+      if (window.logSystemEvent)
+        await window.logSystemEvent(
+          "ERROR",
+          `[PLAYLIST-SELECTOR] Failed to load settings: ${errMsg}`
+        );
+    });
 </script>
 
 <div class="selector-container">

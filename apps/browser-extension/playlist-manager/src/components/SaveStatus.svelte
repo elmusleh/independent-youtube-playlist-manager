@@ -1,10 +1,6 @@
 <script lang="ts">
   import Fa from "svelte-fa";
-  import {
-    faArrowsRotate,
-    faCircleExclamation,
-    faCheck,
-  } from "@fortawesome/free-solid-svg-icons";
+  import { faArrowsRotate, faCircleExclamation, faCheck } from "@fortawesome/free-solid-svg-icons";
   import SimpleButton from "./SimpleButton.svelte";
   import type { StatusManager } from "../services/status-manager.svelte";
 
@@ -26,21 +22,15 @@
     title?: string;
   } = $props();
 
-  const _isDirty = $derived(
-    isDirty !== undefined ? isDirty : status ? status.isDirty : false,
-  );
+  const _isDirty = $derived(isDirty !== undefined ? isDirty : status ? status.isDirty : false);
   const _saving = $derived(status ? status.saving : saving);
   const _refreshing = $derived(status ? status.refreshing : refreshing);
   const _hasSavedOnce = $derived(status ? status.hasSavedOnce : hasSavedOnce);
   const _error = $derived(status?.error);
 
-  const buttonTitle = $derived(
-    title || (_isDirty && !_saving ? "Save & Refresh" : "Refresh"),
-  );
+  const buttonTitle = $derived(title || (_isDirty && !_saving ? "Save & Refresh" : "Refresh"));
 
-  const showRefreshText = $derived(
-    onclick && !_isDirty && !_saving && !_refreshing && !_error,
-  );
+  const showRefreshText = $derived(onclick && !_isDirty && !_saving && !_refreshing && !_error);
 
   let justSaved = $state(false);
   $effect(() => {
@@ -64,17 +54,11 @@
   });
 
   const progress = $derived(status?.progress);
-  const icon = $derived(
-    _error ? faCircleExclamation : justSaved ? faCheck : faArrowsRotate,
-  );
+  const icon = $derived(_error ? faCircleExclamation : justSaved ? faCheck : faArrowsRotate);
 </script>
 
 <SimpleButton {onclick} secondary title={_error || buttonTitle}>
-  <span
-    class="refresh-icon"
-    class:spinning={_saving || _refreshing}
-    class:success={justSaved}
-  >
+  <span class="refresh-icon" class:spinning={_saving || _refreshing} class:success={justSaved}>
     <Fa {icon} fw />
   </span>
   {#if _error}

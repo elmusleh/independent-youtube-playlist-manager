@@ -1,11 +1,6 @@
 <script lang="ts">
   import Fa from "svelte-fa";
-  import {
-    faBug,
-    faTrash,
-    faTerminal,
-    faCopy,
-  } from "@fortawesome/free-solid-svg-icons";
+  import { faBug, faTrash, faTerminal, faCopy } from "@fortawesome/free-solid-svg-icons";
   import ViewHeader from "../components/ViewHeader.svelte";
   import SimpleButton from "../components/SimpleButton.svelte";
   import SaveStatus from "../components/SaveStatus.svelte";
@@ -25,10 +20,7 @@
         const result = await browser.storage.local.get("yph_system_logs");
         logs = result.yph_system_logs || [];
         if (window.logSystemEvent) {
-          await window.logSystemEvent(
-            "INFO",
-            `[LOGS-VIEW] Loaded ${logs.length} log entries`,
-          );
+          await window.logSystemEvent("INFO", `[LOGS-VIEW] Loaded ${logs.length} log entries`);
         }
       } catch (e) {
         const errMsg = e instanceof Error ? e.message : String(e);
@@ -52,19 +44,13 @@
       await navigator.clipboard.writeText(logs.join("\n"));
       window.success("Logs copied to clipboard");
       if (window.logSystemEvent) {
-        await window.logSystemEvent(
-          "INFO",
-          "[LOGS-VIEW] Logs copied to clipboard",
-        );
+        await window.logSystemEvent("INFO", "[LOGS-VIEW] Logs copied to clipboard");
       }
     } catch (e) {
       const errMsg = e instanceof Error ? e.message : String(e);
       window.error("Failed to copy logs");
       if (window.logSystemEvent) {
-        await window.logSystemEvent(
-          "ERROR",
-          `[LOGS-VIEW] Failed to copy logs: ${errMsg}`,
-        );
+        await window.logSystemEvent("ERROR", `[LOGS-VIEW] Failed to copy logs: ${errMsg}`);
       }
     }
   }
@@ -80,19 +66,13 @@
           logs = [];
           window.success("Logs cleared");
           if (window.logSystemEvent) {
-            await window.logSystemEvent(
-              "INFO",
-              "[LOGS-VIEW] System logs cleared by user",
-            );
+            await window.logSystemEvent("INFO", "[LOGS-VIEW] System logs cleared by user");
           }
         } catch (e) {
           const errMsg = e instanceof Error ? e.message : String(e);
           window.error("Failed to clear logs");
           if (window.logSystemEvent) {
-            await window.logSystemEvent(
-              "ERROR",
-              `[LOGS-VIEW] Failed to clear logs: ${errMsg}`,
-            );
+            await window.logSystemEvent("ERROR", `[LOGS-VIEW] Failed to clear logs: ${errMsg}`);
           }
         }
       },
@@ -133,9 +113,7 @@
         <div class="empty-state">
           <Fa icon={faBug} size="3x" />
           <p>No system logs found.</p>
-          <p class="sub-text">
-            Logs will appear here when extension events occur.
-          </p>
+          <p class="sub-text">Logs will appear here when extension events occur.</p>
         </div>
       {:else}
         <pre class="log-output" bind:this={logEl}>{logs.join("\n")}</pre>
@@ -145,7 +123,6 @@
 </main>
 
 <style>
-
   main {
     display: flex;
     flex-direction: column;

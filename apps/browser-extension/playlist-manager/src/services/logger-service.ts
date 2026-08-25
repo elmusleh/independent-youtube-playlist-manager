@@ -5,26 +5,26 @@
 interface LogEntry {
   timestamp: string; // ISO string
   module: string;
-  level: 'INFO' | 'WARN' | 'ERROR';
+  level: "INFO" | "WARN" | "ERROR";
   action: string;
   details?: any;
 }
 
 class SystemLoggerClass {
-  private readonly storageKey = 'yph_system_logs';
+  private readonly storageKey = "yph_system_logs";
   private readonly maxEntries = 1000;
 
   private async getLogs(): Promise<LogEntry[]> {
-    if (typeof browser === 'undefined') return [];
+    if (typeof browser === "undefined") return [];
     const result = await browser.storage.local.get(this.storageKey);
     return (result[this.storageKey] as LogEntry[]) || [];
   }
 
   private async saveLogs(logs: LogEntry[]): Promise<void> {
-    if (typeof browser === 'undefined') return;
+    if (typeof browser === "undefined") return;
     await browser.storage.local.set({ [this.storageKey]: logs });
     // Notify UI components
-    const event = new CustomEvent('system-log-updated', { detail: logs[logs.length - 1] });
+    const event = new CustomEvent("system-log-updated", { detail: logs[logs.length - 1] });
     window.dispatchEvent(event);
   }
 
@@ -41,7 +41,7 @@ class SystemLoggerClass {
     return {
       timestamp: new Date().toISOString(),
       module,
-      level: 'INFO',
+      level: "INFO",
       action,
       details,
     };
@@ -49,19 +49,19 @@ class SystemLoggerClass {
 
   async info(module: string, action: string, details?: any): Promise<void> {
     const entry = this.format(module, action, details);
-    entry.level = 'INFO';
+    entry.level = "INFO";
     await this.append(entry);
   }
 
   async warn(module: string, action: string, details?: any): Promise<void> {
     const entry = this.format(module, action, details);
-    entry.level = 'WARN';
+    entry.level = "WARN";
     await this.append(entry);
   }
 
   async error(module: string, action: string, details?: any): Promise<void> {
     const entry = this.format(module, action, details);
-    entry.level = 'ERROR';
+    entry.level = "ERROR";
     await this.append(entry);
   }
 }
@@ -70,6 +70,6 @@ class SystemLoggerClass {
 export const SystemLogger = new SystemLoggerClass();
 
 // Attach to window for legacy usage (e.g., window.SystemLogger)
-if (typeof window !== 'undefined') {
+if (typeof window !== "undefined") {
   (window as any).SystemLogger = SystemLogger;
 }

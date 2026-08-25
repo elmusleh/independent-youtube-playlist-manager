@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
     if (!isSupabaseConfigured) {
       return NextResponse.json(
         { error: "Cloud authentication is not configured." },
-        { status: 503 },
+        { status: 503 }
       );
     }
 
@@ -26,9 +26,10 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json().catch(() => ({}));
-    const label = typeof body.label === "string" && body.label.trim()
-      ? body.label.trim().slice(0, 100)
-      : "WebExtension Client";
+    const label =
+      typeof body.label === "string" && body.label.trim()
+        ? body.label.trim().slice(0, 100)
+        : "WebExtension Client";
 
     // Generate secure cryptographically random token
     const randomHex = crypto.randomBytes(16).toString("hex");

@@ -31,10 +31,8 @@
   const status = new StatusManager();
   let accountPlaylists: YtPlaylistInfoExtended[] = $state([]);
   let localPlaylists: Playlist[] = $state([]);
-  let likedPlaylist: (YtPlaylistInfoExtended & { category: string }) | null =
-    $state(null);
-  let uploadedPlaylist: (YtPlaylistInfoExtended & { category: string }) | null =
-    $state(null);
+  let likedPlaylist: (YtPlaylistInfoExtended & { category: string }) | null = $state(null);
+  let uploadedPlaylist: (YtPlaylistInfoExtended & { category: string }) | null = $state(null);
   let adoptingId = $state("");
   let syncingId = $state("");
   let settings: Settings | null = $state(null);
@@ -46,10 +44,7 @@
       const errMsg = e instanceof Error ? e.message : String(e);
       console.error("[SAVED-VIEW] Failed to load settings:", e);
       if (window.logSystemEvent)
-        await window.logSystemEvent(
-          "ERROR",
-          `[SAVED-VIEW] Failed to load settings: ${errMsg}`,
-        );
+        await window.logSystemEvent("ERROR", `[SAVED-VIEW] Failed to load settings: ${errMsg}`);
     });
 
   const filterChips = ["All", "Local", "YouTube"];
@@ -77,7 +72,7 @@
     }> = [];
 
     // Helper to add unique playlists (local entries take precedence)
-    const addUnique = (p: typeof result[0]) => {
+    const addUnique = (p: (typeof result)[0]) => {
       if (!seen.has(p.id)) {
         seen.add(p.id);
         result.push(p);
@@ -93,8 +88,7 @@
         videoCount: p.videos.length,
         isTagged: false,
         isLocal: true,
-        thumbnailUrl:
-          window.videoService.getVideoThumbnailUrl(p.videos[0]) || undefined,
+        thumbnailUrl: window.videoService.getVideoThumbnailUrl(p.videos[0]) || undefined,
         category: "local",
       });
     });
@@ -110,7 +104,7 @@
           thumbnailUrl: p.thumbnailUrl || undefined,
           videoCount: p.videoCount,
           isTagged: p.isTagged || false,
-          isLocal: false,  // Force false for YouTube playlists
+          isLocal: false, // Force false for YouTube playlists
           category: (p as any).category || "youtube",
         });
       });
@@ -123,7 +117,7 @@
           thumbnailUrl: (likedPlaylist as any).thumbnailUrl || undefined,
           videoCount: (likedPlaylist as any).videoCount,
           isTagged: (likedPlaylist as any).isTagged || false,
-          isLocal: false,  // YouTube playlists are never local
+          isLocal: false, // YouTube playlists are never local
           category: "liked",
         });
       }
@@ -134,7 +128,7 @@
           thumbnailUrl: (uploadedPlaylist as any).thumbnailUrl || undefined,
           videoCount: (uploadedPlaylist as any).videoCount,
           isTagged: (uploadedPlaylist as any).isTagged || false,
-          isLocal: false,  // YouTube playlists are never local
+          isLocal: false, // YouTube playlists are never local
           category: "uploaded",
         });
       }
@@ -151,10 +145,7 @@
     const playlists = allPlaylists;
 
     let result = playlists.filter((p) => {
-      if (
-        searchQuery &&
-        !p.title.toLowerCase().includes(searchQuery.toLowerCase())
-      ) {
+      if (searchQuery && !p.title.toLowerCase().includes(searchQuery.toLowerCase())) {
         return false;
       }
       if (chip === "Local") return p.isLocal === true;
@@ -165,9 +156,7 @@
     if (sortMethod === "A-Z") {
       result = [...result].sort((a, b) => a.title.localeCompare(b.title));
     } else {
-      result = [...result].sort(
-        (a, b) => (b.timestamp || 0) - (a.timestamp || 0),
-      );
+      result = [...result].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
     }
     return result;
   });
@@ -175,9 +164,9 @@
   // Dynamic count based on active filter chip
   let playlistCount = $derived.by(() => {
     if (activeChip === "Local") {
-      return allPlaylists.filter(p => p.isLocal === true).length;
+      return allPlaylists.filter((p) => p.isLocal === true).length;
     } else if (activeChip === "YouTube") {
-      return allPlaylists.filter(p => p.isLocal === false).length;
+      return allPlaylists.filter((p) => p.isLocal === false).length;
     } else {
       return allPlaylists.length;
     }
@@ -224,7 +213,7 @@
 
   function handleStorageChange(
     changes: Record<string, { oldValue?: any; newValue?: any }>,
-    area: string,
+    area: string
   ) {
     if (area === "sync") {
       const featureKeys = [
@@ -300,7 +289,7 @@
 
     // Check for existing sync state
     const existingSync = await window.getSyncState(p.id);
-    
+
     if (existingSync?.remotePlaylistId) {
       // Check if remote playlist still exists
       try {
@@ -310,11 +299,11 @@
           const total = existingSync.totalVideos;
           const remaining = existingSync.remainingVideoIds.length;
           const isAutoRetry = await window.isAutoRetryScheduled(p.id);
-          
+
           // Show resume dialog
           requestConfirm({
             title: "Resume Existing Sync?",
-            message: 
+            message:
               `Found partially synced playlist "${localP.title}" with ${synced}/${total} videos (${remaining} remaining).\n\n` +
               `Auto-retry scheduled: ${isAutoRetry ? "Yes (24h)" : "No"}\n\n` +
               `Do you want to resume syncing, or start fresh with a new playlist?`,
@@ -340,7 +329,7 @@
         await window.clearSyncState(p.id);
       }
     }
-    
+
     // No existing sync state, show standard confirmation
     requestConfirm({
       title: "Sync to YouTube?",
@@ -352,17 +341,20 @@
     });
   }
 
-  async function syncPlaylist(p: { id: string }, resumeState: import("../services/sync-state-service").SyncState | null) {
+  async function syncPlaylist(
+    p: { id: string },
+    resumeState: import("../services/sync-state-service").SyncState | null
+  ) {
     const localP = localPlaylists.find((lp) => lp.id === p.id);
     if (!localP) return;
 
     syncingId = p.id;
     try {
-      await window.savePlaylist(localP, { 
+      await window.savePlaylist(localP, {
         syncToYoutube: true,
-        resumeFromState: resumeState || undefined
+        resumeFromState: resumeState || undefined,
       });
-      
+
       // Check if sync is complete or partial
       const isComplete = await window.isSyncComplete(p.id);
       if (isComplete) {
@@ -374,20 +366,22 @@
           const synced = syncState.syncedVideoIds.length;
           const total = syncState.totalVideos;
           const isAutoRetry = await window.isAutoRetryScheduled(p.id);
-          
+
           window.info(
             `Partial sync: ${synced}/${total} videos uploaded. ` +
-            `${isAutoRetry ? "Will auto-resume in 24h." : "Click Sync to continue."}`
+              `${isAutoRetry ? "Will auto-resume in 24h." : "Click Sync to continue."}`
           );
         }
       }
     } catch (e) {
       const errorMsg = e instanceof Error ? e.message : String(e);
       console.error("Failed to sync playlist:", e);
-      
+
       // Check for quota error to show enhanced message
-      if (errorMsg.toLowerCase().includes("quota") || 
-          errorMsg.toLowerCase().includes("ratelimitexceeded")) {
+      if (
+        errorMsg.toLowerCase().includes("quota") ||
+        errorMsg.toLowerCase().includes("ratelimitexceeded")
+      ) {
         // Get current progress for display
         const syncState = await window.getSyncState(p.id);
         if (syncState) {
@@ -397,13 +391,13 @@
           const remaining = syncState?.remainingVideoIds?.length ?? 0;
           const daysNeeded = total > 0 ? Math.ceil(remaining / 200) : 0; // ~200 videos/day max based on 10,000 quota units
           const isAutoRetry = await window.isAutoRetryScheduled(p.id);
-          
+
           window.error(
             `API quota exceeded!\n\n` +
-            `Progress: ${synced}/${total} videos synced\n` +
-            `Remaining: ${remaining} videos\n` +
-            `Estimated completion: ${daysNeeded} day${daysNeeded > 1 ? 's' : ''}\n\n` +
-            `${isAutoRetry ? "✓ Auto-retry scheduled in 24h" : "Click Sync to resume tomorrow"}`
+              `Progress: ${synced}/${total} videos synced\n` +
+              `Remaining: ${remaining} videos\n` +
+              `Estimated completion: ${daysNeeded} day${daysNeeded > 1 ? "s" : ""}\n\n` +
+              `${isAutoRetry ? "✓ Auto-retry scheduled in 24h" : "Click Sync to resume tomorrow"}`
           );
         } else {
           window.error("API quota exceeded. Please try again tomorrow.");
@@ -428,7 +422,12 @@
 
       // Extract YouTube account playlists (non-local, non-virtual)
       const youtubeTaggedPlaylists = allPlaylistsResult.filter(
-        (p) => !p.isLocal && !p.id.startsWith("local-") && p.id !== "LIKED" && p.id !== "UPLOADS" && p.id !== "WL",
+        (p) =>
+          !p.isLocal &&
+          !p.id.startsWith("local-") &&
+          p.id !== "LIKED" &&
+          p.id !== "UPLOADS" &&
+          p.id !== "WL"
       );
 
       // Get all account playlists (the non-tagged ones)
@@ -456,10 +455,7 @@
         console.log("[SAVED-VIEW] Uploaded info:", uploadedInfo);
         if (uploadedInfo) {
           const uploadedItems = await window.ytGetPlaylistItems("UPLOADS");
-          console.log(
-            "[SAVED-VIEW] Uploaded items count:",
-            uploadedItems.length,
-          );
+          console.log("[SAVED-VIEW] Uploaded items count:", uploadedItems.length);
           uploadedPlaylist = {
             ...uploadedInfo,
             videoCount: uploadedItems.length,
@@ -525,10 +521,7 @@
         icon: faYoutube,
         onClick: () => {
           const listId = p.id === "UPLOADS" ? "UU" : p.id;
-          window.open(
-            `https://www.youtube.com/playlist?list=${listId}`,
-            "_blank",
-          );
+          window.open(`https://www.youtube.com/playlist?list=${listId}`, "_blank");
         },
       });
     }
@@ -581,7 +574,8 @@
         push("/api-setup");
       } else {
         console.error("Sign in failed", e);
-        if (window.logSystemEvent) await window.logSystemEvent("ERROR", `[SAVED] Sign-in failed: ${errMsg}`);
+        if (window.logSystemEvent)
+          await window.logSystemEvent("ERROR", `[SAVED] Sign-in failed: ${errMsg}`);
         if (window.error) window.error("Sign-in failed. Please try again.");
       }
     }
@@ -597,18 +591,10 @@
 <main>
   <div class="view-header">
     <div class="top-left">
-      <ViewHeader
-        icon={faListUl}
-        title="Playlists"
-        count={playlistCount}
-      />
+      <ViewHeader icon={faListUl} title="Playlists" count={playlistCount} />
     </div>
     <div class="btn-group right-align">
-      <SimpleButton
-        onclick={() => (location.hash = "#/manage")}
-        title="Manage playlists"
-        secondary
-      >
+      <SimpleButton onclick={() => (location.hash = "#/manage")} title="Manage playlists" secondary>
         <Fa icon={faWrench} fw />
         <span>Manage</span>
       </SimpleButton>
@@ -650,11 +636,7 @@
       </div>
 
       {#each filterChips as chip}
-        <button
-          class:active={activeChip === chip}
-          class="chip"
-          onclick={() => (activeChip = chip)}
-        >
+        <button class:active={activeChip === chip} class="chip" onclick={() => (activeChip = chip)}>
           {chip}
         </button>
       {/each}
@@ -681,9 +663,7 @@
               : p.isTagged
                 ? "synced"
                 : "online"}
-          showFavoriteBadge={!!(
-            settings && p.id === settings.watchLaterPlaylistId
-          )}
+          showFavoriteBadge={!!(settings && p.id === settings.watchLaterPlaylistId)}
           onOpen={() => openInEditor(p)}
           actions={getCardActions(p)}
           category={p.category}

@@ -4,12 +4,38 @@
 
 ---
 
+## ⚡ Quick Reference (first 30 seconds of any session)
+
+```bash
+npm run check          # ALWAYS run this first. Lint → format:check → test → svelte-check. All clear? Proceed.
+npm run format         # Auto-format everything before committing.
+npm run lint:fix       # ESLint auto-fix (handles unused-var prefix, console cleanup).
+npm run build          # Full production build (SPA → editor → dist/chrome + dist/firefox).
+npm run watch          # Dev watch mode for the Svelte SPA.
+npm run web            # Web portal dev server (localhost:3000).
+```
+
+### File Map
+
+| Path                                           | Contains                          | Notes                                                                                          |
+| ---------------------------------------------- | --------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `apps/browser-extension/background/`           | Service worker entry point        | `index.js` → imports `background.js` (895 lines), `init.js`                                    |
+| `apps/browser-extension/content-scripts/`      | Page-injected scripts             | `watch-tracker.js`, `injectors/` (5 small files)                                               |
+| `apps/browser-extension/popup/`                | Quick-add popup toolbar           | `popup.js` (1076 lines), `popup.html`, `popup.css`                                             |
+| `apps/browser-extension/playlist-manager/src/` | Svelte SPA (TypeScript)           | `App.svelte`, `components/` (~38 files), `services/` (17 files), `views/`, `stores/`, `types/` |
+| `apps/web-portal/`                             | Next.js 15 marketing + dashboard  | App Router, Tailwind, shadcn/ui, Playwright e2e                                                |
+| `packages/build-tools/`                        | Build/CI scripts (Node.js)        | `capture.js`, `validate-manifests.js`, `patch-innerhtml.js`, `package-chrome-store.js`         |
+| `docs/`                                        | All documentation + screenshots   | `USAGE_EXAMPLES.md`, `RELEASE_SPEC.md`, `USER_GUIDE.md`                                        |
+| Root                                           | Lint, format, test, deploy config | `eslint.config.mjs`, `.prettierrc`, `vitest.config.mjs`, `jsconfig.json`, `vercel.json`        |
+
+---
+
 ## 🏛️ Architecture Overview
 
-The codebase is split into two primary layers:
+The codebase is split into three layers:
 
 1. **`apps/browser-extension/playlist-manager/` (Frontend SPA Extension UI)**
-   - Built with **Svelte 4 / 5 + TypeScript + Rollup**.
+   - Built with **Svelte 5 + TypeScript + Rollup**.
    - Compiles into `apps/browser-extension/editor/` (`main.js`, `bundle.css`, `index.html`).
    - Location of all UI views (`App.svelte`, `PlaylistEditor.svelte`, `Saved.svelte`, `Settings.svelte`, `History.svelte`, `Search.svelte`) and data services (`video-service.ts`, `youtube-api.ts`, `storage-service.ts`, `sync-service.ts`).
 
@@ -97,25 +123,64 @@ Metadata fetching occurs in `apps/browser-extension/playlist-manager/src/service
 All commands must be executed from the **repository root**:
 
 ```bash
-# 1. Type-check Svelte SPA
-cd apps/browser-extension/playlist-manager && npx svelte-check && cd ..
+# PRIMARY: One-shot verify (lint → format:check → test → svelte-check)
+npm run check
 
-# 2. Complete production build (Compiles SPA -> apps/browser-extension/editor/, copies to dist/chrome/ and dist/firefox/, patches innerHTML, validates manifests)
-npm run build
+# Individual steps (run check instead unless debugging a specific step)
+npm run lint            # ESLint on extension JS + build tools
+npm run lint:fix        # ESLint auto-fix (safe: unused vars get _ prefix, console gets commented)
+npm run format          # Prettier --write everything
+npm run format:check    # Prettier dry-run (part of check)
+npm run test            # Vitest unit tests (passWithNoTests: true)
 
-# 3. Web SaaS Portal & Dashboard Build
-npm run web:build
-
-# 4. Development watch mode
-npm run watch
+# Builds
+npm run build           # Full production build (SPA → editor → dist/chrome + dist/firefox)
+npm run watch           # Dev watch mode
+npm run web             # Web portal dev server (localhost:3000)
+npm run web:build       # Web portal production build
 ```
+
+---
+
+## 🤖 AI Agent Workflow (mandatory)
+
+### Pre-Edit
+
+```
+1. npm run check          # Verify clean baseline — do NOT edit anything if this fails
+2. Read the file(s)       # Always read_file before editing
+3. Search for usages      # search_files on the symbol/import you're about to change
+```
+
+### Post-Edit
+
+```
+4. Make the edit          # Use patch tool (not terminal sed/awk)
+5. npm run check          # MUST pass. Fix any failures before continuing.
+6. npm run build          # MUST pass. Full production build verification.
+```
+
+### Commit
+
+```
+7. git add the changed files
+8. git commit (present the message to the user for review)
+9. NEVER git push — notify the user instead
+```
+
+**Critical rule:** Never skip step 5. Every edit must pass `npm run check` before you declare it done. If the check fails, it's still your problem.
 
 ---
 
 ## 🚨 Guidelines & Rules for AI Agents
 
-1. **Run Verification Commands:** Always run `npm run build` and `cd apps/browser-extension/playlist-manager && npx svelte-check` after making code modifications to ensure no compilation or manifest validation errors.
+1. **Run Verification Commands:** Always run `npm run check` and `npm run build` after making code modifications.
 2. **Preserve Compatibility:** Maintain Android (Fenix) compatibility guard checks (`isAndroid()` user-agent detection) before using desktop-only extension APIs (`contextMenus`, `identity.launchWebAuthFlow`).
 3. **Keep Manifests Clean:** Never add `apps/browser-extension/manifest.json`. Only edit `apps/browser-extension/manifest.chrome.json` and `apps/browser-extension/manifest.firefox.json`.
-4. Debounced Saves: Ensure UI edits to playlists trigger the debounced autosave in `storage-service.ts`.
-5. Manual Pushes: AI agents are NEVER permitted to run `git push`. Always stage and commit your changes, then notify the user to handle the push manually.
+4. **Debounced Saves:** Ensure UI edits to playlists trigger the debounced autosave in `storage-service.ts`.
+5. **Manual Pushes:** AI agents are NEVER permitted to run `git push`. Always stage and commit your changes, then notify the user to handle the push manually.
+6. **Run check before and after every edit.** This is non-negotiable. A failing check means you broke something.
+
+## 🚀 Release Process
+
+All project releases must follow the standard procedure defined in [docs/RELEASE_SPEC.md](docs/RELEASE_SPEC.md). AI agents are responsible for all steps up to, but not including, the final `git push`.

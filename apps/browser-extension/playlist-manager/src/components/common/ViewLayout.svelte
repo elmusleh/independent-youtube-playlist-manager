@@ -1,8 +1,8 @@
 <script lang="ts">
-  let { 
+  let {
     id = "",
     className = "",
-    children 
+    children,
   }: {
     id?: string;
     className?: string;

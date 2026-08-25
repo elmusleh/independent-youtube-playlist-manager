@@ -938,7 +938,7 @@ async function handleChannelImport() {
         await log("INFO", `Popup: Script execution result: ${JSON.stringify(result)}`);
       } catch (e) {
         await log("ERROR", `Popup: Script execution failed: ${getErrorMessage(e)}`);
-        throw new Error(`Failed to execute scraping script: ${getErrorMessage(e)}`);
+        throw new Error(`Failed to execute scraping script: ${getErrorMessage(e)}`, { cause: e });
       }
 
       scrapeResult = result[0]?.result || {

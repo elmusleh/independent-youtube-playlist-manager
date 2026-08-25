@@ -6,11 +6,15 @@ export const dynamic = "force-dynamic";
 // GET /api/sync: Pull latest snapshot
 export async function GET(req: NextRequest) {
   const authHeader = req.headers.get("authorization") || "";
-  const token = authHeader.replace("Bearer ", "").trim() || req.nextUrl.searchParams.get("token") || "";
+  const token =
+    authHeader.replace("Bearer ", "").trim() || req.nextUrl.searchParams.get("token") || "";
 
   const { userId, valid } = await verifyExtensionToken(token);
   if (!valid) {
-    return NextResponse.json({ error: "Unauthorized: Invalid or missing sync token." }, { status: 401 });
+    return NextResponse.json(
+      { error: "Unauthorized: Invalid or missing sync token." },
+      { status: 401 }
+    );
   }
 
   if (!isSupabaseConfigured) {
@@ -22,7 +26,8 @@ export async function GET(req: NextRequest) {
         timestamp: new Date().toISOString(),
         playlistCount: 4,
         videoCount: 842,
-        message: "Supabase credentials not configured in environment; serving verified local snapshot.",
+        message:
+          "Supabase credentials not configured in environment; serving verified local snapshot.",
       },
     });
   }
@@ -55,7 +60,10 @@ export async function POST(req: NextRequest) {
 
   const { userId, valid } = await verifyExtensionToken(token);
   if (!valid) {
-    return NextResponse.json({ error: "Unauthorized: Invalid or missing sync token." }, { status: 401 });
+    return NextResponse.json(
+      { error: "Unauthorized: Invalid or missing sync token." },
+      { status: 401 }
+    );
   }
 
   try {
@@ -67,7 +75,8 @@ export async function POST(req: NextRequest) {
     }
 
     const playlists = Array.isArray(payload.playlists) ? payload.playlists : [];
-    const metadataCount = typeof payload.metadataCache === "object" ? Object.keys(payload.metadataCache).length : 0;
+    const metadataCount =
+      typeof payload.metadataCache === "object" ? Object.keys(payload.metadataCache).length : 0;
     const sizeBytes = Buffer.byteLength(JSON.stringify(payload), "utf8");
 
     if (!isSupabaseConfigured) {

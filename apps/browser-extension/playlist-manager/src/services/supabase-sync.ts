@@ -19,7 +19,12 @@ export class BackgroundSyncEngine {
   /**
    * Main sync trigger: Pushes local mutations and pulls remote delta changes
    */
-  async triggerSync(): Promise<{ success: boolean; pushed: number; pulled: number; error?: string }> {
+  async triggerSync(): Promise<{
+    success: boolean;
+    pushed: number;
+    pulled: number;
+    error?: string;
+  }> {
     if (this.isSyncing) {
       return { success: false, pushed: 0, pulled: 0, error: "Sync already in progress" };
     }
@@ -28,7 +33,12 @@ export class BackgroundSyncEngine {
     try {
       const session = await getSession();
       if (!session || !session.user) {
-        return { success: true, pushed: 0, pulled: 0, error: "User logged out (changes kept local)" };
+        return {
+          success: true,
+          pushed: 0,
+          pulled: 0,
+          error: "User logged out (changes kept local)",
+        };
       }
 
       const client = await getSupabaseClient();
@@ -58,7 +68,7 @@ export class BackgroundSyncEngine {
    * Push local pending and soft-deleted records to Supabase
    */
   private async pushLocalChanges(client: any, userId: string): Promise<number> {
-    const rawLocal = await this.getStorageItem<SyncRecord<Playlist>[]>(LOCAL_PLAYLISTS_KEY) || [];
+    const rawLocal = (await this.getStorageItem<SyncRecord<Playlist>[]>(LOCAL_PLAYLISTS_KEY)) || [];
     const pending = rawLocal.filter((p) => p.syncStatus !== "synced");
     if (pending.length === 0) return 0;
 
@@ -117,7 +127,8 @@ export class BackgroundSyncEngine {
    * Pull remote delta updates from Supabase since last sync timestamp
    */
   private async pullRemoteChanges(client: any, userId: string): Promise<number> {
-    const lastSync = (await this.getStorageItem<string>(LAST_SYNC_KEY)) || new Date(0).toISOString();
+    const lastSync =
+      (await this.getStorageItem<string>(LAST_SYNC_KEY)) || new Date(0).toISOString();
 
     // 1. Fetch updated playlists
     const { data: remotePlaylists, error: plErr } = await client
@@ -286,7 +297,9 @@ export class BackgroundSyncEngine {
             table: "playlist_items",
           },
           async () => {
-            console.log("[SUPABASE-REALTIME] Remote playlist item change detected, pulling delta...");
+            console.log(
+              "[SUPABASE-REALTIME] Remote playlist item change detected, pulling delta..."
+            );
             await this.pullRemoteChanges(client, userId);
             if (onRemoteUpdate) onRemoteUpdate();
           }

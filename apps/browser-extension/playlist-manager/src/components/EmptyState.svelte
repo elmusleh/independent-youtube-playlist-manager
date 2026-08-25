@@ -91,7 +91,9 @@
     font-size: 14px;
     font-weight: 600;
     text-decoration: none;
-    transition: background 0.15s, filter 0.15s;
+    transition:
+      background 0.15s,
+      filter 0.15s;
     border: none;
     cursor: pointer;
   }

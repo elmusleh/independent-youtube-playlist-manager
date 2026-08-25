@@ -59,31 +59,19 @@
         <span>Play All</span>
       </SimpleButton>
     {/if}
-    <SimpleButton
-      onclick={onImport}
-      title="Add videos from URLs or IDs"
-      secondary
-    >
+    <SimpleButton onclick={onImport} title="Add videos from URLs or IDs" secondary>
       <Fa icon={faPlus} fw />
       <span>Add Video(s)</span>
     </SimpleButton>
     {#if onScrapeHtml}
-      <SimpleButton
-        onclick={onScrapeHtml}
-        title="Scrape YouTube links from pasted HTML"
-        secondary
-      >
+      <SimpleButton onclick={onScrapeHtml} title="Scrape YouTube links from pasted HTML" secondary>
         <Fa icon={faCode} fw />
         <span>Scrape HTML</span>
       </SimpleButton>
     {/if}
 
     {#if hasVideos}
-      <SimpleButton
-        onclick={() => (isSelectMode = true)}
-        title="Bulk select videos"
-        secondary
-      >
+      <SimpleButton onclick={() => (isSelectMode = true)} title="Bulk select videos" secondary>
         <Fa icon={faCheck} fw />
         <span>Select</span>
       </SimpleButton>

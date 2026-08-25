@@ -3,8 +3,4 @@
   import PlaylistLoader from "../components/PlaylistLoader.svelte";
 </script>
 
-<PlaylistLoader 
-  isFavorite={true} 
-  pageIcon={faStar} 
-  pageTitle="Favorite Playlist" 
-/>
+<PlaylistLoader isFavorite={true} pageIcon={faStar} pageTitle="Favorite Playlist" />

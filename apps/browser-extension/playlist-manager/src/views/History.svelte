@@ -49,10 +49,7 @@
   // 1. Initialization: Fetch initial data directly at top level
   const loadInitialData = async () => {
     if (window.logSystemEvent)
-      await window.logSystemEvent(
-        "INFO",
-        "[HISTORY-VIEW] Loading watch history",
-      );
+      await window.logSystemEvent("INFO", "[HISTORY-VIEW] Loading watch history");
     try {
       const data = await browser.storage.local.get(HISTORY_KEY);
       parseAndSortHistory(data[HISTORY_KEY]);
@@ -63,17 +60,14 @@
       if (window.logSystemEvent)
         await window.logSystemEvent(
           "INFO",
-          `[HISTORY-VIEW] Loaded ${historyArray.length} history entries`,
+          `[HISTORY-VIEW] Loaded ${historyArray.length} history entries`
         );
     } catch (e) {
       const errMsg = e instanceof Error ? e.message : String(e);
       console.error("Failed to load history:", e);
       errorMessage = errMsg;
       if (window.logSystemEvent)
-        await window.logSystemEvent(
-          "ERROR",
-          `[HISTORY-VIEW] Failed to load history: ${errMsg}`,
-        );
+        await window.logSystemEvent("ERROR", `[HISTORY-VIEW] Failed to load history: ${errMsg}`);
     } finally {
       loading = false;
     }
@@ -159,7 +153,7 @@
         (item.title || "").toLowerCase().includes(q) ||
         (item.channel || "").toLowerCase().includes(q)
       );
-    }),
+    })
   );
 
   let paginatedHistory = $derived(
@@ -167,7 +161,7 @@
       items: filteredHistory,
       pageSize,
       currentPage,
-    }) as HistoryItem[],
+    }) as HistoryItem[]
   );
 
   let groupedHistory = $derived(
@@ -178,8 +172,8 @@
         groups[label].push(item);
         return groups;
       },
-      {} as Record<string, HistoryItem[]>,
-    ),
+      {} as Record<string, HistoryItem[]>
+    )
   );
 
   let groupOrder = $derived(Object.keys(groupedHistory));
@@ -208,27 +202,19 @@
       a.remove();
       URL.revokeObjectURL(url);
       if (window.logSystemEvent)
-        await window.logSystemEvent(
-          "INFO",
-          "[HISTORY-VIEW] Watch history exported successfully",
-        );
+        await window.logSystemEvent("INFO", "[HISTORY-VIEW] Watch history exported successfully");
       window.success("History exported successfully");
     } catch (e) {
       const errMsg = e instanceof Error ? e.message : String(e);
       console.error("Failed to export history:", e);
       if (window.logSystemEvent)
-        await window.logSystemEvent(
-          "ERROR",
-          `[HISTORY-VIEW] Export failed: ${errMsg}`,
-        );
+        await window.logSystemEvent("ERROR", `[HISTORY-VIEW] Export failed: ${errMsg}`);
       window.error("Export failed");
     }
   }
 
   function importHistory() {
-    const fi = document.getElementById(
-      "HistoryImportInput",
-    ) as HTMLInputElement;
+    const fi = document.getElementById("HistoryImportInput") as HTMLInputElement;
     fi.onchange = () => {
       const file = fi.files?.[0];
       if (!file) return;
@@ -237,25 +223,19 @@
         try {
           const importedData = JSON.parse(fr.result as string);
           if (window.logSystemEvent)
-            await window.logSystemEvent(
-              "INFO",
-              "[HISTORY-VIEW] Importing watch history from file",
-            );
+            await window.logSystemEvent("INFO", "[HISTORY-VIEW] Importing watch history from file");
           await browser.storage.local.set({ [HISTORY_KEY]: importedData });
           if (window.logSystemEvent)
             await window.logSystemEvent(
               "INFO",
-              "[HISTORY-VIEW] Watch history imported successfully",
+              "[HISTORY-VIEW] Watch history imported successfully"
             );
           window.success("History imported successfully");
         } catch (e) {
           const errMsg = e instanceof Error ? e.message : String(e);
           console.error("Failed to import history:", e);
           if (window.logSystemEvent)
-            await window.logSystemEvent(
-              "ERROR",
-              `[HISTORY-VIEW] Import failed: ${errMsg}`,
-            );
+            await window.logSystemEvent("ERROR", `[HISTORY-VIEW] Import failed: ${errMsg}`);
           window.error("File is incorrectly formatted");
         }
         fi.value = "";
@@ -269,11 +249,7 @@
 <main>
   <div class="view-header">
     <div class="top-left">
-      <ViewHeader
-        icon={faClockRotateLeft}
-        title="Watch History"
-        count={historyArray.length}
-      />
+      <ViewHeader icon={faClockRotateLeft} title="Watch History" count={historyArray.length} />
     </div>
     <div class="btn-group right-align">
       {#if historyArray.length > 0}
@@ -285,18 +261,23 @@
           <Fa icon={faFileImport} fw />
           <span>Import</span>
         </SimpleButton>
-        <SimpleButton secondary onclick={() => {
-          requestConfirm({
-            title: "Clear History?",
-            message: "This will permanently remove all watch history from your local storage. YouTube history will not be affected.",
-            color: "danger",
-            onConfirm: async () => {
-              await browser.storage.local.remove(HISTORY_KEY);
-              historyArray = [];
-              window.success("History cleared");
-            }
-          });
-        }} title="Clear all history">
+        <SimpleButton
+          secondary
+          onclick={() => {
+            requestConfirm({
+              title: "Clear History?",
+              message:
+                "This will permanently remove all watch history from your local storage. YouTube history will not be affected.",
+              color: "danger",
+              onConfirm: async () => {
+                await browser.storage.local.remove(HISTORY_KEY);
+                historyArray = [];
+                window.success("History cleared");
+              },
+            });
+          }}
+          title="Clear all history"
+        >
           <Fa icon={faXmark} fw />
           <span>Clear History</span>
         </SimpleButton>
@@ -319,10 +300,7 @@
         <div class="empty-state">
           <Fa icon={faClockRotateLeft} size="4x" />
           <h2>Keep track of what you watch</h2>
-          <p>
-            Your local watch history will appear here as you play videos from
-            your playlists.
-          </p>
+          <p>Your local watch history will appear here as you play videos from your playlists.</p>
         </div>
       {:else if filteredHistory.length === 0}
         <div class="empty-state">
@@ -361,10 +339,7 @@
                         </div>
                         <div class="play-overlay"><Fa icon={faPlay} /></div>
                         <div class="progress-bar-container">
-                          <div
-                            class="progress-fill"
-                            style="width: {getProgressWidth(item)}"
-                          ></div>
+                          <div class="progress-fill" style="width: {getProgressWidth(item)}"></div>
                         </div>
                       </div>
                     </a>
@@ -380,14 +355,10 @@
                         </a>
                       </div>
                       <div class="meta">
-                        <span class="channel"
-                          >{item.channel || "Unknown Channel"}</span
-                        >
+                        <span class="channel">{item.channel || "Unknown Channel"}</span>
                         <span class="dot">•</span>
                         <span class="timestamp"
-                          >{new Date(
-                            item.lastWatchedAt,
-                          ).toLocaleDateString()}</span
+                          >{new Date(item.lastWatchedAt).toLocaleDateString()}</span
                         >
                       </div>
                       <div class="resume-info">
@@ -418,15 +389,9 @@
   </div>
 </main>
 
-<input
-  type="file"
-  id="HistoryImportInput"
-  accept="application/json"
-  style="display: none;"
-/>
+<input type="file" id="HistoryImportInput" accept="application/json" style="display: none;" />
 
 <style>
-
   .content {
     flex: 1;
   }

@@ -71,7 +71,7 @@ if (typeof browser !== "undefined") {
         console.log("Cache restored from persistent storage");
       }
     })
-    .catch(() => { });
+    .catch(() => {});
 }
 
 // ─── Metadata Cache Migration (monolithic → per-video idb-keyval) ─────────
@@ -104,7 +104,9 @@ if (typeof browser !== "undefined") {
         await dbPutMetadataBatch(batchObj);
       }
       await browser.storage.local.set({ [META_MIGRATION_FLAG]: true });
-      console.log(`[STORAGE] Metadata cache migration complete: ${Object.keys(batchObj).length} entries migrated.`);
+      console.log(
+        `[STORAGE] Metadata cache migration complete: ${Object.keys(batchObj).length} entries migrated.`
+      );
     } catch (e) {
       console.warn("[STORAGE] Metadata cache migration failed:", e);
     }
@@ -157,7 +159,7 @@ async function removeLocalPlaylist(id: string): Promise<void> {
 }
 
 window.ensureWatchLaterPlaylist = async (
-  forceCreate = false,
+  forceCreate = false
 ): Promise<{ id: string | null; recreated: boolean }> => {
   const settings = await window.getSettings();
   let currentId = settings.watchLaterPlaylistId;
@@ -180,19 +182,21 @@ window.ensureWatchLaterPlaylist = async (
     try {
       // 1. Get all playlists from their YouTube account
       const ytPlaylists = await window.getAccountPlaylists();
-      
+
       // 2. Look for an existing "Watch Later [YPH]" or "Watch Later" playlist
       const existingWL = ytPlaylists.find(
         (p) => p.title === "Watch Later [YPH]" || p.title === "Watch Later"
       );
-      
+
       if (existingWL) {
-        console.log(`[STORAGE] Linking existing YouTube playlist "${existingWL.title}" as favorite`);
+        console.log(
+          `[STORAGE] Linking existing YouTube playlist "${existingWL.title}" as favorite`
+        );
         await window.storeObject("watchLaterPlaylistId", existingWL.id);
         notifyPlaylistsChanged();
         return { id: existingWL.id, recreated: false };
       }
-      
+
       // 3. Create a new "Watch Later [YPH]" playlist on YouTube
       console.log("[STORAGE] Creating new YouTube playlist 'Watch Later [YPH]' as favorite...");
       const newYtId = await window.ytCreatePlaylist("Watch Later [YPH]", "private");
@@ -200,7 +204,10 @@ window.ensureWatchLaterPlaylist = async (
       notifyPlaylistsChanged();
       return { id: newYtId, recreated: true };
     } catch (e) {
-      console.error("[STORAGE] Failed to auto-configure YouTube favorite, falling back to local:", e);
+      console.error(
+        "[STORAGE] Failed to auto-configure YouTube favorite, falling back to local:",
+        e
+      );
       return await recreateLocal();
     }
   };
@@ -289,7 +296,7 @@ let _isSyncing = false;
 
 window.savePlaylist = async (
   playlist: Playlist,
-  options: { syncToYoutube?: boolean; resumeFromState?: SyncState } = {},
+  options: { syncToYoutube?: boolean; resumeFromState?: SyncState } = {}
 ): Promise<string> => {
   await SystemLogger.info("StorageService", "savePlaylist start", {
     playlistId: playlist.id,
@@ -327,13 +334,12 @@ window.savePlaylist = async (
           // Resume existing sync
           ytId = syncState.remotePlaylistId;
           videosToSync = syncState.remainingVideoIds;
-          console.log(`[STORAGE] Resuming sync for playlist ${ytId}, ${videosToSync.length} videos remaining`);
+          console.log(
+            `[STORAGE] Resuming sync for playlist ${ytId}, ${videosToSync.length} videos remaining`
+          );
         } else {
           // New playlist on YouTube - create it
-          ytId = await window.ytCreatePlaylist(
-            playlist.title,
-            settings.defaultPrivacy,
-          );
+          ytId = await window.ytCreatePlaylist(playlist.title, settings.defaultPrivacy);
           videosToSync = playlist.videos;
 
           // Initialize sync state for tracking progress (with remote ID known)
@@ -342,7 +348,7 @@ window.savePlaylist = async (
             playlist.title,
             playlist.videos,
             settings.defaultPrivacy,
-            ytId, // Pass remote playlist ID immediately to avoid race condition
+            ytId // Pass remote playlist ID immediately to avoid race condition
           );
         }
 
@@ -362,9 +368,10 @@ window.savePlaylist = async (
             const errorMsg = e instanceof Error ? e.message : String(e);
 
             // Check if this is a quota error
-            if (errorMsg.toLowerCase().includes("quota") ||
-              errorMsg.toLowerCase().includes("ratelimitexceeded")) {
-
+            if (
+              errorMsg.toLowerCase().includes("quota") ||
+              errorMsg.toLowerCase().includes("ratelimitexceeded")
+            ) {
               // Save error to sync state
               if (syncState) {
                 syncState.error = errorMsg;
@@ -375,20 +382,21 @@ window.savePlaylist = async (
               const freshState = await window.getSyncState(playlist.id);
               const synced = freshState?.syncedVideoIds?.length || successfullySynced.length;
               const total = freshState?.totalVideos || playlist.videos.length;
-              const remaining = freshState?.remainingVideoIds?.length || (total - synced);
+              const remaining = freshState?.remainingVideoIds?.length || total - synced;
 
               // Schedule auto-retry if enabled
               if (typeof browser !== "undefined" && browser.alarms && settings.autoRetryEnabled) {
                 await window.scheduleAutoRetry(playlist.id);
               }
 
-              const autoRetryMsg = (typeof browser !== "undefined" && browser.alarms && settings.autoRetryEnabled)
-                ? " Auto-retry scheduled for 24h."
-                : "";
+              const autoRetryMsg =
+                typeof browser !== "undefined" && browser.alarms && settings.autoRetryEnabled
+                  ? " Auto-retry scheduled for 24h."
+                  : "";
 
               throw new Error(
                 `API quota exceeded (${synced}/${total} videos synced). ` +
-                `${remaining} videos remaining. Progress saved - click Sync to resume.${autoRetryMsg}`
+                  `${remaining} videos remaining. Progress saved - click Sync to resume.${autoRetryMsg}`
               );
             }
 
@@ -424,17 +432,13 @@ window.savePlaylist = async (
       const currentVideoIds = currentItems.map((i) => i.videoId);
 
       // Remove videos that were deleted from the playlist.
-      const removedItems = currentItems.filter(
-        (i) => !playlist.videos.includes(i.videoId),
-      );
+      const removedItems = currentItems.filter((i) => !playlist.videos.includes(i.videoId));
       for (const item of removedItems) {
         await window.ytRemoveItem(item.itemId);
       }
 
       // Append/Insert videos that are new.
-      const addedVideoIds = playlist.videos.filter(
-        (id) => !currentVideoIds.includes(id),
-      );
+      const addedVideoIds = playlist.videos.filter((id) => !currentVideoIds.includes(id));
       for (const videoId of addedVideoIds) {
         const position = playlist.videos.indexOf(videoId);
         await window.ytAddVideo(ytId, videoId, position);
@@ -449,17 +453,10 @@ window.savePlaylist = async (
 
         // If the video at this position isn't what we expect, move the correct one here.
         if (!currentItem || currentItem.videoId !== desiredVideoId) {
-          const currentIndex = freshItems.findIndex(
-            (item) => item.videoId === desiredVideoId,
-          );
+          const currentIndex = freshItems.findIndex((item) => item.videoId === desiredVideoId);
           if (currentIndex !== -1) {
             const itemToReorder = freshItems[currentIndex];
-            await window.ytMoveItem(
-              itemToReorder.itemId,
-              ytId,
-              itemToReorder.videoId,
-              i,
-            );
+            await window.ytMoveItem(itemToReorder.itemId, ytId, itemToReorder.videoId, i);
 
             // Sync our local tracked list to match YouTube's shift
             const [moved] = freshItems.splice(currentIndex, 1);
@@ -503,9 +500,7 @@ window.savePlaylist = async (
   }
 };
 
-window.importPlaylists = async (
-  playlistsExport: PlaylistExport[],
-): Promise<void> => {
+window.importPlaylists = async (playlistsExport: PlaylistExport[]): Promise<void> => {
   // Remember the current favorite before importing
   const settings = await window.getSettings();
   const oldFavoriteId = settings.watchLaterPlaylistId;
@@ -567,7 +562,7 @@ window.importPlaylists = async (
   const signedIn = await window.isSignedIn();
   if (signedIn && playlistsExport.length > 0) {
     window.success(
-      `Imported ${playlistsExport.length} playlist(s) locally. Open a playlist and click "Sync to YouTube" to upload to your account.`,
+      `Imported ${playlistsExport.length} playlist(s) locally. Open a playlist and click "Sync to YouTube" to upload to your account.`
     );
   }
 };
@@ -632,9 +627,7 @@ window.getPlaylists = async (): Promise<Playlist[]> => {
 
   if (_cache.list && (await isFresh(_cache.list.ts))) {
     // Merge cached YT with fresh local
-    const ytPlaylists = _cache.list.data.filter(
-      (p) => !p.id.startsWith("local-"),
-    );
+    const ytPlaylists = _cache.list.data.filter((p) => !p.id.startsWith("local-"));
     return [...local, ...ytPlaylists];
   }
 
@@ -654,7 +647,7 @@ window.getPlaylists = async (): Promise<Playlist[]> => {
       };
       _cache.single.set(p.id, { data: playlist, ts: Date.now() });
       return playlist;
-    }),
+    })
   );
 
   const all = [...local, ...playlists];
@@ -702,9 +695,7 @@ window.getPlaylist = async (id: string): Promise<Playlist | null> => {
 };
 
 // Helper function to check if any YouTube feature is enabled
-async function isAnyYouTubeFeatureEnabled(
-  settings: Settings,
-): Promise<boolean> {
+async function isAnyYouTubeFeatureEnabled(settings: Settings): Promise<boolean> {
   return (
     settings.enableAccountPlaylists ||
     settings.enableLikedVideos ||
@@ -730,10 +721,7 @@ window.getAccountPlaylists = async (): Promise<YtPlaylistInfoExtended[]> => {
     videoCount: p.videos.length,
     isTagged: false,
     isLocal: true,
-    thumbnailUrl:
-      p.videos[0]
-        ? window.videoService.getVideoThumbnailUrl(p.videos[0])
-        : undefined,
+    thumbnailUrl: p.videos[0] ? window.videoService.getVideoThumbnailUrl(p.videos[0]) : undefined,
   }));
 
   // If not signed in, only return local playlists
@@ -750,9 +738,7 @@ window.getAccountPlaylists = async (): Promise<YtPlaylistInfoExtended[]> => {
   }
 
   if (_cache.accountList && (await isFresh(_cache.accountList.ts))) {
-    const ytAccount = _cache.accountList.data.filter(
-      (p) => !p.id.startsWith("local-"),
-    );
+    const ytAccount = _cache.accountList.data.filter((p) => !p.id.startsWith("local-"));
     return [...localMapped, ...ytAccount];
   }
 
@@ -778,12 +764,10 @@ window.getAccountPlaylists = async (): Promise<YtPlaylistInfoExtended[]> => {
 
     // Robust check: Ensure the favorite playlist is in the list
     if (settings.watchLaterPlaylistId) {
-      const favoriteInList = playlists.some(
-        (p) => p.id === settings.watchLaterPlaylistId,
-      );
+      const favoriteInList = playlists.some((p) => p.id === settings.watchLaterPlaylistId);
       if (!favoriteInList) {
         console.log(
-          `Favorite playlist ${settings.watchLaterPlaylistId} missing from bulk list, fetching directly...`,
+          `Favorite playlist ${settings.watchLaterPlaylistId} missing from bulk list, fetching directly...`
         );
         try {
           const fav = await window.ytGetPlaylist(settings.watchLaterPlaylistId);
@@ -859,20 +843,17 @@ window.getAccountPlaylists = async (): Promise<YtPlaylistInfoExtended[]> => {
     // API failed - return cached data if available
     console.warn("API call failed, returning cached playlists if available", e);
     if (_cache.accountList) {
-      const ytAccount = _cache.accountList.data.filter(
-        (p) => !p.id.startsWith("local-"),
-      );
+      const ytAccount = _cache.accountList.data.filter((p) => !p.id.startsWith("local-"));
       return [...localMapped, ...ytAccount];
     }
     // Try to restore from persistent storage
     if (typeof browser !== "undefined") {
       const stored = await browser.storage.local.get(PERSISTENT_CACHE_KEY);
-      const cached = stored[PERSISTENT_CACHE_KEY]?.accountList as CacheEntry<YtPlaylistInfoExtended[]> | undefined;
+      const cached = stored[PERSISTENT_CACHE_KEY]?.accountList as
+        CacheEntry<YtPlaylistInfoExtended[]> | undefined;
       if (cached) {
         _cache.accountList = cached;
-        const ytAccount = cached.data.filter(
-          (p) => !p.id.startsWith("local-"),
-        );
+        const ytAccount = cached.data.filter((p) => !p.id.startsWith("local-"));
         return [...localMapped, ...ytAccount];
       }
     }
@@ -890,7 +871,7 @@ window.getAccountSubscriptions = async (): Promise<
 
 // Return the user's recent activities.
 window.getAccountActivities = async (
-  maxResults: number = 20,
+  maxResults: number = 20
 ): Promise<
   {
     type: string;
@@ -906,7 +887,7 @@ window.getAccountActivities = async (
 
 // Return the user's comments.
 window.getAccountComments = async (
-  maxResults: number = 20,
+  maxResults: number = 20
 ): Promise<
   {
     id: string;
@@ -923,7 +904,7 @@ window.getAccountComments = async (
 // Perform a YouTube search.
 window.youtubeSearch = async (
   query: string,
-  maxResults: number = 20,
+  maxResults: number = 20
 ): Promise<
   {
     videoId: string;
@@ -1023,10 +1004,7 @@ if (typeof browser !== "undefined") {
   window.fetchAllObjects = async () => ({ ...localStorage });
   window.storeObject = async (id, obj) => {
     _cachedSettings = null;
-    localStorage.setItem(
-      id,
-      typeof obj === "string" ? obj : JSON.stringify(obj),
-    );
+    localStorage.setItem(id, typeof obj === "string" ? obj : JSON.stringify(obj));
   };
   window.removeObject = async (id) => {
     _cachedSettings = null;
@@ -1181,7 +1159,7 @@ function persistCache(): void {
   if (_cache.list) data.list = _cache.list;
   if (_cache.accountList) data.accountList = _cache.accountList;
   if (Object.keys(data).length > 0) {
-    browser.storage.local.set({ [PERSISTENT_CACHE_KEY]: data }).catch(() => { });
+    browser.storage.local.set({ [PERSISTENT_CACHE_KEY]: data }).catch(() => {});
   }
 }
 
@@ -1189,9 +1167,7 @@ function notifyPlaylistsChanged() {
   bustCache();
   persistCache();
   if (typeof browser !== "undefined") {
-    browser.runtime
-      .sendMessage({ cmd: "update-saved-playlists" })
-      .catch(() => { });
+    browser.runtime.sendMessage({ cmd: "update-saved-playlists" }).catch(() => {});
   }
 }
 
@@ -1202,7 +1178,9 @@ window.invalidateCacheAndNotify = () => {
 if (typeof window !== "undefined") {
   window.addEventListener("yt-auth-changed", async () => {
     try {
-      console.log("[STORAGE] Auth change detected, ensuring favorite Watch Later playlist is updated...");
+      console.log(
+        "[STORAGE] Auth change detected, ensuring favorite Watch Later playlist is updated..."
+      );
       await window.ensureWatchLaterPlaylist();
     } catch (e) {
       console.error("[STORAGE] Failed to ensure Watch Later playlist on auth change:", e);
@@ -1210,4 +1188,4 @@ if (typeof window !== "undefined") {
   });
 }
 
-export { };
+export {};

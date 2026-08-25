@@ -86,8 +86,7 @@
       if (playlist) {
         viewState = "ready";
       } else {
-        errorMessage =
-          "Playlist not found. It may have been deleted or you no longer have access.";
+        errorMessage = "Playlist not found. It may have been deleted or you no longer have access.";
         viewState = "error";
       }
     } catch (e) {
@@ -177,11 +176,7 @@
         actionHref="https://www.youtube.com/playlist?list=WL"
       />
     {:else if viewState === "error"}
-      <ErrorState
-        message={errorMessage}
-        onRetry={loadData}
-        showSettings={true}
-      />
+      <ErrorState message={errorMessage} onRetry={loadData} showSettings={true} />
     {:else if viewState === "ready" && playlist}
       <PlaylistEditor
         {playlist}

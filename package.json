@@ -19,7 +19,7 @@
     "web:build": "npm --prefix apps/web-portal run build",
     "web:test": "npm --prefix apps/web-portal run test:e2e",
     "sync-version": "node packages/build-tools/sync-version.mjs",
-    "release": "bash scripts/release.sh",
+    "check": "npm run lint && npm run format:check && npm run test && cd apps/browser-extension/playlist-manager && npx svelte-check",
     "lint": "eslint apps/browser-extension/ packages/build-tools/ --ext .js",
     "lint:fix": "eslint apps/browser-extension/ packages/build-tools/ --ext .js --fix",
     "format": "prettier --write .",
@@ -43,6 +43,7 @@
     "notyf": "^3.10.0",
     "playwright": "^1.62.1",
     "prettier": "^3.0.0",
+    "prettier-plugin-svelte": "^4.1.1",
     "vitest": "^4.1.11",
     "webextension-polyfill": "^0.12.0"
   },

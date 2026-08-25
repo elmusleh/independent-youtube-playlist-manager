@@ -1,11 +1,11 @@
 <script lang="ts">
   import Fa from "svelte-fa";
-  import { 
-    faFileExport, 
-    faCodeMerge, 
+  import {
+    faFileExport,
+    faCodeMerge,
     faCloudArrowDown,
     faTrash,
-    faXmark
+    faXmark,
   } from "@fortawesome/free-solid-svg-icons";
   import SimpleButton from "../SimpleButton.svelte";
   import ProgressBar from "../ProgressBar.svelte";
@@ -34,7 +34,7 @@
 
     // Export Selection
     showExport = $bindable(false),
-    onExecuteExport
+    onExecuteExport,
   }: {
     showMerge: boolean;
     mergeTitle: string;
@@ -62,11 +62,26 @@
 </script>
 
 {#if showMerge}
-  <div class="overlay" onclick={() => (showMerge = false)} onkeydown={(e) => (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') && (showMerge = false)} role="button" tabindex="-1" aria-label="Close dialog">
-    <div class="dialog" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()} role="dialog" tabindex="-1">
+  <div
+    class="overlay"
+    onclick={() => (showMerge = false)}
+    onkeydown={(e) =>
+      (e.key === "Escape" || e.key === "Enter" || e.key === " ") && (showMerge = false)}
+    role="button"
+    tabindex="-1"
+    aria-label="Close dialog"
+  >
+    <div
+      class="dialog"
+      onclick={(e) => e.stopPropagation()}
+      onkeydown={(e) => e.stopPropagation()}
+      role="dialog"
+      tabindex="-1"
+    >
       <h3 class="dialog-title">Merge Playlists</h3>
       <p class="dialog-msg">
-        Merge {selectedPlaylists.length} playlists into one. This will accumulate <strong>~{mergeRawTotal}</strong> videos before de-duplication.
+        Merge {selectedPlaylists.length} playlists into one. This will accumulate
+        <strong>~{mergeRawTotal}</strong> videos before de-duplication.
       </p>
 
       <div class="field-group">
@@ -79,7 +94,7 @@
         </select>
       </div>
 
-      {#if mergeTargetId === 'new'}
+      {#if mergeTargetId === "new"}
         <div class="field-group">
           <label class="field-label" for="merge-title">New Playlist Title</label>
           <input
@@ -104,8 +119,22 @@
 {/if}
 
 {#if showSaveOffline}
-  <div class="overlay" onclick={() => (showSaveOffline = false)} onkeydown={(e) => (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') && (showSaveOffline = false)} role="button" tabindex="-1" aria-label="Close dialog">
-    <div class="dialog large" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()} role="dialog" tabindex="-1">
+  <div
+    class="overlay"
+    onclick={() => (showSaveOffline = false)}
+    onkeydown={(e) =>
+      (e.key === "Escape" || e.key === "Enter" || e.key === " ") && (showSaveOffline = false)}
+    role="button"
+    tabindex="-1"
+    aria-label="Close dialog"
+  >
+    <div
+      class="dialog large"
+      onclick={(e) => e.stopPropagation()}
+      onkeydown={(e) => e.stopPropagation()}
+      role="dialog"
+      tabindex="-1"
+    >
       <h3 class="dialog-title">Save YouTube Playlists Offline</h3>
       <p class="dialog-msg">Select how you want to save these playlists to your local storage.</p>
 
@@ -119,19 +148,39 @@
             <div class="offline-playlist-options">
               {#if local}
                 <label class="radio-label">
-                  <input type="radio" value="sync" bind:group={offlineSaveMode[yt.id]} onchange={() => onModeChange(yt.id, 'sync')} />
+                  <input
+                    type="radio"
+                    value="sync"
+                    bind:group={offlineSaveMode[yt.id]}
+                    onchange={() => onModeChange(yt.id, "sync")}
+                  />
                   Sync with existing: "{local.title}"
                 </label>
               {/if}
               <label class="radio-label">
-                <input type="radio" value="new" bind:group={offlineSaveMode[yt.id]} onchange={() => onModeChange(yt.id, 'new')} />
+                <input
+                  type="radio"
+                  value="new"
+                  bind:group={offlineSaveMode[yt.id]}
+                  onchange={() => onModeChange(yt.id, "new")}
+                />
                 Save as new local playlist
               </label>
-              {#if offlineSaveMode[yt.id] === 'new'}
-                <input type="text" class="text-input offline-title-input" bind:value={offlineTitles[yt.id]} placeholder="Local Title" />
+              {#if offlineSaveMode[yt.id] === "new"}
+                <input
+                  type="text"
+                  class="text-input offline-title-input"
+                  bind:value={offlineTitles[yt.id]}
+                  placeholder="Local Title"
+                />
               {/if}
               <label class="radio-label">
-                <input type="radio" value="skip" bind:group={offlineSaveMode[yt.id]} onchange={() => onModeChange(yt.id, 'skip')} />
+                <input
+                  type="radio"
+                  value="skip"
+                  bind:group={offlineSaveMode[yt.id]}
+                  onchange={() => onModeChange(yt.id, "skip")}
+                />
                 Skip this playlist
               </label>
             </div>

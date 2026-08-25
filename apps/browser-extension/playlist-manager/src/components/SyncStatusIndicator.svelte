@@ -1,10 +1,6 @@
 <script lang="ts">
   import Fa from "svelte-fa";
-  import {
-    faCloud,
-    faArrowsRotate,
-    faFile,
-  } from "@fortawesome/free-solid-svg-icons";
+  import { faCloud, faArrowsRotate, faFile } from "@fortawesome/free-solid-svg-icons";
   import { faYoutube } from "@fortawesome/free-brands-svg-icons";
 
   let {

@@ -122,11 +122,7 @@
       {/if}
     </div>
 
-    <SimpleButton
-      onclick={onOpenCopyMove}
-      secondary
-      disabled={selectedCount === 0}
-    >
+    <SimpleButton onclick={onOpenCopyMove} secondary disabled={selectedCount === 0}>
       <Fa icon={faLayerGroup} fw />
       <span>Playlist</span>
     </SimpleButton>

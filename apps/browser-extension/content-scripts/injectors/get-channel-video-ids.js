@@ -1,6 +1,5 @@
 (async function () {
-  const TARGET_QUANTITY =
-    /** @type {number} */ (window["YPH_TARGET_QUANTITY"]) || 500; // Maximum videos to fetch
+  const TARGET_QUANTITY = /** @type {number} */ (window["YPH_TARGET_QUANTITY"]) || 500; // Maximum videos to fetch
 
   // Helper to scroll down and wait for content to load
   async function scrollAndLoad(targetCount) {
@@ -10,7 +9,7 @@
 
     while (scrollAttempts < maxScrollAttempts) {
       const currentVideos = document.querySelectorAll(
-        "ytd-rich-item-renderer, ytd-grid-video-renderer, ytd-video-renderer, ytd-compact-video-renderer",
+        "ytd-rich-item-renderer, ytd-grid-video-renderer, ytd-video-renderer, ytd-compact-video-renderer"
       );
 
       if (currentVideos.length >= targetCount) {
@@ -46,7 +45,7 @@
 
   const videoElements = [
     ...document.querySelectorAll(
-      "ytd-rich-item-renderer, ytd-grid-video-renderer, ytd-video-renderer, ytd-compact-video-renderer",
+      "ytd-rich-item-renderer, ytd-grid-video-renderer, ytd-video-renderer, ytd-compact-video-renderer"
     ),
   ];
 
@@ -58,25 +57,19 @@
       const id = (match && match[1]) || "";
 
       // Scrape Title
-      const title = link
-        ? /** @type {HTMLElement} */ (link).innerText.trim()
-        : "";
+      const title = link ? /** @type {HTMLElement} */ (link).innerText.trim() : "";
 
       // Scrape duration label
       const timeEl = el.querySelector(
-        "ytd-thumbnail-overlay-time-status-renderer span, #text.ytd-thumbnail-overlay-time-status-renderer, span.ytd-thumbnail-overlay-time-status-renderer",
+        "ytd-thumbnail-overlay-time-status-renderer span, #text.ytd-thumbnail-overlay-time-status-renderer, span.ytd-thumbnail-overlay-time-status-renderer"
       );
-      const durationLabel = timeEl
-        ? /** @type {HTMLElement} */ (timeEl).innerText.trim()
-        : "";
+      const durationLabel = timeEl ? /** @type {HTMLElement} */ (timeEl).innerText.trim() : "";
 
       // Scrape Channel
       const channelEl = document.querySelector(
-        "#channel-name #text, #text-container.ytd-channel-name",
+        "#channel-name #text, #text-container.ytd-channel-name"
       );
-      const channel = channelEl
-        ? /** @type {HTMLElement} */ (channelEl).innerText.trim()
-        : "";
+      const channel = channelEl ? /** @type {HTMLElement} */ (channelEl).innerText.trim() : "";
 
       return { id, title, channel, durationLabel };
     })

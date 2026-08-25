@@ -1,9 +1,6 @@
 <script lang="ts">
   import Fa from "svelte-fa";
-  import {
-    faLink,
-    faArrowUpRightFromSquare,
-  } from "@fortawesome/free-solid-svg-icons";
+  import { faLink, faArrowUpRightFromSquare } from "@fortawesome/free-solid-svg-icons";
   import ViewHeader from "../components/ViewHeader.svelte";
 
   let idOrUrl = $state("");
@@ -15,10 +12,7 @@
     // Check if it's a URL
     try {
       const url = new URL(trimmed);
-      if (
-        url.hostname.includes("youtube.com") ||
-        url.hostname.includes("youtu.be")
-      ) {
+      if (url.hostname.includes("youtube.com") || url.hostname.includes("youtu.be")) {
         // Playlist ID
         const listId = url.searchParams.get("list");
         if (listId) return listId;
@@ -61,8 +55,7 @@
 
   <div class="view-body">
     <p class="sub-text">
-      Enter a YouTube Playlist ID, Video ID, or URL to open it directly in the
-      editor.
+      Enter a YouTube Playlist ID, Video ID, or URL to open it directly in the editor.
     </p>
 
     <div class="input-container">
@@ -83,15 +76,14 @@
     <div class="info-box">
       <h3>Pro Tip</h3>
       <p>
-        You can also open videos! If you paste a video URL, the editor will load
-        just that video, allowing you to quickly add it to a playlist.
+        You can also open videos! If you paste a video URL, the editor will load just that video,
+        allowing you to quickly add it to a playlist.
       </p>
     </div>
   </div>
 </main>
 
 <style>
-
   .sub-text {
     opacity: 0.7;
     margin-bottom: 32px;

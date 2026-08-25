@@ -18,11 +18,7 @@
 </script>
 
 {#if playlistId}
-  <PlaylistLoader 
-    id={playlistId} 
-    pageIcon={faPenToSquare} 
-    pageTitle="Edit Playlist" 
-  />
+  <PlaylistLoader id={playlistId} pageIcon={faPenToSquare} pageTitle="Edit Playlist" />
 {:else}
   <p style="text-align: center; padding: 40px; color: var(--text-muted);">
     Internal Error: No playlist ID provided.

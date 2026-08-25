@@ -1,7 +1,12 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
 
-  let { title = "", bgcolor = "#007bff", onclick, children }: {
+  let {
+    title = "",
+    bgcolor = "#007bff",
+    onclick,
+    children,
+  }: {
     title?: string;
     bgcolor?: string;
     onclick?: (e: MouseEvent) => void;

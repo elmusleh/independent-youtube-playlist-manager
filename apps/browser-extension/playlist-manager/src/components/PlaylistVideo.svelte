@@ -157,8 +157,7 @@
       {:else if video.isDeleted}
         <span class="status-badge deleted-badge">Deleted</span>
       {:else if video.duration || video.durationSeconds}
-        <span class="duration-badge"
-          >{formatDuration(video.duration || video.durationSeconds)}</span
+        <span class="duration-badge">{formatDuration(video.duration || video.durationSeconds)}</span
         >
       {/if}
     </div>
@@ -328,12 +327,22 @@
   }
 
   @keyframes pulse-live {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.7; }
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.7;
+    }
   }
 
   .skeleton-shimmer {
-    background: linear-gradient(90deg, rgba(150, 150, 150, 0.1) 25%, rgba(150, 150, 150, 0.25) 50%, rgba(150, 150, 150, 0.1) 75%);
+    background: linear-gradient(
+      90deg,
+      rgba(150, 150, 150, 0.1) 25%,
+      rgba(150, 150, 150, 0.25) 50%,
+      rgba(150, 150, 150, 0.1) 75%
+    );
     background-size: 200% 100%;
     animation: shimmer 1.5s infinite;
     border-radius: 4px;
@@ -351,8 +360,12 @@
   }
 
   @keyframes shimmer {
-    0% { background-position: 200% 0; }
-    100% { background-position: -200% 0; }
+    0% {
+      background-position: 200% 0;
+    }
+    100% {
+      background-position: -200% 0;
+    }
   }
 
   .video-details {

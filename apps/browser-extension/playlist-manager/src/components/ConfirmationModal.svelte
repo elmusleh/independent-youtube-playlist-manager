@@ -1,23 +1,30 @@
 <script lang="ts">
-  import { activeConfirmation, closeConfirm, executeConfirm, executeCancel } from '../stores/confirmation';
-  import { onDestroy } from 'svelte';
+  import {
+    activeConfirmation,
+    closeConfirm,
+    executeConfirm,
+    executeCancel,
+  } from "../stores/confirmation";
+  import { onDestroy } from "svelte";
 
   function handleKeydown(event: KeyboardEvent) {
-    if ($activeConfirmation.isOpen && event.key === 'Escape') {
+    if ($activeConfirmation.isOpen && event.key === "Escape") {
       executeCancel();
     }
   }
 
-  window.addEventListener('keydown', handleKeydown);
+  window.addEventListener("keydown", handleKeydown);
   onDestroy(() => {
-    window.removeEventListener('keydown', handleKeydown);
+    window.removeEventListener("keydown", handleKeydown);
   });
 </script>
 
 {#if $activeConfirmation.isOpen}
-  <div 
-    class="modal-overlay" 
-    onmousedown={(e) => { if (e.target === e.currentTarget) executeCancel(); }}
+  <div
+    class="modal-overlay"
+    onmousedown={(e) => {
+      if (e.target === e.currentTarget) executeCancel();
+    }}
     onkeydown={handleKeydown}
     role="presentation"
   >
@@ -28,10 +35,7 @@
         <button class="cancel" onclick={executeCancel}>
           {$activeConfirmation.cancelLabel || "Cancel"}
         </button>
-        <button
-          class="confirm {$activeConfirmation.color}"
-          onclick={executeConfirm}
-        >
+        <button class="confirm {$activeConfirmation.color}" onclick={executeConfirm}>
           {$activeConfirmation.confirmLabel || "Confirm"}
         </button>
       </div>

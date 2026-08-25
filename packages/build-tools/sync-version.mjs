@@ -27,7 +27,10 @@ function writeJson(filePath, data) {
 const chromeManifestPath = resolve(root, "apps/browser-extension/manifest.chrome.json");
 const firefoxManifestPath = resolve(root, "apps/browser-extension/manifest.firefox.json");
 const packageJsonPath = resolve(root, "package.json");
-const playlistEditorPackageJsonPath = resolve(root, "apps/browser-extension/playlist-manager/package.json");
+const playlistEditorPackageJsonPath = resolve(
+  root,
+  "apps/browser-extension/playlist-manager/package.json"
+);
 const webPortalPackageJsonPath = resolve(root, "apps/web-portal/package.json");
 
 const args = process.argv.slice(2);
@@ -57,7 +60,9 @@ const firefoxManifest = readJson(firefoxManifestPath);
 const firefoxPrev = firefoxManifest.version;
 firefoxManifest.version = canonicalVersion;
 writeJson(firefoxManifestPath, firefoxManifest);
-console.log(`  apps/browser-extension/manifest.firefox.json -> ${canonicalVersion} (was ${firefoxPrev})`);
+console.log(
+  `  apps/browser-extension/manifest.firefox.json -> ${canonicalVersion} (was ${firefoxPrev})`
+);
 
 // Update package.json (root)
 const pkg = readJson(packageJsonPath);
@@ -71,7 +76,9 @@ const pePkg = readJson(playlistEditorPackageJsonPath);
 const pePkgPrev = pePkg.version;
 pePkg.version = canonicalVersion;
 writeJson(playlistEditorPackageJsonPath, pePkg);
-console.log(`  apps/browser-extension/playlist-manager/package.json -> ${canonicalVersion} (was ${pePkgPrev})`);
+console.log(
+  `  apps/browser-extension/playlist-manager/package.json -> ${canonicalVersion} (was ${pePkgPrev})`
+);
 
 // Update web-portal package.json
 const wpPkg = readJson(webPortalPackageJsonPath);

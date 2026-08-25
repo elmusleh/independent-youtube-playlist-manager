@@ -17,13 +17,16 @@ export default {
     "youtube-api": "src/services/youtube-api.ts",
     "storage-service": "src/services/storage-service.ts",
     "video-service": "src/services/video-service.ts",
-    "utils": "src/services/utils.ts",
+    utils: "src/services/utils.ts",
     "sync-state-service": "src/services/sync-state-service.ts",
     "supabase-client": "src/services/supabase-client.ts",
     "supabase-sync": "src/services/supabase-sync.ts",
   },
   onwarn: (warning, handler) => {
-    if (warning.code === "CIRCULAR_DEPENDENCY" && warning.message.includes("node_modules/svelte/")) {
+    if (
+      warning.code === "CIRCULAR_DEPENDENCY" &&
+      warning.message.includes("node_modules/svelte/")
+    ) {
       return;
     }
     handler(warning);
@@ -63,20 +66,19 @@ export default {
         runes: true,
       },
       onwarn: (warning, handler) => {
-        if (warning.code && (warning.code.startsWith("a11y-") || warning.code.startsWith("a11y_"))) return;
+        if (warning.code && (warning.code.startsWith("a11y-") || warning.code.startsWith("a11y_")))
+          return;
         handler(warning);
       },
     }),
     svelte({
-      include: [
-        "node_modules/svelte-fa/**/*.svelte",
-        "node_modules/svelte-paginate/**/*.svelte"
-      ],
+      include: ["node_modules/svelte-fa/**/*.svelte", "node_modules/svelte-paginate/**/*.svelte"],
       compilerOptions: {
         dev: !production,
       },
       onwarn: (warning, handler) => {
-        if (warning.code && (warning.code.startsWith("a11y-") || warning.code.startsWith("a11y_"))) return;
+        if (warning.code && (warning.code.startsWith("a11y-") || warning.code.startsWith("a11y_")))
+          return;
         handler(warning);
       },
     }),
@@ -96,10 +98,9 @@ export default {
       inlineSources: !production,
     }),
     production && terser(),
-    production && copy({
-      targets: [
-        { src: "public/global.css", dest: "../editor" },
-      ],
-    }),
+    production &&
+      copy({
+        targets: [{ src: "public/global.css", dest: "../editor" }],
+      }),
   ],
 };

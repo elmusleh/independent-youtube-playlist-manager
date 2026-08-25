@@ -33,18 +33,18 @@ const SYNC_STATE_KEY = "yph_sync_state";
  */
 window.saveSyncState = async (state: SyncState): Promise<void> => {
   if (typeof browser === "undefined") return;
-  
+
   try {
     const result = await browser.storage.local.get(SYNC_STATE_KEY);
     const allStates: Record<string, SyncState> = result[SYNC_STATE_KEY] || {};
-    
+
     allStates[state.localPlaylistId] = {
       ...state,
       lastAttemptAt: Date.now(),
     };
-    
+
     await browser.storage.local.set({ [SYNC_STATE_KEY]: allStates });
-    
+
     await SystemLogger.info("SyncState", "saveSyncState", {
       localPlaylistId: state.localPlaylistId,
       remotePlaylistId: state.remotePlaylistId,
@@ -62,7 +62,7 @@ window.saveSyncState = async (state: SyncState): Promise<void> => {
  */
 window.getSyncState = async (localPlaylistId: string): Promise<SyncState | null> => {
   if (typeof browser === "undefined") return null;
-  
+
   try {
     const result = await browser.storage.local.get(SYNC_STATE_KEY);
     const allStates: Record<string, SyncState> = result[SYNC_STATE_KEY] || {};
@@ -78,21 +78,21 @@ window.getSyncState = async (localPlaylistId: string): Promise<SyncState | null>
  */
 window.clearSyncState = async (localPlaylistId: string): Promise<void> => {
   if (typeof browser === "undefined") return;
-  
+
   try {
     const result = await browser.storage.local.get(SYNC_STATE_KEY);
     const allStates: Record<string, SyncState> = result[SYNC_STATE_KEY] || {};
-    
+
     if (allStates[localPlaylistId]) {
       delete allStates[localPlaylistId];
       await browser.storage.local.set({ [SYNC_STATE_KEY]: allStates });
-      
+
       // Also clear any scheduled retry alarm
       const alarmName = `sync-retry-${localPlaylistId}`;
       if (browser.alarms) {
         await browser.alarms.clear(alarmName);
       }
-      
+
       await SystemLogger.info("SyncState", "clearSyncState", { localPlaylistId });
     }
   } catch (e) {
@@ -105,13 +105,11 @@ window.clearSyncState = async (localPlaylistId: string): Promise<void> => {
  */
 window.getAllPendingSyncs = async (): Promise<SyncState[]> => {
   if (typeof browser === "undefined") return [];
-  
+
   try {
     const result = await browser.storage.local.get(SYNC_STATE_KEY);
     const allStates: Record<string, SyncState> = result[SYNC_STATE_KEY] || {};
-    return Object.values(allStates).filter(
-      (state) => (state.remainingVideoIds || []).length > 0
-    );
+    return Object.values(allStates).filter((state) => (state.remainingVideoIds || []).length > 0);
   } catch (e) {
     await SystemLogger.error("SyncState", "getAllPendingSyncs failed", { error: e });
     return [];
@@ -123,7 +121,7 @@ window.getAllPendingSyncs = async (): Promise<SyncState[]> => {
  */
 window.isAutoRetryScheduled = async (localPlaylistId: string): Promise<boolean> => {
   if (typeof browser === "undefined" || !browser.alarms) return false;
-  
+
   try {
     const alarmName = `sync-retry-${localPlaylistId}`;
     const alarm = await browser.alarms.get(alarmName);
@@ -138,18 +136,18 @@ window.isAutoRetryScheduled = async (localPlaylistId: string): Promise<boolean> 
  */
 window.cancelAutoRetry = async (localPlaylistId: string): Promise<void> => {
   if (typeof browser === "undefined" || !browser.alarms) return;
-  
+
   try {
     const alarmName = `sync-retry-${localPlaylistId}`;
     await browser.alarms.clear(alarmName);
-    
+
     // Update sync state to disable auto-retry
     const state = await window.getSyncState(localPlaylistId);
     if (state) {
       state.autoRetryEnabled = false;
       await window.saveSyncState(state);
     }
-    
+
     await SystemLogger.info("SyncState", "cancelAutoRetry", { localPlaylistId });
   } catch (e) {
     await SystemLogger.error("SyncState", "cancelAutoRetry failed", { error: e });
@@ -161,23 +159,23 @@ window.cancelAutoRetry = async (localPlaylistId: string): Promise<void> => {
  */
 window.scheduleAutoRetry = async (localPlaylistId: string): Promise<void> => {
   if (typeof browser === "undefined" || !browser.alarms) return;
-  
+
   try {
     const alarmName = `sync-retry-${localPlaylistId}`;
-    
+
     // Schedule retry for 24 hours later (1440 minutes)
     await browser.alarms.create(alarmName, {
       delayInMinutes: 24 * 60,
     });
-    
+
     // Update sync state
     const state = await window.getSyncState(localPlaylistId);
     if (state) {
       state.autoRetryEnabled = true;
       await window.saveSyncState(state);
     }
-    
-    await SystemLogger.info("SyncState", "scheduleAutoRetry", { 
+
+    await SystemLogger.info("SyncState", "scheduleAutoRetry", {
       localPlaylistId,
       scheduledFor: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
     });
@@ -212,7 +210,7 @@ window.initializeSyncState = async (
     }
     return existingState;
   }
-  
+
   const state: SyncState = {
     localPlaylistId,
     remotePlaylistId, // Set immediately if known, empty string if not yet created
@@ -226,7 +224,7 @@ window.initializeSyncState = async (
     autoRetryEnabled: false,
     retryCount: 0, // Track number of retry attempts
   };
-  
+
   await window.saveSyncState(state);
   return state;
 };
@@ -240,19 +238,17 @@ window.updateSyncProgress = async (
 ): Promise<void> => {
   const state = await window.getSyncState(localPlaylistId);
   if (!state) return;
-  
+
   // Add newly synced videos to the list (using Set to prevent duplicates)
   const syncedSet = new Set(state.syncedVideoIds);
-  newlySyncedVideoIds.forEach(id => syncedSet.add(id));
+  newlySyncedVideoIds.forEach((id) => syncedSet.add(id));
   state.syncedVideoIds = Array.from(syncedSet);
-  
+
   // Remove from remaining
-  state.remainingVideoIds = state.remainingVideoIds.filter(
-    (id) => !syncedSet.has(id)
-  );
-  
+  state.remainingVideoIds = state.remainingVideoIds.filter((id) => !syncedSet.has(id));
+
   state.lastAttemptAt = Date.now();
-  
+
   await window.saveSyncState(state);
 };
 

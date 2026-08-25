@@ -52,7 +52,10 @@
 
   const browser = (window as any).browser || (window as any).chrome;
 
-  let { isMenuOpen = false, onToggleMenu = () => {} }: { isMenuOpen?: boolean; onToggleMenu?: () => void } = $props();
+  let {
+    isMenuOpen = false,
+    onToggleMenu = () => {},
+  }: { isMenuOpen?: boolean; onToggleMenu?: () => void } = $props();
 
   let signedIn = $state(false);
   let userProfile: {
@@ -66,9 +69,7 @@
   let missingCredentials = $state(false);
   let showReleaseNotes = $state(false);
   let showThemeCard = $state(false);
-  let githubStars: string | null = $state(
-    sessionStorage.getItem("yph_github_stars"),
-  );
+  let githubStars: string | null = $state(sessionStorage.getItem("yph_github_stars"));
   let myChannelLoading = $state(false);
   let myChannelInfo: any = $state(null);
   let myChannelError = $state("");
@@ -78,13 +79,12 @@
     try {
       if (githubStars) return;
       const res = await fetch(
-        "https://api.github.com/repos/elmusleh/independent-youtube-playlist-manager",
+        "https://api.github.com/repos/elmusleh/independent-youtube-playlist-manager"
       );
       const data = await res.json();
       if (data.stargazers_count !== undefined) {
         let stars = data.stargazers_count;
-        githubStars =
-          stars > 999 ? (stars / 1000).toFixed(1) + "k" : stars.toString();
+        githubStars = stars > 999 ? (stars / 1000).toFixed(1) + "k" : stars.toString();
         sessionStorage.setItem("yph_github_stars", githubStars || "");
       }
     } catch (e) {
@@ -121,18 +121,12 @@
       };
       missingCredentials = !creds.clientId || !creds.apiKey;
       if (window.logSystemEvent && missingCredentials)
-        await window.logSystemEvent(
-          "INFO",
-          "[HEADER] Missing custom API credentials",
-        );
+        await window.logSystemEvent("INFO", "[HEADER] Missing custom API credentials");
     } catch (e) {
       const errMsg = e instanceof Error ? e.message : String(e);
       missingCredentials = true;
       if (window.logSystemEvent)
-        await window.logSystemEvent(
-          "ERROR",
-          `[HEADER] Failed to check credentials: ${errMsg}`,
-        );
+        await window.logSystemEvent("ERROR", `[HEADER] Failed to check credentials: ${errMsg}`);
     }
   }
 
@@ -224,7 +218,7 @@
     closeDropdown();
     window.open(
       "https://github.com/elmusleh/independent-youtube-playlist-manager/issues",
-      "_blank",
+      "_blank"
     );
   }
 
@@ -255,15 +249,11 @@
   }
 
   // Only show search bar on specific views
-  let isSavedView = $derived(
-    router.location === "/saved" || router.location === "/",
-  );
+  let isSavedView = $derived(router.location === "/saved" || router.location === "/");
   let isHistoryView = $derived(router.location === "/history");
   let isManageView = $derived(router.location === "/manage");
   let isEditorView = $derived(router.location.startsWith("/editor"));
-  let showSearchBar = $derived(
-    isSavedView || isHistoryView || isManageView || isEditorView,
-  );
+  let showSearchBar = $derived(isSavedView || isHistoryView || isManageView || isEditorView);
 
   // Dynamic placeholder based on current view
   let searchPlaceholder = $derived(
@@ -273,7 +263,7 @@
         ? "Search watch history…"
         : isEditorView
           ? "Search videos…"
-          : "Search…",
+          : "Search…"
   );
 
   // Local search value that syncs with the appropriate store
@@ -314,10 +304,7 @@
         const errMsg = e instanceof Error ? e.message : String(e);
         console.error("Failed to load user profile:", e);
         if (window.logSystemEvent)
-          await window.logSystemEvent(
-            "ERROR",
-            `[HEADER] Failed to load user profile: ${errMsg}`,
-          );
+          await window.logSystemEvent("ERROR", `[HEADER] Failed to load user profile: ${errMsg}`);
       }
     } else {
       userProfile = null;
@@ -418,10 +405,7 @@
               const errMsg = e instanceof Error ? e.message : String(e);
               console.error("[HEADER] Sign-out failed:", e);
               if (window.logSystemEvent)
-                await window.logSystemEvent(
-                  "ERROR",
-                  `[HEADER] Sign-out failed: ${errMsg}`,
-                );
+                await window.logSystemEvent("ERROR", `[HEADER] Sign-out failed: ${errMsg}`);
             } finally {
               loadingAuth = false;
             }
@@ -444,10 +428,7 @@
           } else {
             console.error("Sign in failed:", err);
             if (window.logSystemEvent)
-              await window.logSystemEvent(
-                "ERROR",
-                `[HEADER] Sign-in failed: ${errMsg}`,
-              );
+              await window.logSystemEvent("ERROR", `[HEADER] Sign-in failed: ${errMsg}`);
             if (window.error) window.error("Sign-in failed. Please try again.");
           }
         } finally {
@@ -507,10 +488,7 @@
     </div>
 
     <div class="right">
-      <button
-        class="create-btn create-btn-create-color"
-        onclick={() => push("/new")}
-      >
+      <button class="create-btn create-btn-create-color" onclick={() => push("/new")}>
         <Fa icon={faPlus} fw />
         <span>New Playlist</span>
       </button>
@@ -521,8 +499,7 @@
         <button
           class="avatar-btn"
           class:logged-in={signedIn && (channelInfo.thumbnail || userProfile)}
-          class:icon-only={!signedIn ||
-            (!channelInfo.thumbnail && !userProfile)}
+          class:icon-only={!signedIn || (!channelInfo.thumbnail && !userProfile)}
           onclick={toggleDropdown}
           title="Account"
         >
@@ -534,9 +511,7 @@
               width="32"
               height="32"
             />
-            <span class="user-name"
-              >{userProfile?.title || channelInfo.title}</span
-            >
+            <span class="user-name">{userProfile?.title || channelInfo.title}</span>
           {:else}
             <Fa icon={faEllipsisVertical} size="lg" />
           {/if}
@@ -556,9 +531,7 @@
                 {:else if myChannelError}
                   <div class="channel-error">
                     <p>{myChannelError}</p>
-                    <button class="retry-btn" onclick={loadMyChannel}
-                      >Retry</button
-                    >
+                    <button class="retry-btn" onclick={loadMyChannel}>Retry</button>
                   </div>
                 {:else if myChannelInfo}
                   <div class="channel-info">
@@ -572,16 +545,12 @@
                         <h3>{myChannelInfo.snippet.title}</h3>
                         <p class="handle">{myChannelInfo.snippet.customUrl}</p>
                         <a
-                          href="https://youtube.com/{myChannelInfo.snippet
-                            .customUrl}"
+                          href="https://youtube.com/{myChannelInfo.snippet.customUrl}"
                           target="_blank"
                           rel="noopener noreferrer"
                           class="yt-link"
                         >
-                          View on YouTube <Fa
-                            icon={faArrowUpRightFromSquare}
-                            size="xs"
-                          />
+                          View on YouTube <Fa icon={faArrowUpRightFromSquare} size="xs" />
                         </a>
                       </div>
                     </div>
@@ -590,10 +559,7 @@
               </div>
 
               <div class="menu-section">
-                <button
-                  class="menu-item auth-action"
-                  onclick={handleAuthAction}
-                >
+                <button class="menu-item auth-action" onclick={handleAuthAction}>
                   <div class="icon-box">
                     <Fa icon={faRightFromBracket} fw />
                   </div>
@@ -616,10 +582,7 @@
             <div class="divider mobile-only-menu-item"></div>
 
             <div class="menu-section">
-              <button
-                class="menu-item appearance-trigger"
-                onclick={toggleThemeCard}
-              >
+              <button class="menu-item appearance-trigger" onclick={toggleThemeCard}>
                 <div class="icon-box">
                   <Fa icon={faPalette} fw />
                 </div>
@@ -628,21 +591,14 @@
                   <Fa icon={faChevronRight} size="xs" />
                 </div>
               </button>
-              <button
-                class="menu-item"
-                onclick={(e) => navigateTo("/shortcuts", e)}
-              >
+              <button class="menu-item" onclick={(e) => navigateTo("/shortcuts", e)}>
                 <div class="icon-box"><Fa icon={faKeyboard} fw /></div>
                 <span>Keyboard shortcuts</span>
               </button>
             </div>
 
             {#if showThemeCard}
-              <div
-                class="theme-card"
-                role="dialog"
-                aria-labelledby="theme-card-title"
-              >
+              <div class="theme-card" role="dialog" aria-labelledby="theme-card-title">
                 <div class="theme-card-header">
                   <span id="theme-card-title">Appearance</span>
                 </div>
@@ -675,24 +631,16 @@
             <div class="divider"></div>
 
             <div class="menu-section">
-              <button
-                class="menu-item"
-                onclick={(e) => navigateTo("/api-setup", e)}
-              >
+              <button class="menu-item" onclick={(e) => navigateTo("/api-setup", e)}>
                 <div class="icon-box">
                   <Fa icon={faKey} fw />
                   {#if missingCredentials}
-                    <div class="warning-badge" title="API credentials missing">
-                      !
-                    </div>
+                    <div class="warning-badge" title="API credentials missing">!</div>
                   {/if}
                 </div>
                 <span>API Setup</span>
               </button>
-              <button
-                class="menu-item"
-                onclick={(e) => navigateTo("/settings", e)}
-              >
+              <button class="menu-item" onclick={(e) => navigateTo("/settings", e)}>
                 <div class="icon-box"><Fa icon={faGear} fw /></div>
                 <span>Settings</span>
               </button>
@@ -705,10 +653,7 @@
             <div class="divider"></div>
 
             <div class="menu-section">
-              <button
-                class="menu-item"
-                onclick={(e) => navigateTo("/share", e)}
-              >
+              <button class="menu-item" onclick={(e) => navigateTo("/share", e)}>
                 <div class="icon-box"><Fa icon={faShareFromSquare} fw /></div>
                 <span>Share</span>
               </button>
@@ -733,7 +678,7 @@
                   e.stopPropagation();
                   closeDropdown();
                   window.open(
-                    "https://github.com/elmusleh/independent-youtube-playlist-manager/discussions",
+                    "https://github.com/elmusleh/independent-youtube-playlist-manager/discussions"
                   );
                 }}
               >
@@ -753,9 +698,7 @@
               >
                 <div class="icon-box"><Fa icon={faGithub} size="lg" /></div>
                 {#if githubStars}
-                  <span class="stars-count"
-                    ><Fa icon={faStar} size="xs" /> {githubStars}</span
-                  >
+                  <span class="stars-count"><Fa icon={faStar} size="xs" /> {githubStars}</span>
                 {/if}
                 <span>GitHub Repository</span>
               </a>
@@ -765,11 +708,7 @@
       </div>
 
       {#if !signedIn}
-        <button
-          class="sign-in-btn"
-          onclick={handleAuthClick}
-          disabled={loadingAuth}
-        >
+        <button class="sign-in-btn" onclick={handleAuthClick} disabled={loadingAuth}>
           <Fa icon={faCircleUser} fw />
           <span>{loadingAuth ? "Wait..." : "Sign in"}</span>
         </button>

@@ -39,11 +39,11 @@ async function getCachedToken(): Promise<string | null> {
     const result = await browser.storage.local.get(TOKEN_CACHE_KEY);
     const cached = result[TOKEN_CACHE_KEY] as TokenCache | undefined;
     if (!cached) return null;
-    
+
     // Allow tokens that expired within the last hour for refresh purposes
-    const oneHourAgo = Date.now() - (60 * 60 * 1000);
+    const oneHourAgo = Date.now() - 60 * 60 * 1000;
     if (cached.expiry < oneHourAgo) return null;
-    
+
     return cached.token;
   } catch (e) {
     return null;
@@ -54,17 +54,22 @@ async function cacheToken(token: string, expiresIn: number): Promise<void> {
   const cache: TokenCache = { token, expiry: Date.now() + expiresIn * 1000 };
   try {
     await browser.storage.local.set({ [TOKEN_CACHE_KEY]: cache });
-    appendAuthLog("Token successfully cached, valid until " + new Date(cache.expiry).toLocaleTimeString());
+    appendAuthLog(
+      "Token successfully cached, valid until " + new Date(cache.expiry).toLocaleTimeString()
+    );
     updateIsSignedIn(true);
   } catch (err) {
     console.error("Failed to cache token:", err);
-    if (err instanceof Error && err.name === 'QuotaExceededError') {
+    if (err instanceof Error && err.name === "QuotaExceededError") {
       console.error("Local storage quota exceeded while caching token!");
     }
   }
 }
 
-async function fetchFreshToken(interactive: boolean = true, selectAccount: boolean = false): Promise<string> {
+async function fetchFreshToken(
+  interactive: boolean = true,
+  selectAccount: boolean = false
+): Promise<string> {
   if (tokenRefreshPromise && !interactive) return tokenRefreshPromise;
 
   // Guard: for interactive sign-in, require custom credentials to be set
@@ -73,7 +78,12 @@ async function fetchFreshToken(interactive: boolean = true, selectAccount: boole
       const result = await browser.storage.local.get("custom_yt_credentials");
       const creds = result.custom_yt_credentials;
       if (!creds?.clientId || !creds?.apiKey) {
-        throw Object.assign(new Error("API credentials are not configured. Please go to API Setup to enter your Client ID and API Key."), { code: "credentials_missing" });
+        throw Object.assign(
+          new Error(
+            "API credentials are not configured. Please go to API Setup to enter your Client ID and API Key."
+          ),
+          { code: "credentials_missing" }
+        );
       }
     } catch (e: any) {
       if (e.code === "credentials_missing") throw e;
@@ -88,13 +98,16 @@ async function fetchFreshToken(interactive: boolean = true, selectAccount: boole
     console.log("[YT-AUTH] Checking Firefox compatibility...");
     console.log("[YT-AUTH] Cookies enabled:", navigator.cookieEnabled);
     if (!navigator.cookieEnabled) {
-      console.warn("[YT-AUTH] Third-party cookies are likely blocked, which can break Google Sign-In.");
+      console.warn(
+        "[YT-AUTH] Third-party cookies are likely blocked, which can break Google Sign-In."
+      );
     }
   }
 
   // Detect Firefox for Android (Fenix) — identity API unavailable there
   const isAndroid = /Android/i.test(navigator.userAgent);
-  const hasIdentityAPI = !isAndroid && typeof (browser as any).identity?.launchWebAuthFlow === "function";
+  const hasIdentityAPI =
+    !isAndroid && typeof (browser as any).identity?.launchWebAuthFlow === "function";
 
   /**
    * Parse an OAuth token from a redirect URL (handles both hash and query params).
@@ -115,7 +128,10 @@ async function fetchFreshToken(interactive: boolean = true, selectAccount: boole
     const qError = parsed.searchParams.get("error");
     if (qError) throw new Error(`Auth error: ${qError}`);
     if (qToken) {
-      return { token: qToken, expiresIn: parseInt(parsed.searchParams.get("expires_in") ?? "3600", 10) };
+      return {
+        token: qToken,
+        expiresIn: parseInt(parsed.searchParams.get("expires_in") ?? "3600", 10),
+      };
     }
     return null;
   }
@@ -171,11 +187,14 @@ async function fetchFreshToken(interactive: boolean = true, selectAccount: boole
       browser.tabs.onUpdated.addListener(onUpdated);
       browser.tabs.onRemoved.addListener(onRemoved);
 
-      browser.tabs.create({ url: authUrl }).then((tab) => {
-        authTabId = tab.id ?? null;
-      }).catch((e) => {
-        settle(() => reject(e));
-      });
+      browser.tabs
+        .create({ url: authUrl })
+        .then((tab) => {
+          authTabId = tab.id ?? null;
+        })
+        .catch((e) => {
+          settle(() => reject(e));
+        });
     });
   }
 
@@ -213,8 +232,14 @@ async function fetchFreshToken(interactive: boolean = true, selectAccount: boole
 
       if (hasIdentityAPI) {
         // Desktop Firefox / Chrome: use the standard identity API
-        console.log("[YT-AUTH] Launching auth flow via identity API:", { interactive, selectAccount, redirectUri });
-        appendAuthLog(`Launching auth flow (interactive: ${interactive}, selectAccount: ${selectAccount}). Redirect URI: ${redirectUri}`);
+        console.log("[YT-AUTH] Launching auth flow via identity API:", {
+          interactive,
+          selectAccount,
+          redirectUri,
+        });
+        appendAuthLog(
+          `Launching auth flow (interactive: ${interactive}, selectAccount: ${selectAccount}). Redirect URI: ${redirectUri}`
+        );
         responseUrl = await browser.identity.launchWebAuthFlow({
           url: url.toString(),
           interactive: interactive,
@@ -224,7 +249,9 @@ async function fetchFreshToken(interactive: boolean = true, selectAccount: boole
         if (!interactive) {
           // Silent refresh is not possible via tab-based flow on Android
           updateIsSignedIn(false);
-          throw new Error("Silent token refresh not supported on Android. Please sign in interactively.");
+          throw new Error(
+            "Silent token refresh not supported on Android. Please sign in interactively."
+          );
         }
         console.log("[YT-AUTH] Launching auth flow via tab (Android):", { redirectUri });
         appendAuthLog(`Launching Android tab-based auth flow. Redirect URI: ${redirectUri}`);
@@ -241,15 +268,20 @@ async function fetchFreshToken(interactive: boolean = true, selectAccount: boole
       return result.token;
     } catch (err) {
       console.error("[YT-AUTH] Auth flow failed:", err);
-      
+
       if (isFirefox && err instanceof Error && err.message?.includes("Canceled by user")) {
-        console.warn("[YT-AUTH] Canceled by user. In Firefox, this can also happen if third-party cookies are blocked.");
+        console.warn(
+          "[YT-AUTH] Canceled by user. In Firefox, this can also happen if third-party cookies are blocked."
+        );
       }
 
       if (err instanceof Error && err.message?.includes("did not approve access")) {
-        throw Object.assign(new Error(
-          "Redirect URI mismatch: The URI sent to Google does not match what's registered. Open API Setup, copy your redirect URI(s), and add them to your Google Cloud Console OAuth client."
-        ), { code: "redirect_uri_mismatch" });
+        throw Object.assign(
+          new Error(
+            "Redirect URI mismatch: The URI sent to Google does not match what's registered. Open API Setup, copy your redirect URI(s), and add them to your Google Cloud Console OAuth client."
+          ),
+          { code: "redirect_uri_mismatch" }
+        );
       }
 
       if (!interactive) updateIsSignedIn(false);
@@ -284,8 +316,8 @@ window.getYouTubeToken = async (): Promise<string> => {
       throw e;
     }
   }
-  
-  // No cached token at all - we shouldn't try silent refresh as it will likely fail 
+
+  // No cached token at all - we shouldn't try silent refresh as it will likely fail
   // with 'interaction_required' or 'login_required' and cause console noise.
   throw new Error("User not signed in");
 };
@@ -299,7 +331,7 @@ window.isSignedIn = async (): Promise<boolean> => {
       if (cached !== null) {
         const result = await browser.storage.local.get(TOKEN_CACHE_KEY);
         const c = result[TOKEN_CACHE_KEY];
-        
+
         if (c && Date.now() > c.expiry) {
           // Do not attempt silent refresh here — launchWebAuthFlow cannot be called
           // from a background service worker context in Chrome MV3.
@@ -307,7 +339,7 @@ window.isSignedIn = async (): Promise<boolean> => {
           updateIsSignedIn(false);
           return false;
         }
-        
+
         updateIsSignedIn(true);
         return true;
       }

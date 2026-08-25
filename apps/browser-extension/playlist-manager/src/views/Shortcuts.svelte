@@ -106,12 +106,7 @@
     e.stopPropagation();
 
     // Ignore just modifier keys being pressed
-    if (
-      e.key === "Control" ||
-      e.key === "Alt" ||
-      e.key === "Shift" ||
-      e.key === "Meta"
-    ) {
+    if (e.key === "Control" || e.key === "Alt" || e.key === "Shift" || e.key === "Meta") {
       return;
     }
 
@@ -133,15 +128,12 @@
 
     const formattedKey = formatKey(newShortcut).toUpperCase().replace(/ /g, "");
     if (reservedShortcuts.includes(formattedKey)) {
-      errorMessage =
-        "This shortcut is reserved by the browser and cannot be used.";
+      errorMessage = "This shortcut is reserved by the browser and cannot be used.";
       return;
     }
 
     // Check for duplicates
-    for (const [existingAction, existingShortcut] of Object.entries(
-      config.mappings,
-    )) {
+    for (const [existingAction, existingShortcut] of Object.entries(config.mappings)) {
       if (
         existingAction !== recordingAction &&
         formatKey(existingShortcut) === formatKey(newShortcut)
@@ -211,9 +203,7 @@
               {#if recordingAction === action}
                 <div class="recording-box">
                   <span class="recording-text">Press keys now...</span>
-                  <button class="cancel-btn" onclick={cancelRecording}
-                    >Cancel</button
-                  >
+                  <button class="cancel-btn" onclick={cancelRecording}>Cancel</button>
                 </div>
               {:else}
                 <button
@@ -233,7 +223,6 @@
 </main>
 
 <style>
-
   .shortcuts-container {
     background: var(--background-color);
     border: 1px solid var(--border-color);

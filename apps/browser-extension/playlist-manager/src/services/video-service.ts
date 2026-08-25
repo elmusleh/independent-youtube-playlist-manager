@@ -41,8 +41,17 @@ function hasValidData(entry: any): boolean {
   if (!entry || typeof entry !== "object") return false;
   const title = (entry.title || "").trim();
   const hasTitle = Boolean(title && title !== "undefined" && title !== "null");
-  const hasChannel = Boolean(entry.channel && entry.channel !== "undefined" && entry.channel !== "null");
-  const hasDuration = Boolean(entry.durationISO || entry.durationSeconds || entry.isLive || entry.isDeleted || entry.isPrivate || entry.isBroken);
+  const hasChannel = Boolean(
+    entry.channel && entry.channel !== "undefined" && entry.channel !== "null"
+  );
+  const hasDuration = Boolean(
+    entry.durationISO ||
+    entry.durationSeconds ||
+    entry.isLive ||
+    entry.isDeleted ||
+    entry.isPrivate ||
+    entry.isBroken
+  );
   return hasTitle || hasChannel || hasDuration;
 }
 
@@ -53,7 +62,7 @@ function isEntryFresh(entry: any): boolean {
 
 function isNegativeCacheFresh(entry: any): boolean {
   if (!entry || !entry.lastFetchAttempt) return false;
-  return (Date.now() - entry.lastFetchAttempt) < NEGATIVE_CACHE_TTL_MS;
+  return Date.now() - entry.lastFetchAttempt < NEGATIVE_CACHE_TTL_MS;
 }
 
 function isValidAndFresh(entry: any): entry is VideoMetaEntry {
@@ -101,7 +110,11 @@ class VideoService {
     try {
       await dbDeleteMetadata(videoIds);
     } catch (e) {
-      if (window.logSystemEvent) await window.logSystemEvent("WARN", `[VIDEO-SERVICE] Failed to clear cache for ${videoIds.length} videos`);
+      if (window.logSystemEvent)
+        await window.logSystemEvent(
+          "WARN",
+          `[VIDEO-SERVICE] Failed to clear cache for ${videoIds.length} videos`
+        );
     }
   }
 
@@ -123,7 +136,11 @@ class VideoService {
       try {
         cached = await dbGetMetadata(videoId);
       } catch (e) {
-        if (window.logSystemEvent) await window.logSystemEvent("WARN", `[VIDEO-SERVICE] Failed to read cache for ${videoId}`);
+        if (window.logSystemEvent)
+          await window.logSystemEvent(
+            "WARN",
+            `[VIDEO-SERVICE] Failed to read cache for ${videoId}`
+          );
       }
     }
     const hasValidData = isValidAndFresh(cached);
@@ -151,8 +168,12 @@ class VideoService {
     // 2. Session-only mode: return empty stub
     if (sessionOnly) {
       return {
-        id: window.videoIdCount++, videoId, url: this.YOUTUBE_URL_PREFIX + videoId,
-        title: "", channel: "", thumbnailUrl: this.getVideoThumbnailUrl(videoId),
+        id: window.videoIdCount++,
+        videoId,
+        url: this.YOUTUBE_URL_PREFIX + videoId,
+        title: "",
+        channel: "",
+        thumbnailUrl: this.getVideoThumbnailUrl(videoId),
       };
     }
 
@@ -172,7 +193,8 @@ class VideoService {
           }
         }
       } catch (e) {
-        if (window.logSystemEvent) await window.logSystemEvent("WARN", `[VIDEO-SERVICE] oEmbed fetch failed for ${videoId}`);
+        if (window.logSystemEvent)
+          await window.logSystemEvent("WARN", `[VIDEO-SERVICE] oEmbed fetch failed for ${videoId}`);
       }
     } else {
       ({ title, channel } = JSON.parse(sessionVideoData));
@@ -191,7 +213,11 @@ class VideoService {
           if (!channel && history.channel) channel = history.channel;
         }
       } catch (e) {
-        if (window.logSystemEvent) await window.logSystemEvent("WARN", `[VIDEO-SERVICE] History fetch failed for ${videoId}`);
+        if (window.logSystemEvent)
+          await window.logSystemEvent(
+            "WARN",
+            `[VIDEO-SERVICE] History fetch failed for ${videoId}`
+          );
       }
     }
 
@@ -209,13 +235,16 @@ class VideoService {
               duration = data.durationISO;
               if (!title && data.title) title = data.title;
               if (!channel && data.channel) channel = data.channel;
-              console.log(`[YPH] fetchVideo: Got metadata from open tab for ${videoId}: ${duration}`);
+              console.log(
+                `[YPH] fetchVideo: Got metadata from open tab for ${videoId}: ${duration}`
+              );
               break;
             }
           }
         }
       } catch (e) {
-        if (window.logSystemEvent) await window.logSystemEvent("WARN", `[VIDEO-SERVICE] Tab scraping failed for ${videoId}`);
+        if (window.logSystemEvent)
+          await window.logSystemEvent("WARN", `[VIDEO-SERVICE] Tab scraping failed for ${videoId}`);
       }
     }
 
@@ -243,7 +272,11 @@ class VideoService {
           }
         }
       } catch (e) {
-        if (window.logSystemEvent) await window.logSystemEvent("WARN", `[VIDEO-SERVICE] Multi-tier metadata fetch failed for ${videoId}`);
+        if (window.logSystemEvent)
+          await window.logSystemEvent(
+            "WARN",
+            `[VIDEO-SERVICE] Multi-tier metadata fetch failed for ${videoId}`
+          );
       }
     }
 
@@ -272,7 +305,11 @@ class VideoService {
 
         await dbPutMetadata(videoId, entry);
       } catch (e) {
-        if (window.logSystemEvent) await window.logSystemEvent("WARN", `[VIDEO-SERVICE] Failed to write cache for ${videoId}`);
+        if (window.logSystemEvent)
+          await window.logSystemEvent(
+            "WARN",
+            `[VIDEO-SERVICE] Failed to write cache for ${videoId}`
+          );
       }
     }
 
@@ -341,22 +378,32 @@ class VideoService {
   }
 
   openPlaylistEditor(playlist: Playlist) {
-    const previousPage =
-      location.hash.length > 0 ? location.hash.substring(1) : "/";
+    const previousPage = location.hash.length > 0 ? location.hash.substring(1) : "/";
     history.pushState({ playlist, previousPage }, "", "#/editor");
     window.dispatchEvent(new Event("hashchange"));
   }
 
   async openPlaylist(videoIds: string[], playlistId?: string) {
-    if (window.logSystemEvent) await window.logSystemEvent("INFO", `[VIDEO-SERVICE] Opening playlist with ${videoIds.length} videos`);
+    if (window.logSystemEvent)
+      await window.logSystemEvent(
+        "INFO",
+        `[VIDEO-SERVICE] Opening playlist with ${videoIds.length} videos`
+      );
 
     let t = 0;
     if (playlistId && playlistId.startsWith("local-") && typeof browser !== "undefined") {
       try {
-        const history = await browser.runtime.sendMessage({ cmd: "get-yph-history", videoId: videoIds[0] });
+        const history = await browser.runtime.sendMessage({
+          cmd: "get-yph-history",
+          videoId: videoIds[0],
+        });
         if (history && history.t) {
           t = Math.floor(history.t);
-          if (window.logSystemEvent) await window.logSystemEvent("INFO", `[VIDEO-SERVICE] Resuming ${videoIds[0]} at ${t}s from history`);
+          if (window.logSystemEvent)
+            await window.logSystemEvent(
+              "INFO",
+              `[VIDEO-SERVICE] Resuming ${videoIds[0]} at ${t}s from history`
+            );
         }
       } catch (e) {
         console.error("Failed to fetch history:", e);
@@ -377,7 +424,11 @@ class VideoService {
       chunks.push(videoIds);
     }
 
-    if (window.logSystemEvent) await window.logSystemEvent("INFO", `[VIDEO-SERVICE] Play All: ${videoIds.length} videos, chunking=${chunkEnabled ? settings.playAllChunkSize : "off"}, ${chunks.length} tab(s)`);
+    if (window.logSystemEvent)
+      await window.logSystemEvent(
+        "INFO",
+        `[VIDEO-SERVICE] Play All: ${videoIds.length} videos, chunking=${chunkEnabled ? settings.playAllChunkSize : "off"}, ${chunks.length} tab(s)`
+      );
 
     for (let idx = 0; idx < chunks.length; idx++) {
       const chunk = chunks[idx];
@@ -386,11 +437,17 @@ class VideoService {
 
       if (playlistId && playlistId !== "WL" && !playlistId.startsWith("local-") && !chunkEnabled) {
         url = `https://www.youtube.com/watch?v=${firstVideoId}&list=${playlistId}`;
-        if (window.logSystemEvent) await window.logSystemEvent("INFO", `[VIDEO-SERVICE] Sync: Using &list= param`, { url });
+        if (window.logSystemEvent)
+          await window.logSystemEvent("INFO", `[VIDEO-SERVICE] Sync: Using &list= param`, { url });
       } else {
         const allIds = chunk.join(",");
         url = `${this.youtubeServiceURL || "https://www.youtube.com"}/watch_videos?video_ids=${allIds}`;
-        if (window.logSystemEvent) await window.logSystemEvent("INFO", `[VIDEO-SERVICE] Offline/Guest: Using watch_videos generator`, { url });
+        if (window.logSystemEvent)
+          await window.logSystemEvent(
+            "INFO",
+            `[VIDEO-SERVICE] Offline/Guest: Using watch_videos generator`,
+            { url }
+          );
       }
 
       if (idx === 0 && playlistId && playlistId.startsWith("local-")) {
@@ -401,7 +458,11 @@ class VideoService {
         url = url.split("#")[0] + `#yph_local_list=${playlistId}`;
       }
 
-      if (window.logSystemEvent) await window.logSystemEvent("INFO", `[VIDEO-SERVICE] Opening tab ${idx + 1}/${chunks.length}: ${url}`);
+      if (window.logSystemEvent)
+        await window.logSystemEvent(
+          "INFO",
+          `[VIDEO-SERVICE] Opening tab ${idx + 1}/${chunks.length}: ${url}`
+        );
 
       if (typeof browser != "undefined") {
         await browser.tabs.create({ url });

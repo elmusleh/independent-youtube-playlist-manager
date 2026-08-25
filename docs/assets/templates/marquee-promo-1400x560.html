@@ -1,71 +1,136 @@
 <!doctype html>
 <html>
-<head>
-<meta charset="utf-8">
-<link rel="stylesheet" href="_shared.css">
-<style>
-  body { background: #fff; display: flex; align-items: center; justify-content: center; }
-  .tile {
-    width: 1400px; height: 560px;
-    background: #0c0c0e;
-    position: relative; overflow: hidden;
-    display: flex; align-items: center;
-    color: #fff;
-  }
-  .glow {
-    position: absolute; border-radius: 50%; filter: blur(90px); opacity: 0.55;
-  }
-  .g1 { width: 640px; height: 640px; background: #ff0000; right: -140px; top: -180px; }
-  .g2 { width: 520px; height: 520px; background: #7a0000; left: -120px; bottom: -200px; opacity: 0.6; }
-  .content {
-    position: relative; z-index: 2; display: flex; align-items: center; gap: 44px;
-    padding: 0 90px; width: 100%;
-  }
-  .badge {
-    width: 140px; height: 140px; flex-shrink: 0; background: #fff; border-radius: 32px;
-    display: flex; align-items: center; justify-content: center;
-    box-shadow: 0 14px 40px rgba(255,0,0,0.35);
-  }
-  .text { flex: 1; }
-  h1 {
-    font-size: 64px; font-weight: 800; letter-spacing: -1.5px; line-height: 1.02;
-  }
-  h1 .accent { color: #ff3b3b; }
-  p {
-    font-size: 21px; color: #d4d4d8; margin-top: 14px; font-weight: 500; letter-spacing: 0.1px;
-    max-width: 760px; line-height: 1.45;
-  }
-  .feats {
-    display: flex; gap: 10px; margin-top: 26px; flex-wrap: wrap;
-  }
-  .feat {
-    font-size: 14px; font-weight: 600; color: #e4e4e7;
-    border: 1px solid rgba(255,255,255,0.22); background: rgba(255,255,255,0.06);
-    padding: 8px 16px; border-radius: 999px;
-  }
-</style>
-</head>
-<body>
-  <div class="tile">
-    <div class="glow g1"></div>
-    <div class="glow g2"></div>
-    <div class="content">
-      <div class="badge">
-        <img src="../iypm-logo.png" alt="IYPM Logo" style="max-width: 75%; max-height: 75%; object-fit: contain;" />
-      </div>
-      <div class="text">
-        <h1>Independent YouTube Playlist Manager<br><span class="accent">Build. Merge. Sort. Export.</span></h1>
-        <p>Unlimited playlists, bulk-add open tabs, and one-click merge, split &amp; sort — fully offline, no login, no tracking. Your YouTube playlists, finally under your control.</p>
-        <div class="feats">
-          <span class="feat">Unlimited playlists</span>
-          <span class="feat">Bulk-add tabs</span>
-          <span class="feat">Merge &amp; sort</span>
-          <span class="feat">100% offline</span>
-          <span class="feat">JSON / CSV / M3U export</span>
-          <span class="feat">Free &amp; open source</span>
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="_shared.css" />
+    <style>
+      body {
+        background: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .tile {
+        width: 1400px;
+        height: 560px;
+        background: #0c0c0e;
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        color: #fff;
+      }
+      .glow {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(90px);
+        opacity: 0.55;
+      }
+      .g1 {
+        width: 640px;
+        height: 640px;
+        background: #ff0000;
+        right: -140px;
+        top: -180px;
+      }
+      .g2 {
+        width: 520px;
+        height: 520px;
+        background: #7a0000;
+        left: -120px;
+        bottom: -200px;
+        opacity: 0.6;
+      }
+      .content {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        align-items: center;
+        gap: 44px;
+        padding: 0 90px;
+        width: 100%;
+      }
+      .badge {
+        width: 140px;
+        height: 140px;
+        flex-shrink: 0;
+        background: #fff;
+        border-radius: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 14px 40px rgba(255, 0, 0, 0.35);
+      }
+      .text {
+        flex: 1;
+      }
+      h1 {
+        font-size: 64px;
+        font-weight: 800;
+        letter-spacing: -1.5px;
+        line-height: 1.02;
+      }
+      h1 .accent {
+        color: #ff3b3b;
+      }
+      p {
+        font-size: 21px;
+        color: #d4d4d8;
+        margin-top: 14px;
+        font-weight: 500;
+        letter-spacing: 0.1px;
+        max-width: 760px;
+        line-height: 1.45;
+      }
+      .feats {
+        display: flex;
+        gap: 10px;
+        margin-top: 26px;
+        flex-wrap: wrap;
+      }
+      .feat {
+        font-size: 14px;
+        font-weight: 600;
+        color: #e4e4e7;
+        border: 1px solid rgba(255, 255, 255, 0.22);
+        background: rgba(255, 255, 255, 0.06);
+        padding: 8px 16px;
+        border-radius: 999px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="tile">
+      <div class="glow g1"></div>
+      <div class="glow g2"></div>
+      <div class="content">
+        <div class="badge">
+          <img
+            src="../iypm-logo.png"
+            alt="IYPM Logo"
+            style="max-width: 75%; max-height: 75%; object-fit: contain"
+          />
+        </div>
+        <div class="text">
+          <h1>
+            Independent YouTube Playlist Manager<br /><span class="accent"
+              >Build. Merge. Sort. Export.</span
+            >
+          </h1>
+          <p>
+            Unlimited playlists, bulk-add open tabs, and one-click merge, split &amp; sort — fully
+            offline, no login, no tracking. Your YouTube playlists, finally under your control.
+          </p>
+          <div class="feats">
+            <span class="feat">Unlimited playlists</span>
+            <span class="feat">Bulk-add tabs</span>
+            <span class="feat">Merge &amp; sort</span>
+            <span class="feat">100% offline</span>
+            <span class="feat">JSON / CSV / M3U export</span>
+            <span class="feat">Free &amp; open source</span>
+          </div>
         </div>
       </div>
     </div>
-  </div>
-</body>
+  </body>
 </html>

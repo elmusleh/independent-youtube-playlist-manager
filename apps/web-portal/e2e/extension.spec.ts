@@ -60,7 +60,10 @@ const test = base.extend<{
 
     if (!background) {
       // SW didn't register — skip rather than fail with a misleading URL error.
-      test.skip(true, "Extension service worker did not register — check the extension for SW errors.");
+      test.skip(
+        true,
+        "Extension service worker did not register — check the extension for SW errors."
+      );
       return;
     }
 
@@ -71,14 +74,17 @@ const test = base.extend<{
 
 test.describe("YPH WebExtension E2E Tests (Chromium)", () => {
   test.beforeEach(async ({}, testInfo) => {
-    test.skip(!process.env.HEADED, "Skipping extension tests in headless mode (requires process.env.HEADED=true)");
+    test.skip(
+      !process.env.HEADED,
+      "Skipping extension tests in headless mode (requires process.env.HEADED=true)"
+    );
   });
 
   test("1. Popup page renders elements and matches extensionId", async ({ page, extensionId }) => {
     if (!process.env.HEADED) return;
     // Navigate directly to the extension popup page URL
     await page.goto(`chrome-extension://${extensionId}/popup/popup.html`);
-    
+
     // Verify the title or main elements of the popup
     await expect(page.locator("body")).toBeVisible();
     await expect(page.getByText("Playlist Manager", { exact: true })).toBeVisible();
@@ -87,7 +93,7 @@ test.describe("YPH WebExtension E2E Tests (Chromium)", () => {
   test("2. Playlist Editor SPA dashboard loads successfully", async ({ page, extensionId }) => {
     // Navigate to the settings page in the Svelte options UI
     await page.goto(`chrome-extension://${extensionId}/editor/index.html#/settings`);
-    
+
     await expect(page.getByRole("heading", { name: "Settings", exact: true })).toBeVisible();
     await expect(page.getByText("Independent YouTube Playlist Manager")).toBeVisible();
     await expect(page.getByText("Cache duration")).toBeVisible();

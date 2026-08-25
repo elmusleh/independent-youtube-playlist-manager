@@ -1,13 +1,13 @@
 <script lang="ts">
   import { get } from "svelte/store";
   import { getPlaylistsSorter } from "../services/playlists-sorter.js";
-  import {
-    playlistsSearch,
-    playlistsSorting,
-  } from "../stores/playlists-filters.js";
+  import { playlistsSearch, playlistsSorting } from "../stores/playlists-filters.js";
   import type { Playlist, PlaylistsSorting } from "../types/model.js";
 
-  let { playlists = $bindable([]), filteredPlaylists = $bindable([]) }: {
+  let {
+    playlists = $bindable([]),
+    filteredPlaylists = $bindable([]),
+  }: {
     playlists: Playlist[];
     filteredPlaylists: Playlist[];
   } = $props();
@@ -23,7 +23,7 @@
       .map((k) => k.toLowerCase());
     if (keywords.length) {
       filteredPlaylists = filteredPlaylists.filter((playlist) =>
-        keywords.every((k) => playlist.title.toLowerCase().includes(k)),
+        keywords.every((k) => playlist.title.toLowerCase().includes(k))
       );
     }
   });
@@ -47,15 +47,14 @@
 <aside>
   <div class="count-wrapper">
     <h2>
-      {filteredPlaylists.length} playlist{filteredPlaylists.length > 1
-        ? "s"
-        : ""}
+      {filteredPlaylists.length} playlist{filteredPlaylists.length > 1 ? "s" : ""}
     </h2>
   </div>
   <div class="search-wrapper">
     <label>
       <span>Search</span>
-      <input aria-label="Filter playlists"
+      <input
+        aria-label="Filter playlists"
         type="text"
         placeholder="Filter playlists..."
         bind:value={search}

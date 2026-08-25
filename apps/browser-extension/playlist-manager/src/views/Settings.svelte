@@ -111,7 +111,8 @@
 
       requestConfirm({
         title: "Restore Complete Database Backup",
-        message: "How would you like to restore this backup?\n\n• Merge: Safely adds playlists, updates video metadata, and preserves newest watch timestamps without deleting existing playlists.\n• Click Confirm to perform Merge restore.",
+        message:
+          "How would you like to restore this backup?\n\n• Merge: Safely adds playlists, updates video metadata, and preserves newest watch timestamps without deleting existing playlists.\n• Click Confirm to perform Merge restore.",
         confirmLabel: "Merge Restore (Safe)",
         color: "primary",
         onConfirm: async () => {
@@ -194,10 +195,7 @@
       const errMsg = e instanceof Error ? e.message : String(e);
       console.error("[SETTINGS] Failed to load settings:", e);
       if (window.logSystemEvent)
-        await window.logSystemEvent(
-          "ERROR",
-          `[SETTINGS] Failed to load settings: ${errMsg}`,
-        );
+        await window.logSystemEvent("ERROR", `[SETTINGS] Failed to load settings: ${errMsg}`);
     });
 
   async function checkSignIn() {
@@ -207,10 +205,7 @@
       const errMsg = e instanceof Error ? e.message : String(e);
       console.error("[SETTINGS] checkSignIn failed:", e);
       if (window.logSystemEvent)
-        await window.logSystemEvent(
-          "ERROR",
-          `[SETTINGS] checkSignIn failed: ${errMsg}`,
-        );
+        await window.logSystemEvent("ERROR", `[SETTINGS] checkSignIn failed: ${errMsg}`);
     }
   }
   checkSignIn();
@@ -244,25 +239,16 @@
   async function loadPlaylists() {
     loadingPlaylists = true;
     if (window.logSystemEvent)
-      await window.logSystemEvent(
-        "INFO",
-        "[SETTINGS] Loading playlists for favorite selection",
-      );
+      await window.logSystemEvent("INFO", "[SETTINGS] Loading playlists for favorite selection");
     try {
       playlists = await window.getAccountPlaylists();
       if (window.logSystemEvent)
-        await window.logSystemEvent(
-          "INFO",
-          `[SETTINGS] Loaded ${playlists.length} playlists`,
-        );
+        await window.logSystemEvent("INFO", `[SETTINGS] Loaded ${playlists.length} playlists`);
     } catch (e) {
       const errMsg = e instanceof Error ? e.message : String(e);
       console.error("Failed to load playlists:", e);
       if (window.logSystemEvent)
-        await window.logSystemEvent(
-          "ERROR",
-          `[SETTINGS] Failed to load playlists: ${errMsg}`,
-        );
+        await window.logSystemEvent("ERROR", `[SETTINGS] Failed to load playlists: ${errMsg}`);
     } finally {
       loadingPlaylists = false;
     }
@@ -291,7 +277,7 @@
     if (window.logSystemEvent)
       await window.logSystemEvent(
         "INFO",
-        `[SETTINGS] Saving favorite playlist: ${id ?? "YouTube Native"}`,
+        `[SETTINGS] Saving favorite playlist: ${id ?? "YouTube Native"}`
       );
     await save("watchLaterPlaylistId", id, () => {
       window.invalidateCacheAndNotify();
@@ -315,7 +301,7 @@
           isLocal: true,
           saved: true,
         },
-        { syncToYoutube: false },
+        { syncToYoutube: false }
       );
 
       if (settings) settings!.watchLaterPlaylistId = newId;
@@ -327,7 +313,7 @@
       if (window.logSystemEvent)
         await window.logSystemEvent(
           "INFO",
-          `[SETTINGS] Created and set favorite: "${title}" (${newId})`,
+          `[SETTINGS] Created and set favorite: "${title}" (${newId})`
         );
       window.success(`Created and set favorite: ${title}`);
     });
@@ -367,30 +353,20 @@
   async function clearWatchHistory() {
     requestConfirm({
       title: "Clear Watch History?",
-      message:
-        "This will reset all your saved video timestamps. This cannot be undone.",
+      message: "This will reset all your saved video timestamps. This cannot be undone.",
       color: "danger",
       onConfirm: async () => {
         if (window.logSystemEvent)
-          await window.logSystemEvent(
-            "INFO",
-            "[SETTINGS] Clearing watch history",
-          );
+          await window.logSystemEvent("INFO", "[SETTINGS] Clearing watch history");
         try {
           await browser.storage.local.remove(HISTORY_KEY);
           if (window.logSystemEvent)
-            await window.logSystemEvent(
-              "INFO",
-              "[SETTINGS] Watch history cleared",
-            );
+            await window.logSystemEvent("INFO", "[SETTINGS] Watch history cleared");
           window.success("Watch history cleared");
         } catch (e) {
           const errMsg = e instanceof Error ? e.message : String(e);
           if (window.logSystemEvent)
-            await window.logSystemEvent(
-              "ERROR",
-              `[SETTINGS] Failed to clear history: ${errMsg}`,
-            );
+            await window.logSystemEvent("ERROR", `[SETTINGS] Failed to clear history: ${errMsg}`);
           window.error("Failed to clear history");
         }
       },
@@ -416,27 +392,19 @@
       a.remove();
       URL.revokeObjectURL(url);
       if (window.logSystemEvent)
-        await window.logSystemEvent(
-          "INFO",
-          "[SETTINGS] Watch history exported successfully",
-        );
+        await window.logSystemEvent("INFO", "[SETTINGS] Watch history exported successfully");
       window.success("History exported successfully");
     } catch (e) {
       const errMsg = e instanceof Error ? e.message : String(e);
       console.error("Failed to export history:", e);
       if (window.logSystemEvent)
-        await window.logSystemEvent(
-          "ERROR",
-          `[SETTINGS] Export failed: ${errMsg}`,
-        );
+        await window.logSystemEvent("ERROR", `[SETTINGS] Export failed: ${errMsg}`);
       window.error("Export failed");
     }
   }
 
   function importHistory() {
-    const fi = document.getElementById(
-      "HistoryImportInput",
-    ) as HTMLInputElement;
+    const fi = document.getElementById("HistoryImportInput") as HTMLInputElement;
     fi.onchange = () => {
       const file = fi.files?.[0];
       if (!file) return;
@@ -445,27 +413,18 @@
         try {
           const importedData = JSON.parse(fr.result as string);
           if (window.logSystemEvent)
-            await window.logSystemEvent(
-              "INFO",
-              "[SETTINGS] Importing watch history from file",
-            );
+            await window.logSystemEvent("INFO", "[SETTINGS] Importing watch history from file");
 
           await browser.storage.local.set({ [HISTORY_KEY]: importedData });
 
           if (window.logSystemEvent)
-            await window.logSystemEvent(
-              "INFO",
-              "[SETTINGS] Watch history imported successfully",
-            );
+            await window.logSystemEvent("INFO", "[SETTINGS] Watch history imported successfully");
           window.success("History imported successfully");
         } catch (e) {
           const errMsg = e instanceof Error ? e.message : String(e);
           console.error("Failed to import history:", e);
           if (window.logSystemEvent)
-            await window.logSystemEvent(
-              "ERROR",
-              `[SETTINGS] Import failed: ${errMsg}`,
-            );
+            await window.logSystemEvent("ERROR", `[SETTINGS] Import failed: ${errMsg}`);
           window.error("File is incorrectly formatted");
         }
         fi.value = "";
@@ -530,9 +489,7 @@
           <div class="toggle-row">
             <div class="toggle-info">
               <span>Split into multiple tabs</span>
-              <span class="sub-text"
-                >Open large playlists across multiple tabs instead of one</span
-              >
+              <span class="sub-text">Open large playlists across multiple tabs instead of one</span>
             </div>
             <ToggleSwitch
               checked={settings?.playAllChunkEnabled ?? false}
@@ -565,8 +522,7 @@
                 max="500"
                 step="1"
                 bind:value={settings.playAllChunkSize}
-                onblur={() =>
-                  save("playAllChunkSize", settings?.playAllChunkSize)}
+                onblur={() => save("playAllChunkSize", settings?.playAllChunkSize)}
                 onkeydown={(e) => {
                   if (e.key === "Enter") {
                     save("playAllChunkSize", settings?.playAllChunkSize);
@@ -584,9 +540,7 @@
           <div class="toggle-row">
             <div class="toggle-info">
               <span>Enable Watch History Tracking</span>
-              <span class="sub-text"
-                >Track your watch progress and store it locally.</span
-              >
+              <span class="sub-text">Track your watch progress and store it locally.</span>
             </div>
             <ToggleSwitch
               checked={settings?.ruleEnabled ?? false}
@@ -601,9 +555,7 @@
             <div class="toggle-row indent-row">
               <div class="toggle-info">
                 <span>Save history on pause</span>
-                <span class="sub-text"
-                  >Update your timestamp whenever you pause the video.</span
-                >
+                <span class="sub-text">Update your timestamp whenever you pause the video.</span>
               </div>
               <ToggleSwitch
                 checked={settings?.ruleTrackPause ?? false}
@@ -618,8 +570,7 @@
               <div class="toggle-info">
                 <span>Save history on page leave</span>
                 <span class="sub-text"
-                  >Update your timestamp when closing the tab or navigating
-                  away.</span
+                  >Update your timestamp when closing the tab or navigating away.</span
                 >
               </div>
               <ToggleSwitch
@@ -635,8 +586,7 @@
               <div class="toggle-info">
                 <span>Auto-Delete when finished</span>
                 <span class="sub-text"
-                  >Remove the video from the local playlist once you finish
-                  watching it.</span
+                  >Remove the video from the local playlist once you finish watching it.</span
                 >
               </div>
               <ToggleSwitch
@@ -649,12 +599,8 @@
             </div>
 
             <div class="field">
-              <label for="ruleCompletionThreshold"
-                >Completion Threshold (%)</label
-              >
-              <p class="sub-text">
-                Consider a video "finished" when this percentage is reached.
-              </p>
+              <label for="ruleCompletionThreshold">Completion Threshold (%)</label>
+              <p class="sub-text">Consider a video "finished" when this percentage is reached.</p>
               <input
                 aria-label="Completion threshold percent"
                 id="ruleCompletionThreshold"
@@ -662,21 +608,14 @@
                 min="1"
                 max="100"
                 bind:value={settings.ruleCompletionThreshold}
-                onchange={() =>
-                  save(
-                    "ruleCompletionThreshold",
-                    settings?.ruleCompletionThreshold,
-                  )}
+                onchange={() => save("ruleCompletionThreshold", settings?.ruleCompletionThreshold)}
               />
             </div>
           {/if}
 
           <div class="field">
-            <label for="ruleHistoryRetentionDays">Keep History For (Days)</label
-            >
-            <p class="sub-text">
-              How long your local watch history is stored before being pruned.
-            </p>
+            <label for="ruleHistoryRetentionDays">Keep History For (Days)</label>
+            <p class="sub-text">How long your local watch history is stored before being pruned.</p>
             <input
               aria-label="History retention days"
               id="ruleHistoryRetentionDays"
@@ -684,27 +623,18 @@
               min="1"
               max="3650"
               bind:value={settings.ruleHistoryRetentionDays}
-              onchange={() =>
-                save(
-                  "ruleHistoryRetentionDays",
-                  settings?.ruleHistoryRetentionDays,
-                )}
+              onchange={() => save("ruleHistoryRetentionDays", settings?.ruleHistoryRetentionDays)}
             />
           </div>
 
           <div class="field">
-            <label for="ruleHistoryThrottleMs"
-              >History Throttle Interval (ms)</label
-            >
-            <p class="sub-text">
-              Minimum time between saves to prevent excessive storage writes.
-            </p>
+            <label for="ruleHistoryThrottleMs">History Throttle Interval (ms)</label>
+            <p class="sub-text">Minimum time between saves to prevent excessive storage writes.</p>
             <select
               aria-label="History throttle interval"
               id="ruleHistoryThrottleMs"
               bind:value={settings.ruleHistoryThrottleMs}
-              onchange={() =>
-                save("ruleHistoryThrottleMs", settings?.ruleHistoryThrottleMs)}
+              onchange={() => save("ruleHistoryThrottleMs", settings?.ruleHistoryThrottleMs)}
             >
               <option value={1000}>1 second</option>
               <option value={3000}>3 seconds</option>
@@ -714,19 +644,15 @@
           </div>
 
           <div class="field">
-            <label for="ruleHistoryDebounceMs"
-              >History Debounce Delay (ms)</label
-            >
+            <label for="ruleHistoryDebounceMs">History Debounce Delay (ms)</label>
             <p class="sub-text">
-              Delay before saving after pause or tab switch to avoid momentary
-              pauses.
+              Delay before saving after pause or tab switch to avoid momentary pauses.
             </p>
             <select
               aria-label="History debounce delay"
               id="ruleHistoryDebounceMs"
               bind:value={settings.ruleHistoryDebounceMs}
-              onchange={() =>
-                save("ruleHistoryDebounceMs", settings?.ruleHistoryDebounceMs)}
+              onchange={() => save("ruleHistoryDebounceMs", settings?.ruleHistoryDebounceMs)}
             >
               <option value={500}>0.5 seconds</option>
               <option value={1000}>1 second</option>
@@ -739,8 +665,7 @@
             <div class="toggle-info">
               <span>Track During Playback</span>
               <span class="sub-text"
-                >Periodically save position while video is playing (not just on
-                pause).</span
+                >Periodically save position while video is playing (not just on pause).</span
               >
             </div>
             <ToggleSwitch
@@ -754,9 +679,7 @@
 
           <div class="data-management-section">
             <div class="field-label">Manage Data</div>
-            <p class="sub-text">
-              Export, import, or clear your local watch history timestamps.
-            </p>
+            <p class="sub-text">Export, import, or clear your local watch history timestamps.</p>
             <div class="button-group">
               <SimpleButton secondary onclick={exportHistory}>
                 <Fa icon={faFileExport} fw /> Export
@@ -777,9 +700,8 @@
           <div class="field">
             <label for="watchLaterPlaylist">Target Playlist</label>
             <p class="sub-text">
-              Pick a managed playlist to be your favorite. It will always be
-              kept alive (recreated if deleted) and is used for quick-add
-              shortcuts.
+              Pick a managed playlist to be your favorite. It will always be kept alive (recreated
+              if deleted) and is used for quick-add shortcuts.
             </p>
             {#if settings!.watchLaterPlaylistId === null && !signedIn}
               <div class="status-warning">
@@ -796,9 +718,7 @@
                 disabled={status.saving}
                 onchange={onFavoriteSelectChange}
               >
-                <option value={CREATE_NEW}
-                  >✚ Create new managed playlist...</option
-                >
+                <option value={CREATE_NEW}>✚ Create new managed playlist...</option>
                 <option value={null}>YouTube Native (Watch Later)</option>
                 {#each playlists as playlist}
                   <option value={playlist.id}>{playlist.title}</option>
@@ -808,13 +728,10 @@
               <div class="favorite-action-container">
                 <SimpleButton
                   className="btn-full-width"
-                  primary={selectedFavoriteId !==
-                    settings?.watchLaterPlaylistId}
-                  secondary={selectedFavoriteId ===
-                    settings?.watchLaterPlaylistId}
+                  primary={selectedFavoriteId !== settings?.watchLaterPlaylistId}
+                  secondary={selectedFavoriteId === settings?.watchLaterPlaylistId}
                   onclick={handleFavoriteAction}
-                  disabled={status.saving ||
-                    selectedFavoriteId === settings?.watchLaterPlaylistId}
+                  disabled={status.saving || selectedFavoriteId === settings?.watchLaterPlaylistId}
                   title="Apply favorite playlist target"
                 >
                   {#if selectedFavoriteId === settings?.watchLaterPlaylistId}
@@ -838,9 +755,7 @@
           <div class="toggle-row">
             <div class="toggle-info">
               <span>Open editor after creation</span>
-              <span class="sub-text"
-                >Instead of playing the playlist immediately</span
-              >
+              <span class="sub-text">Instead of playing the playlist immediately</span>
             </div>
             <ToggleSwitch
               checked={settings?.openPlaylistEditorAfterCreation ?? false}
@@ -852,17 +767,12 @@
           </div>
 
           <div class="field">
-            <label for="addToLatestPosition"
-              >Add to latest playlist position</label
-            >
-            <p class="sub-text">
-              Where to add new videos in the latest playlist
-            </p>
+            <label for="addToLatestPosition">Add to latest playlist position</label>
+            <p class="sub-text">Where to add new videos in the latest playlist</p>
             <select
               id="addToLatestPosition"
               bind:value={settings.addToLatestPosition}
-              onchange={() =>
-                save("addToLatestPosition", settings?.addToLatestPosition)}
+              onchange={() => save("addToLatestPosition", settings?.addToLatestPosition)}
             >
               <option value="bottom">Bottom (End of playlist)</option>
               <option value="top">Top (Beginning of playlist)</option>
@@ -874,8 +784,7 @@
             <select
               id="defaultEditorPage"
               bind:value={settings.defaultEditorPage}
-              onchange={() =>
-                save("defaultEditorPage", settings?.defaultEditorPage)}
+              onchange={() => save("defaultEditorPage", settings?.defaultEditorPage)}
             >
               <option value="/new">New playlist</option>
               <option value="/saved">Saved playlists</option>
@@ -887,8 +796,7 @@
             <select
               id="defaultPageSize"
               bind:value={settings.defaultPageSize}
-              onchange={() =>
-                save("defaultPageSize", settings?.defaultPageSize)}
+              onchange={() => save("defaultPageSize", settings?.defaultPageSize)}
             >
               {#each PAGE_SIZES as size}
                 <option value={size}>{size}</option>
@@ -899,8 +807,7 @@
           <div class="toggle-row">
             <div class="toggle-info">
               <span>Disable thumbnails</span>
-              <span class="sub-text">Hide video previews to save bandwidth</span
-              >
+              <span class="sub-text">Hide video previews to save bandwidth</span>
             </div>
             <ToggleSwitch
               checked={settings?.disableThumbnails ?? false}
@@ -914,9 +821,7 @@
           <div class="toggle-row">
             <div class="toggle-info">
               <span>Auto-remove duplicates</span>
-              <span class="sub-text"
-                >Skip duplicate videos when adding to a playlist</span
-              >
+              <span class="sub-text">Skip duplicate videos when adding to a playlist</span>
             </div>
             <ToggleSwitch
               checked={settings?.autoRemoveDuplicates ?? false}
@@ -947,8 +852,8 @@
             <div class="toggle-info">
               <span>Auto-save changes</span>
               <span class="sub-text"
-                >Automatically save playlist edits after a delay. When off, use
-                the Refresh button to save manually.</span
+                >Automatically save playlist edits after a delay. When off, use the Refresh button
+                to save manually.</span
               >
             </div>
             <ToggleSwitch
@@ -964,14 +869,12 @@
             <div class="field">
               <label for="autoSaveInterval">Auto-save delay</label>
               <p class="sub-text">
-                How long to wait after your last edit before saving
-                automatically.
+                How long to wait after your last edit before saving automatically.
               </p>
               <select
                 id="autoSaveInterval"
                 bind:value={settings.autoSaveInterval}
-                onchange={() =>
-                  save("autoSaveInterval", settings?.autoSaveInterval)}
+                onchange={() => save("autoSaveInterval", settings?.autoSaveInterval)}
               >
                 <option value={1}>1 second</option>
                 <option value={2}>2 seconds</option>
@@ -1018,12 +921,18 @@
               onchange={() =>
                 save("metadataExecutionStrategy", settings?.metadataExecutionStrategy)}
             >
-              <option value="free_first">⚡ Zero-Quota / Free First (Recommended — Saves API Quota)</option>
-              <option value="api_first">🔑 Official YouTube Data API First (Consumes Daily Quota)</option>
+              <option value="free_first"
+                >⚡ Zero-Quota / Free First (Recommended — Saves API Quota)</option
+              >
+              <option value="api_first"
+                >🔑 Official YouTube Data API First (Consumes Daily Quota)</option
+              >
             </select>
           </div>
 
-          <h4 style="margin: 1.2em 0 0.4em; font-size: 14px; color: var(--text-color);">Active Extraction Engines</h4>
+          <h4 style="margin: 1.2em 0 0.4em; font-size: 14px; color: var(--text-color);">
+            Active Extraction Engines
+          </h4>
 
           <div class="toggle-row">
             <div class="toggle-info">
@@ -1102,7 +1011,8 @@
                 bind:value={settings.customInvidiousInstances}
                 onblur={() => save("customInvidiousInstances", settings?.customInvidiousInstances)}
                 onkeydown={(e) => {
-                  if (e.key === "Enter") save("customInvidiousInstances", settings?.customInvidiousInstances);
+                  if (e.key === "Enter")
+                    save("customInvidiousInstances", settings?.customInvidiousInstances);
                 }}
               />
             </div>
@@ -1119,17 +1029,21 @@
                 bind:value={settings.customPipedInstances}
                 onblur={() => save("customPipedInstances", settings?.customPipedInstances)}
                 onkeydown={(e) => {
-                  if (e.key === "Enter") save("customPipedInstances", settings?.customPipedInstances);
+                  if (e.key === "Enter")
+                    save("customPipedInstances", settings?.customPipedInstances);
                 }}
               />
             </div>
           {/if}
 
-          <div style="margin-top: 1.2em; padding-top: 1em; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+          <div
+            style="margin-top: 1.2em; padding-top: 1em; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;"
+          >
             <div>
               <span style="font-weight: 500;"><Fa icon={faDatabase} /> Local Metadata Cache</span>
               <p class="sub-text" style="margin: 2px 0 0;">
-                {metadataCacheCount} {metadataCacheCount === 1 ? 'video' : 'videos'} stored in IndexedDB (24h TTL)
+                {metadataCacheCount}
+                {metadataCacheCount === 1 ? "video" : "videos"} stored in IndexedDB (24h TTL)
               </p>
             </div>
             <SimpleButton
@@ -1147,14 +1061,11 @@
           <h3><Fa icon={faBolt} /> Quick Add & Tabs</h3>
           <div class="field">
             <label for="defaultQuickAddTarget">Default Quick Add Target</label>
-            <p class="sub-text">
-              Default playlist targeted when opening the popup
-            </p>
+            <p class="sub-text">Default playlist targeted when opening the popup</p>
             <select
               id="defaultQuickAddTarget"
               bind:value={settings.defaultQuickAddTarget}
-              onchange={() =>
-                save("defaultQuickAddTarget", settings?.defaultQuickAddTarget)}
+              onchange={() => save("defaultQuickAddTarget", settings?.defaultQuickAddTarget)}
             >
               <option value="create">Create new playlist</option>
               <option value="latest">Latest Playlist</option>
@@ -1168,17 +1079,14 @@
             <select
               id="defaultTabScope"
               bind:value={settings.defaultTabScope}
-              onchange={() =>
-                save("defaultTabScope", settings?.defaultTabScope)}
+              onchange={() => save("defaultTabScope", settings?.defaultTabScope)}
             >
               <option value="current">Only this tab</option>
               <option value="left">Tabs to the left (this window)</option>
               <option value="right">Tabs to the right (this window)</option>
-              <option value="all-this-window-include"
-                >All tabs in this window (include this)</option
+              <option value="all-this-window-include">All tabs in this window (include this)</option
               >
-              <option value="all-this-window-exclude"
-                >All tabs in this window (exclude this)</option
+              <option value="all-this-window-exclude">All tabs in this window (exclude this)</option
               >
               <option value="all-windows">All tabs across all windows</option>
             </select>
@@ -1187,9 +1095,7 @@
           <div class="toggle-row">
             <div class="toggle-info">
               <span>Auto-save to YouTube</span>
-              <span class="sub-text"
-                >Automatically sync newly created playlists</span
-              >
+              <span class="sub-text">Automatically sync newly created playlists</span>
             </div>
             <ToggleSwitch
               checked={settings?.saveCreatedPlaylists}
@@ -1203,9 +1109,7 @@
           <div class="toggle-row">
             <div class="toggle-info">
               <span>Close YouTube tabs</span>
-              <span class="sub-text"
-                >Automatically close tabs after adding them</span
-              >
+              <span class="sub-text">Automatically close tabs after adding them</span>
             </div>
             <ToggleSwitch
               checked={settings?.closeAddedTabs}
@@ -1279,8 +1183,8 @@
           <div class="field">
             <div class="field-label">Storage Location</div>
             <p class="sub-text">
-              Opt out of browser storage and save your extension data directly
-              to a local file (`extension_data.json`).
+              Opt out of browser storage and save your extension data directly to a local file
+              (`extension_data.json`).
             </p>
             {#if !isFileSystemSupported}
               <div
@@ -1288,9 +1192,7 @@
                 style="background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.2); color: #ef4444;"
               >
                 <Fa icon={faInfoCircle} />
-                <span
-                  >File System Access API is not supported in your browser.</span
-                >
+                <span>File System Access API is not supported in your browser.</span>
               </div>
             {:else if storageMode === "local"}
               <div
@@ -1306,9 +1208,7 @@
                 style="background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.2); color: #ef4444;"
               >
                 <Fa icon={faInfoCircle} />
-                <span
-                  >Local Folder Access Revoked (Click Connect to re-authorize)</span
-                >
+                <span>Local Folder Access Revoked (Click Connect to re-authorize)</span>
               </div>
             {:else}
               <div
@@ -1337,9 +1237,7 @@
                   }
                 }}
               >
-                {storageMode === "local"
-                  ? "Change Folder"
-                  : "Connect Local Folder"}
+                {storageMode === "local" ? "Change Folder" : "Connect Local Folder"}
               </SimpleButton>
               {#if storageMode === "local" || storageNeedsAuth}
                 <SimpleButton
@@ -1350,9 +1248,7 @@
                       updateStorageUI();
                       window.success("Reverted to browser storage.");
                     } catch (err: any) {
-                      window.error(
-                        "Failed to disconnect folder: " + err.message,
-                      );
+                      window.error("Failed to disconnect folder: " + err.message);
                     }
                   }}
                 >
@@ -1367,7 +1263,9 @@
         <section class="card">
           <h3><Fa icon={faDatabase} /> Database Backup & Portable Restore</h3>
           <p class="sub-text">
-            Create portable, zero-data-loss backups of your entire extension state (playlists, full IndexedDB video metadata cache, watch history progress, and settings). Transfer seamlessly across browsers and devices.
+            Create portable, zero-data-loss backups of your entire extension state (playlists, full
+            IndexedDB video metadata cache, watch history progress, and settings). Transfer
+            seamlessly across browsers and devices.
           </p>
 
           <input
@@ -1381,7 +1279,8 @@
           <div class="data-management-section" style="margin-top: 0.5em;">
             <div class="field-label">Portability Pipeline</div>
             <p class="sub-text">
-              Export comprehensive backup file or restore previously saved state with automatic schema validation and duplicate resolution.
+              Export comprehensive backup file or restore previously saved state with automatic
+              schema validation and duplicate resolution.
             </p>
             <div class="button-group">
               <SimpleButton
@@ -1408,15 +1307,14 @@
         <section class="card">
           <h3><Fa icon={faPlayCircle} /> YouTube Features</h3>
           <p class="sub-text">
-            Enable additional data fetching from your YouTube account. Disabling
-            these hides them from the sidebar.
+            Enable additional data fetching from your YouTube account. Disabling these hides them
+            from the sidebar.
           </p>
 
           <div class="toggle-row">
             <div class="toggle-info">
               <span>Enable Liked Videos</span>
-              <span class="sub-text">Show your Liked Videos in the sidebar</span
-              >
+              <span class="sub-text">Show your Liked Videos in the sidebar</span>
             </div>
             <ToggleSwitch
               checked={settings?.enableLikedVideos}
@@ -1430,9 +1328,7 @@
           <div class="toggle-row">
             <div class="toggle-info">
               <span>Enable Uploaded Videos</span>
-              <span class="sub-text"
-                >Show your Uploaded Videos in the sidebar</span
-              >
+              <span class="sub-text">Show your Uploaded Videos in the sidebar</span>
             </div>
             <ToggleSwitch
               checked={settings?.enableUploadedVideos}
@@ -1446,9 +1342,7 @@
           <div class="toggle-row">
             <div class="toggle-info">
               <span>Enable Subscriptions</span>
-              <span class="sub-text"
-                >Show your Channel Subscriptions in the sidebar</span
-              >
+              <span class="sub-text">Show your Channel Subscriptions in the sidebar</span>
             </div>
             <ToggleSwitch
               checked={settings?.enableSubscriptions}
@@ -1462,9 +1356,7 @@
           <div class="toggle-row">
             <div class="toggle-info">
               <span>Enable Recent Activities</span>
-              <span class="sub-text"
-                >Show your recent YouTube activities in the sidebar</span
-              >
+              <span class="sub-text">Show your recent YouTube activities in the sidebar</span>
             </div>
             <ToggleSwitch
               checked={settings?.enableActivities}
@@ -1478,9 +1370,7 @@
           <div class="toggle-row">
             <div class="toggle-info">
               <span>Enable Comments</span>
-              <span class="sub-text"
-                >Show your recent comments in the sidebar</span
-              >
+              <span class="sub-text">Show your recent comments in the sidebar</span>
             </div>
             <ToggleSwitch
               checked={settings?.enableComments}
@@ -1494,9 +1384,7 @@
           <div class="toggle-row">
             <div class="toggle-info">
               <span>Enable Search</span>
-              <span class="sub-text"
-                >Search for YouTube videos directly from the sidebar</span
-              >
+              <span class="sub-text">Search for YouTube videos directly from the sidebar</span>
             </div>
             <ToggleSwitch
               checked={settings?.enableSearch}
@@ -1526,9 +1414,7 @@
           <div class="toggle-row">
             <div class="toggle-info">
               <span>Enable Watch Later</span>
-              <span class="sub-text"
-                >Show a direct button for the system Watch Later playlist</span
-              >
+              <span class="sub-text">Show a direct button for the system Watch Later playlist</span>
             </div>
             <ToggleSwitch
               checked={settings?.enableWatchLater}
@@ -1542,9 +1428,7 @@
           <div class="toggle-row">
             <div class="toggle-info">
               <span>Enable Open by ID</span>
-              <span class="sub-text"
-                >Quickly open any YouTube playlist by its ID or URL</span
-              >
+              <span class="sub-text">Quickly open any YouTube playlist by its ID or URL</span>
             </div>
             <ToggleSwitch
               checked={settings?.enableOpenById}
@@ -1558,9 +1442,7 @@
           <div class="toggle-row">
             <div class="toggle-info">
               <span>Enable My Channel</span>
-              <span class="sub-text"
-                >Show your YouTube channel information and stats</span
-              >
+              <span class="sub-text">Show your YouTube channel information and stats</span>
             </div>
             <ToggleSwitch
               checked={settings?.enableMyChannel}
@@ -1593,8 +1475,8 @@
             <div class="checkbox-label">
               <label for="autoRetryEnabled">Auto-retry sync after quota reset</label>
               <p class="sub-text">
-                Automatically resume playlist sync 24 hours after hitting API quota limit.
-                Disable if you prefer to manually click Sync to resume.
+                Automatically resume playlist sync 24 hours after hitting API quota limit. Disable
+                if you prefer to manually click Sync to resume.
               </p>
             </div>
             <ToggleSwitch
@@ -1608,9 +1490,7 @@
 
           <div class="field">
             <label for="cacheDuration">Cache duration</label>
-            <p class="sub-text">
-              How long playlist data is cached before refreshing.
-            </p>
+            <p class="sub-text">How long playlist data is cached before refreshing.</p>
             <select
               id="cacheDuration"
               bind:value={settings.cacheDuration}
@@ -1637,8 +1517,7 @@
               min="10"
               max="10000"
               bind:value={settings.maxLogLines}
-              onchange={() =>
-                settings && save("maxLogLines", Number(settings?.maxLogLines))}
+              onchange={() => settings && save("maxLogLines", Number(settings?.maxLogLines))}
             />
           </div>
         </section>
@@ -1665,12 +1544,7 @@
         }}
         role="presentation"
       >
-        <div
-          class="modal-content"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="modal-title"
-        >
+        <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="modal-title">
           <h3 id="modal-title">Enter Playlist Name</h3>
           <div class="field" style="margin: 20px 0;">
             <input
@@ -1682,13 +1556,9 @@
             />
           </div>
           <div class="actions">
-            <SimpleButton secondary onclick={() => (showNamePrompt = false)}
-              >Cancel</SimpleButton
-            >
-            <SimpleButton
-              primary
-              onclick={confirmCreatePlaylist}
-              disabled={!newPlaylistName.trim()}>Confirm</SimpleButton
+            <SimpleButton secondary onclick={() => (showNamePrompt = false)}>Cancel</SimpleButton>
+            <SimpleButton primary onclick={confirmCreatePlaylist} disabled={!newPlaylistName.trim()}
+              >Confirm</SimpleButton
             >
           </div>
         </div>
@@ -1713,10 +1583,8 @@
             <Fa icon={faInfoCircle} /> YouTube Native Info
           </h3>
           <p class="modal-body">
-            "YouTube Native" uses your account's official <strong
-              >Watch Later</strong
-            > playlist directly. This requires you to be signed in and cannot be
-            managed by the extension.
+            "YouTube Native" uses your account's official <strong>Watch Later</strong> playlist directly.
+            This requires you to be signed in and cannot be managed by the extension.
           </p>
           <div class="actions">
             <SimpleButton
@@ -1747,7 +1615,7 @@
                     if (window.logSystemEvent)
                       await window.logSystemEvent(
                         "ERROR",
-                        `[SETTINGS] Modal sign-in failed: ${errMsg}`,
+                        `[SETTINGS] Modal sign-in failed: ${errMsg}`
                       );
                     if (window.error) window.error("Sign-in failed. Please try again.");
                   }
@@ -1793,8 +1661,8 @@
                 <span class="section-badge">Signed In</span>
               </div>
               <p class="section-text">
-                No video limit per tab. All videos can load in a single tab,
-                giving you the best playback experience.
+                No video limit per tab. All videos can load in a single tab, giving you the best
+                playback experience.
               </p>
             </div>
 
@@ -1803,26 +1671,22 @@
                 <span class="section-badge guest-badge">Guest User</span>
               </div>
               <p class="section-text">
-                YouTube enforces a limit of approximately <strong
-                  >50 videos per tab</strong
-                > regardless of your extension settings?. This is a YouTube server-side
-                restriction and cannot be bypassed.
+                YouTube enforces a limit of approximately <strong>50 videos per tab</strong> regardless
+                of your extension settings?. This is a YouTube server-side restriction and cannot be bypassed.
               </p>
             </div>
 
             <div class="info-note">
               <Fa icon={faInfoCircle} />
               <p>
-                These limits apply when using the "Play All" feature to open
-                your playlist on YouTube.
+                These limits apply when using the "Play All" feature to open your playlist on
+                YouTube.
               </p>
             </div>
           </div>
 
           <div class="modal-footer">
-            <SimpleButton primary onclick={() => (showPlayAllInfo = false)}>
-              Got it
-            </SimpleButton>
+            <SimpleButton primary onclick={() => (showPlayAllInfo = false)}>Got it</SimpleButton>
           </div>
         </div>
       </div>
@@ -2015,13 +1879,8 @@
     opacity: 0.7;
   }
 
-
   .info-card {
-    background: linear-gradient(
-      to bottom right,
-      rgba(6, 95, 212, 0.03),
-      transparent
-    );
+    background: linear-gradient(to bottom right, rgba(6, 95, 212, 0.03), transparent);
     border-left: 4px solid var(--primary-color);
   }
 

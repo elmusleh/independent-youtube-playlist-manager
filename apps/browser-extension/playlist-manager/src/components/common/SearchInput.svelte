@@ -6,7 +6,7 @@
     value = $bindable(""),
     placeholder = "Search...",
     className = "",
-    oninput = undefined
+    oninput = undefined,
   }: {
     value: string;
     placeholder?: string;
@@ -18,7 +18,7 @@
     value = "";
     if (oninput) {
       // Dispatch a dummy event to trigger potential handlers
-      oninput(new Event('input'));
+      oninput(new Event("input"));
     }
   }
 </script>
@@ -27,13 +27,7 @@
   <div class="search-icon">
     <Fa icon={faSearch} fw />
   </div>
-  <input
-    type="text"
-    {placeholder}
-    bind:value
-    {oninput}
-    aria-label="Search"
-  />
+  <input type="text" {placeholder} bind:value {oninput} aria-label="Search" />
   {#if value}
     <button class="clear-btn" onclick={clear} aria-label="Clear search">
       <Fa icon={faXmark} fw />

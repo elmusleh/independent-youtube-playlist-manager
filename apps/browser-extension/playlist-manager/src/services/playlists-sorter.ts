@@ -13,15 +13,11 @@ function timestampSorter(isNewFirst: boolean) {
   };
 }
 
-let sorterByType: Record<
-  PlaylistsSorting,
-  (a: Playlist, b: Playlist) => number
-> = {
+let sorterByType: Record<PlaylistsSorting, (a: Playlist, b: Playlist) => number> = {
   "date-created-asc": timestampSorter(false),
   "date-created-desc": timestampSorter(true),
   "title-az": titleSorter(true),
   "title-za": titleSorter(false),
 };
 
-export const getPlaylistsSorter = (sortBy: PlaylistsSorting) =>
-  sorterByType[sortBy];
+export const getPlaylistsSorter = (sortBy: PlaylistsSorting) => sorterByType[sortBy];

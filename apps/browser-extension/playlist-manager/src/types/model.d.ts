@@ -188,12 +188,7 @@ export interface CatalogVideo {
   updated_at?: string;
 }
 
-export type PlaylistsSorting =
-  | "date-created-asc"
-  | "date-created-desc"
-  | "title-az"
-  | "title-za";
+export type PlaylistsSorting = "date-created-asc" | "date-created-desc" | "title-az" | "title-za";
 
 export type Theme = "light" | "dark";
 export type ThemeChoice = "device" | Theme;
-

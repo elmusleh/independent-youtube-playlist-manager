@@ -63,7 +63,7 @@
       if (window.logSystemEvent)
         await window.logSystemEvent(
           "ERROR",
-          `[DEV-SETUP] Failed to build redirect URIs: ${errMsg}`,
+          `[DEV-SETUP] Failed to build redirect URIs: ${errMsg}`
         );
     }
   })();
@@ -71,10 +71,7 @@
   // Load existing credentials
   (async () => {
     if (window.logSystemEvent)
-      await window.logSystemEvent(
-        "INFO",
-        "[DEV-SETUP] Loading custom credentials",
-      );
+      await window.logSystemEvent("INFO", "[DEV-SETUP] Loading custom credentials");
     try {
       const result = await browser.storage.local.get("custom_yt_credentials");
       const creds = result.custom_yt_credentials || {
@@ -86,16 +83,13 @@
       if (window.logSystemEvent)
         await window.logSystemEvent(
           "INFO",
-          `[DEV-SETUP] Credentials loaded: clientId=${clientId ? "set" : "empty"}, apiKey=${apiKey ? "set" : "empty"}`,
+          `[DEV-SETUP] Credentials loaded: clientId=${clientId ? "set" : "empty"}, apiKey=${apiKey ? "set" : "empty"}`
         );
     } catch (e) {
       const errMsg = e instanceof Error ? e.message : String(e);
       console.error("Failed to load custom credentials", e);
       if (window.logSystemEvent)
-        await window.logSystemEvent(
-          "ERROR",
-          `[DEV-SETUP] Failed to load credentials: ${errMsg}`,
-        );
+        await window.logSystemEvent("ERROR", `[DEV-SETUP] Failed to load credentials: ${errMsg}`);
     }
   })();
 
@@ -110,11 +104,8 @@
   async function saveCredentials() {
     await status.save(async () => {
       if (window.logSystemEvent)
-        await window.logSystemEvent(
-          "INFO",
-          "[DEV-SETUP] Saving custom credentials",
-        );
-      
+        await window.logSystemEvent("INFO", "[DEV-SETUP] Saving custom credentials");
+
       const result = await browser.storage.local.get("custom_yt_credentials");
       const oldCreds = result.custom_yt_credentials || {
         clientId: "",
@@ -124,7 +115,7 @@
         if (window.logSystemEvent)
           await window.logSystemEvent(
             "INFO",
-            "[DEV-SETUP] Client ID changed, invalidating auth token",
+            "[DEV-SETUP] Client ID changed, invalidating auth token"
           );
         // Token is likely invalid now
         await browser.storage.local.remove("yt_auth_token_cache");
@@ -137,10 +128,7 @@
         },
       });
       if (window.logSystemEvent)
-        await window.logSystemEvent(
-          "INFO",
-          "[DEV-SETUP] Credentials saved successfully",
-        );
+        await window.logSystemEvent("INFO", "[DEV-SETUP] Credentials saved successfully");
 
       // Give the storage a moment to save, then notify to update auth and sidebars
       setTimeout(() => {
@@ -153,10 +141,7 @@
     testStatus = "testing";
     testMessage = "Starting authentication flow...";
     if (window.logSystemEvent)
-      await window.logSystemEvent(
-        "INFO",
-        "[DEV-SETUP] Testing connection with custom credentials",
-      );
+      await window.logSystemEvent("INFO", "[DEV-SETUP] Testing connection with custom credentials");
 
     try {
       // Force sign in to ensure token with new client ID is fetched
@@ -171,16 +156,15 @@
         if (window.logSystemEvent)
           await window.logSystemEvent(
             "INFO",
-            `[DEV-SETUP] Connection test successful: ${channel.title}`,
+            `[DEV-SETUP] Connection test successful: ${channel.title}`
           );
       } else {
         testStatus = "error";
-        testMessage =
-          "Failed to fetch channel data. Check your API Key and quotas.";
+        testMessage = "Failed to fetch channel data. Check your API Key and quotas.";
         if (window.logSystemEvent)
           await window.logSystemEvent(
             "ERROR",
-            "[DEV-SETUP] Connection test failed: no channel data returned",
+            "[DEV-SETUP] Connection test failed: no channel data returned"
           );
       }
     } catch (e) {
@@ -188,13 +172,11 @@
       const code = (e as any)?.code;
       console.error("Connection test failed:", e);
       if (window.logSystemEvent)
-        await window.logSystemEvent(
-          "ERROR",
-          `[DEV-SETUP] Connection test failed: ${errMsg}`,
-        );
+        await window.logSystemEvent("ERROR", `[DEV-SETUP] Connection test failed: ${errMsg}`);
       testStatus = "error";
       if (code === "redirect_uri_mismatch") {
-        testMessage = "Redirect URI mismatch: Copy the redirect URI(s) shown below and add them to your Google Cloud Console OAuth client under Authorized redirect URIs.";
+        testMessage =
+          "Redirect URI mismatch: Copy the redirect URI(s) shown below and add them to your Google Cloud Console OAuth client under Authorized redirect URIs.";
       } else if (code === "credentials_missing") {
         testMessage = "No credentials set. Enter your Client ID and API Key above first.";
       } else {
@@ -208,18 +190,12 @@
       await navigator.clipboard.writeText(redirectUri);
       window.success("Copied to clipboard");
       if (window.logSystemEvent)
-        await window.logSystemEvent(
-          "INFO",
-          "[DEV-SETUP] Redirect URI copied to clipboard",
-        );
+        await window.logSystemEvent("INFO", "[DEV-SETUP] Redirect URI copied to clipboard");
     } catch (e) {
       const errMsg = e instanceof Error ? e.message : String(e);
       window.error("Failed to copy");
       if (window.logSystemEvent)
-        await window.logSystemEvent(
-          "ERROR",
-          `[DEV-SETUP] Failed to copy redirect URI: ${errMsg}`,
-        );
+        await window.logSystemEvent("ERROR", `[DEV-SETUP] Failed to copy redirect URI: ${errMsg}`);
     }
   }
 
@@ -252,10 +228,9 @@
           <h2>Use Your Own YouTube API Quota</h2>
         </div>
         <p>
-          To prevent hitting the extension's shared usage limits, you can
-          configure the extension to use your own Google Cloud Console
-          credentials. This requires setting up a project and generating your
-          own Client ID and API Key.
+          To prevent hitting the extension's shared usage limits, you can configure the extension to
+          use your own Google Cloud Console credentials. This requires setting up a project and
+          generating your own Client ID and API Key.
         </p>
       </section>
 
@@ -265,11 +240,7 @@
           <ol class="steps">
             <li>
               Go to the
-              <a
-                href="https://console.cloud.google.com/"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
+              <a href="https://console.cloud.google.com/" target="_blank" rel="noopener noreferrer">
                 Google Cloud Console <Fa icon={faExternalLinkAlt} />
               </a>
             </li>
@@ -280,29 +251,29 @@
               <strong>Enable</strong>.
             </li>
             <li>
-              Go to <strong>APIs & Services > OAuth consent screen</strong>.
-              Choose <strong>Internal</strong> (if available) or
+              Go to <strong>APIs & Services > OAuth consent screen</strong>. Choose
+              <strong>Internal</strong>
+              (if available) or
               <strong>External</strong>. Set an App Name (e.g., "YPH Editor").
               <br />
               <strong>CRITICAL:</strong> Keep the Publishing Status as
               <strong>"Testing"</strong>. Do NOT click "Publish App".
             </li>
             <li>
-              On the same screen, scroll down to <strong>Test users</strong>.
-              Click <strong>Add Users</strong> and enter your
+              On the same screen, scroll down to <strong>Test users</strong>. Click
+              <strong>Add Users</strong>
+              and enter your
               <strong>own personal Gmail address</strong>.
               <br />
               <span class="step-note"
-                >Without this, login will fail with a "Project not verified"
-                error.</span
+                >Without this, login will fail with a "Project not verified" error.</span
               >
             </li>
             <li>
               Go to <strong>APIs & Services > Credentials</strong>.
             </li>
             <li>
-              Click <strong>Create Credentials > API Key</strong>. Copy the
-              generated key.
+              Click <strong>Create Credentials > API Key</strong>. Copy the generated key.
             </li>
             <li>
               Click <strong>Create Credentials > OAuth client ID</strong>.
@@ -311,8 +282,7 @@
               Select <strong>Web application</strong> as the Application type.
             </li>
             <li>
-              Under <strong>Authorized redirect URIs</strong>, add the URI(s)
-              for your browser(s):
+              Under <strong>Authorized redirect URIs</strong>, add the URI(s) for your browser(s):
               {#if !chromeRedirectUri}
                 <div class="uri-label">Firefox</div>
                 <div class="uri-box">
@@ -343,7 +313,9 @@
               <span class="step-note">Add all URIs that apply to your target browser(s).</span>
             </li>
             <li>
-              <strong>Note:</strong> After adding the redirect URI(s), it may take a few minutes for the changes to take effect. If you get a "redirect_uri_mismatch" error immediately after setup, please wait a few minutes and try again.
+              <strong>Note:</strong> After adding the redirect URI(s), it may take a few minutes for the
+              changes to take effect. If you get a "redirect_uri_mismatch" error immediately after setup,
+              please wait a few minutes and try again.
             </li>
             <li>
               Click <strong>Create</strong> and copy the generated
@@ -354,9 +326,8 @@
           <div class="pro-tip">
             <Fa icon={faInfoCircle} />
             <p>
-              <strong>Pro-Tip:</strong> Make sure your status is set to 'Testing'
-              and your email is added under 'Test Users' in the Google Console, or
-              the login will be blocked.
+              <strong>Pro-Tip:</strong> Make sure your status is set to 'Testing' and your email is added
+              under 'Test Users' in the Google Console, or the login will be blocked.
             </p>
           </div>
         </section>
@@ -365,8 +336,7 @@
           <h3>Your Credentials</h3>
           <p class="privacy-note">
             <Fa icon={faInfoCircle} />
-            These keys are stored ONLY in your local browser storage and are never
-            sent to any servers.
+            These keys are stored ONLY in your local browser storage and are never sent to any servers.
           </p>
 
           <div class="field">
@@ -394,11 +364,7 @@
           </div>
 
           <div class="test-connection-box">
-            <SimpleButton
-              onclick={testConnection}
-              primary
-              disabled={testStatus === "testing"}
-            >
+            <SimpleButton onclick={testConnection} primary disabled={testStatus === "testing"}>
               Test Connection
             </SimpleButton>
 
@@ -422,7 +388,6 @@
 </main>
 
 <style>
-
   .status-container {
     height: 32px;
     display: flex;
@@ -444,11 +409,7 @@
   }
 
   .intro-card {
-    background: linear-gradient(
-      to right,
-      rgba(62, 166, 255, 0.05),
-      transparent
-    );
+    background: linear-gradient(to right, rgba(62, 166, 255, 0.05), transparent);
     border-left: 4px solid var(--primary-color);
   }
 

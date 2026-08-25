@@ -29,7 +29,8 @@ export function initTheme() {
     .catch(async (e) => {
       const errMsg = e instanceof Error ? e.message : String(e);
       console.error("[THEME-STORE] Failed to initialize theme:", e);
-      if (window.logSystemEvent) await window.logSystemEvent("ERROR", `[THEME-STORE] Failed to initialize theme: ${errMsg}`);
+      if (window.logSystemEvent)
+        await window.logSystemEvent("ERROR", `[THEME-STORE] Failed to initialize theme: ${errMsg}`);
       updatePageTheme();
     });
 }

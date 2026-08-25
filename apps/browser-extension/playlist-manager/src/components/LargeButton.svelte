@@ -1,7 +1,16 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
 
-  let { bgcolor = "#065fd4", disabled = false, primary = false, secondary = false, class: className = "", style = "", onclick, children }: {
+  let {
+    bgcolor = "#065fd4",
+    disabled = false,
+    primary = false,
+    secondary = false,
+    class: className = "",
+    style = "",
+    onclick,
+    children,
+  }: {
     bgcolor?: string;
     disabled?: boolean;
     primary?: boolean;
@@ -14,12 +23,12 @@
 
   function handleKeydown(event: KeyboardEvent) {
     if (disabled) return;
-    if (event.key === 'Enter' || event.key === ' ') {
+    if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
-      const clickEvent = new MouseEvent('click', {
+      const clickEvent = new MouseEvent("click", {
         view: window,
         bubbles: true,
-        cancelable: true
+        cancelable: true,
       });
       (event.currentTarget as HTMLElement).dispatchEvent(clickEvent);
     }
@@ -57,7 +66,10 @@
     font-family: inherit;
     font-size: 14px;
     font-weight: 500;
-    transition: background-color 0.2s, border-color 0.2s, filter 0.2s;
+    transition:
+      background-color 0.2s,
+      border-color 0.2s,
+      filter 0.2s;
     outline: none;
     color: white;
   }

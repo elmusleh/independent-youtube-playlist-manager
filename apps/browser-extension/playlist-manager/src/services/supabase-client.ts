@@ -93,9 +93,13 @@ export function isAndroidPlatform(): boolean {
 export async function loginWithOAuth(provider: "google" | "github"): Promise<Session | null> {
   const client = await getSupabaseClient();
 
-  const identityApi = (typeof chrome !== "undefined" && chrome?.identity) || (typeof browser !== "undefined" && browser?.identity);
+  const identityApi =
+    (typeof chrome !== "undefined" && chrome?.identity) ||
+    (typeof browser !== "undefined" && browser?.identity);
   if (isAndroidPlatform() || !identityApi || !identityApi.launchWebAuthFlow) {
-    throw new Error("OAuth popup flow is unavailable on Android/Fenix. Please use Email/Password sign-in.");
+    throw new Error(
+      "OAuth popup flow is unavailable on Android/Fenix. Please use Email/Password sign-in."
+    );
   }
 
   const redirectUrl = identityApi.getRedirectURL("supabase");
@@ -115,7 +119,9 @@ export async function loginWithOAuth(provider: "google" | "github"): Promise<Ses
   });
 
   if (authResponseUrl) {
-    const hashPart = authResponseUrl.includes("#") ? authResponseUrl.split("#")[1] : authResponseUrl.split("?")[1] || "";
+    const hashPart = authResponseUrl.includes("#")
+      ? authResponseUrl.split("#")[1]
+      : authResponseUrl.split("?")[1] || "";
     const params = new URLSearchParams(hashPart);
     const accessToken = params.get("access_token");
     const refreshToken = params.get("refresh_token");

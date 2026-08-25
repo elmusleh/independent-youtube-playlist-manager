@@ -4,7 +4,10 @@
   import Fa from "svelte-fa";
   import { push } from "svelte-spa-router";
 
-  let { message = "Please sign in to access this feature.", onSignedIn }: {
+  let {
+    message = "Please sign in to access this feature.",
+    onSignedIn,
+  }: {
     message?: string;
     onSignedIn?: () => void;
   } = $props();
@@ -24,7 +27,8 @@
         push("/api-setup");
       } else {
         console.error("[AUTH-PLACEHOLDER] Sign-in failed:", e);
-        if (window.logSystemEvent) await window.logSystemEvent("ERROR", `[AUTH-PLACEHOLDER] Sign-in failed: ${errMsg}`);
+        if (window.logSystemEvent)
+          await window.logSystemEvent("ERROR", `[AUTH-PLACEHOLDER] Sign-in failed: ${errMsg}`);
         if (window.error) window.error("Sign-in failed. Please try again.");
       }
     } finally {
@@ -36,7 +40,12 @@
 <div class="auth-placeholder">
   <div class="content">
     <div class="icon">
-      <img src="../assets/icons/icon_128.png" alt="Independent YouTube Playlist Manager" width="48" height="48" />
+      <img
+        src="../assets/icons/icon_128.png"
+        alt="Independent YouTube Playlist Manager"
+        width="48"
+        height="48"
+      />
     </div>
     <p>{message}</p>
     <LargeButton onclick={handleSignIn} bgcolor="#4285F4" disabled={loading}>

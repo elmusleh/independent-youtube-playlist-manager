@@ -1,15 +1,11 @@
 import type { Video } from "../types/model";
 
 export const sortByTitle = (videos: Video[]) => {
-  return [...videos].sort((a, b) =>
-    (a.title || "").localeCompare(b.title || ""),
-  );
+  return [...videos].sort((a, b) => (a.title || "").localeCompare(b.title || ""));
 };
 
 export const sortByChannel = (videos: Video[]) => {
-  return [...videos].sort((a, b) =>
-    (a.channel || "").localeCompare(b.channel || ""),
-  );
+  return [...videos].sort((a, b) => (a.channel || "").localeCompare(b.channel || ""));
 };
 
 export const sortByDuration = (videos: Video[]) => {
@@ -34,17 +30,17 @@ export const sortByReleaseDate = (videos: Video[]) => {
     if (a.publishedAt === b.publishedAt) return 0;
     if (a.publishedAt === undefined) return 1;
     if (b.publishedAt === undefined) return -1;
-    
+
     const timeA = new Date(a.publishedAt).getTime();
     const timeB = new Date(b.publishedAt).getTime();
-    
+
     const isInvalidA = isNaN(timeA);
     const isInvalidB = isNaN(timeB);
-    
+
     if (isInvalidA && isInvalidB) return 0;
     if (isInvalidA) return 1;
     if (isInvalidB) return -1;
-    
+
     return timeB - timeA;
   });
 };
