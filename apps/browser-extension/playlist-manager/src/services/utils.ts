@@ -1,5 +1,4 @@
-import { Notyf } from "notyf";
-import "notyf/notyf.min.css";
+import { toast } from "../stores/toast";
 
 // Guard to prevent duplicate declarations on SPA navigation
 if (window._utilsLoaded) {
@@ -8,37 +7,11 @@ if (window._utilsLoaded) {
   window._utilsLoaded = true;
 }
 
-// Only initialize Notyf if document is available (UI context)
+// Bridge the global notification helpers to the unified toast store (UI context)
 if (typeof window !== "undefined" && typeof window.document !== "undefined") {
-  const notify = new Notyf({
-    duration: 5000,
-    dismissible: true,
-  });
-
-  const inform = new Notyf({
-    duration: 5000,
-    dismissible: true,
-    types: [
-      {
-        type: "info",
-        background: "#007bff",
-        icon: false,
-      },
-    ],
-  });
-
-  window.error = (message) => {
-    notify.error(message);
-    return () => notify.dismissAll();
-  };
-  window.success = (message) => {
-    notify.success(message);
-    return () => notify.dismissAll();
-  };
-  window.info = (message) => {
-    inform.open({ type: "info", message });
-    return () => inform.dismissAll();
-  };
+  window.error = (message) => toast.show(message, "error");
+  window.success = (message) => toast.show(message, "success");
+  window.info = (message) => toast.show(message, "info");
 } else {
   // Mock implementations for background worker to prevent reference errors
   window.error = (msg) => {

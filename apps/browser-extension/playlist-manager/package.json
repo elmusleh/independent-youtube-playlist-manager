@@ -19,7 +19,6 @@
     "@tsconfig/svelte": "^5.0.4",
     "@types/firefox-webext-browser": "^82.0.0",
     "http-proxy": "^1.18.1",
-    "notyf": "^3.10.0",
     "rollup": "^2.80.0",
     "rollup-plugin-copy": "^3.4.0",
     "rollup-plugin-css-only": "^3.1.0",

@@ -295,9 +295,9 @@ interface Window {
  */
 
 interface Window {
-  success: (msg: string) => void;
-  error: (msg: string) => void;
-  info: (msg: string) => (() => void) | void;
+  success: (msg: string) => () => void;
+  error: (msg: string) => () => void;
+  info: (msg: string) => () => void;
   logSystemEvent: (
     level: "INFO" | "ERROR" | "WARN",
     message: string,

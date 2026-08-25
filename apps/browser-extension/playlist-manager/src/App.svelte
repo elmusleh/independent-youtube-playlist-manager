@@ -18,7 +18,7 @@
   import Search from "./views/Search.svelte";
   import OpenById from "./views/OpenById.svelte";
   import ConfirmationModal from "./components/ConfirmationModal.svelte";
-  import Toast from "./components/Toast.svelte";
+  import ToastContainer from "./components/ToastContainer.svelte";
   import "./stores/shortcuts";
   import { logger } from "./services/logger";
 
@@ -163,7 +163,7 @@
     </div>
   </div>
   <ConfirmationModal />
-  <Toast />
+  <ToastContainer />
 </div>
 
 <style>

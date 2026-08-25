@@ -11,7 +11,6 @@
   import { faShareNodes, faLink, faCheck } from "@fortawesome/free-solid-svg-icons";
   import ViewHeader from "../components/ViewHeader.svelte";
   import StickyHeader from "../components/StickyHeader.svelte";
-  import { toast } from "../stores/toast";
   import { logger } from "../services/logger";
 
   const shareUrl = "https://github.com/elmusleh/independent-youtube-playlist-manager";
@@ -58,13 +57,13 @@
     try {
       await navigator.clipboard.writeText(`${shareText} ${shareUrl}`);
       copied = true;
-      toast.show("Link copied to clipboard!", "success");
+      window.success("Link copied to clipboard!");
       setTimeout(() => {
         copied = false;
       }, 2000);
     } catch (e) {
       logger.error("Failed to copy", e);
-      toast.show("Failed to copy link", "error");
+      window.error("Failed to copy link");
     }
   }
 
