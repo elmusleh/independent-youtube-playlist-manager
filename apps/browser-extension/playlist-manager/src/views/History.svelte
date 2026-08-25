@@ -385,14 +385,6 @@
               <div class="history-list">
                 {#each groupedHistory[groupLabel] as item (item.videoId)}
                   <div class="history-item">
-                    <button
-                      class="delete-btn"
-                      onclick={() => deleteHistoryItemEntry(item.videoId)}
-                      title="Remove from history"
-                      aria-label="Remove {item.title || item.videoId} from history"
-                    >
-                      <Fa icon={faTrash} />
-                    </button>
                     <a
                       href="https://www.youtube.com/watch?v={item.videoId}"
                       target="_blank"
@@ -435,6 +427,16 @@
                       <div class="resume-info">
                         Watched {formatTime(item.timestamp)}
                       </div>
+                    </div>
+                    <div class="delete-cell">
+                      <button
+                        class="delete-btn"
+                        onclick={() => deleteHistoryItemEntry(item.videoId)}
+                        title="Remove from history"
+                        aria-label="Remove {item.title || item.videoId} from history"
+                      >
+                        <Fa icon={faTrash} />
+                      </button>
                     </div>
                   </div>
                 {/each}
@@ -537,7 +539,7 @@
     width: 200px;
     aspect-ratio: 16 / 9;
     border-radius: 8px;
-    overflow: hidden;
+    overflow: visible;
     background: #000;
   }
 
@@ -545,6 +547,7 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
+    border-radius: 8px;
   }
 
   .duration-overlay {
@@ -648,49 +651,99 @@
     justify-content: center;
   }
 
+  .delete-cell {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    align-self: center;
+  }
+
   .delete-btn {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    z-index: 2;
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 30px;
-    height: 30px;
+    width: 32px;
+    height: 32px;
     border: none;
-    border-radius: 6px;
+    border-radius: 50%;
     background: transparent;
     color: var(--text-muted);
     cursor: pointer;
-    opacity: 0;
     transition:
-      opacity 0.15s,
-      color 0.15s,
-      background 0.15s;
+      background 0.15s,
+      color 0.15s;
   }
 
   .delete-btn:hover {
+    background: rgba(229, 62, 62, 0.15);
     color: #e53e3e;
-    background: rgba(229, 62, 62, 0.1);
-  }
-
-  .history-item:hover .delete-btn {
-    opacity: 1;
   }
 
   @media (max-width: 768px) {
-    .delete-btn {
-      opacity: 1;
+    .btn-group {
+      overflow-x: auto;
+      white-space: nowrap;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
     }
-  }
 
-  @media (max-width: 768px) {
+    .btn-group::-webkit-scrollbar {
+      display: none;
+    }
+
     .history-item {
-      flex-direction: column;
+      gap: 10px;
+      padding: 6px;
     }
+
     .thumbnail-container {
-      width: 100%;
+      width: 120px;
+    }
+
+    .duration-overlay {
+      font-size: 10px;
+      padding: 1px 3px;
+      bottom: 4px;
+      right: 4px;
+    }
+
+    .play-overlay {
+      font-size: 20px;
+    }
+
+    .title {
+      font-size: 14px;
+    }
+
+    .meta {
+      font-size: 12px;
+      gap: 6px;
+    }
+
+    .resume-info {
+      display: none;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .history-item {
+      gap: 8px;
+      padding: 4px;
+    }
+
+    .thumbnail-container {
+      width: 100px;
+    }
+
+    .delete-btn {
+      width: 28px;
+      height: 28px;
+    }
+
+    .title {
+      font-size: 13px;
+      -webkit-line-clamp: 1;
+      line-clamp: 1;
     }
   }
 </style>
