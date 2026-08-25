@@ -20,6 +20,7 @@
     faStar,
   } from "@fortawesome/free-solid-svg-icons";
   import ViewHeader from "../components/ViewHeader.svelte";
+  import StickyHeader from "../components/StickyHeader.svelte";
   import SimpleButton from "../components/SimpleButton.svelte";
   import { StatusManager } from "../services/status-manager.svelte";
   import SkeletonCard from "../components/SkeletonCard.svelte";
@@ -1193,29 +1194,33 @@
 {/if}
 
 <!-- ─── Main ─────────────────────────────────────────────────────────────── -->
-<main>
-  <ViewHeader
-    icon={faBoxArchive}
-    title="Manage"
-    count={allPlaylists.length}
-    showSaveStatus={true}
-    {status}
-    onSave={refresh}
-  >
-    <div class="header-actions-inline">
-      <SimpleButton onclick={exportAll} secondary disabled={allPlaylists.length === 0}>
-        <Fa icon={faFileExport} fw /><span
-          >{selectedIds.size > 0 ? "Export Selected" : "Export All"}</span
-        >
-      </SimpleButton>
-
-      <SimpleButton onclick={importPlaylists} secondary>
-        <Fa icon={faFileImport} fw /><span>Import</span>
-      </SimpleButton>
-    </div>
-  </ViewHeader>
-
+<main class="view-scroll-container">
   <div class="view-body">
+    <StickyHeader>
+      {#snippet children()}
+        <ViewHeader
+          icon={faBoxArchive}
+          title="Manage"
+          count={allPlaylists.length}
+          showSaveStatus={true}
+          {status}
+          onSave={refresh}
+        >
+          {#snippet rightActions()}
+            <SimpleButton onclick={exportAll} secondary disabled={allPlaylists.length === 0}>
+              <Fa icon={faFileExport} fw /><span
+                >{selectedIds.size > 0 ? "Export Selected" : "Export All"}</span
+              >
+            </SimpleButton>
+
+            <SimpleButton onclick={importPlaylists} secondary>
+              <Fa icon={faFileImport} fw /><span>Import</span>
+            </SimpleButton>
+          {/snippet}
+        </ViewHeader>
+      {/snippet}
+    </StickyHeader>
+
     {#if loading}
       <div class="skeleton-grid">
         {#each Array(6) as _}
@@ -1479,6 +1484,8 @@
 />
 
 <style>
+  @import "../css/view-layout.css";
+
   .search-sort-bar {
     display: flex;
     justify-content: space-between;
@@ -1577,8 +1584,8 @@
     background: var(--hover-color);
     border-bottom: 1px solid var(--border-color);
     position: sticky;
-    top: 0;
-    z-index: 90;
+    top: 72px; /* Stick below the sticky view header (min-height: 72px) */
+    z-index: 5;
     transition: background 0.2s;
   }
 
@@ -1866,6 +1873,7 @@
     .list-header {
       flex-direction: column;
       align-items: flex-start;
+      top: 0; /* Header stacks taller on mobile; list-header can stick at top */
     }
 
     .bulk-actions {

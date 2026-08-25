@@ -9,6 +9,15 @@
   background-color: var(--background-color);
 }
 
+/* Scroll container for view content — apply to <main> elements
+   so .view-body gets a constrained height and sticky positioning works. */
+.view-scroll-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
 .view-header {
   display: flex;
   justify-content: space-between;

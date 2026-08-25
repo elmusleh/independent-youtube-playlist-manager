@@ -10,6 +10,7 @@
     faCheck,
   } from "@fortawesome/free-solid-svg-icons";
   import ViewHeader from "../components/ViewHeader.svelte";
+  import StickyHeader from "../components/StickyHeader.svelte";
   import SimpleButton from "../components/SimpleButton.svelte";
   import SaveStatus from "../components/SaveStatus.svelte";
   import { StatusManager } from "../services/status-manager.svelte";
@@ -209,18 +210,18 @@
   }
 </script>
 
-<main>
-  <div class="view-header">
-    <div class="top-left">
-      <ViewHeader icon={faKey} title="API Setup" />
-    </div>
-
-    <div class="btn-group right-align">
-      <SaveStatus onclick={refresh} {status} />
-    </div>
-  </div>
-
+<main class="view-scroll-container">
   <div class="view-body">
+    <StickyHeader>
+      {#snippet children()}
+        <ViewHeader icon={faKey} title="API Setup">
+          {#snippet rightActions()}
+            <SaveStatus onclick={refresh} {status} />
+          {/snippet}
+        </ViewHeader>
+      {/snippet}
+    </StickyHeader>
+
     <div class="content">
       <section class="card intro-card">
         <div class="intro-header">
@@ -388,6 +389,8 @@
 </main>
 
 <style>
+  @import "../css/view-layout.css";
+
   .status-container {
     height: 32px;
     display: flex;

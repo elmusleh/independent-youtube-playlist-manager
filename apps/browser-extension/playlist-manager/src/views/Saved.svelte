@@ -3,6 +3,7 @@
   import { faArrowUpRightFromSquare, faListUl, faWrench } from "@fortawesome/free-solid-svg-icons";
   import { faYoutube } from "@fortawesome/free-brands-svg-icons";
   import ViewHeader from "../components/ViewHeader.svelte";
+  import StickyHeader from "../components/StickyHeader.svelte";
   import SimpleButton from "../components/SimpleButton.svelte";
   import SaveStatus from "../components/SaveStatus.svelte";
   import { StatusManager } from "../services/status-manager.svelte";
@@ -223,27 +224,33 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 </svelte:head>
 
-<main>
-  <div class="view-header">
-    <div class="top-left">
-      <ViewHeader icon={faListUl} title="Playlists" count={playlistCount} />
-    </div>
-    <div class="btn-group right-align">
-      <SimpleButton onclick={() => (location.hash = "#/manage")} title="Manage playlists" secondary>
-        <Fa icon={faWrench} fw />
-        <span>Manage</span>
-      </SimpleButton>
-      <SaveStatus onclick={refresh} {status} title="Refresh" />
-    </div>
-  </div>
-
+<main class="view-scroll-container">
   <div class="view-body">
-    <FilterBar
-      {activeChip}
-      onChipChange={(c) => (activeChip = c)}
-      {activeSort}
-      onSortChange={(s) => (activeSort = s)}
-    />
+    <StickyHeader>
+      {#snippet children()}
+        <ViewHeader icon={faListUl} title="Playlists" count={playlistCount}>
+          {#snippet rightActions()}
+            <SimpleButton
+              onclick={() => (location.hash = "#/manage")}
+              title="Manage playlists"
+              secondary
+            >
+              <Fa icon={faWrench} fw />
+              <span>Manage</span>
+            </SimpleButton>
+            <SaveStatus onclick={refresh} {status} title="Refresh" />
+          {/snippet}
+        </ViewHeader>
+      {/snippet}
+      {#snippet subBar()}
+        <FilterBar
+          {activeChip}
+          onChipChange={(c) => (activeChip = c)}
+          {activeSort}
+          onSortChange={(s) => (activeSort = s)}
+        />
+      {/snippet}
+    </StickyHeader>
 
     <PlaylistGrid
       loading={loading && allPlaylists.length === 0}
@@ -281,27 +288,5 @@
 </main>
 
 <style>
-  .view-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px 24px;
-    border-bottom: 1px solid var(--border-color);
-    background: var(--background-color);
-  }
-
-  .top-left {
-    display: flex;
-    align-items: center;
-  }
-
-  .btn-group {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .right-align {
-    justify-content: flex-end;
-  }
+  @import "../css/view-layout.css";
 </style>

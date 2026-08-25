@@ -13,6 +13,7 @@
   import { faRotateLeft, faKeyboard } from "@fortawesome/free-solid-svg-icons";
   import Fa from "svelte-fa";
   import ViewHeader from "../components/ViewHeader.svelte";
+  import StickyHeader from "../components/StickyHeader.svelte";
 
   let config = $state({ enabled: true, mappings: { ...defaultMappings } });
   const status = new StatusManager();
@@ -162,22 +163,22 @@
 
 <svelte:window onkeydown={handleKeyDown} />
 
-<main>
-  <div class="view-header">
-    <div class="top-left">
-      <ViewHeader icon={faKeyboard} title="Keyboard Shortcuts" />
-    </div>
-
-    <div class="btn-group right-align">
-      <SimpleButton onclick={resetDefaults} secondary>
-        <Fa icon={faRotateLeft} fw />
-        <span>Reset to Default</span>
-      </SimpleButton>
-      <SaveStatus onclick={refresh} {status} />
-    </div>
-  </div>
-
+<main class="view-scroll-container">
   <div class="view-body">
+    <StickyHeader>
+      {#snippet children()}
+        <ViewHeader icon={faKeyboard} title="Keyboard Shortcuts">
+          {#snippet rightActions()}
+            <SimpleButton onclick={resetDefaults} secondary>
+              <Fa icon={faRotateLeft} fw />
+              <span>Reset to Default</span>
+            </SimpleButton>
+            <SaveStatus onclick={refresh} {status} />
+          {/snippet}
+        </ViewHeader>
+      {/snippet}
+    </StickyHeader>
+
     <div class="shortcuts-container">
       <div class="setting-row">
         <div class="setting-info">
@@ -223,6 +224,8 @@
 </main>
 
 <style>
+  @import "../css/view-layout.css";
+
   .shortcuts-container {
     background: var(--background-color);
     border: 1px solid var(--border-color);

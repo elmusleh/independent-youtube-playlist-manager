@@ -37,7 +37,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 </svelte:head>
 
-<main>
+<main class="view-scroll-container">
   {#await playlistAsync then playlist}
     <PlaylistEditor
       {playlist}

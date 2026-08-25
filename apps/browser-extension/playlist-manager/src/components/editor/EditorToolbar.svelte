@@ -198,12 +198,11 @@
 <style>
   .playlist-btns {
     display: flex;
-    padding: 0 0 24px 0;
+    padding: 12px 24px;
     flex-wrap: wrap;
     gap: 12px;
     align-items: center;
-    border-bottom: 1px solid var(--border-color);
-    margin-bottom: 24px;
+    border-top: 1px solid var(--border-color);
   }
 
   .btn-group {

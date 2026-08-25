@@ -13,6 +13,7 @@
   import SkeletonCard from "../components/SkeletonCard.svelte";
   import EmptyState from "../components/EmptyState.svelte";
   import AuthPlaceholder from "../components/AuthPlaceholder.svelte";
+  import StickyHeader from "../components/StickyHeader.svelte";
 
   let signedIn = $state(false);
   const status = new StatusManager();
@@ -46,30 +47,30 @@
   checkAuth();
 </script>
 
-<main>
-  <div class="view-header">
-    <div class="top-left">
-      <ViewHeader icon={faSearch} title="YouTube Search" count={results.length} />
-    </div>
-    <div class="btn-group right-align">
-      {#if query && results.length > 0}
-        <SimpleButton
-          secondary
-          onclick={() => {
-            query = "";
-            results = [];
-          }}
-          title="Clear search"
-        >
-          <Fa icon={faXmark} fw />
-          <span>Clear</span>
-        </SimpleButton>
-      {/if}
-      <SaveStatus onclick={handleSearch} {status} title="Refresh" />
-    </div>
-  </div>
-
+<main class="view-scroll-container">
   <div class="view-body">
+    <StickyHeader>
+      {#snippet children()}
+        <ViewHeader icon={faSearch} title="YouTube Search" count={results.length}>
+          {#snippet rightActions()}
+            {#if query && results.length > 0}
+              <SimpleButton
+                secondary
+                onclick={() => {
+                  query = "";
+                  results = [];
+                }}
+                title="Clear search"
+              >
+                <Fa icon={faXmark} fw />
+                <span>Clear</span>
+              </SimpleButton>
+            {/if}
+            <SaveStatus onclick={handleSearch} {status} title="Refresh" />
+          {/snippet}
+        </ViewHeader>
+      {/snippet}
+    </StickyHeader>
     {#if !signedIn}
       <AuthPlaceholder />
     {:else}
@@ -138,6 +139,8 @@
 </main>
 
 <style>
+  @import "../css/view-layout.css";
+
   .search-bar {
     display: flex;
     gap: 8px;

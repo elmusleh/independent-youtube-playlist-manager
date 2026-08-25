@@ -14,6 +14,7 @@
   import SimpleButton from "../components/SimpleButton.svelte";
   import SaveStatus from "../components/SaveStatus.svelte";
   import ViewHeader from "../components/ViewHeader.svelte";
+  import StickyHeader from "../components/StickyHeader.svelte";
   import { StatusManager } from "../services/status-manager.svelte";
   import ErrorState from "../components/ErrorState.svelte";
   import SkeletonCard from "../components/SkeletonCard.svelte";
@@ -301,55 +302,58 @@
   }
 </script>
 
-<main>
-  <div class="view-header">
-    <div class="top-left">
-      <ViewHeader icon={faClockRotateLeft} title="Watch History" count={historyArray.length} />
-    </div>
-    <div class="btn-group right-align">
-      {#if historyArray.length > 0}
-        <SimpleButton
-          secondary
-          onclick={toggleTracking}
-          title={trackingEnabled ? "Pause watch history tracking" : "Resume watch history tracking"}
-        >
-          <Fa icon={trackingEnabled ? faPause : faPlay} fw />
-          <span>{trackingEnabled ? "Pause Tracking" : "Resume Tracking"}</span>
-        </SimpleButton>
-        <SimpleButton secondary onclick={exportHistory} title="Export watch history">
-          <Fa icon={faFileExport} fw />
-          <span>Export</span>
-        </SimpleButton>
-        <SimpleButton secondary onclick={importHistory} title="Import watch history">
-          <Fa icon={faFileImport} fw />
-          <span>Import</span>
-        </SimpleButton>
-        <SimpleButton
-          secondary
-          onclick={() => {
-            requestConfirm({
-              title: "Clear History?",
-              message:
-                "This will permanently remove all watch history from your local storage. YouTube history will not be affected.",
-              color: "danger",
-              onConfirm: async () => {
-                await browser.storage.local.remove(HISTORY_KEY);
-                historyArray = [];
-                window.success("History cleared");
-              },
-            });
-          }}
-          title="Clear all history"
-        >
-          <Fa icon={faXmark} fw />
-          <span>Clear History</span>
-        </SimpleButton>
-      {/if}
-      <SaveStatus onclick={refresh} {status} title="Refresh" />
-    </div>
-  </div>
-
+<main class="view-scroll-container">
   <div class="view-body">
+    <StickyHeader>
+      {#snippet children()}
+        <ViewHeader icon={faClockRotateLeft} title="Watch History" count={historyArray.length}>
+          {#snippet rightActions()}
+            {#if historyArray.length > 0}
+              <SimpleButton
+                secondary
+                onclick={toggleTracking}
+                title={trackingEnabled
+                  ? "Pause watch history tracking"
+                  : "Resume watch history tracking"}
+              >
+                <Fa icon={trackingEnabled ? faPause : faPlay} fw />
+                <span>{trackingEnabled ? "Pause Tracking" : "Resume Tracking"}</span>
+              </SimpleButton>
+              <SimpleButton secondary onclick={exportHistory} title="Export watch history">
+                <Fa icon={faFileExport} fw />
+                <span>Export</span>
+              </SimpleButton>
+              <SimpleButton secondary onclick={importHistory} title="Import watch history">
+                <Fa icon={faFileImport} fw />
+                <span>Import</span>
+              </SimpleButton>
+              <SimpleButton
+                secondary
+                onclick={() => {
+                  requestConfirm({
+                    title: "Clear History?",
+                    message:
+                      "This will permanently remove all watch history from your local storage. YouTube history will not be affected.",
+                    color: "danger",
+                    onConfirm: async () => {
+                      await browser.storage.local.remove(HISTORY_KEY);
+                      historyArray = [];
+                      window.success("History cleared");
+                    },
+                  });
+                }}
+                title="Clear all history"
+              >
+                <Fa icon={faXmark} fw />
+                <span>Clear History</span>
+              </SimpleButton>
+            {/if}
+            <SaveStatus onclick={refresh} {status} title="Refresh" />
+          {/snippet}
+        </ViewHeader>
+      {/snippet}
+    </StickyHeader>
+
     <div class="content">
       {#if loading}
         <div class="skeleton-grid">
@@ -465,6 +469,8 @@
 <input type="file" id="HistoryImportInput" accept="application/json" style="display: none;" />
 
 <style>
+  @import "../css/view-layout.css";
+
   .content {
     flex: 1;
   }
@@ -680,17 +686,6 @@
   }
 
   @media (max-width: 768px) {
-    .btn-group {
-      overflow-x: auto;
-      white-space: nowrap;
-      -webkit-overflow-scrolling: touch;
-      scrollbar-width: none;
-    }
-
-    .btn-group::-webkit-scrollbar {
-      display: none;
-    }
-
     .history-item {
       gap: 10px;
       padding: 6px;

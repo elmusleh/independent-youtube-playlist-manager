@@ -3,6 +3,7 @@
   import { flip } from "svelte/animate";
   import { expoOut } from "svelte/easing";
   import ViewHeader from "../components/ViewHeader.svelte";
+  import StickyHeader from "./StickyHeader.svelte";
   import SyncStatusIndicator from "./SyncStatusIndicator.svelte";
   import LoadingModal from "./LoadingModal.svelte";
   import PlaylistVideo from "./PlaylistVideo.svelte";
@@ -1123,58 +1124,128 @@
   };
 </script>
 
-<ViewHeader
-  icon={pageIcon}
-  title={playlist?.title || pageTitle}
-  count={videos.length}
-  bind:editingTitle
-  onTitleChange={(newTitle: string) => {
-    if (playlist) {
-      playlist.title = newTitle;
-      updateDirtyState();
-    }
-  }}
-  showFavoriteButton={true}
-  isFavorite={isFavoritePlaylist}
-  favoriteReadOnly={isFavoritePage || isFavoritePlaylist}
-  onToggleFavorite={toggleFavorite}
-  showSyncStatus={true}
-  syncStatus={isLocal ? "local" : playlist?.isTagged ? "synced" : "online"}
-  showLockButton={true}
-  isLocked={playlist?.isPermanent === true}
-  onToggleLock={async () => {
-    if (playlist) {
-      playlist.isPermanent = !playlist.isPermanent;
-      await savePlaylist({ silent: true });
-    }
-  }}
-  showSyncButton={signedIn &&
-    isLocal &&
-    playlist?.id !== "WL" &&
-    videos.length > 0 &&
-    !status.saving}
-  onSync={() => savePlaylist({ forceSync: true })}
-  showYoutubeButton={signedIn && !isLocal && !!playlist?.id}
-  playlistId={playlist?.id}
-  showAdoptButton={signedIn && isUnmanagedYT && videos.length > 0}
-  isAdopting={adopting === true}
-  onAdopt={handleAdopt}
-  showDiscardButton={isDirty}
-  onDiscard={discardChanges}
-  showSaveStatus={true}
-  {status}
-  {isDirty}
-  onSave={handleManualSave}
-/>
-
-{#if playlist?.isPermanent}
-  <div class="permanent-notice">
-    <Fa icon={faLock} fw />
-    <span>This playlist is permanent. Videos won't be automatically deleted.</span>
-  </div>
-{/if}
-
 <div class="view-body">
+  <StickyHeader>
+    {#snippet children()}
+      <ViewHeader
+        icon={pageIcon}
+        title={playlist?.title || pageTitle}
+        count={videos.length}
+        bind:editingTitle
+        onTitleChange={(newTitle: string) => {
+          if (playlist) {
+            playlist.title = newTitle;
+            updateDirtyState();
+          }
+        }}
+        showFavoriteButton={true}
+        isFavorite={isFavoritePlaylist}
+        favoriteReadOnly={isFavoritePage || isFavoritePlaylist}
+        onToggleFavorite={toggleFavorite}
+        showSyncStatus={true}
+        syncStatus={isLocal ? "local" : playlist?.isTagged ? "synced" : "online"}
+        showLockButton={true}
+        isLocked={playlist?.isPermanent === true}
+        onToggleLock={async () => {
+          if (playlist) {
+            playlist.isPermanent = !playlist.isPermanent;
+            await savePlaylist({ silent: true });
+          }
+        }}
+        showSyncButton={signedIn &&
+          isLocal &&
+          playlist?.id !== "WL" &&
+          videos.length > 0 &&
+          !status.saving}
+        onSync={() => savePlaylist({ forceSync: true })}
+        showYoutubeButton={signedIn && !isLocal && !!playlist?.id}
+        playlistId={playlist?.id}
+        showAdoptButton={signedIn && isUnmanagedYT && videos.length > 0}
+        isAdopting={adopting === true}
+        onAdopt={handleAdopt}
+        showDiscardButton={isDirty}
+        onDiscard={discardChanges}
+        showSaveStatus={true}
+        {status}
+        {isDirty}
+        onSave={handleManualSave}
+      />
+    {/snippet}
+    {#snippet subBar()}
+      {#if playlist?.isPermanent}
+        <div class="permanent-notice">
+          <Fa icon={faLock} fw />
+          <span>This playlist is permanent. Videos won't be automatically deleted.</span>
+        </div>
+      {/if}
+      {#if playlist && (dataLoaded || !isLoading) && !authRequired && !error}
+        {#if isSelectMode}
+          <BulkActionsBar
+            selectedCount={selectedVideoIds.size}
+            isAllSelected={selectedVideoIds.size === videos.length}
+            onToggleSelectAll={toggleSelectAll}
+            onSelectAbove={() => handleBatchSelect("above")}
+            onSelectBelow={() => handleBatchSelect("below")}
+            onSelectFirst50={selectFirst50}
+            onOpenCopyMove={openCopyMove}
+            onMoveToTop={() => handleBulkAction("top")}
+            onMoveToBottom={() => handleBulkAction("bottom")}
+            onDelete={() =>
+              requestConfirm({
+                title: "Delete?",
+                message: "Delete selected videos?",
+                color: "danger",
+                onConfirm: async () => {
+                  await handleBulkAction("delete");
+                },
+              })}
+            onCancel={() => {
+              isSelectMode = false;
+              selectedVideoIds = new Set();
+            }}
+          />
+        {:else}
+          <EditorToolbar
+            hasVideos={videos.length > 0}
+            bind:isSelectMode
+            onPlay={play}
+            onImport={() => {
+              modalType = "Import";
+              displayModal = true;
+            }}
+            onScrapeHtml={scrapeHtml}
+            onClean={(type) => {
+              if (type === "broken") {
+                handleClean("broken");
+              } else if (type === "duplicates") {
+                handleClean("duplicates");
+              } else if (type === "live") {
+                handleClean("live");
+              } else if (type === "refetch") {
+                handleClean("refetch");
+              }
+            }}
+            onSort={(type) => {
+              if (type === "title") {
+                handleSort("title");
+              } else if (type === "channel") {
+                handleSort("channel");
+              } else if (type === "duration") {
+                handleSort("duration");
+              } else if (type === "views") {
+                handleSort("views");
+              } else if (type === "date") {
+                handleSort("date");
+              } else if (type === "reverse") {
+                handleSort("reverse");
+              }
+            }}
+          />
+        {/if}
+      {/if}
+    {/snippet}
+  </StickyHeader>
+
   {#if authRequired}
     <AuthPlaceholder message="Sign in to view Watch Later." />
   {:else if error}
@@ -1183,70 +1254,6 @@
     </div>
   {:else if playlist}
     {#if dataLoaded || !isLoading}
-      {#if isSelectMode}
-        <BulkActionsBar
-          selectedCount={selectedVideoIds.size}
-          isAllSelected={selectedVideoIds.size === videos.length}
-          onToggleSelectAll={toggleSelectAll}
-          onSelectAbove={() => handleBatchSelect("above")}
-          onSelectBelow={() => handleBatchSelect("below")}
-          onSelectFirst50={selectFirst50}
-          onOpenCopyMove={openCopyMove}
-          onMoveToTop={() => handleBulkAction("top")}
-          onMoveToBottom={() => handleBulkAction("bottom")}
-          onDelete={() =>
-            requestConfirm({
-              title: "Delete?",
-              message: "Delete selected videos?",
-              color: "danger",
-              onConfirm: async () => {
-                await handleBulkAction("delete");
-              },
-            })}
-          onCancel={() => {
-            isSelectMode = false;
-            selectedVideoIds = new Set();
-          }}
-        />
-      {:else}
-        <EditorToolbar
-          hasVideos={videos.length > 0}
-          bind:isSelectMode
-          onPlay={play}
-          onImport={() => {
-            modalType = "Import";
-            displayModal = true;
-          }}
-          onScrapeHtml={scrapeHtml}
-          onClean={(type) => {
-            if (type === "broken") {
-              handleClean("broken");
-            } else if (type === "duplicates") {
-              handleClean("duplicates");
-            } else if (type === "live") {
-              handleClean("live");
-            } else if (type === "refetch") {
-              handleClean("refetch");
-            }
-          }}
-          onSort={(type) => {
-            if (type === "title") {
-              handleSort("title");
-            } else if (type === "channel") {
-              handleSort("channel");
-            } else if (type === "duration") {
-              handleSort("duration");
-            } else if (type === "views") {
-              handleSort("views");
-            } else if (type === "date") {
-              handleSort("date");
-            } else if (type === "reverse") {
-              handleSort("reverse");
-            }
-          }}
-        />
-      {/if}
-
       <div class="list">
         {#each paginatedVideos as video, index (video.id)}
           <div
@@ -1422,7 +1429,7 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 12px 20px;
+    padding: 12px 24px;
     background: var(--hover-color);
     border-bottom: 1px solid var(--border-color);
     color: var(--text-color);

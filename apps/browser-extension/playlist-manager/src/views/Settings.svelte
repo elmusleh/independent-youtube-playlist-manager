@@ -4,6 +4,7 @@
   import { faGear } from "@fortawesome/free-solid-svg-icons";
   import ViewHeader from "../components/ViewHeader.svelte";
   import SaveStatus from "../components/SaveStatus.svelte";
+  import StickyHeader from "../components/StickyHeader.svelte";
   import { StatusManager } from "../services/status-manager.svelte";
   import { saveSetting } from "../services/settings-utils.js";
   import { logger } from "../services/logger";
@@ -89,18 +90,18 @@
   }
 </script>
 
-<main>
-  <div class="view-header">
-    <div class="top-left">
-      <ViewHeader icon={faGear} title="Settings" />
-    </div>
-
-    <div class="btn-group right-align">
-      <SaveStatus onclick={refresh} {status} />
-    </div>
-  </div>
-
+<main class="view-scroll-container">
   <div class="view-body">
+    <StickyHeader>
+      {#snippet children()}
+        <ViewHeader icon={faGear} title="Settings">
+          {#snippet rightActions()}
+            <SaveStatus onclick={refresh} {status} />
+          {/snippet}
+        </ViewHeader>
+      {/snippet}
+    </StickyHeader>
+
     {#if settings}
       <div class="settings-grid">
         <PlaybackSettings

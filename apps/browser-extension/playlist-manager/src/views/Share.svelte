@@ -10,6 +10,7 @@
   } from "@fortawesome/free-brands-svg-icons";
   import { faShareNodes, faLink, faCheck } from "@fortawesome/free-solid-svg-icons";
   import ViewHeader from "../components/ViewHeader.svelte";
+  import StickyHeader from "../components/StickyHeader.svelte";
   import { toast } from "../stores/toast";
   import { logger } from "../services/logger";
 
@@ -84,15 +85,14 @@
   }
 </script>
 
-<main>
-  <div class="view-header">
-    <div class="top-left">
-      <ViewHeader icon={faShareNodes} title="Share" />
-    </div>
-    <div class="btn-group right-align"></div>
-  </div>
-
+<main class="view-scroll-container">
   <div class="view-body">
+    <StickyHeader>
+      {#snippet children()}
+        <ViewHeader icon={faShareNodes} title="Share" />
+      {/snippet}
+    </StickyHeader>
+
     <div class="share-intro">
       <p>
         Love using Independent YouTube Playlist Manager? Help others discover it by sharing it with
@@ -140,6 +140,8 @@
 </main>
 
 <style>
+  @import "../css/view-layout.css";
+
   .share-intro {
     text-align: center;
     margin-bottom: 40px;

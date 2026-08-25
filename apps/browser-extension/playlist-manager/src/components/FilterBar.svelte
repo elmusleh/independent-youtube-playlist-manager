@@ -71,12 +71,8 @@
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
-    position: sticky;
-    top: 56px;
-    z-index: 99;
-    background: var(--background-color);
-    margin: 0 -24px;
     padding: 12px 24px;
+    border-top: 1px solid var(--border-color);
   }
 
   .chip {
@@ -147,8 +143,6 @@
 
   @media (max-width: 768px) {
     .chip-bar {
-      top: 52px;
-      margin: 0 -16px;
       padding: 12px 16px;
     }
 

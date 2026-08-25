@@ -2,6 +2,7 @@
   import Fa from "svelte-fa";
   import { faBug, faTrash, faTerminal, faCopy } from "@fortawesome/free-solid-svg-icons";
   import ViewHeader from "../components/ViewHeader.svelte";
+  import StickyHeader from "../components/StickyHeader.svelte";
   import SimpleButton from "../components/SimpleButton.svelte";
   import SaveStatus from "../components/SaveStatus.svelte";
   import { StatusManager } from "../services/status-manager.svelte";
@@ -82,30 +83,30 @@
   loadLogs();
 </script>
 
-<main>
-  <div class="view-header">
-    <div class="top-left">
-      <ViewHeader icon={faTerminal} title="System Logs" count={logs.length} />
-    </div>
-
-    <div class="btn-group right-align">
-      {#if logs.length > 0}
-        <SimpleButton onclick={copyLogs} secondary>
-          <Fa icon={faCopy} fw />
-          <span>Copy</span>
-        </SimpleButton>
-
-        <SimpleButton onclick={requestClearLogs} danger>
-          <Fa icon={faTrash} fw />
-          <span>Clear Logs</span>
-        </SimpleButton>
-      {/if}
-
-      <SaveStatus onclick={loadLogs} {status} />
-    </div>
-  </div>
-
+<main class="view-scroll-container">
   <div class="view-body">
+    <StickyHeader>
+      {#snippet children()}
+        <ViewHeader icon={faTerminal} title="System Logs" count={logs.length}>
+          {#snippet rightActions()}
+            {#if logs.length > 0}
+              <SimpleButton onclick={copyLogs} secondary>
+                <Fa icon={faCopy} fw />
+                <span>Copy</span>
+              </SimpleButton>
+
+              <SimpleButton onclick={requestClearLogs} danger>
+                <Fa icon={faTrash} fw />
+                <span>Clear Logs</span>
+              </SimpleButton>
+            {/if}
+
+            <SaveStatus onclick={loadLogs} {status} />
+          {/snippet}
+        </ViewHeader>
+      {/snippet}
+    </StickyHeader>
+
     <div class="logs-container">
       {#if status.refreshing}
         <p class="status">Loading logs...</p>
@@ -123,6 +124,8 @@
 </main>
 
 <style>
+  @import "../css/view-layout.css";
+
   main {
     display: flex;
     flex-direction: column;

@@ -7,6 +7,7 @@
   import PlaylistSkeleton from "./skeletons/PlaylistSkeleton.svelte";
   import ErrorState from "./ErrorState.svelte";
   import ViewHeader from "./ViewHeader.svelte";
+  import StickyHeader from "./StickyHeader.svelte";
   import EmptyState from "./EmptyState.svelte";
   import SimpleButton from "./SimpleButton.svelte";
   import { StatusManager } from "../services/status-manager.svelte";
@@ -135,59 +136,63 @@
   });
 </script>
 
-<main>
+<main class="view-scroll-container">
   {#if viewState !== "ready"}
-    <ViewHeader
-      icon={pageIcon}
-      title={playlist?.title || pageTitle}
-      count={playlist?.videos?.length || 0}
-      bind:editingTitle
-      onTitleChange={(newTitle) => {
-        if (playlist) {
-          playlist.title = newTitle;
-          status.markDirty();
-        }
-      }}
-      showSaveStatus={true}
-      {status}
-      onSave={refresh}
+    <div class="view-body">
+      <StickyHeader>
+        {#snippet children()}
+          <ViewHeader
+            icon={pageIcon}
+            title={playlist?.title || pageTitle}
+            count={playlist?.videos?.length || 0}
+            bind:editingTitle
+            onTitleChange={(newTitle) => {
+              if (playlist) {
+                playlist.title = newTitle;
+                status.markDirty();
+              }
+            }}
+            showSaveStatus={true}
+            {status}
+            onSave={refresh}
+          />
+        {/snippet}
+      </StickyHeader>
+
+      {#if viewState === "loading"}
+        <div class="loading-state">
+          <PlaylistSkeleton rows={8} />
+        </div>
+      {:else if viewState === "not-set"}
+        <EmptyState
+          icon={pageIcon}
+          title="No Favorite Playlist Set"
+          message="You haven't picked a favorite playlist yet. Go to Settings to choose one."
+          actionLabel="Go to Settings"
+          actionHref="#/settings"
+        />
+      {:else if viewState === "youtube-native"}
+        <EmptyState
+          icon={pageIcon}
+          title="YouTube Watch Later"
+          message="Your favorite is set to YouTube's native Watch Later. Manage it directly on YouTube."
+          actionLabel="Open on YouTube"
+          actionHref="https://www.youtube.com/playlist?list=WL"
+        />
+      {:else if viewState === "error"}
+        <ErrorState message={errorMessage} onRetry={loadData} showSettings={true} />
+      {/if}
+    </div>
+  {:else if viewState === "ready" && playlist}
+    <PlaylistEditor
+      {playlist}
+      {pageTitle}
+      {pageIcon}
+      {signedIn}
+      isFavoritePage={isFavorite}
+      bind:status
     />
   {/if}
-
-  <div class="view-body">
-    {#if viewState === "loading"}
-      <div class="loading-state">
-        <PlaylistSkeleton rows={8} />
-      </div>
-    {:else if viewState === "not-set"}
-      <EmptyState
-        icon={pageIcon}
-        title="No Favorite Playlist Set"
-        message="You haven't picked a favorite playlist yet. Go to Settings to choose one."
-        actionLabel="Go to Settings"
-        actionHref="#/settings"
-      />
-    {:else if viewState === "youtube-native"}
-      <EmptyState
-        icon={pageIcon}
-        title="YouTube Watch Later"
-        message="Your favorite is set to YouTube's native Watch Later. Manage it directly on YouTube."
-        actionLabel="Open on YouTube"
-        actionHref="https://www.youtube.com/playlist?list=WL"
-      />
-    {:else if viewState === "error"}
-      <ErrorState message={errorMessage} onRetry={loadData} showSettings={true} />
-    {:else if viewState === "ready" && playlist}
-      <PlaylistEditor
-        {playlist}
-        {pageTitle}
-        {pageIcon}
-        {signedIn}
-        isFavoritePage={isFavorite}
-        bind:status
-      />
-    {/if}
-  </div>
 </main>
 
 <style>

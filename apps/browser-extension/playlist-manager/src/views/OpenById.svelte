@@ -2,6 +2,7 @@
   import Fa from "svelte-fa";
   import { faLink, faArrowUpRightFromSquare } from "@fortawesome/free-solid-svg-icons";
   import ViewHeader from "../components/ViewHeader.svelte";
+  import StickyHeader from "../components/StickyHeader.svelte";
 
   let idOrUrl = $state("");
 
@@ -45,15 +46,14 @@
   }
 </script>
 
-<main>
-  <div class="view-header">
-    <div class="top-left">
-      <ViewHeader icon={faLink} title="Open by ID" />
-    </div>
-    <div class="btn-group right-align"></div>
-  </div>
-
+<main class="view-scroll-container">
   <div class="view-body">
+    <StickyHeader>
+      {#snippet children()}
+        <ViewHeader icon={faLink} title="Open by ID" />
+      {/snippet}
+    </StickyHeader>
+
     <p class="sub-text">
       Enter a YouTube Playlist ID, Video ID, or URL to open it directly in the editor.
     </p>
@@ -84,6 +84,8 @@
 </main>
 
 <style>
+  @import "../css/view-layout.css";
+
   .sub-text {
     opacity: 0.7;
     margin-bottom: 32px;

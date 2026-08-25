@@ -7,6 +7,7 @@
   import SkeletonCard from "../components/SkeletonCard.svelte";
   import AuthPlaceholder from "../components/AuthPlaceholder.svelte";
   import ViewHeader from "../components/ViewHeader.svelte";
+  import StickyHeader from "../components/StickyHeader.svelte";
   import EmptyState from "../components/EmptyState.svelte";
   import ErrorState from "../components/ErrorState.svelte";
   import { playlistsSearch } from "../stores/playlists-filters";
@@ -56,17 +57,18 @@
   checkAuth();
 </script>
 
-<main>
-  <div class="view-header">
-    <div class="top-left">
-      <ViewHeader icon={faUsers} title="Subscriptions" count={subscriptions.length} />
-    </div>
-    <div class="btn-group right-align">
-      <SaveStatus onclick={refresh} {status} title="Refresh" />
-    </div>
-  </div>
-
+<main class="view-scroll-container">
   <div class="view-body">
+    <StickyHeader>
+      {#snippet children()}
+        <ViewHeader icon={faUsers} title="Subscriptions" count={subscriptions.length}>
+          {#snippet rightActions()}
+            <SaveStatus onclick={refresh} {status} title="Refresh" />
+          {/snippet}
+        </ViewHeader>
+      {/snippet}
+    </StickyHeader>
+
     {#if !signedIn}
       <AuthPlaceholder />
     {:else if loading}

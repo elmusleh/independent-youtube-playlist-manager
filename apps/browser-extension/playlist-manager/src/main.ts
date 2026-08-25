@@ -14,6 +14,11 @@ import "./services/storage-service.js";
 import "./services/sync-state-service.js";
 import "./services/video-service.js";
 
+// Import the canonical view layout CSS as a JS module so rollup bundles it
+// into bundle.css (native `@import` in Svelte <style> blocks is ignored when
+// it doesn't appear at the top of the compiled stylesheet).
+import "./css/view-layout.css";
+
 import { mount } from "svelte";
 import App from "./App.svelte";
 import { initTheme } from "./stores/theme.store.js";

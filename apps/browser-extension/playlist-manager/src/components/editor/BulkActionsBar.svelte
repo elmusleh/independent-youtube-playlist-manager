@@ -198,7 +198,7 @@
     border-radius: 12px;
     border: 1px solid var(--primary-color);
     box-sizing: border-box;
-    margin-bottom: 24px;
+    margin-bottom: 16px;
   }
 
   .selection-info {
