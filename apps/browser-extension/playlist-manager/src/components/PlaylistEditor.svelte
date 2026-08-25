@@ -972,12 +972,14 @@
     else if (action === "bottom") videos = [...remaining, ...selected];
     else if (action === "delete") {
       videos = remaining;
-      selectedVideoIds = new Set();
-      isSelectMode = false;
     }
 
     updateDirtyState();
     loadPageVideos(1);
+
+    // Clear selection and exit select mode after any completed bulk action
+    selectedVideoIds = new Set();
+    isSelectMode = false;
 
     window.success("Action complete");
   }

@@ -221,6 +221,7 @@
 
       window.invalidateCacheAndNotify();
       await loadPlaylists();
+      selectedIds = new Set();
       prog.active = false;
       if (window.logSystemEvent)
         await window.logSystemEvent(
@@ -393,6 +394,7 @@
 
       window.invalidateCacheAndNotify();
       await loadPlaylists();
+      selectedIds = new Set();
       prog.active = false;
       if (window.logSystemEvent)
         await window.logSystemEvent(
