@@ -1,0 +1,83 @@
+digraph IndependentYouTubePlaylistManagerArchitecture {
+    rankdir=TB;
+    node [shape=box, style=rounded, fontname="Helvetica"];
+
+    subgraph cluster_browser {
+        label="Browser Extension (MV3)";
+        style=filled;
+        color=lightgrey;
+
+        node [shape=component];
+        Background [label="Service Worker\n(background/index.js)"];
+        ContentScripts [label="Content Scripts\n(watch-tracker.js, injectors/*)"];
+        Popup [label="Popup UI\n(popup.html, popup.js)"];
+        PlaylistManagerSPA [label="Svelte SPA\n(playlist-manager/src/*)"];
+
+        Background -> ContentScripts;
+        Background -> Popup;
+        Background -> PlaylistManagerSPA;
+    }
+
+    subgraph cluster_web_portal {
+        label="Web Portal (Next.js 15)";
+        style=filled;
+        color=lightblue;
+
+        node [shape=component];
+        LandingPage [label="Landing Page\n(app/page.tsx)"];
+        FeaturesSection [label="FeaturesSection\n(components/landing/FeaturesSection.tsx)"];
+        HowItWorksSection [label="HowItWorksSection\n(components/landing/HowItWorksSection.tsx)"];
+        PrivacySection [label="PrivacySection\n(components/landing/PrivacySection.tsx)"];
+        FAQSection [label="FAQSection\n(components/landing/FAQSection.tsx)"];
+        Navbar [label="Navbar\n(components/landing/Navbar.tsx)"];
+        Footer [label="Footer\n(components/landing/Footer.tsx)"];
+
+        LandingPage -> FeaturesSection;
+        LandingPage -> HowItWorksSection;
+        LandingPage -> PrivacySection;
+        LandingPage -> FAQSection;
+        LandingPage -> Navbar;
+        LandingPage -> Footer;
+    }
+
+    subgraph cluster_storage {
+        label="Storage Systems";
+        style=filled;
+        color=lightgreen;
+
+        node [shape=cylinder];
+        IndexedDB [label="IndexedDB\n(yph_metadata_db_v2)"];
+        BrowserStorage [label="browser.storage.local\n(playlists, settings, history)"];
+        SyncState [label="browser.storage.local\n(yph_sync_state)"];
+        LocalCache [label="Persistent Cache\n(encrypted)"];
+
+        IndexedDB -> BrowserStorage;
+        BrowserStorage -> SyncState;
+        BrowserStorage -> LocalCache;
+    }
+
+    subgraph cluster_sync {
+        label="Sync Systems";
+        style=filled;
+        color=lightyellow;
+
+        node [shape=component];
+        SupabaseSync [label="Supabase Sync\n(supabase-sync.ts)"];
+        BrowserSync [label="Browser Sync\n(chrome.storage.sync)"];
+        DeltaSync [label="Delta Sync\n(LWW resolution)"];
+
+        SupabaseSync -> BrowserSync;
+        BrowserSync -> DeltaSync;
+    }
+
+    Background -> IndexedDB [label="reads/writes"];
+    Background -> BrowserStorage [label="reads/writes"];
+    PlaylistManagerSPA -> IndexedDB [label="queries"];
+    PlaylistManagerSPA -> BrowserStorage [label="reads/writes"];
+    PlaylistManagerSPA -> SupabaseSync [label="initiates"];
+    Background -> YouTubeAPI [label="scrapes/fetches"];
+    Background -> PipedInvidious [label="fallback"];
+    YouTubeAPI [label="YouTube\n(Data API/oEmbed)"];
+    PipedInvidious [label="Piped/Invidious\n(instances)"];
+    edge [fontname="Helvetica", fontsize=10];
+}

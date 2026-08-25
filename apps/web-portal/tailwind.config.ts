@@ -63,6 +63,41 @@ export default {
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
+      fontFamily: {
+        sans: ["var(--font-sans)", "system-ui", "sans-serif"],
+        serif: ["var(--font-serif)", "Georgia", "serif"],
+        mono: ["var(--font-mono)", "Fira Code", "monospace"],
+      },
+      fontSize: {
+        base: ["var(--font-size-base)", { lineHeight: "var(--leading-normal)" }],
+        xl: ["var(--font-size-xl)", { lineHeight: "var(--leading-normal)" }],
+        "2xl": ["var(--font-size-2xl)", { lineHeight: "var(--leading-normal)" }],
+        "3xl": ["var(--font-size-3xl)", { lineHeight: "var(--leading-normal)" }],
+        "4xl": ["var(--font-size-4xl)", { lineHeight: "var(--leading-normal)" }],
+        "5xl": ["var(--font-size-5xl)", { lineHeight: "var(--leading-normal)" }],
+        "6xl": ["var(--font-size-6xl)", { lineHeight: "var(--leading-normal)" }],
+      },
+      fontWeight: {
+        normal: "400",
+        medium: "500",
+        semibold: "600",
+        bold: "700",
+        extrabold: "800",
+        black: "900",
+      },
+      letterSpacing: {
+        tight: "var(--tracking-tight)",
+        normal: "var(--tracking-normal)",
+        wide: "var(--tracking-wide)",
+      },
+      lineHeight: {
+        none: "var(--leading-none)",
+        tight: "var(--leading-tight)",
+        snug: "var(--leading-snug)",
+        normal: "var(--leading-normal)",
+        relaxed: "var(--leading-relaxed)",
+        loose: "var(--leading-loose)",
+      },
       keyframes: {
         "accordion-down": {
           from: { height: "0" },

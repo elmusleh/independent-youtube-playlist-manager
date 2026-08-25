@@ -21,11 +21,11 @@ const FOOTER_LINKS = [
 
 export function Footer() {
   return (
-    <footer className="border-t border-zinc-200/70">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <footer className="fixed bottom-0 inset-x-0 z-40 border-t border-zinc-200/70 bg-white/85 backdrop-blur-lg shadow-[0_-4px_20px_-8px_rgba(0,0,0,0.12)]">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
         <nav
           aria-label="Footer"
-          className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2"
+          className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1.5"
         >
           {FOOTER_LINKS.map((link) => (
             <a
@@ -33,14 +33,14 @@ export function Footer() {
               href={link.href}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-xs text-zinc-500 hover:text-zinc-900 transition-colors"
+              className="text-[11px] sm:text-xs text-zinc-500 hover:text-zinc-900 transition-colors"
             >
               {link.label}
             </a>
           ))}
         </nav>
 
-        <div className="mt-6 pt-6 border-t border-zinc-200/70 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-zinc-400">
+        <div className="mt-2 flex flex-col sm:flex-row items-center justify-between gap-1 text-[10px] text-zinc-400">
           <p>© 2026 Independent YouTube Playlist Manager.</p>
           <p>Last updated: {LAST_UPDATED}</p>
         </div>

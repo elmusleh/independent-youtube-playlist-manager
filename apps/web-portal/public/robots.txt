@@ -1,0 +1,6 @@
+# robots.txt for Independent YouTube Playlist Manager
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://www.independent-youtube-playlist-manager.com/sitemap.xml
