@@ -44,6 +44,7 @@
   // Utils
   import * as utils from "../utils/playlist-utils";
   import { dbGetMetadataBatch, dbPutMetadataBatch } from "../services/db-service.js";
+  import { PAGE_SIZES } from "../services/settings-utils.js";
 
   const browser = (window as any).browser || (window as any).chrome;
 
@@ -283,6 +284,39 @@
     currentPage = e.detail.page;
     loadPageVideos(currentPage);
   }
+
+  // Inline page-size control (persists globally as the `defaultPageSize` setting)
+  function applyPageSize(nextSize: number) {
+    const size = Math.min(500, Math.max(10, nextSize));
+    if (size === pageSize) return;
+    // Anchor to the current first-visible video so the user keeps their place.
+    const total = filteredVideos.length;
+    const firstVisible = Math.min((currentPage - 1) * pageSize, Math.max(total - 1, 0));
+    const totalPages = Math.max(1, Math.ceil(total / size));
+    currentPage = Math.min(totalPages, Math.floor(firstVisible / size) + 1);
+    pageSize = size;
+    loadPageVideos(currentPage);
+  }
+
+  function onPageSizeChange(e: Event) {
+    const size = Number((e.target as HTMLSelectElement).value);
+    if (!Number.isFinite(size)) return;
+    applyPageSize(size);
+    // Persist globally so all playlists (and the Settings page) inherit this value.
+    window.storeObject("defaultPageSize", size).catch(() => {});
+  }
+
+  // Keep the editor's page size in sync when defaultPageSize changes elsewhere
+  // (e.g. the Settings page or another editor instance).
+  function handlePageSizeStorageChange(changes: Record<string, { newValue?: any }>, area: string) {
+    if (area !== "sync" && area !== "local") return;
+    if (!changes.defaultPageSize) return;
+    const size = Number(changes.defaultPageSize.newValue);
+    if (!Number.isFinite(size)) return;
+    applyPageSize(size);
+  }
+  browser.storage.onChanged.addListener(handlePageSizeStorageChange);
+  onDestroy(() => browser.storage.onChanged.removeListener(handlePageSizeStorageChange));
 
   // Intercept Navigation
   function handleBeforeUnload(e: any) {
@@ -1285,14 +1319,27 @@
         {/each}
       </div>
 
-      {#if videos.length > pageSize}
-        <div class="pagination">
-          <PaginationNav
-            totalItems={videos.length}
-            {pageSize}
-            {currentPage}
-            onsetpage={updatePaginationPage}
-          />
+      {#if videos.length > 0}
+        <div class="pagination-bar">
+          <div class="page-size-control">
+            <label class="page-size-label" for="editor-page-size">Per page</label>
+            <select id="editor-page-size" value={pageSize} onchange={onPageSizeChange}>
+              {#if !PAGE_SIZES.includes(pageSize)}
+                <option value={pageSize}>{pageSize}</option>
+              {/if}
+              {#each PAGE_SIZES as size}
+                <option value={size}>{size}</option>
+              {/each}
+            </select>
+          </div>
+          {#if videos.length > pageSize}
+            <PaginationNav
+              totalItems={videos.length}
+              {pageSize}
+              {currentPage}
+              onsetpage={updatePaginationPage}
+            />
+          {/if}
         </div>
       {/if}
     {/if}
@@ -1375,8 +1422,50 @@
     color: var(--text-muted);
   }
 
-  .pagination {
+  .pagination-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
     margin-top: 24px;
+    flex-wrap: wrap;
+  }
+
+  .page-size-control {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .page-size-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+
+  .page-size-control select {
+    height: 36px;
+    padding: 0 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+    background-color: var(--bg-secondary);
+    color: var(--text-color);
+    font-size: 13px;
+    font-weight: 500;
+    outline: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .page-size-control select:hover {
+    background-color: var(--hover-color);
+    border-color: var(--primary-color);
+  }
+
+  .page-size-control select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(62, 166, 255, 0.1);
   }
 
   /* Premium Branded Buttons */
