@@ -5,6 +5,8 @@
     faClockRotateLeft,
     faXmark,
     faPlay,
+    faPause,
+    faTrash,
     faSearch,
     faFileExport,
     faFileImport,
@@ -37,6 +39,7 @@
   let historyArray: HistoryItem[] = $state([]);
   let loading = $state(true);
   let errorMessage = $state<string | null>(null);
+  let trackingEnabled = $state(true);
   const status = new StatusManager();
 
   async function refresh() {
@@ -44,6 +47,52 @@
       await loadInitialData();
     });
   }
+
+  async function loadTrackingState() {
+    try {
+      const data = await browser.storage.sync.get("ruleEnabled");
+      trackingEnabled = data.ruleEnabled !== false;
+    } catch {
+      trackingEnabled = true;
+    }
+  }
+
+  async function toggleTracking() {
+    const newState = !trackingEnabled;
+    try {
+      await browser.storage.sync.set({ ruleEnabled: newState });
+      trackingEnabled = newState;
+      window.success(newState ? "Watch history resumed" : "Watch history paused");
+    } catch {
+      window.error("Failed to update tracking setting");
+    }
+  }
+
+  async function deleteHistoryItemEntry(videoId: string) {
+    requestConfirm({
+      title: "Remove from History?",
+      message:
+        "This video will be removed from your local watch history. YouTube history will not be affected.",
+      color: "danger",
+      onConfirm: async () => {
+        try {
+          const result = await browser.runtime.sendMessage({
+            cmd: "delete-yph-history-item",
+            videoId,
+          });
+          if (result) {
+            historyArray = historyArray.filter((item) => item.videoId !== videoId);
+            window.success("History entry removed");
+          } else {
+            window.error("Failed to remove history entry");
+          }
+        } catch {
+          window.error("Failed to remove history entry");
+        }
+      },
+    });
+  }
+
   let currentPage = $state(1);
   let pageSize = $state(100);
 
@@ -57,6 +106,8 @@
 
       const settings = await window.getSettings();
       pageSize = settings.defaultPageSize;
+
+      await loadTrackingState();
 
       if (window.logSystemEvent)
         await window.logSystemEvent(
@@ -93,6 +144,9 @@
   function handleStorageChange(changes: Record<string, any>, area: string) {
     if (area === "local" && changes[HISTORY_KEY]) {
       parseAndSortHistory(changes[HISTORY_KEY].newValue);
+    }
+    if (area === "sync" && changes.ruleEnabled) {
+      trackingEnabled = changes.ruleEnabled.newValue !== false;
     }
   }
 
@@ -254,6 +308,14 @@
     </div>
     <div class="btn-group right-align">
       {#if historyArray.length > 0}
+        <SimpleButton
+          secondary
+          onclick={toggleTracking}
+          title={trackingEnabled ? "Pause watch history tracking" : "Resume watch history tracking"}
+        >
+          <Fa icon={trackingEnabled ? faPause : faPlay} fw />
+          <span>{trackingEnabled ? "Pause Tracking" : "Resume Tracking"}</span>
+        </SimpleButton>
         <SimpleButton secondary onclick={exportHistory} title="Export watch history">
           <Fa icon={faFileExport} fw />
           <span>Export</span>
@@ -323,6 +385,14 @@
               <div class="history-list">
                 {#each groupedHistory[groupLabel] as item (item.videoId)}
                   <div class="history-item">
+                    <button
+                      class="delete-btn"
+                      onclick={() => deleteHistoryItemEntry(item.videoId)}
+                      title="Remove from history"
+                      aria-label="Remove {item.title || item.videoId} from history"
+                    >
+                      <Fa icon={faTrash} />
+                    </button>
                     <a
                       href="https://www.youtube.com/watch?v={item.videoId}"
                       target="_blank"
@@ -576,6 +646,43 @@
     border-top: 1px solid var(--border-color);
     display: flex;
     justify-content: center;
+  }
+
+  .delete-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    opacity: 0;
+    transition:
+      opacity 0.15s,
+      color 0.15s,
+      background 0.15s;
+  }
+
+  .delete-btn:hover {
+    color: #e53e3e;
+    background: rgba(229, 62, 62, 0.1);
+  }
+
+  .history-item:hover .delete-btn {
+    opacity: 1;
+  }
+
+  @media (max-width: 768px) {
+    .delete-btn {
+      opacity: 1;
+    }
   }
 
   @media (max-width: 768px) {

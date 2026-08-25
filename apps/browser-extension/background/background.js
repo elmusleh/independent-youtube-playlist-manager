@@ -4,6 +4,7 @@ import { buildContextMenus } from "./context-menus.js";
 import {
   saveHistory,
   getHistory,
+  deleteHistoryItem,
   handleCleanupWatchedVideo,
   pruneHistory,
   pruneStaleMetadataCache,
@@ -180,6 +181,14 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
     browser.storage.local
       .remove("local_yt_history")
       .then(() => sendResponse(true))
+      .catch((e) => {
+        console.error(e);
+        sendResponse(false);
+      });
+    return true;
+  } else if (request.cmd === "delete-yph-history-item") {
+    deleteHistoryItem(request.videoId)
+      .then(sendResponse)
       .catch((e) => {
         console.error(e);
         sendResponse(false);

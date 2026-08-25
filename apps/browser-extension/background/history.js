@@ -80,6 +80,46 @@ export async function getHistory(videoId) {
 }
 
 // ---------------------------------------------------------------------------
+// Delete a single history entry
+// ---------------------------------------------------------------------------
+
+/**
+ * Delete a single video's watch history entry
+ * @param {string} videoId
+ * @returns {Promise<boolean>}
+ */
+export async function deleteHistoryItem(videoId) {
+  const start = Date.now();
+  try {
+    if (window.logSystemEvent)
+      await window.logSystemEvent("INFO", `Background: Deleting history for ${videoId}`);
+    const data = await browser.storage.local.get(HISTORY_KEY);
+    const history = data[HISTORY_KEY] || {};
+
+    if (!(videoId in history)) {
+      if (window.logSystemEvent)
+        await window.logSystemEvent("WARN", `Background: History entry ${videoId} not found`);
+      return false;
+    }
+
+    delete history[videoId];
+    await browser.storage.local.set({ [HISTORY_KEY]: history });
+
+    if (window.logSystemEvent)
+      await window.logSystemEvent("INFO", `Background: Deleted history entry for ${videoId}`);
+    return true;
+  } catch (e) {
+    console.error("[Background] deleteHistoryItem failed:", e);
+    return false;
+  } finally {
+    const duration = Date.now() - start;
+    if (duration > 100 && window.logSystemEvent) {
+      window.logSystemEvent("PERF", `deleteHistoryItem took ${duration}ms`);
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Auto-cleanup of watched videos
 // ---------------------------------------------------------------------------
 
