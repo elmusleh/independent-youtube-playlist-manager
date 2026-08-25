@@ -3,6 +3,8 @@
   import {
     faArrowUp,
     faArrowDown,
+    faAnglesUp,
+    faAnglesDown,
     faListCheck,
     faCheckDouble,
     faChevronDown,
@@ -21,6 +23,8 @@
     onSelectAbove,
     onSelectBelow,
     onSelectFirst50,
+    onOpenRangeSelectAbove,
+    onOpenRangeSelectBelow,
     onOpenCopyMove,
     onMoveToTop,
     onMoveToBottom,
@@ -33,6 +37,8 @@
     onSelectAbove: () => void;
     onSelectBelow: () => void;
     onSelectFirst50: () => void;
+    onOpenRangeSelectAbove: () => void;
+    onOpenRangeSelectBelow: () => void;
     onOpenCopyMove: () => void;
     onMoveToTop: () => void;
     onMoveToBottom: () => void;
@@ -127,6 +133,29 @@
           >
             <Fa icon={faArrowDown} fw />
             <span>All videos below</span>
+          </button>
+          <div class="dropdown-divider"></div>
+          <button
+            onclick={() => {
+              onOpenRangeSelectAbove();
+              closeAll();
+            }}
+            disabled={selectedCount === 0}
+            class={selectedCount === 0 ? "disabled-option" : ""}
+          >
+            <Fa icon={faAnglesUp} fw />
+            <span>Select N videos above...</span>
+          </button>
+          <button
+            onclick={() => {
+              onOpenRangeSelectBelow();
+              closeAll();
+            }}
+            disabled={selectedCount === 0}
+            class={selectedCount === 0 ? "disabled-option" : ""}
+          >
+            <Fa icon={faAnglesDown} fw />
+            <span>Select N videos below...</span>
           </button>
         </div>
       {/if}
@@ -277,6 +306,12 @@
     opacity: 0.5;
     pointer-events: none;
     cursor: not-allowed;
+  }
+
+  .dropdown-divider {
+    height: 1px;
+    background: var(--border-color);
+    margin: 4px 0;
   }
 
   @media (max-width: 900px) {

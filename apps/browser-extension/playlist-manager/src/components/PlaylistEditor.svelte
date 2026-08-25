@@ -39,6 +39,7 @@
   import EditorToolbar from "./editor/EditorToolbar.svelte";
   import BulkActionsBar from "./editor/BulkActionsBar.svelte";
   import PlaylistModals from "./editor/PlaylistModals.svelte";
+  import RangeSelectModal from "./RangeSelectModal.svelte";
   import SimpleButton from "../components/SimpleButton.svelte";
 
   // Utils
@@ -374,6 +375,10 @@
     if (selectedVideoIds.size === videos.length) selectedVideoIds = new Set();
     else selectedVideoIds = new Set(videos.map((v) => v.id));
   }
+
+  // Count-based range selection (via BulkActionsBar dropdown)
+  let rangeSelectModalOpen = $state(false);
+  let rangeSelectDirection = $state<"above" | "below">("above");
 
   // Modal State
   let displayModal = $state(false);
@@ -1045,6 +1050,32 @@
     selectedVideoIds = next;
   }
 
+  function openRangeSelect(direction: "above" | "below") {
+    rangeSelectDirection = direction;
+    rangeSelectModalOpen = true;
+  }
+
+  function handleRangeSelect(count: number) {
+    const indices = videos
+      .map((v, i) => (selectedVideoIds.has(v.id) ? i : -1))
+      .filter((i) => i !== -1);
+    if (indices.length === 0) return;
+
+    const next = new Set(selectedVideoIds);
+    if (rangeSelectDirection === "above") {
+      // Anchor = top-most (minimum) selected index. Select the N items above it.
+      const anchor = Math.min(...indices);
+      const start = Math.max(0, anchor - count);
+      for (let i = start; i < anchor; i++) next.add(videos[i].id);
+    } else {
+      // Anchor = bottom-most (maximum) selected index. Select the N items below it.
+      const anchor = Math.max(...indices);
+      const end = Math.min(videos.length - 1, anchor + count);
+      for (let i = anchor + 1; i <= end; i++) next.add(videos[i].id);
+    }
+    selectedVideoIds = next;
+  }
+
   async function handleManualSave() {
     if (isDirty) {
       await savePlaylist({ silent: false });
@@ -1221,6 +1252,8 @@
             onSelectAbove={() => handleBatchSelect("above")}
             onSelectBelow={() => handleBatchSelect("below")}
             onSelectFirst50={selectFirst50}
+            onOpenRangeSelectAbove={() => openRangeSelect("above")}
+            onOpenRangeSelectBelow={() => openRangeSelect("below")}
             onOpenCopyMove={openCopyMove}
             onMoveToTop={() => handleBulkAction("top")}
             onMoveToBottom={() => handleBulkAction("bottom")}
@@ -1365,6 +1398,13 @@
   onExport={() => {}}
   onScrapeHtml={handleScrapeHtml}
   onExecuteCopyMove={executeCopyMove}
+/>
+
+<RangeSelectModal
+  bind:display={rangeSelectModalOpen}
+  title={rangeSelectDirection === "above" ? "Select Videos (Above)" : "Select Videos (Below)"}
+  maxValue={videos.length}
+  onConfirm={handleRangeSelect}
 />
 
 {#if isLoading}
