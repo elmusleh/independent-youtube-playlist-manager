@@ -5,7 +5,6 @@ import { Footer } from "@/components/landing/Footer";
 import { Button } from "@/components/ui/button";
 import { Sparkles, Star } from "lucide-react";
 import Image from "next/image";
-import { ComparisonSection } from "@/components/landing/ComparisonSection";
 import { headline, subheadline } from "@/components/landing/copy";
 
 export default function Home() {
@@ -23,15 +22,15 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="min-h-screen flex flex-col bg-mesh-light text-zinc-900 w-full overflow-x-hidden selection:bg-red-500/10 selection:text-red-900">
+    <div className="h-dvh flex flex-col bg-mesh-light text-zinc-900 w-full overflow-hidden selection:bg-red-500/10 selection:text-red-900">
       {/* Main View */}
-      <main className="flex-1 w-full overflow-x-hidden pb-28">
-        <div className="flex flex-col items-center justify-center min-h-screen w-full px-4 py-16 sm:py-24 text-center space-y-10 animate-in fade-in duration-500 relative">
+      <main className="flex-1 min-h-0 w-full flex flex-col">
+        <div className="flex flex-col items-center justify-center flex-1 min-h-0 w-full px-4 py-4 sm:py-6 lg:py-8 text-center space-y-4 sm:space-y-6 lg:space-y-6 animate-in fade-in duration-500 relative">
           {/* Background Accent Glows */}
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[280px] sm:w-[500px] h-[280px] sm:h-[400px] bg-red-500/5 blur-[100px] rounded-full pointer-events-none -z-10 animate-float slow" />
 
           {/* Official Logo */}
-          <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-2xl overflow-hidden shadow-md flex items-center justify-center border border-zinc-200 bg-white group hover:scale-105 transition-transform duration-300">
+          <div className="h-14 w-14 sm:h-20 sm:w-20 rounded-2xl overflow-hidden shadow-md flex items-center justify-center border border-zinc-200 bg-white group hover:scale-105 transition-transform duration-300">
             <Image
               src="/icon.png"
               alt="Independent YouTube Playlist Manager logo"
@@ -49,10 +48,10 @@ export default function Home() {
 
           {/* Headline */}
           <div className="space-y-4">
-            <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-zinc-950 leading-tight">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-zinc-950 leading-tight">
               {headline}
             </h1>
-            <p className="text-zinc-600 text-sm sm:text-base max-w-xl mx-auto leading-relaxed">
+            <p className="text-zinc-600 text-xs sm:text-base max-w-xl mx-auto leading-relaxed">
               {subheadline}
             </p>
           </div>
@@ -104,7 +103,7 @@ export default function Home() {
           </div>
 
           {/* GitHub Source Button */}
-          <div className="w-full max-w-xl mx-auto flex justify-center mt-8">
+          <div className="w-full max-w-xl mx-auto flex justify-center mt-3 sm:mt-6">
             <button
               className="inline-flex items-center justify-center transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border-none bg-zinc-900/80 backdrop-blur-lg shadow-xl rounded-xl w-full sm:w-auto h-12 px-8 font-semibold text-sm sm:text-base text-white touch-target-44 whitespace-nowrap gap-3 hover:bg-zinc-900 hover:-translate-y-0.5 hover:shadow-2xl hover:shadow-zinc-900/25 active:translate-y-0 active:scale-[0.98]"
               onClick={() =>
@@ -126,8 +125,6 @@ export default function Home() {
             </button>
           </div>
         </div>
-
-        <ComparisonSection />
       </main>
 
       {/* Footer */}

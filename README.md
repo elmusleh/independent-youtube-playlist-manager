@@ -1,65 +1,85 @@
-<p align="center"><a href="https://github.com/elmusleh/independent-youtube-playlist-manager" target="_blank" rel="noreferrer noopener"><img width="128" alt="IYPM logo" src="https://raw.githubusercontent.com/elmusleh/independent-youtube-playlist-manager/main/apps/web-portal/public/icon.png"></a></p>
-<p align="center">Independent YouTube Playlist Manager (IYPM) helps you <strong>save YouTube videos for later viewing</strong> by creating custom playlists from your open tabs. Store playlists locally or optionally sync with your YouTube account—<strong>no login required</strong> for basic use.</p>
-<br/>
-<p align="center">
-  <a rel="noreferrer noopener" href="https://chromewebstore.google.com/detail/dapjjdcnolpmfcnobilphjfpkmmokgid"><img alt="Chrome Web Store" src="https://img.shields.io/badge/Chrome-141e24.svg?&style=for-the-badge&logo=google-chrome&logoColor=white"></a>
-  <a rel="noreferrer noopener" href="https://addons.mozilla.org/en-US/firefox/addon/iypm/"><img alt="Firefox Add-ons" src="https://img.shields.io/badge/Firefox-141e24.svg?&style=for-the-badge&logo=firefox-browser&logoColor=white"></a>
-</p>
+<div align="center">
 
-<h2 align="center">Independent YouTube Playlist Manager (IYPM)</h2>
+<a href="https://github.com/elmusleh/independent-youtube-playlist-manager"><img src="https://raw.githubusercontent.com/elmusleh/independent-youtube-playlist-manager/main/apps/web-portal/public/icon.png" alt="IYPM logo" width="96" /></a>
 
-<p align="center">
-  <img src="docs/architecture.png" alt="Architecture of Independent YouTube Playlist Manager" width="800"/>
-</p>
+# Independent YouTube Playlist Manager
 
-IYPM is an **open-source**, privacy-first **browser extension** designed to replace and enhance YouTube's native playlist management. It operates entirely **client-side**, storing your data locally and syncing on-demand to your YouTube account without any intermediate third-party servers.
+**IYPM** is an open-source, privacy-first **browser extension** that lets you save, organize, and sync YouTube playlists across devices — entirely client-side, with **no servers, no API quotas, and no login required**.
+
+<a href="https://chromewebstore.google.com/detail/dapjjdcnolpmfcnobilphjfpkmmokgid"><img alt="Chrome Web Store" src="https://img.shields.io/badge/Chrome-141e24.svg?&style=for-the-badge&logo=google-chrome&logoColor=white" /></a>
+<a href="https://addons.mozilla.org/en-US/firefox/addon/iypm/"><img alt="Firefox Add-ons" src="https://img.shields.io/badge/Firefox-141e24.svg?&style=for-the-badge&logo=firefox-browser&logoColor=white" /></a>
+
+</div>
 
 ---
 
-## 📖 Project Documentation Map
+## ⚖️ IYPM vs Native YouTube Playlists
 
-For installation guides, technical setup, and compliance notices, refer directly to the dedicated documentation files:
+A comprehensive, side-by-side comparison of every capability — the single source of truth for what IYPM offers over YouTube's built-in playlists.
 
-- **User Guide & Installation**: [`docs/USER_GUIDE.md`](docs/USER_GUIDE.md) (manual browser loading, Google Cloud API setup, sync quotas)
-- **Support & FAQ**: [`docs/SUPPORT.md`](docs/SUPPORT.md) (troubleshooting, frequently asked questions)
-- **Firefox & Chrome Store Submissions**: [`docs/amo-submission.md`](docs/amo-submission.md) (upload checklists, reviewer notes, technical details)
-- **Privacy Policy**: [`docs/PRIVACY_POLICY.md`](docs/PRIVACY_POLICY.md) (zero data collection notice)
-- **Terms of Service**: [`docs/TERMS_OF_SERVICE.md`](docs/TERMS_OF_SERVICE.md) (extension terms of use)
-- **Impressum / Legal Notice**: [`docs/IMPRESSUM.md`](docs/IMPRESSUM.md) (legal provider info)
-- **Contributing Guidelines**: [`CONTRIBUTING.md`](CONTRIBUTING.md) (development, testing, PR guidelines)
-- **Release Changelog**: [`docs/RELEASE_NOTES.md`](docs/RELEASE_NOTES.md) (milestone feature releases)
-- **AI Agent Architect Constraints**: [`AGENTS.md`](AGENTS.md) (developer constraints for AI coding agents)
+> **Legend:** ✅ Supported · ⚠️ Limited / optional · ❌ Not available
 
----
+### Playlist Creation & Organization
 
-## 🚀 Key Features
+| Capability                               | IYPM                                        | Native YouTube Playlists     |
+| ---------------------------------------- | ------------------------------------------- | ---------------------------- |
+| Create unlimited playlists               | ✅ Unlimited, no account required           | ⚠️ Requires a Google account |
+| Batch-add multiple videos                | ✅ Add dozens in one click                  | ❌ One video at a time       |
+| Tab Harvester (open tabs)                | ✅ Grab YouTube tabs from all windows       | ❌ Not possible              |
+| Extract IDs from text / HTML / clipboard | ✅ Paste links, HTML source, or text blocks | ❌ Not possible              |
+| Quick-add toolbar popup                  | ✅ One-click queue from the toolbar         | ❌ Not available             |
+| Right-click context menus                | ✅ Add links from YouTube search pages      | ❌ Not available             |
 
-- **Offline-first:** Edit, reorder, merge, split, and search your playlists without internet connection.
-- **Bulk Editing:** Drag-and-drop, pagination support, bulk-select and delete, duplicates removal, and reverse sorting.
-- **Tab Harvester:** Import all open YouTube tabs from active browser windows with a single click.
-- **Flexible Import/Export:** Backup database to **JSON (Schema v2)**, or export to **CSV** and **M3U** playlists.
-- **Zero Data Collection:** Fully client-side. No user profiles, tracker links, or telemetry.
+### Editing & Bulk Operations
 
-## 🔐 Permissions & Privacy
+| Capability                 | IYPM                                      | Native YouTube Playlists      |
+| -------------------------- | ----------------------------------------- | ----------------------------- |
+| Drag-and-drop reordering   | ✅ Reorder playlists freely               | ⚠️ Limited manual reordering  |
+| Bulk select & delete       | ✅ Multi-select and batch delete          | ❌ Delete one video at a time |
+| Merge playlists            | ✅ Combine two playlists into one         | ❌ Not possible               |
+| Split playlists            | ✅ Split one playlist into several        | ❌ Not possible               |
+| Duplicate removal          | ✅ Automatic de-duplication               | ❌ Manual only                |
+| Smart sorting              | ✅ Sort by title, channel, date, and more | ⚠️ Default order only         |
+| Reverse order              | ✅ One-click reverse                      | ❌ Not possible               |
+| Search within playlists    | ✅ Instant local search                   | ⚠️ Basic search only          |
+| Pagination for large lists | ✅ Handles thousands of videos smoothly   | ⚠️ Lazy-loading only          |
 
-When you install IYPM from GitHub, your browser will request several permissions to function. Here is why we need them:
+### Import, Export & Portability
 
-- **tabs**: To "harvest" open YouTube URLs from your browser so you can add them to playlists with one click.
-- **scripting**: To read video metadata (title, channel, duration) directly from the YouTube page so you can manage useful info instead of raw links.
-- **identity**: Used **only** if you choose to sync playlists with your personal YouTube account.
-- **storage & unlimitedStorage**: To save your playlists and metadata locally on your machine, ensuring privacy and offline-first performance.
-- **bookmarks, contextMenus, alarms**: Used to manage your playlist data source, provide right-click 'add' actions, and handle sync retries.
-- **Host Permission**: Access is restricted strictly to `youtube.com` watch pages to capture video details.
+| Capability              | IYPM                                | Native YouTube Playlists            |
+| ----------------------- | ----------------------------------- | ----------------------------------- |
+| JSON backup             | ✅ Full database backup (Schema v2) | ❌ Not possible                     |
+| CSV export              | ✅ Spreadsheet-ready export         | ❌ Not possible                     |
+| M3U export              | ✅ Playable in VLC & media players  | ❌ Not possible                     |
+| Restore / import backup | ✅ Merge or overwrite restore modes | ❌ Not possible                     |
+| Data ownership          | ✅ Your data lives on your machine  | ❌ Locked into the Google ecosystem |
 
-All data is stored locally by default, and we never share your data with third parties. For full transparency, see our [`docs/PRIVACY_POLICY.md`](docs/PRIVACY_POLICY.md).
+### Metadata & Offline
 
-### Comparison: IYPM vs Native YouTube Playlists
+| Capability                                | IYPM                                        | Native YouTube Playlists            |
+| ----------------------------------------- | ------------------------------------------- | ----------------------------------- |
+| Works offline                             | ✅ IndexedDB + local storage                | ❌ Requires connection & session    |
+| Video metadata (title, channel, duration) | ✅ Zero-quota multi-tier fetch engine       | ⚠️ Automatic, but Google-controlled |
+| Local metadata cache                      | ✅ Multi-gigabyte IndexedDB cache           | ❌ No local control                 |
+| Custom metadata engines                   | ✅ Configurable Invidious / Piped instances | ❌ Not applicable                   |
+| Thumbnails & descriptions                 | ✅ Cached locally for instant access        | ⚠️ Streamed from YouTube            |
 
-|| Capability | Independent YouTube Playlist Manager (IYPM) | Native YouTube Playlists |
-|| ---------------------------- | -------------------------------------------------------------------------------- | -------------------------------------------------------- |
-|| **Creating playlists** | ✅ Create **unlimited playlists** with a few clicks. Batch-add dozens of videos. | ⚠️ Add videos one by one manually (very slow). |
-|| **Adding open browser tabs** | ✅ Harvester grabs open YouTube tabs from **all browser windows** automatically. | ❌ Not possible. |
-|| **Text & HTML Scraping** | ✅ Extract video IDs from raw HTML source, clipboard paste, or text blocks. | ❌ Not possible. |
-|| **Bulk Edit Tools** | ✅ Merge, split, reverse, sort, and de-duplicate. Bulk select and delete. | ❌ Manual per-video deletion only. No merge/split tools. |
-|| **Works Offline** | ✅ Yes, data is stored in IndexedDB and local storage. | ❌ Requires active connection and YouTube session. |
-|| **Data Portability** | ✅ 1-click export to **JSON**, **CSV**, and **M3U** (VLC). | ❌ Locked into Google ecosystem. |
+### Sync & Cross-Device
+
+| Capability                 | IYPM                                            | Native YouTube Playlists       |
+| -------------------------- | ----------------------------------------------- | ------------------------------ |
+| Cross-device sync          | ⚠️ Optional: encrypted Supabase + YouTube OAuth | ✅ Built-in via Google account |
+| Account independence       | ✅ Data not tied to any single account          | ❌ Tied to one Google account  |
+| No API quota for local use | ✅ Zero-quota scraping pipeline                 | ⚠️ No control (N/A)            |
+| Sync resume on quota limit | ✅ Auto-resume over days, no duplicates         | ❌ N/A                         |
+
+### Privacy, Openness & Platform
+
+| Capability        | IYPM                                        | Native YouTube Playlists         |
+| ----------------- | ------------------------------------------- | -------------------------------- |
+| Data collection   | ✅ Zero telemetry, zero tracking            | ❌ Google collects usage data    |
+| Login required    | ✅ Not required for basic use               | ❌ Google account required       |
+| Open source       | ✅ MIT license, fully auditable             | ❌ Proprietary, closed source    |
+| Permissions scope | ✅ Strictly youtube.com watch pages         | ⚠️ Broad Google account scope    |
+| Platform support  | ✅ Chrome, Firefox Desktop, Firefox Android | ⚠️ Web + mobile apps only        |
+| Cost              | ✅ 100% free & open source                  | ✅ Free (ad-supported ecosystem) |

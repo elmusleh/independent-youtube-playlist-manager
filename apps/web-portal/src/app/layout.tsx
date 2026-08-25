@@ -72,7 +72,7 @@ export default function RootLayout({
         </script>
       </Head>
       <body
-        className={`${inter.className} bg-zinc-50 text-zinc-900 min-h-screen antialiased selection:bg-red-500/10 selection:text-red-900`}
+        className={`${inter.className} bg-zinc-50 text-zinc-900 min-h-dvh antialiased selection:bg-red-500/10 selection:text-red-900`}
       >
         {children}
         <Analytics />
