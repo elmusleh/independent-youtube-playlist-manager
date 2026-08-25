@@ -15,6 +15,9 @@ export interface Video {
   isDeleted?: boolean;
   isBroken?: boolean;
   isLive?: boolean;
+  isUnavailable?: boolean;
+  /** Transient UI flag: background metadata enrichment in progress (never persisted) */
+  isEnriching?: boolean;
 }
 
 export interface NormalizedVideoMeta {
@@ -30,6 +33,7 @@ export interface NormalizedVideoMeta {
   isDeleted: boolean;
   isBroken: boolean;
   isLive: boolean;
+  isUnavailable?: boolean;
   lastCachedAt: number;
   lastFetchAttempt?: number;
 }

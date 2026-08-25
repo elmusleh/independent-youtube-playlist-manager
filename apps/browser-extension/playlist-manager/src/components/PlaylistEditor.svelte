@@ -46,6 +46,7 @@
   // Utils
   import * as utils from "../utils/playlist-utils";
   import { dbGetMetadataBatch, dbPutMetadataBatch } from "../services/db-service.js";
+  import { enrichVideoMetadata } from "../services/enrichment-service.js";
   import { PAGE_SIZES } from "../services/settings-utils.js";
 
   const browser = (window as any).browser || (window as any).chrome;
@@ -272,6 +273,27 @@
     // rules. We intentionally do NOT re-sort the array here — if the sort was
     // already applied, the video order in storage reflects it already.
     activeSortRules = playlist?.sortRules?.length ? playlist.sortRules.map((r) => ({ ...r })) : [];
+
+    // Silent background enrichment: videos missing essential metadata (title,
+    // channel, or duration) are fetched in the background without blocking the
+    // UI. Videos with fresh/valid cached data (or a recent failed attempt) are
+    // skipped via shouldSkipFetch to avoid pointless refetch loops.
+    if (autoFetchMetadata) {
+      const missing = videos.filter(isVideoMissingMetadata);
+      const toEnrich: Video[] = [];
+      for (const v of missing) {
+        if (window.videoService) {
+          const skip = await window.videoService.shouldSkipFetch(v.videoId);
+          if (skip) continue;
+        }
+        toEnrich.push(v);
+      }
+      if (toEnrich.length > 0) {
+        const enrichIds = new Set(toEnrich.map((v) => v.videoId));
+        videos = videos.map((v) => (enrichIds.has(v.videoId) ? { ...v, isEnriching: true } : v));
+        ensureMetadataLoaded(toEnrich, true).catch(() => {});
+      }
+    }
   }
 
   // Filtering & Pagination Derived
@@ -593,7 +615,6 @@
   }
 
   async function importVideos() {
-    isLoading = true;
     try {
       const rawIds = [
         ...new Set(
@@ -606,27 +627,42 @@
               ].map((m) => m[1])
         ),
       ];
-      let imported = (
-        await Promise.all(
-          rawIds.map((id) =>
-            window.videoService
-              ? window.videoService.fetchVideo(id)
-              : Promise.resolve({
-                  id: window.videoIdCount++,
-                  videoId: id,
-                  url: `https://www.youtube.com/watch?v=${id}`,
-                  title: "",
-                  channel: "",
-                })
-          )
-        )
-      ).filter((v) => v != null);
 
+      if (rawIds.length === 0) {
+        window.info("No valid YouTube video IDs found in the input.");
+        return;
+      }
+
+      let newIds = rawIds;
       const settings = await window.getSettings();
       if (settings.autoRemoveDuplicates) {
         const existing = new Set(videos.map((v) => v.videoId));
-        imported = imported.filter((v) => !existing.has(v.videoId));
+        newIds = rawIds.filter((id) => !existing.has(id));
       }
+
+      if (newIds.length === 0) {
+        window.info("All videos already exist in this playlist.");
+        displayModal = false;
+        importText = "";
+        return;
+      }
+
+      // Append placeholder stubs immediately — metadata is enriched in the
+      // background so the user can keep interacting with the playlist.
+      let imported: Video[] = newIds.map((id) => ({
+        id: window.videoIdCount++,
+        videoId: id,
+        url: `https://www.youtube.com/watch?v=${id}`,
+        title: "",
+        channel: "",
+        thumbnailUrl:
+          window.videoService?.getVideoThumbnailUrl(id) ||
+          `https://i.ytimg.com/vi/${id}/default.jpg`,
+        isEnriching: autoFetchMetadata,
+      }));
+
+      // Populate stubs whose metadata is already cached in IndexedDB instantly.
+      imported = await hydrateImportedFromCache(imported);
 
       videos = importAtTop ? [...imported, ...videos] : [...videos, ...imported];
       updateDirtyState();
@@ -635,10 +671,16 @@
       if (playlist && playlist.id && !isPlaylistBuilder) {
         savePlaylist({ silent: true }).catch(() => {});
       }
-      await loadPageVideos(importAtTop ? 1 : currentPage);
       window.success(`Imported ${imported.length} videos`);
-    } finally {
-      isLoading = false;
+
+      // Non-blocking background enrichment for any still-missing metadata.
+      const stillMissing = imported.filter((v) => v.isEnriching);
+      if (autoFetchMetadata && stillMissing.length > 0) {
+        ensureMetadataLoaded(stillMissing, true).catch(() => {});
+      }
+    } catch (e) {
+      console.error("Failed to import videos:", e);
+      window.error("Import failed. Check console for details.");
     }
   }
 
@@ -648,7 +690,6 @@
   }
 
   async function handleScrapeHtml() {
-    isLoading = true;
     try {
       // Extract YouTube links from HTML
       const youtubeRegex =
@@ -661,27 +702,29 @@
         return;
       }
 
-      let imported = (
-        await Promise.all(
-          videoIds.map((id) =>
-            window.videoService
-              ? window.videoService.fetchVideo(id)
-              : Promise.resolve({
-                  id: window.videoIdCount++,
-                  videoId: id,
-                  url: `https://www.youtube.com/watch?v=${id}`,
-                  title: "",
-                  channel: "",
-                })
-          )
-        )
-      ).filter((v) => v != null);
-
+      let newIds = videoIds;
       const settings = await window.getSettings();
       if (settings.autoRemoveDuplicates) {
         const existing = new Set(videos.map((v) => v.videoId));
-        imported = imported.filter((v) => !existing.has(v.videoId));
+        newIds = videoIds.filter((id) => !existing.has(id));
       }
+
+      // Append placeholder stubs immediately — metadata is enriched in the
+      // background so the user can keep interacting with the playlist.
+      let imported: Video[] = newIds.map((id) => ({
+        id: window.videoIdCount++,
+        videoId: id,
+        url: `https://www.youtube.com/watch?v=${id}`,
+        title: "",
+        channel: "",
+        thumbnailUrl:
+          window.videoService?.getVideoThumbnailUrl(id) ||
+          `https://i.ytimg.com/vi/${id}/default.jpg`,
+        isEnriching: autoFetchMetadata,
+      }));
+
+      // Populate stubs whose metadata is already cached in IndexedDB instantly.
+      imported = await hydrateImportedFromCache(imported);
 
       videos = [...videos, ...imported];
       updateDirtyState();
@@ -690,10 +733,16 @@
       if (playlist && playlist.id && !isPlaylistBuilder) {
         savePlaylist({ silent: true }).catch(() => {});
       }
-      await loadPageVideos(currentPage);
       window.success(`Scraped ${imported.length} videos from HTML`);
-    } finally {
-      isLoading = false;
+
+      // Non-blocking background enrichment for any still-missing metadata.
+      const stillMissing = imported.filter((v) => v.isEnriching);
+      if (autoFetchMetadata && stillMissing.length > 0) {
+        ensureMetadataLoaded(stillMissing, true).catch(() => {});
+      }
+    } catch (e) {
+      console.error("Failed to scrape HTML:", e);
+      window.error("HTML scrape failed. Check console for details.");
     }
   }
 
@@ -710,6 +759,44 @@
         return !v.channel || v.channel === "undefined";
       case "title":
         return !v.title || v.title === "undefined";
+    }
+  }
+
+  /** A video is missing essential metadata if it lacks title, channel, or duration. */
+  function isVideoMissingMetadata(v: Video): boolean {
+    const title = (v.title || "").trim();
+    const channel = (v.channel || "").trim();
+    const hasTitle = title && title !== "undefined";
+    const hasChannel = channel && channel !== "undefined";
+    const hasDuration = v.durationISO || v.isLive || v.isPrivate || v.isDeleted || v.isBroken;
+    return !hasTitle || !hasChannel || !hasDuration;
+  }
+
+  /** Fill placeholder stubs with metadata already cached in IndexedDB (instant, no network). */
+  async function hydrateImportedFromCache(stubs: Video[]): Promise<Video[]> {
+    try {
+      const cached = await dbGetMetadataBatch(stubs.map((s) => s.videoId));
+      return stubs.map((s) => {
+        const c = cached[s.videoId];
+        if (!c || !(c.title || c.channel || c.durationISO)) return s;
+        return {
+          ...s,
+          title: c.title,
+          channel: c.channel,
+          duration: c.durationISO,
+          durationISO: c.durationISO,
+          durationSeconds: c.durationSeconds || window.isoToSecs(c.durationISO),
+          viewCount: c.viewCount,
+          publishedAt: c.publishedAt,
+          isPrivate: c.isPrivate,
+          isDeleted: c.isDeleted,
+          isBroken: c.isBroken,
+          isLive: c.isLive,
+          isEnriching: false,
+        };
+      });
+    } catch (e) {
+      return stubs;
     }
   }
 
@@ -908,12 +995,13 @@
     silent = false,
     force = false
   ): Promise<boolean> {
-    if (_isLoadingMetadata) return false;
-    _isLoadingMetadata = true;
+    if (targetVideos.length === 0) return true;
 
-    if (targetVideos.length === 0) {
-      _isLoadingMetadata = false;
-      return true;
+    // Only the modal (non-silent) path is guarded — silent background runs may
+    // overlap; the engine's in-flight dedup prevents duplicate API calls.
+    if (!silent) {
+      if (_isLoadingMetadata) return false;
+      _isLoadingMetadata = true;
     }
 
     const videoIds = targetVideos.map((v) => v.videoId);
@@ -926,56 +1014,30 @@
       progressCurrent = 0;
       progressTotal = videoIds.length;
       progressCancelRequested = false;
-    }
-
-    const BATCH_SIZE = 50;
-    const metaMap = new Map<string, any>();
-
-    // Always clear session cache for these IDs so prior individual fetch failures
-    // (which may have set null entries) don't block the batch retry
-    if (typeof window.clearMetadataSessionCache === "function") {
-      window.clearMetadataSessionCache(videoIds);
-    }
-
-    // For force refetch, also clear persistent cache so we actually hit the APIs
-    if (force) {
-      if (window.videoService) {
-        await window.videoService.clearCache(videoIds);
-      }
+      window.info(`Starting metadata fetch for ${videoIds.length} video(s)...`);
     }
 
     try {
-      if (!silent) {
-        window.info(`Starting metadata fetch for ${videoIds.length} video(s)...`);
-      }
-      for (let i = 0; i < videoIds.length; i += BATCH_SIZE) {
-        if (!silent && progressCancelRequested) {
-          break;
-        }
+      const { metaMap } = await enrichVideoMetadata(videoIds, {
+        force,
+        shouldCancel: () => !silent && progressCancelRequested,
+        onProgress: (fetched, total) => {
+          if (!silent) {
+            progressCurrent = fetched;
+            progressPercent = Math.round((fetched / total) * 100);
+            progressText = `Loading metadata (${fetched} of ${total})...`;
+          }
+        },
+      });
 
-        const batch = videoIds.slice(i, i + BATCH_SIZE);
-        if (!silent) {
-          progressText = `Loading metadata (${i + 1} - ${Math.min(i + BATCH_SIZE, videoIds.length)} of ${videoIds.length})...`;
-        }
-
-        const batchResults = await window.ytFetchVideoDurations(batch);
-        batchResults.forEach((val, key) => {
-          metaMap.set(key, val);
-        });
-
-        if (!silent) {
-          progressCurrent = Math.min(i + BATCH_SIZE, videoIds.length);
-          progressPercent = Math.round((progressCurrent / progressTotal) * 100);
-        }
-      }
-
-      // Apply results to videos array
+      // Apply resolved metadata back onto the video rows (reactive update).
       if (metaMap.size > 0) {
         videos = videos.map((v) => {
           const meta = metaMap.get(v.videoId);
           if (!meta) return v;
           return {
             ...v,
+            isEnriching: false,
             title:
               meta.title ||
               v.title ||
@@ -983,7 +1045,7 @@
                 ? "Private video"
                 : meta.isDeleted
                   ? "Deleted video"
-                  : "Unknown Video"),
+                  : "[Unavailable Video]"),
             channel:
               meta.channel ||
               v.channel ||
@@ -991,7 +1053,7 @@
                 ? "Private channel"
                 : meta.isDeleted
                   ? "Deleted channel"
-                  : "Unknown Channel"),
+                  : "[Unavailable]"),
             duration: meta.duration || v.duration,
             durationISO: meta.duration || v.durationISO,
             durationSeconds: meta.duration ? window.isoToSecs(meta.duration) : v.durationSeconds,
@@ -1001,20 +1063,28 @@
             isDeleted: meta.isDeleted,
             isBroken: meta.isBroken,
             isLive: meta.isLive,
+            isUnavailable: meta.isUnavailable === true,
           };
         });
       }
 
-      // Cache all fetched metadata directly into IndexedDB
-      if (metaMap.size > 0) {
-        const metaObj: any = {};
-        metaMap.forEach((val, key) => {
-          metaObj[key] = val;
-        });
-        await dbPutMetadataBatch(metaObj);
-      }
+      // Tag IDs that still have no metadata as unavailable (in-memory only — not
+      // persisted, so transient failures retry on the next playlist load instead
+      // of leaving a permanent false "unavailable" tag).
+      const targetedIds = new Set(videoIds);
+      videos = videos.map((v) => {
+        if (targetedIds.has(v.videoId) && !metaMap.has(v.videoId)) {
+          return {
+            ...v,
+            isEnriching: false,
+            title: "[Unavailable Video]",
+            channel: "[Unavailable]",
+            isUnavailable: true,
+          };
+        }
+        return v;
+      });
 
-      // Identify videos that remain unavailable after this single pass
       const unavailableIds = videoIds.filter((id) => !metaMap.has(id));
       const foundCount = videoIds.length - unavailableIds.length;
 
@@ -1031,14 +1101,25 @@
         }
       }
 
+      // Keep state + storage in sync after enrichment. For local playlists a
+      // silent save is a cheap storage.local write; for YouTube-synced playlists
+      // the video ID list is unchanged and metadata already lives in IndexedDB,
+      // so we avoid unnecessary YouTube API sync churn.
+      updateDirtyState();
+      if (silent && playlist && playlist.id && !isPlaylistBuilder && isLocal) {
+        savePlaylist({ silent: true }).catch(() => {});
+      }
+
       return !(!silent && progressCancelRequested);
     } catch (e) {
       console.error("Failed to load metadata:", e);
       if (!silent) window.error("Metadata fetch failed. Check console for details.");
       return false;
     } finally {
-      if (!silent) showProgressModal = false;
-      _isLoadingMetadata = false;
+      if (!silent) {
+        showProgressModal = false;
+        _isLoadingMetadata = false;
+      }
     }
   }
 

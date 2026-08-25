@@ -8,6 +8,7 @@
     faTrash,
     faArrowUpRightFromSquare,
     faPlay,
+    faSpinner,
   } from "@fortawesome/free-solid-svg-icons";
 
   let {
@@ -148,7 +149,7 @@
     </div>
   {/if}
   {#if !disableThumbnails}
-    <div class="thumbnail-wrapper">
+    <div class="thumbnail-wrapper" class:is-enriching={video.isEnriching && !video.title}>
       <img alt={video.title || "Video thumbnail"} src={video.thumbnailUrl} />
       {#if video.isLive}
         <span class="status-badge live-badge">LIVE</span>
@@ -163,7 +164,13 @@
     </div>
   {/if}
   <div class="video-details">
-    {#if !video.title}
+    {#if !video.title && video.isEnriching}
+      <div class="loading-info">
+        <Fa icon={faSpinner} spin /> Loading video info...
+      </div>
+      <div class="skeleton-shimmer skeleton-title"></div>
+      <div class="skeleton-shimmer skeleton-channel"></div>
+    {:else if !video.title}
       <div class="skeleton-shimmer skeleton-title"></div>
       <div class="skeleton-shimmer skeleton-channel"></div>
     {:else}
@@ -366,6 +373,20 @@
     100% {
       background-position: -200% 0;
     }
+  }
+
+  .thumbnail-wrapper.is-enriching img {
+    opacity: 0.35;
+    filter: blur(1px);
+  }
+
+  .loading-info {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-bottom: 6px;
   }
 
   .video-details {

@@ -1078,7 +1078,7 @@ window.getSettings = async (): Promise<Settings> => {
       autoSaveEditor: false,
       autoSaveInterval: 2,
       autoRetryEnabled: true, // Auto-retry sync after quota reset (default ON)
-      autoFetchMetadata: false, // Auto-fetch missing metadata on page load (default OFF)
+      autoFetchMetadata: true, // Auto-fetch missing metadata on page load (default ON)
       metadataExecutionStrategy: "free_first",
       enableInnertubeScraping: true,
       enableEmbedScraping: true,
