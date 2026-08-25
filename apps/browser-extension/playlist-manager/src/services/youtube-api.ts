@@ -1,10 +1,12 @@
 import { dbPutMetadataBatch } from "./db-service.js";
+import { normalizeVideoMeta } from "./schema-normalizer.js";
+import type { NormalizedVideoMeta, RawVideoMeta } from "../types/model.js";
 
 // Guard to prevent duplicate declarations on SPA navigation
-if ((window as any)._youtubeApiLoaded) {
+if (window._youtubeApiLoaded) {
   console.warn("youtube-api already loaded - skipping");
 } else {
-  (window as any)._youtubeApiLoaded = true;
+  window._youtubeApiLoaded = true;
 }
 
 // Marker added to the description of every playlist created by this extension.
@@ -91,7 +93,7 @@ async function ytFetch(path: string, options: RequestInit = {}, retryCount = 0):
   return data;
 }
 
-(window as any).ytFetch = ytFetch;
+window.ytFetch = ytFetch;
 
 // Create a new private playlist. Returns the YouTube playlist ID (e.g. PLxxxxx).
 window.ytCreatePlaylist = async (
@@ -715,11 +717,14 @@ const INVIDIOUS_INSTANCES = [
 
 // Session-level cache: Map<videoId, metadata | null>
 // null means "we already tried all APIs this session and failed"
-const _metadataSessionCache = new Map<string, any | null>();
+const _metadataSessionCache = new Map<
+  string,
+  NormalizedVideoMeta | Record<string, unknown> | null
+>();
 
-// In-flight deduplication: Map<videoId, Promise<any>>
+// In-flight deduplication: Map<videoId, Promise<NormalizedVideoMeta | null>>
 // Prevents duplicate concurrent API calls for the same video ID across multiple callers
-const _metadataInFlight = new Map<string, Promise<any>>();
+const _metadataInFlight = new Map<string, Promise<NormalizedVideoMeta | null | undefined>>();
 
 window.clearMetadataSessionCache = (ids?: string[]) => {
   if (ids && ids.length > 0) {
@@ -828,8 +833,10 @@ interface InnertubeResponse {
  * Tier 1: YouTube Data API v3 (Batch 50 items)
  * High efficiency: 50 videos = 1 quota point
  */
-async function fetchMetadataFromYouTubeDataAPI(videoIds: string[]): Promise<Map<string, any>> {
-  const result = new Map<string, any>();
+async function fetchMetadataFromYouTubeDataAPI(
+  videoIds: string[]
+): Promise<Map<string, NormalizedVideoMeta>> {
+  const result = new Map<string, NormalizedVideoMeta>();
   if (!videoIds.length) return result;
 
   try {
@@ -894,9 +901,9 @@ async function fetchMetadataFromYouTubeDataAPI(videoIds: string[]): Promise<Map<
           const isPrivate = status?.privacyStatus === "private";
 
           result.set(videoId, {
+            videoId,
             title: snippet?.title || "",
             channel: snippet?.channelTitle || "",
-            channelId: snippet?.channelId || "",
             duration: isLive ? "LIVE" : durationISO,
             durationISO: isLive ? "LIVE" : durationISO,
             durationSeconds,
@@ -906,6 +913,7 @@ async function fetchMetadataFromYouTubeDataAPI(videoIds: string[]): Promise<Map<
             isDeleted: false,
             isBroken: false,
             isLive,
+            lastCachedAt: Date.now(),
           });
         }
       }
@@ -1278,8 +1286,8 @@ window.fetchDurationsInvidious = async (
   videoIds: string[],
   customPiped?: string[],
   customInvidious?: string[]
-): Promise<Map<string, any>> => {
-  const result = new Map<string, any>();
+): Promise<Map<string, NormalizedVideoMeta>> => {
+  const result = new Map<string, NormalizedVideoMeta>();
   if (!videoIds.length) return result;
 
   const BATCH_SIZE = 25;
@@ -1303,7 +1311,10 @@ window.fetchDurationsInvidious = async (
 
     for (const outcome of outcomes) {
       if (outcome.metadata) {
-        result.set(outcome.videoId, outcome.metadata);
+        result.set(
+          outcome.videoId,
+          normalizeVideoMeta({ ...outcome.metadata, videoId: outcome.videoId }, outcome.videoId)
+        );
       }
     }
   }
@@ -1314,8 +1325,10 @@ window.fetchDurationsInvidious = async (
 /**
  * Unified Master Batch Metadata Fetcher (Honors User Settings & Free-First Strategy)
  */
-window.ytFetchVideoDurations = async (videoIds: string[]): Promise<Map<string, any>> => {
-  const result = new Map<string, any>();
+window.ytFetchVideoDurations = async (
+  videoIds: string[]
+): Promise<Map<string, NormalizedVideoMeta>> => {
+  const result = new Map<string, NormalizedVideoMeta>();
   if (!videoIds.length) return result;
 
   // 1. Check session cache first
@@ -1324,7 +1337,7 @@ window.ytFetchVideoDurations = async (videoIds: string[]): Promise<Map<string, a
   for (const id of videoIds) {
     if (_metadataSessionCache.has(id)) {
       const cached = _metadataSessionCache.get(id);
-      if (cached !== null) result.set(id, cached);
+      if (cached != null) result.set(id, cached as unknown as NormalizedVideoMeta);
     } else if (_metadataInFlight.has(id)) {
       const inFlight = _metadataInFlight.get(id);
       if (inFlight) {
@@ -1387,8 +1400,9 @@ window.ytFetchVideoDurations = async (videoIds: string[]): Promise<Map<string, a
       try {
         const innertubeResults = await window.fetchMetadataInnertube(missing);
         innertubeResults.forEach((meta: any, videoId: string) => {
-          result.set(videoId, meta);
-          _metadataSessionCache.set(videoId, meta);
+          const normalized = normalizeVideoMeta({ ...meta, videoId }, videoId);
+          result.set(videoId, normalized);
+          _metadataSessionCache.set(videoId, normalized);
         });
       } catch (e: any) {
         const msg = String(e?.message || e);
@@ -1417,8 +1431,9 @@ window.ytFetchVideoDurations = async (videoIds: string[]): Promise<Map<string, a
         );
         for (const { id, meta } of embedResults) {
           if (meta) {
-            result.set(id, meta);
-            _metadataSessionCache.set(id, meta);
+            const normalized = normalizeVideoMeta({ ...meta, videoId: id }, id);
+            result.set(id, normalized);
+            _metadataSessionCache.set(id, normalized);
           }
         }
       } catch (e) {
@@ -1440,8 +1455,9 @@ window.ytFetchVideoDurations = async (videoIds: string[]): Promise<Map<string, a
         );
         for (const { id, meta } of oEmbedResults) {
           if (meta) {
-            result.set(id, meta);
-            _metadataSessionCache.set(id, meta);
+            const normalized = normalizeVideoMeta({ ...meta, videoId: id }, id);
+            result.set(id, normalized);
+            _metadataSessionCache.set(id, normalized);
           }
         }
       } catch (e) {

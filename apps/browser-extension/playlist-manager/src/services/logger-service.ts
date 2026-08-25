@@ -71,5 +71,5 @@ export const SystemLogger = new SystemLoggerClass();
 
 // Attach to window for legacy usage (e.g., window.SystemLogger)
 if (typeof window !== "undefined") {
-  (window as any).SystemLogger = SystemLogger;
+  window.SystemLogger = SystemLogger;
 }

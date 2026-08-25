@@ -21,6 +21,7 @@ export interface NormalizedVideoMeta {
   videoId: string;
   title: string;
   channel: string;
+  duration?: string;
   durationISO: string;
   durationSeconds: number;
   viewCount?: number;
@@ -31,6 +32,20 @@ export interface NormalizedVideoMeta {
   isLive: boolean;
   lastCachedAt: number;
   lastFetchAttempt?: number;
+}
+
+/** Partial metadata returned by Tier 2/3/4/5 scrapers before normalization */
+export interface RawVideoMeta {
+  title: string;
+  channel: string;
+  duration: string;
+  lengthSeconds: number;
+  viewCount?: number;
+  publishedAt?: string;
+  isPrivate?: boolean;
+  isDeleted?: boolean;
+  isBroken?: boolean;
+  isLive?: boolean;
 }
 
 export interface VideoMetaExport {

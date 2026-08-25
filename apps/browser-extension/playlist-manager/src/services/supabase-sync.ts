@@ -352,6 +352,6 @@ export const syncEngine = new BackgroundSyncEngine();
 
 // Expose on global window object for background worker
 if (typeof window !== "undefined") {
-  (window as any).syncEngine = syncEngine;
-  (window as any).supabaseGetSession = getSession;
+  window.syncEngine = syncEngine;
+  window.supabaseGetSession = getSession;
 }

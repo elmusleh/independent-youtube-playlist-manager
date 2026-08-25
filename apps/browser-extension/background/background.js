@@ -16,7 +16,7 @@ import "./sync.js"; // registers alarms.onAlarm listener as side effect
 
 let _initRunning = false;
 
-export async function init() {
+async function init() {
   const start = Date.now();
   try {
     if (_initRunning) return;
@@ -46,11 +46,11 @@ init();
 // Context menu cleanup wrappers
 // ---------------------------------------------------------------------------
 
-export async function clearAddVideoToPlaylistItems() {
+async function clearAddVideoToPlaylistItems() {
   await init();
 }
 
-export async function clearContextMenus() {
+async function clearContextMenus() {
   if (!isAndroid()) await browser.contextMenus.removeAll();
 }
 
@@ -225,7 +225,7 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
 async function createPlaylist(videoIds, title) {
   const start = Date.now();
   try {
-    if (videoIds.length == 0) {
+    if (videoIds.length === 0) {
       if (window.logSystemEvent)
         await window.logSystemEvent("WARN", "Background: createPlaylist called with 0 videos");
       return;

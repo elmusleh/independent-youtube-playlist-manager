@@ -5,10 +5,10 @@
 import { SystemLogger } from "./logger-service.js";
 
 // Guard to prevent duplicate declarations on SPA navigation
-if ((window as any)._syncStateServiceLoaded) {
+if (window._syncStateServiceLoaded) {
   console.warn("sync-state-service already loaded - skipping");
 } else {
-  (window as any)._syncStateServiceLoaded = true;
+  window._syncStateServiceLoaded = true;
 }
 
 export interface SyncState {

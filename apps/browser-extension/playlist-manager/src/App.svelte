@@ -20,6 +20,7 @@
   import ConfirmationModal from "./components/ConfirmationModal.svelte";
   import Toast from "./components/Toast.svelte";
   import "./stores/shortcuts";
+  import { logger } from "./services/logger";
 
   const browser = window.browser || window.chrome;
 
@@ -78,7 +79,7 @@
       }
     } catch (e) {
       const errorMsg = e instanceof Error ? e.message : String(e);
-      console.error("Resume sync failed:", e);
+      logger.error("Resume sync failed:", e);
       return { error: errorMsg };
     }
   }

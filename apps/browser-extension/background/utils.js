@@ -30,6 +30,8 @@ export function handleError(error) {
  * @param {string} message
  * @param {boolean} [isInfo]
  */
+// NOTE: This is intentionally duplicated in popup/utils.js with a different
+// relative icon path. Background uses "assets/...", popup uses "../assets/...".
 export async function alert(message, isInfo) {
   browser.notifications.create({
     type: "basic",

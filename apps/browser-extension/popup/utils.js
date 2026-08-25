@@ -73,6 +73,8 @@ export function removeDuplicates(array) {
  * @param {string} message
  * @param {boolean} [isInfo]
  */
+// NOTE: This is intentionally duplicated in background/utils.js with a different
+// relative icon path. Background uses "assets/...", popup uses "../assets/...".
 export async function alert(message, isInfo) {
   const isAndroid = /Android/i.test(navigator.userAgent);
   browser.notifications.create({
@@ -108,3 +110,26 @@ export async function log(level, message, details = null) {
 
 export const YOUTUBE_REGEX =
   /(?:https?:\/\/)?(?:www\.)?youtu(?:\.be\/|be.com\/\S*(?:watch|embed|shorts)(?:(?:(?=\/[-a-zA-Z0-9_]{11,}(?!\S))\/)|(?:\S*v=|v\/)))([-a-zA-Z0-9_]{11,})/;
+
+// ---------------------------------------------------------------------------
+// Global polling helper
+// ---------------------------------------------------------------------------
+
+/**
+ * Wait for a `window.*` global to become available (editor modules attach
+ * themselves to `window` after loading). Resolves with the value or `null`
+ * if the timeout is reached.
+ *
+ * @param {string} name   - Property name on `window` (e.g. "videoService")
+ * @param {number} [maxAttempts=20] - How many attempts before giving up
+ * @param {number} [intervalMs=100] - Milliseconds between attempts
+ * @returns {Promise<any>}
+ */
+export async function waitForGlobal(name, maxAttempts = 20, intervalMs = 100) {
+  let attempts = 0;
+  while (!window[name] && attempts < maxAttempts) {
+    await new Promise((resolve) => setTimeout(resolve, intervalMs));
+    attempts++;
+  }
+  return window[name] || null;
+}

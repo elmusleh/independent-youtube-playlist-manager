@@ -11,6 +11,7 @@
   import { faShareNodes, faLink, faCheck } from "@fortawesome/free-solid-svg-icons";
   import ViewHeader from "../components/ViewHeader.svelte";
   import { toast } from "../stores/toast";
+  import { logger } from "../services/logger";
 
   const shareUrl = "https://github.com/elmusleh/independent-youtube-playlist-manager";
   const shareTitle = "Playlist Manager";
@@ -61,7 +62,7 @@
         copied = false;
       }, 2000);
     } catch (e) {
-      console.error("Failed to copy", e);
+      logger.error("Failed to copy", e);
       toast.show("Failed to copy link", "error");
     }
   }
@@ -75,7 +76,7 @@
           url: shareUrl,
         });
       } catch (e) {
-        console.error("Share failed", e);
+        logger.error("Share failed", e);
       }
     } else {
       copyLink();

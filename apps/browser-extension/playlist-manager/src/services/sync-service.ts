@@ -2,10 +2,10 @@ import type { Playlist, Video } from "../types/model.js";
 import { SystemLogger } from "./logger-service.js";
 
 // Guard to prevent duplicate declarations
-if ((window as any)._syncServiceLoaded) {
+if (window._syncServiceLoaded) {
   console.warn("sync-service already loaded - skipping");
 } else {
-  (window as any)._syncServiceLoaded = true;
+  window._syncServiceLoaded = true;
 }
 
 const SYNC_PACE_MS = 150;
@@ -76,7 +76,7 @@ class SyncService {
       const ytVideoIds = ytItems.map((item) => item.videoId);
 
       // ─── Phase 0: Conflict Detection & Merging ────────────────────────
-      const baseSnapshot = (await (window as any).getSyncSnapshot(playlistId)) || [];
+      const baseSnapshot = (await window.getSyncSnapshot(playlistId)) || [];
       const remoteAdded = ytVideoIds.filter((id: string) => !baseSnapshot.includes(id));
       const remoteRemoved = baseSnapshot.filter((id: string) => !ytVideoIds.includes(id));
 
@@ -108,7 +108,7 @@ class SyncService {
       if (mergeHappened) {
         playlist.videos = mergedVideos;
         // Immediate local save of merged state
-        await (window as any)._saveToLocalStorage({ ...playlist, isDirty: true });
+        await window._saveToLocalStorage({ ...playlist, isDirty: true });
       }
 
       // 2. Identify required YouTube mutations to reach merged state
@@ -139,13 +139,13 @@ class SyncService {
       };
 
       // ─── Phase A: Removals ─────────────────────────────────
-      const likedPlaylistId = await (window as any).ytGetLikedVideosPlaylistId();
+      const likedPlaylistId = await window.ytGetLikedVideosPlaylistId();
       const isLiked = playlistId === "LIKED" || playlistId === likedPlaylistId;
 
       for (const item of toRemoveItems) {
         await report(`Removing ${item.videoId}...`);
         // Pass both item property to support specialized lists (like LIKED)
-        await (window as any).ytRemoveItem(item.itemId, item.videoId, isLiked);
+        await window.ytRemoveItem(item.itemId);
         await this._pace();
       }
 
@@ -199,9 +199,9 @@ class SyncService {
         lastSyncedAt: Date.now(),
       };
 
-      await (window as any)._saveToLocalStorage(syncedPlaylist);
+      await window._saveToLocalStorage(syncedPlaylist);
       // Update Snapshot
-      await (window as any).saveSyncSnapshot(playlistId, [...syncedPlaylist.videos]);
+      await window.saveSyncSnapshot(playlistId, [...syncedPlaylist.videos]);
       window.invalidateCacheAndNotify();
 
       await SystemLogger.info("SyncService", "syncPlaylist success", { playlistId });
@@ -235,12 +235,12 @@ class SyncService {
    */
   public async refreshAllManaged(): Promise<void> {
     if (this._syncLock) return;
-    const signedIn = await (window as any).isSignedIn();
+    const signedIn = await window.isSignedIn();
     if (!signedIn) return;
 
     this._syncLock = true;
     try {
-      const playlists = (await (window as any).getPlaylists()) as Playlist[];
+      const playlists = (await window.getPlaylists()) as Playlist[];
       const managed = playlists.filter((p) => p.isTagged && !p.isLocal && !p.isDirty);
 
       if (managed.length === 0) return;
@@ -259,9 +259,9 @@ class SyncService {
 
           if (!isSame) {
             const updated = { ...p, videos: ytVideoIds, lastSyncedAt: Date.now() };
-            await (window as any)._saveToLocalStorage(updated);
+            await window._saveToLocalStorage(updated);
             // Update Snapshot
-            await (window as any).saveSyncSnapshot(p.id, [...ytVideoIds]);
+            await window.saveSyncSnapshot(p.id, [...ytVideoIds]);
             if (window.logSystemEvent)
               await window.logSystemEvent(
                 "INFO",
@@ -287,8 +287,8 @@ class SyncService {
     this._syncLock = true;
 
     try {
-      const playlists = await (window as any).getPlaylists();
-      const dirty = playlists.filter((p: any) => p.isDirty && !p.isLocal);
+      const playlists = await window.getPlaylists();
+      const dirty = playlists.filter((p: Playlist) => p.isDirty && !p.isLocal);
 
       if (dirty.length === 0) return;
 
@@ -316,6 +316,6 @@ class SyncService {
 }
 
 // Export as window global for extension visibility
-(window as any).SyncService = new SyncService();
+window.SyncService = new SyncService();
 
 export {};

@@ -1,13 +1,8 @@
 /// <reference path="./popup.d.ts" />
 /// <reference path="../playlist-manager/src/types/services.d.ts" />
 
-import { getById, getErrorMessage, log, YOUTUBE_REGEX } from "./utils.js";
-import {
-  getActiveTab,
-  isYoutubeTab,
-  getVideoTabsInWindow,
-  getAllVideoTabsAcrossWindows,
-} from "./tabs.js";
+import { getById, getErrorMessage, log, YOUTUBE_REGEX, waitForGlobal } from "./utils.js";
+import { getActiveTab, isYoutubeTab } from "./tabs.js";
 import {
   showChannelModal,
   hideChannelModal,
@@ -15,7 +10,7 @@ import {
   detectChannelFromURL,
   handleChannelImport,
 } from "./channel.js";
-import { scrapeMetadataFromTabs, addVideosToResolvedPlaylist } from "./quick-add.js";
+import { executeQuickAddByScope } from "./quick-add.js";
 import { updateTargetUI, initTargetData, loadDefaultTabScope } from "./target.js";
 import { state } from "./state.js";
 
@@ -27,17 +22,12 @@ async function init() {
   await log("INFO", "Popup: Initializing...");
 
   // Wait for videoService to be available
-  let attempts = 0;
-  while (!window.videoService && attempts < 30) {
-    await new Promise((resolve) => setTimeout(resolve, 100));
-    attempts++;
-  }
-
-  if (!window.videoService) {
+  const videoService = await waitForGlobal("videoService", 30);
+  if (!videoService) {
     await log("ERROR", "Popup: videoService not found after 3s");
   }
 
-  state.videoService = window.videoService || {
+  state.videoService = videoService || {
     parseYoutubeId: (url) => {
       const match = YOUTUBE_REGEX.exec(url);
       return match ? match[1] : null;
@@ -57,17 +47,12 @@ async function init() {
 
   // Initialize theme and target mode
   try {
-    // Wait for getSettings to be available
-    attempts = 0;
-    while (!window.getSettings && attempts < 20) {
-      await new Promise((resolve) => setTimeout(resolve, 100));
-      attempts++;
-    }
+    const getSettings = await waitForGlobal("getSettings", 20);
 
-    if (window.getSettings) {
-      const settings = await window.getSettings();
+    if (getSettings) {
+      const settings = await getSettings();
       let theme = settings.themeChoice;
-      if (theme == "device") {
+      if (theme === "device") {
         theme = window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light";
       }
       document.documentElement.dataset.theme = theme;
@@ -199,7 +184,7 @@ function setupUI() {
         videoIds = rawResult;
       }
 
-      if (!videoIds || videoIds.length == 0) {
+      if (!videoIds || videoIds.length === 0) {
         await log("WARN", "Popup: No video IDs returned from content script");
         return alert("The current tab is not a YouTube playlist tab");
       }
@@ -250,103 +235,8 @@ function setupUI() {
   // Quick Add - Execute button with dropdown scope
   getById("btn-execute-add").onclick = async () => {
     const scope = getById("select-tab-scope").value;
-    const currentTab = await getActiveTab();
-
-    if (!currentTab || !currentTab.url) return alert("No active tab found");
-
-    const videoId = state.parseYoutubeId(currentTab.url);
-    if (
-      !videoId &&
-      scope !== "left" &&
-      scope !== "right" &&
-      scope !== "all-this-window-include" &&
-      scope !== "all-this-window-exclude" &&
-      scope !== "all-windows"
-    ) {
-      return alert("The current tab is not a YouTube video");
-    }
-
-    const currentIndex = currentTab.index;
-
-    switch (scope) {
-      case "current":
-        if (!videoId) return alert("The current tab is not a YouTube video");
-        await scrapeMetadataFromTabs([currentTab]);
-        await addVideosToResolvedPlaylist([videoId], [currentTab]);
-        return;
-
-      case "left": {
-        const videoTabs = await getVideoTabsInWindow(
-          currentTab.windowId,
-          (tab) => tab.index < currentIndex
-        );
-        if (videoTabs.length === 0) return alert("No YouTube video tabs found to the left");
-        await scrapeMetadataFromTabs(videoTabs);
-        const videoIds = videoTabs.map((tab) => state.parseYoutubeId(tab.url)).filter(Boolean);
-        const uniqueIds = [...new Set(videoIds)];
-        if (uniqueIds.length === 0) return alert("No YouTube video tabs found");
-        await addVideosToResolvedPlaylist(uniqueIds, videoTabs);
-        return;
-      }
-
-      case "right": {
-        const videoTabs = await getVideoTabsInWindow(
-          currentTab.windowId,
-          (tab) => tab.index > currentIndex
-        );
-        if (videoTabs.length === 0) return alert("No YouTube video tabs found to the right");
-        await scrapeMetadataFromTabs(videoTabs);
-        const videoIds = videoTabs.map((tab) => state.parseYoutubeId(tab.url)).filter(Boolean);
-        const uniqueIds = [...new Set(videoIds)];
-        if (uniqueIds.length === 0) return alert("No YouTube video tabs found");
-        await addVideosToResolvedPlaylist(uniqueIds, videoTabs);
-        return;
-      }
-
-      case "all-this-window-include": {
-        const videoTabs = await getVideoTabsInWindow(currentTab.windowId, () => true);
-        if (videoTabs.length === 0) return alert("No YouTube video tabs found in this window");
-        await scrapeMetadataFromTabs(videoTabs);
-        const videoIds = videoTabs.map((tab) => state.parseYoutubeId(tab.url)).filter(Boolean);
-        const uniqueIds = [...new Set(videoIds)];
-        if (uniqueIds.length === 0) return alert("No YouTube video tabs found");
-        await addVideosToResolvedPlaylist(uniqueIds, videoTabs);
-        return;
-      }
-
-      case "all-this-window-exclude": {
-        const videoTabs = await getVideoTabsInWindow(
-          currentTab.windowId,
-          (tab) => tab.index !== currentIndex
-        );
-        if (videoTabs.length === 0)
-          return alert("No other YouTube video tabs found in this window");
-        await scrapeMetadataFromTabs(videoTabs);
-        const videoIds = videoTabs.map((tab) => state.parseYoutubeId(tab.url)).filter(Boolean);
-        const uniqueIds = [...new Set(videoIds)];
-        if (uniqueIds.length === 0) return alert("No YouTube video tabs found");
-        await addVideosToResolvedPlaylist(uniqueIds, videoTabs);
-        return;
-      }
-
-      case "all-windows": {
-        const videoTabs = await getAllVideoTabsAcrossWindows();
-        if (videoTabs.length === 0) return alert("No YouTube video tabs found");
-        await scrapeMetadataFromTabs(videoTabs);
-        const videoIds = videoTabs.map((tab) => state.parseYoutubeId(tab.url)).filter(Boolean);
-        const uniqueIds = [...new Set(videoIds)];
-        if (uniqueIds.length === 0) return alert("No YouTube video tabs found");
-        await addVideosToResolvedPlaylist(uniqueIds, videoTabs);
-        return;
-      }
-
-      default:
-        return alert("Invalid scope selected");
-    }
+    await executeQuickAddByScope(scope);
   };
-
-  // Kick off target data loading (plays nicely alongside init already calling it)
-  initTargetData();
 }
 
 // Bootstrap

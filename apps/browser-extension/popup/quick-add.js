@@ -3,89 +3,14 @@
 /// <reference path="../../playlist-manager/src/types/services.d.ts" />
 
 import { getById, getErrorMessage, setIcon, log, alert, isNotNull } from "./utils.js";
-import { getActiveTab, isYoutubeTab } from "./tabs.js";
+import { getActiveTab, getVideoTabsInWindow, getAllVideoTabsAcrossWindows } from "./tabs.js";
 import { state } from "./state.js";
 import { updateTargetUI } from "./target.js";
+import { scrapeMetadataFromTabs } from "./scrape-tabs.js";
 
 /**
  * @typedef {import("webextension-polyfill").Tabs.Tab} Tab
  */
-
-// ---------------------------------------------------------------------------
-// Tab metadata scraping
-// ---------------------------------------------------------------------------
-
-const VIDEO_META_CACHE_KEY = "yph_video_metadata_cache";
-
-/**
- * Helper to convert ISO 8601 to seconds
- * @param {string} iso
- * @returns {number}
- */
-const isoToSeconds = (iso) => {
-  if (!iso) return 0;
-  const match = iso.match(/P(?:(\d+)D)?T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+(?:\.\d+)?)S)?/);
-  if (!match) return 0;
-  const d = parseInt(match[1] || "0", 10);
-  const h = parseInt(match[2] || "0", 10);
-  const m = parseInt(match[3] || "0", 10);
-  const s = parseFloat(match[4] || "0");
-  return d * 86400 + h * 3600 + m * 60 + Math.floor(s);
-};
-
-/**
- * Scrapes metadata (title, channel, ISO duration) from a list of YouTube tabs
- * and persists it to the shared video metadata cache.
- * @param {Tab[]} tabs
- * @returns {Promise<Array<{videoId: string, title: string, channel: string, durationISO: string}>>}
- */
-export async function scrapeMetadataFromTabs(tabs) {
-  const results = [];
-
-  for (const tab of tabs) {
-    if (!tab.id || !isYoutubeTab(tab)) continue;
-
-    try {
-      // @ts-ignore
-      const res = await browser.scripting.executeScript({
-        target: { tabId: tab.id },
-        files: ["/content-scripts/injectors/get-video-metadata.js"],
-      });
-
-      const result = res[0]?.result;
-      if (result && result.videoId) {
-        results.push(result);
-      }
-    } catch (e) {
-      // Silently fail for individual tabs (might be restricted or still loading)
-      console.warn(`[YPH] Failed to scrape tab ${tab.id}:`, e);
-    }
-  }
-
-  if (results.length > 0) {
-    try {
-      const store = await browser.storage.local.get(VIDEO_META_CACHE_KEY);
-      const map = store[VIDEO_META_CACHE_KEY] || {};
-
-      results.forEach((res) => {
-        map[res.videoId] = {
-          title: res.title || "",
-          channel: res.channel || "",
-          durationISO: res.durationISO || "",
-          durationSeconds: isoToSeconds(res.durationISO) || 0,
-          lastUpdated: Date.now(),
-        };
-      });
-
-      await browser.storage.local.set({ [VIDEO_META_CACHE_KEY]: map });
-      await log("INFO", `Popup: Persisted metadata for ${results.length} videos from tabs`);
-    } catch (e) {
-      console.error("[YPH] Failed to save metadata to cache:", e);
-    }
-  }
-
-  return results;
-}
 
 // ---------------------------------------------------------------------------
 // Smart playlist naming
@@ -276,4 +201,88 @@ export async function addVideosToResolvedPlaylist(videoIds, videoTabs = []) {
     await log("ERROR", "Popup: Quick add failed", msg);
     alert("Quick add failed: " + msg);
   }
+}
+
+// ---------------------------------------------------------------------------
+// Quick Add by scope (extracted from popup.js setupUI)
+// ---------------------------------------------------------------------------
+
+/**
+ * Resolve tabs and empty-message for the given scope.
+ * @param {string} scope
+ * @param {Tab} currentTab
+ * @param {string} videoId
+ * @returns {Promise<{tabs: Tab[], emptyMsg: string} | null>} null = early return already handled
+ */
+async function resolveTabsForScope(scope, currentTab, videoId) {
+  const idx = currentTab.index;
+
+  switch (scope) {
+    case "current":
+      if (!videoId) {
+        alert("The current tab is not a YouTube video");
+        return null;
+      }
+      return { tabs: [currentTab], emptyMsg: "No YouTube video tabs found" };
+
+    case "left":
+      return {
+        tabs: await getVideoTabsInWindow(currentTab.windowId, (t) => t.index < idx),
+        emptyMsg: "No YouTube video tabs found to the left",
+      };
+    case "right":
+      return {
+        tabs: await getVideoTabsInWindow(currentTab.windowId, (t) => t.index > idx),
+        emptyMsg: "No YouTube video tabs found to the right",
+      };
+    case "all-this-window-include":
+      return {
+        tabs: await getVideoTabsInWindow(currentTab.windowId, () => true),
+        emptyMsg: "No YouTube video tabs found in this window",
+      };
+    case "all-this-window-exclude":
+      return {
+        tabs: await getVideoTabsInWindow(currentTab.windowId, (t) => t.index !== idx),
+        emptyMsg: "No other YouTube video tabs found in this window",
+      };
+    case "all-windows":
+      return {
+        tabs: await getAllVideoTabsAcrossWindows(),
+        emptyMsg: "No YouTube video tabs found",
+      };
+    default:
+      alert("Invalid scope selected");
+      return null;
+  }
+}
+
+/**
+ * Execute the quick-add action based on the selected tab scope.
+ * @param {"current"|"left"|"right"|"all-this-window-include"|"all-this-window-exclude"|"all-windows"} scope
+ */
+export async function executeQuickAddByScope(scope) {
+  const currentTab = await getActiveTab();
+  if (!currentTab || !currentTab.url) return alert("No active tab found");
+
+  const videoId = state.parseYoutubeId(currentTab.url);
+  const needsVideoId = ![
+    "left",
+    "right",
+    "all-this-window-include",
+    "all-this-window-exclude",
+    "all-windows",
+  ].includes(scope);
+  if (!videoId && needsVideoId) return alert("The current tab is not a YouTube video");
+
+  const resolved = await resolveTabsForScope(scope, currentTab, videoId);
+  if (!resolved) return;
+
+  const { tabs, emptyMsg } = resolved;
+  if (tabs.length === 0) return alert(emptyMsg);
+
+  await scrapeMetadataFromTabs(tabs);
+  const videoIds = tabs.map((t) => state.parseYoutubeId(t.url)).filter(Boolean);
+  const uniqueIds = [...new Set(videoIds)];
+  if (uniqueIds.length === 0) return alert("No YouTube video tabs found");
+  await addVideosToResolvedPlaylist(uniqueIds, tabs);
 }

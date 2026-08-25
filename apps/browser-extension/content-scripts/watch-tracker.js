@@ -7,10 +7,7 @@
   let trackedVideoEl = null;
   let rules = {};
 
-  // Store references to bound handlers to remove them properly
   let boundHandlers = {};
-
-  // Tracking state — declared here so all functions can reference them without TDZ issues
   let lastSaveTimestamp = 0;
   let lastSavedTimeValue = -1;
   let isCompleting = false;
@@ -19,7 +16,6 @@
   let isSaving = false;
 
   async function log(level, message, /** @type {any} */ details = null) {
-    // // console.log("%s [%s] %s", logPrefix, level, message, details || "");
     try {
       await browser.runtime.sendMessage({
         cmd: "log-event",
@@ -28,7 +24,7 @@
         details,
       });
     } catch {
-      /* ignore */
+      /* background inactive */
     }
   }
 
@@ -44,9 +40,9 @@
       "ruleTrackDuringPlayback",
     ]);
     rules = {
-      ruleEnabled: data.ruleEnabled !== false, // default true
-      ruleTrackPause: data.ruleTrackPause !== false, // default true
-      ruleTrackUnload: data.ruleTrackUnload !== false, // default true
+      ruleEnabled: data.ruleEnabled !== false,
+      ruleTrackPause: data.ruleTrackPause !== false,
+      ruleTrackUnload: data.ruleTrackUnload !== false,
       ruleAutoDelete: !!data.ruleAutoDelete,
       ruleCompletionThreshold: data.ruleCompletionThreshold || 99,
       ruleHistoryThrottleMs: data.ruleHistoryThrottleMs || 5000,
@@ -57,17 +53,14 @@
 
   async function init() {
     window.addEventListener("yt-navigate-finish", onNavigateFinish);
-    // Also run immediately on first load
     await onNavigateFinish();
   }
 
   async function teardown() {
     if (trackedVideoEl) {
-      if (boundHandlers.pause) trackedVideoEl.removeEventListener("pause", boundHandlers.pause);
-      if (boundHandlers.ended) trackedVideoEl.removeEventListener("ended", boundHandlers.ended);
-      if (boundHandlers.timeupdate)
-        trackedVideoEl.removeEventListener("timeupdate", boundHandlers.timeupdate);
-      if (boundHandlers.play) trackedVideoEl.removeEventListener("play", boundHandlers.play);
+      for (const ev of ["pause", "ended", "timeupdate", "play"]) {
+        if (boundHandlers[ev]) trackedVideoEl.removeEventListener(ev, boundHandlers[ev]);
+      }
     }
     if (boundHandlers.visibilitychange)
       document.removeEventListener("visibilitychange", boundHandlers.visibilitychange);
@@ -78,16 +71,12 @@
     boundHandlers = {};
     trackedVideoEl = null;
 
-    // Clear any pending debounce timer
     if (debounceTimer) {
       clearTimeout(debounceTimer);
       debounceTimer = null;
     }
 
-    const existingPanel = document.getElementById("yph-native-panel");
-    if (existingPanel) {
-      existingPanel.remove();
-    }
+    document.getElementById("yph-native-panel")?.remove();
   }
 
   async function onNavigateFinish() {
@@ -101,7 +90,7 @@
     const urlParams = new URLSearchParams(window.location.search);
     currentVideoId = urlParams.get("v");
 
-    // Support URL param, Hash param, or Session Storage fallback (to survive native YouTube SPA navigation)
+    // Support URL param, Hash param, or Session Storage fallback (survives YouTube SPA navigation)
     const hashParams = new URLSearchParams(window.location.hash.substring(1));
     const urlPlaylistId = urlParams.get("yph_local_list") || hashParams.get("yph_local_list");
     const hasListContext = urlParams.get("list") !== null;
@@ -120,16 +109,26 @@
 
     await getSettings();
 
-    if (!rules.ruleEnabled) {
-      return; // Feature is disabled
-    }
+    if (!rules.ruleEnabled) return;
 
     await log("INFO", `Initializing for video ${currentVideoId}`, {
       playlistId: currentPlaylistId,
     });
 
     if (currentPlaylistId) {
-      await loadCurrentPlaylistFromStorage();
+      // Validate the playlist still exists in storage
+      try {
+        const LOCAL_PLAYLISTS_KEY = "yph_local_playlists";
+        const result = await browser.storage.local.get(LOCAL_PLAYLISTS_KEY);
+        const playlists = result[LOCAL_PLAYLISTS_KEY] || [];
+        if (!playlists.find((p) => p.id === currentPlaylistId)) {
+          await log("WARN", `Playlist ${currentPlaylistId} not found in storage`);
+          currentPlaylistId = null;
+        }
+      } catch (e) {
+        await log("ERROR", "Failed to load local playlists for cleanup context", e);
+        currentPlaylistId = null;
+      }
     }
 
     const videoEl = await waitForVideoElement();
@@ -140,26 +139,19 @@
 
     trackedVideoEl = videoEl;
 
-    // --- Auto-Resume Logic ---
     if (!urlParams.get("t")) {
       try {
         const history = await browser.runtime.sendMessage({
           cmd: "get-yph-history",
           videoId: currentVideoId,
         });
-        if (history && history.t && !history.isCompleted) {
-          const resume = () => {
+        if (history?.t && !history.isCompleted) {
+          const doResume = () => {
             log("INFO", `Auto-resuming video to ${history.t}s`);
             trackedVideoEl.currentTime = history.t;
           };
-
-          if (trackedVideoEl.readyState >= 1) {
-            resume();
-          } else {
-            trackedVideoEl.addEventListener("loadedmetadata", resume, {
-              once: true,
-            });
-          }
+          if (trackedVideoEl.readyState >= 1) doResume();
+          else trackedVideoEl.addEventListener("loadedmetadata", doResume, { once: true });
         }
       } catch {
         /* ignore */
@@ -167,19 +159,6 @@
     }
 
     startProgressTracking();
-  }
-
-  async function loadCurrentPlaylistFromStorage() {
-    if (!currentPlaylistId) return;
-    const LOCAL_PLAYLISTS_KEY = "yph_local_playlists";
-    try {
-      const result = await browser.storage.local.get(LOCAL_PLAYLISTS_KEY);
-      const playlists = result[LOCAL_PLAYLISTS_KEY] || [];
-      playlists.find((p) => p.id === currentPlaylistId);
-    } catch (e) {
-      await log("ERROR", "Failed to load local playlists for cleanup context", e);
-      // No cleanup needed
-    }
   }
 
   function waitForVideoElement(maxRetries = 20, intervalMs = 200) {
@@ -200,8 +179,6 @@
     });
   }
 
-  // --- Tracking Logic ---
-
   function startProgressTracking() {
     boundHandlers.pause = () => onSaveTrigger("pause");
     boundHandlers.play = () => onPlayTrigger();
@@ -215,11 +192,11 @@
 
     trackedVideoEl.addEventListener("pause", boundHandlers.pause);
     trackedVideoEl.addEventListener("play", boundHandlers.play);
+    trackedVideoEl.addEventListener("ended", boundHandlers.ended);
+    trackedVideoEl.addEventListener("timeupdate", boundHandlers.timeupdate);
     document.addEventListener("visibilitychange", boundHandlers.visibilitychange);
     window.addEventListener("pagehide", boundHandlers.pagehide);
     window.addEventListener("yt-navigate-start", boundHandlers.ytnavstart);
-    trackedVideoEl.addEventListener("ended", boundHandlers.ended);
-    trackedVideoEl.addEventListener("timeupdate", boundHandlers.timeupdate);
   }
 
   function isAdShowing() {
@@ -227,7 +204,6 @@
   }
 
   function onPlayTrigger() {
-    // Cancel pending debounce save when user resumes playback
     if (debounceTimer) {
       clearTimeout(debounceTimer);
       debounceTimer = null;
@@ -289,12 +265,11 @@
         const titleEl =
           document.querySelector("h1.ytd-watch-metadata") ||
           document.querySelector(".title.ytd-video-primary-info-renderer");
-        videoTitle = titleEl ? /** @type {HTMLElement} */ (titleEl).innerText.trim() : "";
-
+        videoTitle = titleEl?.textContent?.trim() || "";
         const channelEl =
           document.querySelector("#text.ytd-channel-name") ||
           document.querySelector("ytd-video-owner-renderer #channel-name #text");
-        channelName = channelEl ? /** @type {HTMLElement} */ (channelEl).innerText.trim() : "";
+        channelName = channelEl?.textContent?.trim() || "";
       } catch {
         /* ignore */
       }
@@ -303,13 +278,12 @@
         await browser.runtime.sendMessage({
           cmd: "save-yph-history",
           videoId: currentVideoId,
-          t: t,
-          dur: dur,
+          t,
+          dur,
           title: videoTitle,
           channel: channelName,
-          isCompleted: isCompleted,
+          isCompleted,
         });
-        // We don't log every save to system logs to avoid spamming, but completion triggers a log below
       } catch (e) {
         console.error(`${logPrefix} Failed to save history`, e);
       }
@@ -369,10 +343,6 @@
     }
   }
 
-  // --- Start ---
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", init);
-  } else {
-    init();
-  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
+  else init();
 })();

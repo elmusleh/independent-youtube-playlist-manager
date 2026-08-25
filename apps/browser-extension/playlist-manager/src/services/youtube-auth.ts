@@ -27,8 +27,8 @@ async function appendAuthLog(msg: string): Promise<void> {
 }
 
 function updateIsSignedIn(val: boolean) {
-  if ((window as any)._isSignedIn !== val) {
-    (window as any)._isSignedIn = val;
+  if (window._isSignedIn !== val) {
+    window._isSignedIn = val;
     window.dispatchEvent(new CustomEvent("yt-auth-changed", { detail: { isSignedIn: val } }));
     appendAuthLog("Auth state changed to: " + val);
   }
@@ -379,10 +379,10 @@ window.revokeYouTubeToken = async (): Promise<void> => {
   try {
     const cached = await getCachedToken();
     const signedIn = cached !== null;
-    (window as any)._isSignedIn = signedIn;
+    window._isSignedIn = signedIn;
     if (!signedIn) appendAuthLog("Initial auth check: signed out");
   } catch (e) {}
-  (window as any)._youtubeAuthLoading = false;
+  window._youtubeAuthLoading = false;
 })();
 
 export {};

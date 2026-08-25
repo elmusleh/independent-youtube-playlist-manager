@@ -21,7 +21,7 @@ const LOCAL_PLAYLISTS_KEY = "yph_local_playlists";
  * Dumps the entire database (playlists, IndexedDB metadata cache, watch history, settings) into a portable JSON backup
  */
 export async function exportFullDatabaseBackup(): Promise<CompleteBackupFile> {
-  const browser = (window as any).browser || (window as any).chrome;
+  const browser = window.browser || window.chrome;
 
   // 1. Fetch current settings
   let settings: Settings = {} as Settings;
@@ -155,7 +155,7 @@ export async function importFullDatabaseBackup(
     };
   }
 
-  const browser = (window as any).browser || (window as any).chrome;
+  const browser = window.browser || window.chrome;
   let importedPlaylistsCount = 0;
   let importedMetadataCount = 0;
   let importedHistoryCount = 0;

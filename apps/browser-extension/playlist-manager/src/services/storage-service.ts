@@ -5,10 +5,10 @@ import { SystemLogger } from "./logger-service.js";
 import type { SyncState } from "./sync-state-service.js";
 
 // Guard to prevent duplicate declarations on SPA navigation
-if ((window as any)._storageServiceLoaded) {
+if (window._storageServiceLoaded) {
   console.warn("storage-service already loaded - skipping");
 } else {
-  (window as any)._storageServiceLoaded = true;
+  window._storageServiceLoaded = true;
 }
 
 // ─── Playlist Cache ───────────────────────────────────────────────────────────
@@ -571,7 +571,7 @@ window.removePlaylist = async (playlist: Playlist): Promise<void> => {
   await SystemLogger.info("StorageService", "removePlaylist start", {
     playlistId: playlist.id,
   });
-  if (playlist.id.startsWith("local-") || (playlist as any).isLocal) {
+  if (playlist.id.startsWith("local-") || playlist.isLocal) {
     await removeLocalPlaylist(playlist.id);
   } else if (playlist.saved) {
     await window.ytDeletePlaylist(playlist.id);
@@ -587,7 +587,7 @@ window.removePlaylists = async (playlists: Playlist[]): Promise<void> => {
     count: playlists.length,
   });
   for (const playlist of playlists) {
-    if (playlist.id.startsWith("local-") || (playlist as any).isLocal) {
+    if (playlist.id.startsWith("local-") || playlist.isLocal) {
       await removeLocalPlaylist(playlist.id);
     } else if (playlist.saved) {
       await window.ytDeletePlaylist(playlist.id);

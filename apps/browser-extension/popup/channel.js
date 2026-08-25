@@ -3,7 +3,7 @@
 /// <reference path="../../playlist-manager/src/types/services.d.ts" />
 
 import { getById, getErrorMessage, log, alert } from "./utils.js";
-import { getActiveTab } from "./tabs.js";
+import { getActiveTab, isYouTubeHost } from "./tabs.js";
 
 /**
  * @typedef {import("webextension-polyfill").Tabs.Tab} Tab
@@ -144,10 +144,9 @@ export function detectChannelFromURL(url) {
 export function isYoutubeChannelPage(url) {
   try {
     const urlObj = new URL(url);
-    const hostname = urlObj.hostname.toLowerCase();
     const pathname = urlObj.pathname.toLowerCase();
 
-    if (hostname !== "youtube.com" && !hostname.endsWith(".youtube.com")) return false;
+    if (!isYouTubeHost(urlObj.hostname)) return false;
 
     const channelPatterns = [/^\/channel\//, /^\/c\//, /^\/user\//, /^\/@/, /^\/videos$/];
 

@@ -1,7 +1,7 @@
 /// <reference path="../popup.d.ts" />
 /// <reference path="../../playlist-manager/src/types/services.d.ts" />
 
-import { getById, log } from "./utils.js";
+import { getById, log, waitForGlobal } from "./utils.js";
 import { state } from "./state.js";
 
 /**
@@ -29,26 +29,22 @@ export function updateTargetUI() {
  */
 export async function initTargetData() {
   try {
-    // Wait a bit for window.getPlaylists to be available
-    let attempts = 0;
-    while (!window.getPlaylists && attempts < 10) {
-      await new Promise((resolve) => setTimeout(resolve, 100));
-      attempts++;
-    }
+    const getPlaylists = await waitForGlobal("getPlaylists", 10);
 
-    if (!window.getPlaylists) {
+    if (!getPlaylists) {
       await log("WARN", "Popup: getPlaylists not available");
       return;
     }
 
-    const playlists = await window.getPlaylists();
+    const playlists = await getPlaylists();
     const select = getById("select-target-playlist");
 
     // Sort by timestamp (newest first) - "My playlists" appears at top
     const sorted = [...playlists].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 
     // Show default playlist based on settings or default to latest
-    const settingsObj = window.getSettings ? await window.getSettings() : null;
+    const getSettings = await waitForGlobal("getSettings", 1);
+    const settingsObj = getSettings ? await getSettings() : null;
     const defaultMode = settingsObj?.defaultQuickAddTarget || "latest";
 
     if (defaultMode === "create") {
@@ -92,15 +88,10 @@ export async function initTargetData() {
  */
 export async function loadDefaultTabScope() {
   try {
-    // Wait a bit for window.getSettings to be available
-    let attempts = 0;
-    while (!window.getSettings && attempts < 10) {
-      await new Promise((resolve) => setTimeout(resolve, 100));
-      attempts++;
-    }
+    const getSettings = await waitForGlobal("getSettings", 10);
 
-    if (window.getSettings) {
-      const settings = await window.getSettings();
+    if (getSettings) {
+      const settings = await getSettings();
       const defaultScope = settings.defaultTabScope || "all-this-window-include";
       getById("select-tab-scope").value = defaultScope;
     } else {

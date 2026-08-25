@@ -62,11 +62,5 @@
       "resources": ["assets/*", "editor/*", "popup/*"],
       "matches": ["*://*/*"]
     }
-  ],
-  "browser_specific_settings": {
-    "gecko": {
-      "id": "{c3d5f138-77cb-461e-b553-f82bf70fecf7}",
-      "strict_min_version": "121.0"
-    }
-  }
+  ]
 }

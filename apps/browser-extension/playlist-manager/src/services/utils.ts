@@ -2,10 +2,10 @@ import { Notyf } from "notyf";
 import "notyf/notyf.min.css";
 
 // Guard to prevent duplicate declarations on SPA navigation
-if ((window as any)._utilsLoaded) {
+if (window._utilsLoaded) {
   console.warn("utils already loaded - skipping");
 } else {
-  (window as any)._utilsLoaded = true;
+  window._utilsLoaded = true;
 }
 
 // Only initialize Notyf if document is available (UI context)

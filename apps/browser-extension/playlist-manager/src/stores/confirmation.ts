@@ -1,4 +1,5 @@
 import { writable } from "svelte/store";
+import { logger } from "../services/logger";
 
 export type ConfirmationColor = "default" | "primary" | "danger";
 
@@ -61,7 +62,7 @@ export async function executeConfirm() {
     try {
       await callbackResult;
     } catch (e: any) {
-      console.error("Confirmation callback error:", e);
+      logger.error("Confirmation callback error:", e);
     }
   }
 }
@@ -89,7 +90,7 @@ export async function executeCancel() {
     try {
       await callbackResult;
     } catch (e: any) {
-      console.error("Cancel callback error:", e);
+      logger.error("Cancel callback error:", e);
     }
   }
 }

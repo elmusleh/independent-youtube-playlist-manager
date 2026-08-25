@@ -94,7 +94,7 @@ if (!isAndroid())
   browser.contextMenus.onClicked.addListener(async (info, _tab) => {
     const clickedMenuId = info.menuItemId.toString();
     try {
-      if (clickedMenuId == playlistBuilderId || clickedMenuId == playlistBuilderPageId) {
+      if (clickedMenuId === playlistBuilderId || clickedMenuId === playlistBuilderPageId) {
         addVideoToPlaylistBuilder(info);
       } else if (
         clickedMenuId.startsWith(addVideoToPlaylistItemPrefix) ||
@@ -157,7 +157,7 @@ async function getPlaylistBuilderTab() {
 
 async function openPlaylistBuilderTab() {
   const builderTabs = await getPlaylistBuilderTab();
-  if (builderTabs.length == 0) {
+  if (builderTabs.length === 0) {
     await browser.tabs.create({
       url: browser.runtime.getURL(`/editor/index.html#/playlist-builder`),
     });

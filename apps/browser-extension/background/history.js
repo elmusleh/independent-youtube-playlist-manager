@@ -37,6 +37,9 @@ export async function saveHistory(videoId, t, dur, title, channel, isCompleted) 
     };
     await browser.storage.local.set({ [HISTORY_KEY]: history });
     return true;
+  } catch (e) {
+    console.error("[Background] saveHistory failed:", e);
+    return false;
   } finally {
     const duration = Date.now() - start;
     if (duration > 100 && window.logSystemEvent) {
@@ -64,6 +67,9 @@ export async function getHistory(videoId) {
         ts: item.lastWatchedAt,
       };
     }
+    return null;
+  } catch (e) {
+    console.error("[Background] getHistory failed:", e);
     return null;
   } finally {
     const duration = Date.now() - start;
@@ -200,10 +206,16 @@ export function pruneStaleMetadataCache() {
   if (typeof indexedDB === "undefined") return;
   try {
     const dbRequest = indexedDB.open("keyval-store");
+    dbRequest.onerror = (e) => {
+      console.warn("[Background] Failed to open keyval-store for pruning:", e.target.error);
+    };
     dbRequest.onsuccess = (e) => {
       const db = e.target.result;
       if (!db.objectStoreNames.contains("keyval")) return;
       const tx = db.transaction("keyval", "readwrite");
+      tx.onerror = (ev) => {
+        console.warn("[Background] Prune transaction failed:", ev.target.error);
+      };
       const store = tx.objectStore("keyval");
       const req = store.openCursor();
       const now = Date.now();

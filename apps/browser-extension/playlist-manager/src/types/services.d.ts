@@ -32,6 +32,7 @@ interface YtPlaylistInfoExtended extends YtPlaylistInfo {
   isTagged: boolean;
   isLocal?: boolean;
   thumbnailUrl?: string | null;
+  category?: string;
   privacyStatus?: "private" | "unlisted" | "public";
 }
 

@@ -19,8 +19,9 @@
   import PaginationNav from "../components/PaginationNav.svelte";
   import { historySearch } from "../stores/playlists-filters";
   import { requestConfirm } from "../stores/confirmation";
+  import { logger } from "../services/logger";
 
-  const browser = (window as any).browser || (window as any).chrome;
+  const browser = window.browser || window.chrome;
   const HISTORY_KEY = "local_yt_history";
 
   interface HistoryItem {
@@ -64,7 +65,7 @@
         );
     } catch (e) {
       const errMsg = e instanceof Error ? e.message : String(e);
-      console.error("Failed to load history:", e);
+      logger.error("Failed to load history:", e);
       errorMessage = errMsg;
       if (window.logSystemEvent)
         await window.logSystemEvent("ERROR", `[HISTORY-VIEW] Failed to load history: ${errMsg}`);
@@ -206,7 +207,7 @@
       window.success("History exported successfully");
     } catch (e) {
       const errMsg = e instanceof Error ? e.message : String(e);
-      console.error("Failed to export history:", e);
+      logger.error("Failed to export history:", e);
       if (window.logSystemEvent)
         await window.logSystemEvent("ERROR", `[HISTORY-VIEW] Export failed: ${errMsg}`);
       window.error("Export failed");
@@ -233,7 +234,7 @@
           window.success("History imported successfully");
         } catch (e) {
           const errMsg = e instanceof Error ? e.message : String(e);
-          console.error("Failed to import history:", e);
+          logger.error("Failed to import history:", e);
           if (window.logSystemEvent)
             await window.logSystemEvent("ERROR", `[HISTORY-VIEW] Import failed: ${errMsg}`);
           window.error("File is incorrectly formatted");

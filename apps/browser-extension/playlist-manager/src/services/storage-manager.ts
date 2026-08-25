@@ -11,7 +11,7 @@ export class StorageManager {
 
   async init() {
     try {
-      const chrome = (window as any).browser || (window as any).chrome;
+      const chrome = window.browser || window.chrome;
       const res = chrome?.storage?.local ? await chrome.storage.local.get(HANDLE_DB_KEY) : {};
       const handle = res[HANDLE_DB_KEY];
       if (handle) {
@@ -59,9 +59,9 @@ export class StorageManager {
     }
 
     try {
-      const handle = await (window as any).showDirectoryPicker({ mode: "readwrite" });
+      const handle = await window.showDirectoryPicker!({ mode: "readwrite" });
       this.dirHandle = handle;
-      const chrome = (window as any).browser || (window as any).chrome;
+      const chrome = window.browser || window.chrome;
       if (chrome?.storage?.local) {
         await chrome.storage.local.set({ [HANDLE_DB_KEY]: handle });
       }
@@ -83,7 +83,7 @@ export class StorageManager {
   }
 
   async disconnectFolder(): Promise<void> {
-    const chrome = (window as any).browser || (window as any).chrome;
+    const chrome = window.browser || window.chrome;
     if (chrome?.storage?.local) {
       await chrome.storage.local.remove(HANDLE_DB_KEY);
     }
@@ -92,10 +92,15 @@ export class StorageManager {
     await this.loadFromBrowserStorage();
   }
 
-  async getBrowserStorageData(): Promise<Record<string, any>> {
-    const chrome = (window as any).browser || (window as any).chrome;
+  async getBrowserStorageData(): Promise<Record<string, unknown>> {
+    const chrome = window.browser || window.chrome;
     return new Promise((resolve) => {
-      chrome.storage.local.get(null, (items: any) => resolve(items || {}));
+      // Chrome MV3 uses promise-based API; cast through unknown for callback compatibility
+      void (
+        chrome.storage.local.get(null as unknown as undefined) as unknown as Promise<
+          Record<string, unknown>
+        >
+      ).then((items) => resolve(items || {}));
     });
   }
 
@@ -126,15 +131,15 @@ export class StorageManager {
     this.memoryCache.lastUpdated = Date.now();
 
     if (this.mode === "browser") {
-      const chrome = (window as any).browser || (window as any).chrome;
+      const chrome = window.browser || window.chrome;
       return new Promise((resolve) => {
-        chrome.storage.local.set(
-          {
+        // Chrome MV3 uses promise-based API; cast through unknown for callback compatibility
+        void (
+          chrome.storage.local.set({
             [key]: value,
             lastUpdated: this.memoryCache!.lastUpdated,
-          },
-          () => resolve(undefined)
-        );
+          }) as unknown as Promise<void>
+        ).then(() => resolve(undefined));
       });
     } else {
       return this.debounceWrite();

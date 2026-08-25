@@ -6,6 +6,20 @@
  */
 
 // ---------------------------------------------------------------------------
+// YouTube hostname detection (single source of truth)
+// ---------------------------------------------------------------------------
+
+/**
+ * Check if a hostname belongs to YouTube.
+ * @param {string} hostname
+ * @returns {boolean}
+ */
+export function isYouTubeHost(hostname) {
+  const h = hostname.toLowerCase();
+  return h === "youtube.com" || h.endsWith(".youtube.com") || h === "youtu.be";
+}
+
+// ---------------------------------------------------------------------------
 // Active tab / YouTube detection
 // ---------------------------------------------------------------------------
 
@@ -24,10 +38,7 @@ export async function getActiveTab() {
 export function isYoutubeTab(tab) {
   try {
     const url = new URL(tab.url || "");
-    const hostname = url.hostname.toLowerCase();
-    return (
-      hostname === "youtube.com" || hostname.endsWith(".youtube.com") || hostname === "youtu.be"
-    );
+    return isYouTubeHost(url.hostname);
   } catch {
     return false;
   }
@@ -48,10 +59,8 @@ export async function getVideoTabsInWindow(windowId, filterFn) {
     if (!tab.url) return false;
     try {
       const url = new URL(tab.url);
-      const hostname = url.hostname.toLowerCase();
-      const isYoutube = hostname === "youtube.com" || hostname.endsWith(".youtube.com");
-      const isShort = hostname === "youtu.be";
-      const isVideo = (isYoutube && url.pathname.includes("/watch")) || isShort;
+      const isShort = url.hostname.toLowerCase() === "youtu.be";
+      const isVideo = (isYouTubeHost(url.hostname) && url.pathname.includes("/watch")) || isShort;
       return isVideo && (!filterFn || filterFn(tab));
     } catch {
       return false;
@@ -68,10 +77,8 @@ export async function getAllVideoTabsAcrossWindows() {
     if (!tab.url) return false;
     try {
       const url = new URL(tab.url);
-      const hostname = url.hostname.toLowerCase();
-      const isYoutube = hostname === "youtube.com" || hostname.endsWith(".youtube.com");
-      const isShort = hostname === "youtu.be";
-      return (isYoutube && url.pathname.includes("/watch")) || isShort;
+      const isShort = url.hostname.toLowerCase() === "youtu.be";
+      return (isYouTubeHost(url.hostname) && url.pathname.includes("/watch")) || isShort;
     } catch {
       return false;
     }
