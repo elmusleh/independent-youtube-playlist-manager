@@ -8,9 +8,12 @@
     faSort,
     faChevronDown,
     faCode,
+    faSliders,
   } from "@fortawesome/free-solid-svg-icons";
   import SimpleButton from "../SimpleButton.svelte";
   import { onDestroy } from "svelte";
+  import type { SortRule } from "../../types/model";
+  import { SORT_PRESETS, describeSortRules } from "../../utils/playlist-utils";
 
   let {
     hasVideos = false,
@@ -20,14 +23,16 @@
     onClean,
     onSort,
     onScrapeHtml,
+    activeSortRules = [],
   }: {
     hasVideos: boolean;
     isSelectMode: boolean;
     onPlay: () => void;
     onImport: () => void;
     onClean: (type: string) => void;
-    onSort: (type: string) => void;
+    onSort: (type: string, rules?: SortRule[]) => void;
     onScrapeHtml?: () => void;
+    activeSortRules?: SortRule[];
   } = $props();
 
   let showSortMenu = $state(false);
@@ -49,6 +54,23 @@
   onDestroy(() => {
     window.removeEventListener("click", handleClickOutside);
   });
+
+  const singlePresets = $derived(SORT_PRESETS.filter((p) => !p.compound));
+  const compoundPresets = $derived(SORT_PRESETS.filter((p) => p.compound));
+
+  function rulesEqual(a: SortRule[], b: SortRule[]): boolean {
+    if (a.length !== b.length) return false;
+    return a.every((r, i) => r.field === b[i].field && r.direction === b[i].direction);
+  }
+
+  const hasActiveSort = $derived(activeSortRules.length > 0);
+  const customSortActive = $derived(
+    hasActiveSort && !SORT_PRESETS.some((p) => rulesEqual(p.rules, activeSortRules))
+  );
+
+  const sortButtonTitle = $derived(
+    hasActiveSort ? `Sort (${describeSortRules(activeSortRules)})` : "Sort"
+  );
 </script>
 
 <div class="playlist-btns">
@@ -139,46 +161,63 @@
             closeAll();
             showSortMenu = next;
           }}
-          title="Sort"
+          title={sortButtonTitle}
           secondary
         >
           <Fa icon={faSort} fw />
           <span>Sort</span>
+          {#if hasActiveSort}
+            <span class="sort-badge" title={describeSortRules(activeSortRules)}></span>
+          {/if}
           <Fa icon={faChevronDown} fw />
         </SimpleButton>
         {#if showSortMenu}
-          <div class="dropdown-menu">
+          <div class="dropdown-menu dropdown-menu--sort">
+            <div class="dropdown-section-label">Single Sort</div>
+            {#each singlePresets as preset (preset.id)}
+              <button
+                class:active={rulesEqual(preset.rules, activeSortRules)}
+                onclick={() => {
+                  onSort("preset", preset.rules);
+                  closeAll();
+                }}
+              >
+                <span>{preset.label}</span>
+                {#if rulesEqual(preset.rules, activeSortRules)}
+                  <span class="active-mark"><Fa icon={faCheck} fw /></span>
+                {/if}
+              </button>
+            {/each}
+
+            <div class="dropdown-section-label">Multi-Sort Presets</div>
+            {#each compoundPresets as preset (preset.id)}
+              <button
+                class:active={rulesEqual(preset.rules, activeSortRules)}
+                onclick={() => {
+                  onSort("preset", preset.rules);
+                  closeAll();
+                }}
+              >
+                <span>{preset.label}</span>
+                {#if rulesEqual(preset.rules, activeSortRules)}
+                  <span class="active-mark"><Fa icon={faCheck} fw /></span>
+                {/if}
+              </button>
+            {/each}
+
+            <div class="dropdown-divider"></div>
             <button
+              class:active={customSortActive}
               onclick={() => {
-                onSort("title");
+                onSort("custom");
                 closeAll();
               }}
             >
-              <span>Sort A-Z</span>
-            </button>
-            <button
-              onclick={() => {
-                onSort("channel");
-                closeAll();
-              }}
-            >
-              <span>Sort Channel</span>
-            </button>
-            <button
-              onclick={() => {
-                onSort("duration");
-                closeAll();
-              }}
-            >
-              <span>Sort Duration</span>
-            </button>
-            <button class="disabled-option" disabled>
-              <span>View Count (Popular)</span>
-              <span class="coming-soon">Coming Soon</span>
-            </button>
-            <button class="disabled-option" disabled>
-              <span>Release Date</span>
-              <span class="coming-soon">Coming Soon</span>
+              <Fa icon={faSliders} fw />
+              <span>Custom Multi-Sort...</span>
+              {#if customSortActive}
+                <span class="active-mark"><Fa icon={faCheck} fw /></span>
+              {/if}
             </button>
             <button
               onclick={() => {
@@ -265,24 +304,46 @@
     background: var(--hover-color);
   }
 
-  .dropdown-menu button.disabled-option {
-    opacity: 0.5;
-    pointer-events: none;
-    cursor: not-allowed;
+  /* --- Sort dropdown specifics --- */
+  .dropdown-menu--sort {
+    min-width: 260px;
+    max-height: min(65vh, 560px);
+    overflow-y: auto;
   }
 
-  .dropdown-menu button.disabled-option:hover {
-    background: none;
+  .dropdown-menu--sort button.active {
+    background: color-mix(in srgb, var(--primary-color) 12%, transparent);
+    color: var(--primary-color);
+    font-weight: 600;
   }
 
-  .dropdown-menu .coming-soon {
+  .dropdown-menu--sort .active-mark {
     margin-left: auto;
+    flex-shrink: 0;
+  }
+
+  .dropdown-section-label {
+    padding: 10px 16px 4px;
     font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
     color: var(--text-muted);
-    background: var(--hover-color);
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-weight: 500;
+  }
+
+  .dropdown-divider {
+    height: 1px;
+    background: var(--border-color);
+    margin: 6px 0;
+  }
+
+  .sort-badge {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--primary-color);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary-color) 30%, transparent);
+    flex-shrink: 0;
   }
 
   @media (max-width: 900px) {

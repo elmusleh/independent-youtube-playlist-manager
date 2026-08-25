@@ -110,6 +110,8 @@ export interface Playlist {
   isDirty?: boolean;
   /** If true, videos won't be auto-deleted after watching */
   isPermanent?: boolean;
+  /** Active multi-level sort rules applied to this playlist (persisted with the playlist). */
+  sortRules?: SortRule[];
 }
 
 export interface Settings {
@@ -204,6 +206,17 @@ export interface CatalogVideo {
 }
 
 export type PlaylistsSorting = "date-created-asc" | "date-created-desc" | "title-az" | "title-za";
+
+/** Sortable video fields in the playlist editor. */
+export type SortField = "title" | "channel" | "duration" | "publishedAt" | "viewCount";
+
+export type SortDirection = "asc" | "desc";
+
+/** A single level of a multi-level playlist sort. Rules are evaluated in array order. */
+export interface SortRule {
+  field: SortField;
+  direction: SortDirection;
+}
 
 export type Theme = "light" | "dark";
 export type ThemeChoice = "device" | Theme;

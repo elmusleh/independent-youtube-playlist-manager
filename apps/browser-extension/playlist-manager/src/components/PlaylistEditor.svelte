@@ -29,7 +29,7 @@
   } from "@fortawesome/free-solid-svg-icons";
   import { faYoutube } from "@fortawesome/free-brands-svg-icons";
   import type { IconDefinition } from "@fortawesome/free-solid-svg-icons";
-  import type { Playlist, Video } from "../types/model.js";
+  import type { Playlist, SortField, SortRule, Video } from "../types/model.js";
   import PaginationNav from "./PaginationNav.svelte";
   import AuthPlaceholder from "./AuthPlaceholder.svelte";
   import { requestConfirm } from "../stores/confirmation.js";
@@ -39,6 +39,7 @@
   import EditorToolbar from "./editor/EditorToolbar.svelte";
   import BulkActionsBar from "./editor/BulkActionsBar.svelte";
   import PlaylistModals from "./editor/PlaylistModals.svelte";
+  import MultiSortModal from "./editor/MultiSortModal.svelte";
   import RangeSelectModal from "./RangeSelectModal.svelte";
   import SimpleButton from "../components/SimpleButton.svelte";
 
@@ -94,6 +95,8 @@
   let isDiscarding = $state(false);
   let _isLoadingPage = false;
   let _isLoadingMetadata = false;
+  let activeSortRules = $state<SortRule[]>([]);
+  let showMultiSort = $state(false);
 
   function calculateStateHash(): string {
     const videoIds = videos.map((v) => v.videoId).join(",");
@@ -264,6 +267,11 @@
 
     dataLoaded = true;
     initialHash = calculateStateHash();
+
+    // Restore the active sort indicator from the playlist's persisted sort
+    // rules. We intentionally do NOT re-sort the array here — if the sort was
+    // already applied, the video order in storage reflects it already.
+    activeSortRules = playlist?.sortRules?.length ? playlist.sortRules.map((r) => ({ ...r })) : [];
   }
 
   // Filtering & Pagination Derived
@@ -689,23 +697,76 @@
     }
   }
 
-  async function handleSort(type: string) {
-    const isFetchNeededSort =
-      type === "views" || type === "date" || type === "duration" || type === "channel";
-
-    // 1. Identify videos missing critical metadata for this sort
-    const missing = videos.filter((v) => {
-      if (type === "views") return v.viewCount === undefined;
-      if (type === "date") return v.publishedAt === undefined;
-      if (type === "duration")
+  /** Returns true when a video is missing the metadata needed to sort on `field`. */
+  function videoMissingMetadata(v: Video, field: SortField): boolean {
+    switch (field) {
+      case "viewCount":
+        return v.viewCount === undefined;
+      case "publishedAt":
+        return v.publishedAt === undefined;
+      case "duration":
         return v.durationSeconds === undefined && v.durationISO === undefined;
-      if (type === "channel") return !v.channel || v.channel === "undefined";
-      return false;
-    });
+      case "channel":
+        return !v.channel || v.channel === "undefined";
+      case "title":
+        return !v.title || v.title === "undefined";
+    }
+  }
+
+  /** Backward-compatible mapping for the legacy single-field sort strings. */
+  const LEGACY_SORT_RULES: Record<string, SortRule[]> = {
+    title: [{ field: "title", direction: "asc" }],
+    channel: [{ field: "channel", direction: "asc" }],
+    duration: [{ field: "duration", direction: "asc" }],
+    views: [{ field: "viewCount", direction: "desc" }],
+    date: [{ field: "publishedAt", direction: "desc" }],
+  };
+
+  /**
+   * Persists the current video order + sort rules to storage. Skipped for
+   * brand-new (never-saved) playlists — those are saved by the normal
+   * save/autosave flow so we never auto-create/sync them from a sort action.
+   */
+  async function persistAfterSort() {
+    if (!dataLoaded || !playlist?.saved) return;
+    await savePlaylist({ silent: true }).catch(() => {});
+  }
+
+  async function handleSort(type: string, rules?: SortRule[]) {
+    // "reverse" is an imperative flip of the current order; it clears any rule chain.
+    if (type === "reverse") {
+      videos = utils.reversePlaylist(videos);
+      activeSortRules = [];
+      if (playlist) {
+        playlist = { ...playlist, sortRules: [] };
+      }
+      updateDirtyState();
+      await loadPageVideos(currentPage);
+      await persistAfterSort();
+      window.success("Reversed");
+      return;
+    }
+
+    // "custom" opens the multi-sort modal instead of sorting immediately.
+    if (type === "custom") {
+      showMultiSort = true;
+      return;
+    }
+
+    const effectiveRules = rules || LEGACY_SORT_RULES[type] || [];
+    if (effectiveRules.length === 0) return;
+
+    // 1. Identify videos missing critical metadata for the fields used
+    const missing = videos.filter((v) =>
+      effectiveRules.some((r) => videoMissingMetadata(v, r.field))
+    );
 
     // 2. Aggressively fetch missing data if needed
-    if (isFetchNeededSort && missing.length > 0) {
-      if (!signedIn && (type === "views" || type === "date")) {
+    if (missing.length > 0) {
+      if (
+        !signedIn &&
+        effectiveRules.some((r) => r.field === "viewCount" || r.field === "publishedAt")
+      ) {
         window.info("Sign in to fetch more accurate video statistics for all videos.");
       }
 
@@ -716,46 +777,36 @@
       }
     }
 
-    // 3. Actually perform the sort
+    // 3. Log the operation
     if (window.logSystemEvent) {
-      const validCount = videos.filter((v) => {
-        if (type === "views") return v.viewCount !== undefined;
-        if (type === "date")
-          return v.publishedAt !== undefined && !isNaN(new Date(v.publishedAt).getTime());
-        return true;
-      }).length;
-
-      await window.logSystemEvent("INFO", `[EDITOR] Performing Sort: ${type}`, {
-        total: videos.length,
-        validMetadataCount: validCount,
-        missingMetadataCount: videos.length - validCount,
-      });
+      await window.logSystemEvent(
+        "INFO",
+        `[EDITOR] Performing Sort: ${utils.describeSortRules(effectiveRules) || type}`,
+        { total: videos.length }
+      );
     }
 
-    switch (type) {
-      case "title":
-        videos = utils.sortByTitle(videos);
-        break;
-      case "channel":
-        videos = utils.sortByChannel(videos);
-        break;
-      case "duration":
-        videos = utils.sortByDuration(videos);
-        break;
-      case "views":
-        videos = utils.sortByViewCount(videos);
-        break;
-      case "date":
-        videos = utils.sortByReleaseDate(videos);
-        break;
-      case "reverse":
-        videos = utils.reversePlaylist(videos);
-        break;
+    // 4. Actually perform the sort
+    videos = utils.sortByRules(videos, effectiveRules);
+    activeSortRules = effectiveRules;
+
+    // 5. Persist the active sort rules on the playlist object so the badge
+    //    survives reloads (the reordered array itself is saved below).
+    if (playlist) {
+      playlist = { ...playlist, sortRules: effectiveRules };
     }
 
     updateDirtyState();
     await loadPageVideos(currentPage);
+
+    // 6. Persist the new order + sort rules to storage immediately.
+    await persistAfterSort();
     window.success("Sorted");
+  }
+
+  /** Callback invoked by the MultiSortModal when the user clicks "Apply & Save". */
+  async function handleMultiSortApply(ruleSet: SortRule[]) {
+    await handleSort("preset", ruleSet);
   }
 
   async function handleClean(type: string) {
@@ -1275,6 +1326,7 @@
           <EditorToolbar
             hasVideos={videos.length > 0}
             bind:isSelectMode
+            {activeSortRules}
             onPlay={play}
             onImport={() => {
               modalType = "Import";
@@ -1292,20 +1344,8 @@
                 handleClean("refetch");
               }
             }}
-            onSort={(type) => {
-              if (type === "title") {
-                handleSort("title");
-              } else if (type === "channel") {
-                handleSort("channel");
-              } else if (type === "duration") {
-                handleSort("duration");
-              } else if (type === "views") {
-                handleSort("views");
-              } else if (type === "date") {
-                handleSort("date");
-              } else if (type === "reverse") {
-                handleSort("reverse");
-              }
+            onSort={(type, rules) => {
+              handleSort(type, rules);
             }}
           />
         {/if}
@@ -1405,6 +1445,12 @@
   title={rangeSelectDirection === "above" ? "Select Videos (Above)" : "Select Videos (Below)"}
   maxValue={videos.length}
   onConfirm={handleRangeSelect}
+/>
+
+<MultiSortModal
+  bind:display={showMultiSort}
+  initialRules={activeSortRules}
+  onApply={handleMultiSortApply}
 />
 
 {#if isLoading}
