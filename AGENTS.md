@@ -17,16 +17,65 @@ npm run web            # Web portal dev server (localhost:3000).
 
 ### File Map
 
-| Path                                           | Contains                          | Notes                                                                                          |
-| ---------------------------------------------- | --------------------------------- | ---------------------------------------------------------------------------------------------- |
-| `apps/browser-extension/background/`           | Service worker entry point        | `index.js` → imports `background.js` (895 lines), `init.js`                                    |
-| `apps/browser-extension/content-scripts/`      | Page-injected scripts             | `watch-tracker.js`, `injectors/` (5 small files)                                               |
-| `apps/browser-extension/popup/`                | Quick-add popup toolbar           | `popup.js` (1076 lines), `popup.html`, `popup.css`                                             |
-| `apps/browser-extension/playlist-manager/src/` | Svelte SPA (TypeScript)           | `App.svelte`, `components/` (~38 files), `services/` (17 files), `views/`, `stores/`, `types/` |
-| `apps/web-portal/`                             | Next.js 15 marketing + dashboard  | App Router, Tailwind, shadcn/ui, Playwright e2e                                                |
-| `packages/build-tools/`                        | Build/CI scripts (Node.js)        | `capture.js`, `validate-manifests.js`, `patch-innerhtml.js`, `package-chrome-store.js`         |
-| `docs/`                                        | All documentation + screenshots   | `USAGE_EXAMPLES.md`, `RELEASE_SPEC.md`, `USER_GUIDE.md`                                        |
-| Root                                           | Lint, format, test, deploy config | `eslint.config.mjs`, `.prettierrc`, `vitest.config.mjs`, `jsconfig.json`, `vercel.json`        |
+| Path                                           | Contains                          | Notes                                                                                                                          |
+| ---------------------------------------------- | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `apps/browser-extension/background/`           | Service worker entry point        | `index.js` → imports modules: `background.js` (~300 lines), `utils.js`, `context-menus.js`, `history.js`, `sync.js`, `init.js` |
+| `apps/browser-extension/content-scripts/`      | Page-injected scripts             | `watch-tracker.js`, `injectors/` (5 small files)                                                                               |
+| `apps/browser-extension/popup/`                | Quick-add popup toolbar           | ES modules: `popup.js` (~346 lines entry), `utils.js`, `tabs.js`, `state.js`, `target.js`, `channel.js`, `quick-add.js`        |
+| `apps/browser-extension/playlist-manager/src/` | Svelte SPA (TypeScript)           | `App.svelte`, `components/` (~38 files), `services/` (17 files), `views/`, `stores/`, `types/`                                 |
+| `apps/web-portal/`                             | Next.js 15 marketing + dashboard  | App Router, Tailwind, shadcn/ui, Playwright e2e                                                                                |
+| `packages/build-tools/`                        | Build/CI scripts (Node.js)        | `capture.js`, `validate-manifests.js`, `patch-innerhtml.js`, `package-chrome-store.js`                                         |
+| `docs/`                                        | All documentation + screenshots   | `USAGE_EXAMPLES.md`, `RELEASE_SPEC.md`, `USER_GUIDE.md`                                                                        |
+| Root                                           | Lint, format, test, deploy config | `eslint.config.mjs`, `.prettierrc`, `vitest.config.mjs`, `jsconfig.json`, `vercel.json`                                        |
+
+---
+
+## 🧩 Module Structure Guidelines (AI Agent Code Standards)
+
+This repository is maintained exclusively by AI agents. Every file must be instantly grokkable without loading a monolith.
+
+### The Golden Rule: No file over 350 lines
+
+When any JavaScript file crosses 350 lines, it MUST be split. The AI agent doing the work is responsible for the split — don't defer it. The split is part of the task.
+
+### How to split a monolith
+
+Follow the pattern established in `popup/` and `background/`:
+
+| Module type                  | Convention                                                                                                        | Example                                                                         |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| **Entry point**              | Kept in the original file. Imports from sibling modules, wires onclick handlers, calls init(). No business logic. | `popup.js` (~346 lines), `background.js` (~300 lines)                           |
+| **Utils / constants**        | Pure helpers, shared constants, platform detection. No side effects beyond `export`.                              | `utils.js` — `getById`, `setIcon`, `getErrorMessage`, `alert`, `log`            |
+| **Feature module**           | One concern per file. Named after what it does. All related functions live together.                              | `tabs.js` — `getActiveTab`, `isYoutubeTab`, `getVideoTabsInWindow`              |
+| **Shared state**             | Mutable state that multiple modules read/write. Single source of truth.                                           | `state.js` — `activeTargetMode`, `selectedPlaylistId`                           |
+| **Side-effect registration** | Top-level `browser.*.addListener(...)` calls that must run once. Imported for their side effects.                 | `context-menus.js` — `onClicked.addListener`, `sync.js` — `onAlarm.addListener` |
+
+### Splitting checklist
+
+```
+1. Read the full file end-to-end (never split from partial read)
+2. Group functions by concern on paper, name each group
+3. Create one module per group, copy functions with their JSDoc
+4. Write the import chain top-down (no circular imports)
+5. Keep the entry point: import modules, wire onclick handlers, call init()
+6. npm run check         ← MUST pass before declaring done
+7. npm run build         ← MUST pass (verifies dist/ picks up new modules)
+8. Commit with message: "refactor: split <file> (N lines) into M ES modules"
+```
+
+### Anti-patterns
+
+- ❌ Splitting mid-function or breaking a function's internal logic across files
+- ❌ Circular imports between sibling modules (use a `state.js` buffer)
+- ❌ Leaving dead imports after a split (`no-unused-vars` will catch this)
+- ❌ Splitting TypeScript Rollup entry points without verifying the bundle output (those have complex dependency chains — do them in a focused session)
+- ❌ Skipping the build step — `dist/` must include the new modules
+
+### When NOT to split
+
+- Rollup entry points in `src/services/` (e.g., `youtube-api.ts`, `storage-service.ts`) — these have complex internal deps visible only in the compiled bundle. Split these in dedicated sessions after studying the dependency graph.
+- Files under 150 lines that already do one thing well
+- Test files — they're already granular by nature
 
 ---
 
