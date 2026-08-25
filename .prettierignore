@@ -6,3 +6,4 @@ apps/browser-extension/playlist-manager/public/
 apps/web-portal/.next/
 apps/web-portal/out/
 *.min.js
+.worktrees/
