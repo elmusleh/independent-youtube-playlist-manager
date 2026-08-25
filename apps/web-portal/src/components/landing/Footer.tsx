@@ -1,7 +1,5 @@
 import React from "react";
 
-const LAST_UPDATED = "August 23, 2026";
-
 const REPO_BLOB = "https://github.com/elmusleh/independent-youtube-playlist-manager/blob/main";
 
 const FOOTER_LINKS = [
@@ -40,10 +38,9 @@ export function Footer() {
           ))}
         </nav>
 
-        <div className="mt-1.5 flex flex-col sm:flex-row items-center justify-between gap-1 text-[10px] text-zinc-400">
-          <p>© 2026 Independent YouTube Playlist Manager.</p>
-          <p className="hidden sm:block">Last updated: {LAST_UPDATED}</p>
-        </div>
+        <p className="mt-1.5 text-center text-[10px] text-zinc-400">
+          © 2026 Independent YouTube Playlist Manager.
+        </p>
       </div>
     </footer>
   );
