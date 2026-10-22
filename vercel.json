@@ -1,5 +1,6 @@
 {
-  "buildCommand": "npm --prefix apps/web-portal run build",
-  "outputDirectory": "apps/web-portal/.next",
-  "installCommand": "npm --prefix apps/web-portal install"
+  "rootDirectory": "apps/web-portal",
+  "buildCommand": "npm run build",
+  "outputDirectory": ".next",
+  "installCommand": "npm install"
 }
