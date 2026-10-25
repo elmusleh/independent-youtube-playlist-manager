@@ -140,8 +140,9 @@
   async function testConnection() {
     testStatus = "testing";
     testMessage = "Starting authentication flow...";
+    // Keep signIn in the user gesture for Firefox's optional consent prompt.
     if (window.logSystemEvent)
-      await window.logSystemEvent("INFO", "[DEV-SETUP] Testing connection with custom credentials");
+      void window.logSystemEvent("INFO", "[DEV-SETUP] Testing connection with custom credentials");
 
     try {
       // Force sign in to ensure token with new client ID is fetched

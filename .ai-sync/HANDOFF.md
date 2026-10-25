@@ -1,5 +1,33 @@
 # Pagination handoff
 
+## Current continuation — replacement release 1.1.1
+
+Earlier implementation and version 1.1.0 were committed as c4a1960/bdeb550 with
+local v1.1.0 tag (no push). Firefox candidate 6620498 was submitted with source,
+then disabled by authenticated PATCH after discovering its incorrect required
+[none] data declaration. It is confirmed disabled. Do not re-enable it.
+
+Replacement 1.1.1 declares required browsingActivity/websiteContent and optional
+authenticationInfo/personallyIdentifyingInfo/searchTerms. New data-consent helper
+requests optional consent directly in user actions. YouTube token reads/refresh,
+Supabase initialization/session/SDK fetches and search enforce consent. Revocation
+stops Supabase refresh and realtime. Tests now total 120; check/build pass. Native
+Firefox persisted-token guard added to browser suite. Versions/lockfiles synced.
+
+Chrome privacy disclosures and listing description saved accurately via CUA;
+package draft still 1.1.0 until replacement upload. storeTab is on package page.
+No 1.1.1 store submission yet. Final browser suites and web-ext lint running.
+Next: finish final checks, commit/tag 1.1.1, archive committed source, pack, submit
+Firefox and Chrome replacement; record exact store statuses. Preserve user untracked
+CHANGELOG.md. Never push. Physical-device and real account/provider tests remain
+unverified, as detailed in docs/RELEASE_READINESS.md.
+
+Changed in this continuation: manifest/version/lockfiles, data-consent.ts and tests,
+supabase-client.ts and consent tests, youtube-auth/api.ts, Search.svelte,
+DeveloperSetup.svelte, verify-firefox.py, privacy/release notes and tracking docs.
+
+The following older active-state notes are historical and superseded above.
+
 ## Active task: broad UX and release readiness implementation
 
 User authorized implementation of all responsive improvements and publication to

@@ -1,5 +1,11 @@
 /// <reference path="../../node_modules/@types/firefox-webext-browser/index.d.ts" />
 import { parseOAuthResponse, getFirefoxRedirectUri } from "../utils/oauth-response";
+import {
+  ACCOUNT_DATA,
+  hasDataConsent,
+  requestDataConsent,
+  requireDataConsent,
+} from "../utils/data-consent";
 
 const AUTH_LOG_KEY = "yt_auth_debug_log";
 const CLIENT_ID = "456478079131-cu0s6f03kou9obge8olkron2frju5j2s.apps.googleusercontent.com";
@@ -36,6 +42,7 @@ function updateIsSignedIn(val: boolean) {
 }
 
 async function getCachedToken(): Promise<string | null> {
+  if (!(await hasDataConsent(ACCOUNT_DATA))) return null;
   try {
     const result = await browser.storage.local.get(TOKEN_CACHE_KEY);
     const cached = result[TOKEN_CACHE_KEY] as TokenCache | undefined;
@@ -71,6 +78,8 @@ async function fetchFreshToken(
   interactive: boolean = true,
   selectAccount: boolean = false
 ): Promise<string> {
+  if (interactive) await requestDataConsent(ACCOUNT_DATA);
+  else await requireDataConsent(ACCOUNT_DATA);
   if (tokenRefreshPromise && !interactive) return tokenRefreshPromise;
 
   // Guard: for interactive sign-in, require custom credentials to be set
@@ -343,7 +352,7 @@ window.signIn = async (): Promise<string> => fetchFreshToken(true, true);
 window.revokeYouTubeToken = async (): Promise<void> => {
   const result = await browser.storage.local.get(TOKEN_CACHE_KEY);
   const cached = result[TOKEN_CACHE_KEY];
-  if (cached?.token) {
+  if (cached?.token && (await hasDataConsent(ACCOUNT_DATA))) {
     try {
       await fetch(`https://accounts.google.com/o/oauth2/revoke?token=${cached.token}`);
       appendAuthLog("Token revoked from Google");

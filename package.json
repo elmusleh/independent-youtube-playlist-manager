@@ -1,6 +1,6 @@
 {
   "name": "independent-youtube-playlist-manager",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Create and manage YouTube playlists from links and open tabs",
   "author": "Mohammad El-Musleh <elmusleh.mohammad@gmail.com>",
   "license": "MIT",

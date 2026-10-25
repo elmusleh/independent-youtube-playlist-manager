@@ -1,6 +1,7 @@
 import { dbPutMetadataBatch } from "./db-service.js";
 import { normalizeVideoMeta } from "./schema-normalizer.js";
 import type { NormalizedVideoMeta, RawVideoMeta } from "../types/model.js";
+import { requireDataConsent } from "../utils/data-consent";
 
 // Guard to prevent duplicate declarations on SPA navigation
 if (window._youtubeApiLoaded) {
@@ -459,6 +460,7 @@ window.ytSearch = async (
   }[]
 > => {
   if (!query) return [];
+  await requireDataConsent(["searchTerms"]);
   const params = new URLSearchParams({
     part: "snippet",
     q: query,

@@ -80,6 +80,17 @@ with tempfile.TemporaryDirectory(prefix="iypm-firefox-test-") as directory:
         assert driver.install_addon(str(archive_path), temporary=True) == ADDON_ID
         report["browserVersion"] = driver.capabilities["browserVersion"]
         visit("/saved")
+        consent = evaluate_async("return await browser.permissions.getAll();")
+        assert "data_collection" in consent, consent
+        assert "authenticationInfo" not in consent["data_collection"], consent
+        evaluate_async(
+            "await browser.storage.local.set({yt_auth_token_cache:{token:'synthetic-test-token',expiry:Date.now()+3600000}});"
+            "if(await window.isSignedIn()) throw new Error('Persisted token bypassed consent');"
+            "try { await window.getYouTubeToken(); throw new Error('Token was exposed'); }"
+            "catch(error) { if(error.message==='Token was exposed') throw error; }"
+            "await browser.storage.local.remove('yt_auth_token_cache'); return true;"
+        )
+        report["interactions"].append("Firefox native data permissions and persisted-token consent guard")
         evaluate_async("await window.getPlaylists(); return true;")
         evaluate_async(
             "const data=args[0]; await browser.storage.local.set(data.local);"

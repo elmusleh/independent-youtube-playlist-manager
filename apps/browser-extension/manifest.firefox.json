@@ -2,7 +2,7 @@
   "name": "Independent YouTube Playlist Manager",
   "short_name": "Playlist Manager",
   "description": "Manage YouTube playlists locally: create, edit, sync, and track history. Save videos to watch later. No login required.",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "manifest_version": 3,
   "icons": {
     "16": "assets/icons/icon_16.png",
@@ -63,7 +63,8 @@
       "id": "independent-yt-playlist-manager@elmusleh.github.io",
       "strict_min_version": "140.0",
       "data_collection_permissions": {
-        "required": ["none"]
+        "required": ["browsingActivity", "websiteContent"],
+        "optional": ["authenticationInfo", "personallyIdentifyingInfo", "searchTerms"]
       }
     },
     "gecko_android": {

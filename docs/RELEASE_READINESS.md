@@ -1,10 +1,10 @@
-# Release readiness — 1.1.0
+# Release readiness — 1.1.1
 
 ## Scope and evidence
 
 | Check                                  | Result                                                                         |
 | -------------------------------------- | ------------------------------------------------------------------------------ |
-| Root lint, formatting, unit tests      | Passed; 111 tests                                                              |
+| Root lint, formatting, unit tests      | Passed; 120 tests                                                              |
 | Svelte/TypeScript diagnostics          | Zero errors and warnings                                                       |
 | Chrome and Firefox production packages | Built; generated entry files validated                                         |
 | Mozilla web-ext 10.8.0 lint            | Zero errors, warnings, notices                                                 |
@@ -55,7 +55,9 @@ production build on port 3050, and run `npm run test:portal`.
 
 ## Store submissions
 
-Pending final versioned packaging and submission. Chrome's existing 1.0.1 listing
-was taken down October 15, 2026 for the unused bookmarks permission. Version 1.1.0
-removes it and must be resubmitted for Chrome review. Firefox credentials have been
-verified for the existing `iypm` listing. Exact outcomes will be recorded here.
+The initial Firefox 1.1.0 candidate (version ID 6620498) was withdrawn/disabled
+before approval to correct its data declarations. Version 1.1.1 replaces it with
+accurate declarations and optional account/search consent gates. Chrome's existing
+1.0.1 listing was taken down October 15, 2026 for the unused bookmarks permission;
+the replacement removes it. Chrome's privacy draft has been saved with corrected
+data categories. Final 1.1.1 package verification and submissions are in progress.

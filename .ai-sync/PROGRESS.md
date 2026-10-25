@@ -32,7 +32,11 @@
 - [x] Portal: six sizes and fail-closed sync API behavior verified.
 - [x] Chromium suite after final modal teardown guard: 90 checks, six interaction groups, no runtime errors.
 - [x] Firefox package web-ext lint: zero errors, warnings, notices.
-- [ ] Final version sync, release notes, source archive, store packages, commit and tag.
-- [ ] Submit Firefox listed update using verified configured AMO credentials.
+- [x] Initial 1.1.0 release committed/tagged and packaged; Firefox submission withdrawn for disclosure correction.
+- [x] Correct Firefox data declaration and add optional account/search consent with background request guards.
+- [x] Consent regression coverage: 120 unit tests, zero Svelte diagnostics; 1.1.1 version synchronized.
+- [x] Save accurate Chrome data categories and listing description.
+- [ ] Final 1.1.1 source archive, store packages, commit and tag.
+- [ ] Submit replacement Firefox listed update using verified configured AMO credentials.
 - [ ] Submit Chrome update using the authenticated dashboard (existing listing taken down).
 - [ ] Record exact store outcomes and remaining real-device/authenticated-flow limitations.
