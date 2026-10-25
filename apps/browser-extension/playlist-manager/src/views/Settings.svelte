@@ -126,7 +126,3 @@
     {/if}
   </div>
 </main>
-
-<style>
-  @import "./settings.css";
-</style>

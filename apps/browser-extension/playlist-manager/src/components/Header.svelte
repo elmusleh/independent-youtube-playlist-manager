@@ -298,8 +298,8 @@
     background: none;
     border: none;
     cursor: pointer;
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
     align-items: center;
     justify-content: center;
@@ -312,6 +312,11 @@
 
   .menu-toggle:hover {
     background-color: var(--hover-color);
+  }
+
+  .menu-toggle:focus-visible {
+    outline: 2px solid var(--color-brand-primary);
+    outline-offset: 2px;
   }
 
   .logo {
@@ -357,8 +362,8 @@
   }
 
   .sign-in-btn {
-    height: 34px;
-    padding: 0 14px;
+    height: 44px;
+    padding: 0 16px;
     margin: 0;
     display: flex;
     align-items: center;
@@ -370,13 +375,14 @@
     font-weight: 600;
     cursor: pointer;
     text-decoration: none;
-    color: #3ea6ff;
+    color: var(--color-brand-primary);
     transition: all 0.2s ease;
+    min-width: 44px;
   }
 
   .sign-in-btn:hover {
     background-color: rgba(62, 166, 255, 0.1);
-    border-color: #3ea6ff;
+    border-color: var(--color-brand-primary);
   }
 
   .sign-in-btn:disabled {
@@ -384,9 +390,14 @@
     cursor: wait;
   }
 
+  .sign-in-btn:focus-visible {
+    outline: 2px solid var(--color-brand-primary);
+    outline-offset: 2px;
+  }
+
   .create-btn {
-    height: 34px;
-    padding: 0 14px;
+    height: 44px;
+    padding: 0 16px;
     margin: 0;
     display: flex;
     align-items: center;
@@ -401,6 +412,7 @@
     transition:
       background-color 0.2s ease,
       box-shadow 0.2s ease;
+    min-width: 44px;
   }
 
   .create-btn-create-color {
@@ -410,6 +422,11 @@
 
   .create-btn-create-color:hover {
     background-color: #4a4a4a;
+  }
+
+  .create-btn:focus-visible {
+    outline: 2px solid var(--color-brand-primary);
+    outline-offset: 2px;
   }
 
   @media (max-width: 768px) {
@@ -445,10 +462,56 @@
     }
 
     .create-btn {
-      width: 34px;
-      height: 34px;
+      width: 44px;
+      height: 44px;
       padding: 0;
       justify-content: center;
+    }
+
+    .sign-in-btn {
+      width: 44px;
+      height: 44px;
+      padding: 0;
+      justify-content: center;
+    }
+    .sign-in-btn span {
+      display: none;
+    }
+  }
+
+  /* Small phones (360px and below) */
+  @media (max-width: 360px) {
+    .container {
+      padding: 0 8px;
+    }
+    .brand-logo {
+      width: 24px;
+      height: 24px;
+    }
+    .create-btn {
+      width: 40px;
+      height: 40px;
+    }
+    .sign-in-btn {
+      width: 40px;
+      height: 40px;
+    }
+    .menu-toggle {
+      width: 40px;
+      height: 40px;
+    }
+  }
+
+  /* Large phones (390px+) - show brand name if space permits */
+  @media (min-width: 390px) and (max-width: 768px) {
+    .brand-info {
+      display: flex;
+    }
+    .brand-name {
+      font-size: 16px;
+    }
+    .version {
+      display: none;
     }
   }
 </style>

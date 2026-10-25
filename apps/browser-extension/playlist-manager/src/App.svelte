@@ -241,4 +241,24 @@
       margin-top: 0; /* No horizontal sidebar offset */
     }
   }
+
+  /* Improved tablet layout (768px - 1023px) */
+  @media (min-width: 768px) and (max-width: 1023px) {
+    :global(.sidenav) {
+      width: 220px;
+    }
+    .router-outlet {
+      margin-left: 220px;
+    }
+  }
+
+  /* Large desktop (1440px+) - wider sidebar for more content */
+  @media (min-width: 1440px) {
+    :global(.sidenav) {
+      width: 280px;
+    }
+    .router-outlet {
+      margin-left: 280px;
+    }
+  }
 </style>

@@ -167,7 +167,3 @@
     </div>
   </div>
 {/if}
-
-<style>
-  @import "../views/settings.css";
-</style>

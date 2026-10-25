@@ -21,6 +21,7 @@ import "./css/design-tokens.css";
 // View layout and responsive contracts (now consume tokens from design-tokens.css)
 import "./css/view-layout.css";
 import "./css/responsive.css";
+import "./css/settings.css";
 
 import { mount } from "svelte";
 import App from "./App.svelte";
