@@ -12,7 +12,9 @@
   let isSavedView = $derived(router.location === "/saved" || router.location === "/");
   let isHistoryView = $derived(router.location === "/history");
   let isManageView = $derived(router.location === "/manage");
-  let isEditorView = $derived(router.location.startsWith("/editor"));
+  let isEditorView = $derived(
+    ["/editor", "/playlist", "/favorite", "/new", "/playlist-builder"].includes(router.location)
+  );
   let showSearchBar = $derived(isSavedView || isHistoryView || isManageView || isEditorView);
 
   let searchPlaceholder = $derived(
@@ -52,20 +54,22 @@
   }
 </script>
 
-<div class="center" class:hidden={!showSearchBar}>
-  <div class="search-container">
-    <input
-      aria-label="Search"
-      type="text"
-      placeholder={searchPlaceholder}
-      bind:value={searchValue}
-      oninput={handleSearchInput}
-    />
-    <button class="search-btn" aria-label="Search">
-      <Fa icon={faSearch} />
-    </button>
+{#if showSearchBar}
+  <div class="center">
+    <div class="search-container">
+      <input
+        aria-label="Search"
+        type="text"
+        placeholder={searchPlaceholder}
+        bind:value={searchValue}
+        oninput={handleSearchInput}
+      />
+      <button class="search-btn" aria-label="Search">
+        <Fa icon={faSearch} />
+      </button>
+    </div>
   </div>
-</div>
+{/if}
 
 <style>
   .center {
@@ -75,11 +79,6 @@
     max-width: 720px;
     padding: 0 40px;
     transition: opacity 0.2s ease;
-  }
-
-  .center.hidden {
-    opacity: 0;
-    pointer-events: none;
   }
 
   .search-container {
@@ -100,6 +99,7 @@
   }
 
   .search-container input {
+    min-width: 0;
     flex: 1;
     height: 100%;
     padding: 0 16px;
@@ -137,11 +137,14 @@
 
   @media (max-width: 768px) {
     .center {
-      padding: 0 8px;
+      padding: 0;
+      order: 3;
+      flex: 1 0 100%;
+      max-width: 100%;
     }
 
     .search-container {
-      height: 36px;
+      height: 44px;
     }
 
     .search-btn {
@@ -149,20 +152,20 @@
     }
 
     .search-container input {
-      font-size: 14px;
+      font-size: 16px;
       padding: 0 12px;
     }
   }
 
   @media (max-width: 480px) {
     .center {
-      padding: 0 4px;
-      flex: 0 1 auto;
+      padding: 0;
+      flex: 1 0 100%;
       min-width: 0;
     }
 
     .search-container {
-      height: 32px;
+      height: 44px;
     }
 
     .search-btn {
@@ -170,7 +173,7 @@
     }
 
     .search-container input {
-      font-size: 13px;
+      font-size: 16px;
       padding: 0 8px;
     }
   }

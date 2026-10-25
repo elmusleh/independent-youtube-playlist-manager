@@ -1,7 +1,9 @@
 /* eslint-disable no-console */
 (() => {
   try {
-    const videoId = new URLSearchParams(window.location.search).get("v");
+    const videoId =
+      new URLSearchParams(window.location.search).get("v") ||
+      window.location.pathname.match(/\/(?:shorts|embed)\/([\w-]{11})/)?.[1];
     if (!videoId) return null;
 
     let title =
@@ -17,6 +19,7 @@
         ?.getAttribute("content") ||
       document.querySelector("ytd-video-owner-renderer #channel-name a")?.textContent?.trim() ||
       document.querySelector("#owner #channel-name a")?.textContent?.trim();
+    channel ||= document.querySelector(".slim-owner-channel-name")?.textContent?.trim();
 
     let durationISO =
       document.querySelector('meta[itemprop="duration"]')?.getAttribute("content") || "";
@@ -56,7 +59,7 @@
 
     // Fallback: Check HTML5 video element duration
     if (!durationSeconds) {
-      const videoEl = document.querySelector("video.html5-main-video");
+      const videoEl = document.querySelector("video.html5-main-video, video");
       if (videoEl && videoEl.duration && !isNaN(videoEl.duration) && videoEl.duration > 0) {
         durationSeconds = Math.round(videoEl.duration);
         durationISO = secsToISO(durationSeconds);

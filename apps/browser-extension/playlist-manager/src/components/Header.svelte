@@ -228,7 +228,11 @@
     <HeaderSearchBar />
 
     <div class="right">
-      <button class="create-btn create-btn-create-color" onclick={() => push("/new")}>
+      <button
+        class="create-btn create-btn-create-color"
+        aria-label="New playlist"
+        onclick={() => push("/new")}
+      >
         <Fa icon={faPlus} fw />
         <span>New Playlist</span>
       </button>
@@ -260,7 +264,7 @@
 
 <style>
   header {
-    height: 56px;
+    height: var(--app-header-height);
     background-color: var(--background-color);
     border-bottom: 1px solid var(--border-color);
     display: flex;
@@ -410,11 +414,13 @@
 
   @media (max-width: 768px) {
     header {
-      height: 52px;
+      height: var(--app-header-height);
     }
 
     .container {
       padding: 0 12px;
+      flex-wrap: wrap;
+      row-gap: 4px;
     }
 
     .menu-toggle {

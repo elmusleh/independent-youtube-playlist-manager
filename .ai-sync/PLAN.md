@@ -10,4 +10,8 @@ project checks, and production builds.
 The pagination task is complete. The proposed next implementation plan is
 [docs/RESPONSIVE_UI_PLAN.md](../docs/RESPONSIVE_UI_PLAN.md). It covers popup/dialogs,
 shared navigation and components, every active extension route, and the web portal.
-This planning change does not implement those phases.
+The user has authorized implementation and a Chrome/Firefox release. Implement
+the responsive phases, resolve evidence-backed release blockers, run unit/type/build
+checks and actual browser regression suites, then submit version 1.1.0 to both
+existing store listings. Preserve the user's untracked CHANGELOG.md. Do not push
+Git; follow docs/RELEASE_SPEC.md for the local release commit and annotated tag.

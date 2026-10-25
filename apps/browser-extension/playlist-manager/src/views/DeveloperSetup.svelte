@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { getFirefoxRedirectUri } from "../utils/oauth-response";
   import Fa from "svelte-fa";
   import {
     faKey,
@@ -45,9 +46,7 @@
       const manifest = browser.runtime.getManifest();
       const geckoId = manifest?.browser_specific_settings?.gecko?.id;
       if (geckoId) {
-        // UUID-style IDs (e.g. {abcd-...}) get the braces stripped for the URL
-        const cleanId = geckoId.replace(/^\{|\}$/g, "");
-        redirectUri = `https://${cleanId}.extensions.allizom.org/`;
+        redirectUri = await getFirefoxRedirectUri(geckoId);
       } else {
         // Fallback if gecko ID not found in manifest
         redirectUri = "";

@@ -7,6 +7,7 @@ import css from "rollup-plugin-css-only";
 import svelte from "rollup-plugin-svelte";
 import terser from "@rollup/plugin-terser";
 import sveltePreprocess from "svelte-preprocess";
+import { rmSync } from "node:fs";
 
 const production = process.env.PRODUCTION;
 
@@ -40,6 +41,13 @@ export default {
     chunkFileNames: "chunks/[name]-[hash].js",
   },
   plugins: [
+    {
+      name: "clean-production-output",
+      buildStart() {
+        if (production)
+          rmSync(new URL("../editor/", import.meta.url), { recursive: true, force: true });
+      },
+    },
     replace({
       preventAssignment: true,
       "import.meta.env.DEV": JSON.stringify(!production),
@@ -100,7 +108,20 @@ export default {
     production && terser(),
     production &&
       copy({
-        targets: [{ src: "public/global.css", dest: "../editor" }],
+        targets: [
+          { src: "public/global.css", dest: "../editor" },
+          {
+            src: "public/index.html",
+            dest: "../editor",
+            transform: (contents) =>
+              contents
+                .toString()
+                .replace('href="/favicon.png"', 'href="../assets/icons/icon_48.png"')
+                .replace('href="/global.css"', 'href="global.css"')
+                .replace('href="/build/bundle.css"', 'href="bundle.css"')
+                .replace('src="/build/main.js"', 'src="main.js"'),
+          },
+        ],
       }),
   ],
 };

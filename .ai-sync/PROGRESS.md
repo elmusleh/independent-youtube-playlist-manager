@@ -12,7 +12,27 @@
 
 - [x] Inspect popup, shared dialogs/shell, active views, and current portal layout.
 - [x] Document concrete findings, phased scope, and acceptance/test criteria.
-- [ ] Implement Phase 1: popup and shared dialogs.
-- [ ] Implement Phase 2: shell and shared components.
-- [ ] Implement Phase 3: all active pages and portal.
+- [x] Implement Phase 1: popup and shared dialogs.
+- [x] Implement Phase 2: shell and shared components.
+- [x] Implement Phase 3: active routes and portal responsive fixes.
 - [ ] Complete Phase 4: responsive and real-device regression verification.
+
+## Release readiness work
+
+- [x] Remove unused bookmarks permission identified in Chrome's October 15 takedown.
+- [x] Limit web exposure, support mobile YouTube hosts, fix tab metadata persistence.
+- [x] Restore builder route, filtered reordering, touch/keyboard reorder controls.
+- [x] Fix cross-context settings cache invalidation and Firefox OAuth URL/state handling.
+- [x] Reject malformed/future backups and avoid clearing unrelated data for legacy imports.
+- [x] Fix clean-build HTML generation and eliminate stale chunks from release packages.
+- [x] Upgrade vulnerable dependencies: extension audit clean; portal production audit clean.
+- [x] Portal production build now includes working lint and type checks.
+- [x] Unit checks: 111 tests; zero Svelte errors/warnings.
+- [x] Real Firefox: 90 route/viewport checks on desktop, 90 with Android user agent.
+- [x] Portal: six sizes and fail-closed sync API behavior verified.
+- [x] Chromium suite after final modal teardown guard: 90 checks, six interaction groups, no runtime errors.
+- [x] Firefox package web-ext lint: zero errors, warnings, notices.
+- [ ] Final version sync, release notes, source archive, store packages, commit and tag.
+- [ ] Submit Firefox listed update using verified configured AMO credentials.
+- [ ] Submit Chrome update using the authenticated dashboard (existing listing taken down).
+- [ ] Record exact store outcomes and remaining real-device/authenticated-flow limitations.

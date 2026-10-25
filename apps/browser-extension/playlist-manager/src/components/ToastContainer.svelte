@@ -20,7 +20,7 @@
 <style>
   .toast-container {
     position: fixed;
-    bottom: 16px;
+    bottom: max(16px, env(safe-area-inset-bottom));
     right: 16px;
     z-index: 10000;
     display: flex;

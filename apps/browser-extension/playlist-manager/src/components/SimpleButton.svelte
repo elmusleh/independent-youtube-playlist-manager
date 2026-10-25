@@ -22,22 +22,10 @@
     onclick?: (e: MouseEvent) => void;
     children?: Snippet;
   } = $props();
-
-  function handleKeydown(event: KeyboardEvent) {
-    if (disabled) return;
-    if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault();
-      const clickEvent = new MouseEvent("click", {
-        view: window,
-        bubbles: true,
-        cancelable: true,
-      });
-      (event.currentTarget as HTMLElement).dispatchEvent(clickEvent);
-    }
-  }
 </script>
 
 <button
+  type="button"
   class="btn {className}"
   class:primary
   class:secondary
@@ -45,8 +33,7 @@
   class:icon-only={iconOnly}
   {disabled}
   {onclick}
-  onkeydown={handleKeydown}
-  aria-label={title}
+  aria-label={title || undefined}
   {title}
 >
   <div class="content">

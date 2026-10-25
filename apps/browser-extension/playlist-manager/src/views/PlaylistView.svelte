@@ -1,6 +1,7 @@
 <script lang="ts">
   import { faPenToSquare } from "@fortawesome/free-solid-svg-icons";
   import PlaylistLoader from "../components/PlaylistLoader.svelte";
+  import { router } from "svelte-spa-router";
 
   function getParam(name: string): string | null {
     const url = new URL(document.URL);
@@ -14,7 +15,9 @@
     return url.searchParams.get(name);
   }
 
-  let playlistId = $derived(getParam("id"));
+  let playlistId = $derived(
+    new URLSearchParams(router.querystring || "").get("id") || getParam("id")
+  );
 </script>
 
 {#if playlistId}

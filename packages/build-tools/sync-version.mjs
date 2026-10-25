@@ -87,4 +87,13 @@ wpPkg.version = canonicalVersion;
 writeJson(webPortalPackageJsonPath, wpPkg);
 console.log(`  apps/web-portal/package.json -> ${canonicalVersion} (was ${wpPkgPrev})`);
 
+// Keep npm ci metadata aligned with the manifest and package versions.
+for (const directory of [".", "apps/browser-extension/playlist-manager", "apps/web-portal"]) {
+  const lockPath = resolve(root, directory, "package-lock.json");
+  const lock = readJson(lockPath);
+  lock.version = canonicalVersion;
+  if (lock.packages?.[""]) lock.packages[""].version = canonicalVersion;
+  writeJson(lockPath, lock);
+}
+
 console.log(`\nAll files synced to version ${canonicalVersion}\n`);

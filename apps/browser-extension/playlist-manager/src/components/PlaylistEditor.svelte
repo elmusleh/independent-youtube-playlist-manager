@@ -51,6 +51,7 @@
   import { enrichVideoMetadata } from "../services/enrichment-service.js";
   import { PAGE_SIZES } from "../services/settings-utils.js";
   import { clampPage } from "../utils/pagination";
+  import { reorderItems } from "../utils/reorder";
 
   const browser = (window as any).browser || (window as any).chrome;
 
@@ -1371,18 +1372,24 @@
   // Drag & Drop
   let hovering = $state(-1);
   const dragstart = (event: any, i: number) => {
-    event.dataTransfer.setData("text/plain", (currentPage - 1) * pageSize + i);
+    event.dataTransfer.setData("text/plain", String(paginatedVideos[i].id));
   };
   const drop = async (event: any, targetIdx: number) => {
-    const start = parseInt(event.dataTransfer.getData("text/plain"));
-    const target = (currentPage - 1) * pageSize + targetIdx;
-    const updated = [...videos];
-    const item = updated.splice(start, 1)[0];
-    updated.splice(target, 0, item);
-    videos = updated;
+    const source = event.dataTransfer.getData("text/plain");
+    const target = paginatedVideos[targetIdx];
+    if (!target) return;
+    videos = reorderItems(videos, source, target.id);
     updateDirtyState();
     hovering = -1;
   };
+
+  function moveVideo(video: Video, direction: -1 | 1) {
+    const index = filteredVideos.findIndex((item) => item.id === video.id);
+    const target = filteredVideos[index + direction];
+    if (!target) return;
+    videos = reorderItems(videos, video.id, target.id);
+    updateDirtyState();
+  }
 
   const customFlip: typeof flip = (node, animation, _) => {
     return flip(node, animation, { duration: 800, easing: expoOut });
@@ -1550,6 +1557,9 @@
               }}
               ontoggleSelect={toggleSelect}
               onplayfromhere={playFromHere}
+              onmove={(direction) => moveVideo(video, direction)}
+              canMoveUp={filteredVideos[0]?.id !== video.id}
+              canMoveDown={filteredVideos[filteredVideos.length - 1]?.id !== video.id}
               {video}
               playlistId={playlist?.id}
               active={hovering === index}

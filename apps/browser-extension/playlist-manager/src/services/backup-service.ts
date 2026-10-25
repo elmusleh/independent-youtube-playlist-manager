@@ -125,8 +125,29 @@ export function validateBackupSchema(json: any): {
   }
 
   const schemaVersion = typeof json.schemaVersion === "number" ? json.schemaVersion : 1;
-  if (!json.data || typeof json.data !== "object") {
+  if (![1, CURRENT_SCHEMA_VERSION].includes(schemaVersion)) {
+    errors.push(`Unsupported backup schema version ${schemaVersion}.`);
+  }
+  if (!json.data || typeof json.data !== "object" || Array.isArray(json.data)) {
     errors.push('Missing "data" container in backup payload.');
+  } else {
+    if (!Array.isArray(json.data.playlists)) errors.push('Missing or invalid "playlists" array.');
+    for (const name of ["videoMetadata", "history", "settings"]) {
+      const value = json.data[name];
+      if (value !== undefined && (!value || typeof value !== "object" || Array.isArray(value))) {
+        errors.push(`Invalid "${name}" object.`);
+      }
+    }
+  }
+  const playlists = json.data?.playlists;
+  if (
+    Array.isArray(playlists) &&
+    playlists.some(
+      (p: any) =>
+        !p || typeof p !== "object" || (p.videos !== undefined && !Array.isArray(p.videos))
+    )
+  ) {
+    errors.push("Invalid playlist entry in backup.");
   }
 
   return {
@@ -165,7 +186,7 @@ export async function importFullDatabaseBackup(
     // -------------------------------------------------------------------------
     // 1. Process Video Metadata Cache (IndexedDB)
     // -------------------------------------------------------------------------
-    if (mode === "overwrite") {
+    if (mode === "overwrite" && !Array.isArray(backupJson)) {
       await dbClearMetadata();
     }
 
@@ -275,7 +296,8 @@ export async function importFullDatabaseBackup(
         }
       }
 
-      await browser.storage.local.set({ [HISTORY_KEY]: finalHistory });
+      if (!Array.isArray(backupJson))
+        await browser.storage.local.set({ [HISTORY_KEY]: finalHistory });
     }
 
     // -------------------------------------------------------------------------

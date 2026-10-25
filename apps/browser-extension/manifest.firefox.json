@@ -24,7 +24,7 @@
   },
   "content_scripts": [
     {
-      "matches": ["*://www.youtube.com/watch*"],
+      "matches": ["*://www.youtube.com/watch*", "*://m.youtube.com/watch*"],
       "js": ["assets/browser-polyfill.min.js", "content-scripts/watch-tracker.js"],
       "run_at": "document_idle"
     }
@@ -40,6 +40,7 @@
     "unlimitedStorage",
     "alarms"
   ],
+  "host_permissions": ["https://*.youtube.com/*"],
   "commands": {
     "_execute_action": {
       "suggested_key": {
@@ -56,12 +57,7 @@
       "description": "Quick add current YouTube video to Playlist Builder"
     }
   },
-  "web_accessible_resources": [
-    {
-      "resources": ["assets/*", "editor/*", "popup/*"],
-      "matches": ["*://*/*"]
-    }
-  ],
+  "web_accessible_resources": [],
   "browser_specific_settings": {
     "gecko": {
       "id": "independent-yt-playlist-manager@elmusleh.github.io",

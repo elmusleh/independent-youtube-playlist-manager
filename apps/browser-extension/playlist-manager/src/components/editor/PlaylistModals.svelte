@@ -60,7 +60,7 @@
   }
 </script>
 
-<Modal bind:display>
+<Modal bind:display size="wide">
   {#if modalType === "Export"}
     <div class="modal-container">
       <h3>Export Video URLs</h3>
@@ -249,7 +249,7 @@
 
   textarea {
     width: 100%;
-    min-height: 350px;
+    min-height: min(240px, 35dvh);
     padding: 16px;
     border-radius: 12px;
     border: 1px solid var(--border-color);
@@ -281,6 +281,7 @@
 
   .import-footer {
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
     align-items: center;
     gap: 16px;

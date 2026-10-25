@@ -18,6 +18,7 @@ import "./services/video-service.js";
 // into bundle.css (native `@import` in Svelte <style> blocks is ignored when
 // it doesn't appear at the top of the compiled stylesheet).
 import "./css/view-layout.css";
+import "./css/responsive.css";
 
 import { mount } from "svelte";
 import App from "./App.svelte";

@@ -9,6 +9,7 @@
   } from "@fortawesome/free-solid-svg-icons";
   import SimpleButton from "../SimpleButton.svelte";
   import ProgressBar from "../ProgressBar.svelte";
+  import Modal from "../Modal.svelte";
 
   let {
     // Merge Modal
@@ -62,22 +63,8 @@
 </script>
 
 {#if showMerge}
-  <div
-    class="overlay"
-    onclick={() => (showMerge = false)}
-    onkeydown={(e) =>
-      (e.key === "Escape" || e.key === "Enter" || e.key === " ") && (showMerge = false)}
-    role="button"
-    tabindex="-1"
-    aria-label="Close dialog"
-  >
-    <div
-      class="dialog"
-      onclick={(e) => e.stopPropagation()}
-      onkeydown={(e) => e.stopPropagation()}
-      role="dialog"
-      tabindex="-1"
-    >
+  <Modal bind:display={showMerge} title="Merge Playlists">
+    <div class="dialog">
       <h3 class="dialog-title">Merge Playlists</h3>
       <p class="dialog-msg">
         Merge {selectedPlaylists.length} playlists into one. This will accumulate
@@ -115,26 +102,12 @@
         </SimpleButton>
       </div>
     </div>
-  </div>
+  </Modal>
 {/if}
 
 {#if showSaveOffline}
-  <div
-    class="overlay"
-    onclick={() => (showSaveOffline = false)}
-    onkeydown={(e) =>
-      (e.key === "Escape" || e.key === "Enter" || e.key === " ") && (showSaveOffline = false)}
-    role="button"
-    tabindex="-1"
-    aria-label="Close dialog"
-  >
-    <div
-      class="dialog large"
-      onclick={(e) => e.stopPropagation()}
-      onkeydown={(e) => e.stopPropagation()}
-      role="dialog"
-      tabindex="-1"
-    >
+  <Modal bind:display={showSaveOffline} title="Save YouTube Playlists Offline" size="wide">
+    <div class="dialog large">
       <h3 class="dialog-title">Save YouTube Playlists Offline</h3>
       <p class="dialog-msg">Select how you want to save these playlists to your local storage.</p>
 
@@ -196,12 +169,17 @@
         </SimpleButton>
       </div>
     </div>
-  </div>
+  </Modal>
 {/if}
 
 {#if prog.active}
-  <div class="overlay prog-dialog" role="presentation">
-    <div class="dialog" role="dialog">
+  <Modal
+    display={prog.active}
+    onclose={() => (prog.active = false)}
+    dismissible={!!(prog.done || prog.error)}
+    title={prog.title || "Working"}
+  >
+    <div class="dialog" role="status" aria-live="polite">
       <h3 class="dialog-title">{prog.title}</h3>
       <p class="dialog-msg">{prog.message || "Working..."}</p>
 
@@ -227,35 +205,21 @@
         </div>
       {/if}
     </div>
-  </div>
+  </Modal>
 {/if}
 
 <style>
   @import "../../css/view-layout.css";
 
-  .overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.7);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 2000;
-    padding: 20px;
-    backdrop-filter: blur(8px);
-  }
-
   .dialog {
     background: var(--background-color);
-    border: 1px solid var(--border-color);
     border-radius: 20px;
-    padding: 32px;
+    padding: 0;
     width: 100%;
     max-width: 480px;
     display: flex;
     flex-direction: column;
     gap: 20px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
   }
 
   .dialog.large {

@@ -22,7 +22,7 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="h-dvh flex flex-col bg-mesh-light text-zinc-900 w-full overflow-hidden selection:bg-red-500/10 selection:text-red-900">
+    <div className="min-h-dvh flex flex-col bg-mesh-light text-zinc-900 w-full selection:bg-red-500/10 selection:text-red-900">
       {/* Main View */}
       <main className="flex-1 min-h-0 w-full flex flex-col">
         <div className="flex flex-col items-center justify-center flex-1 min-h-0 w-full px-4 py-4 sm:py-6 lg:py-8 text-center space-y-4 sm:space-y-6 lg:space-y-6 animate-in fade-in duration-500 relative">

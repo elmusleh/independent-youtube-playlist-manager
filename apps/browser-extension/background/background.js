@@ -123,7 +123,9 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
       if (builderTabs.length > 0) {
         const windowId = builderTabs[0].windowId;
         const tabId = builderTabs[0].id;
-        if (windowId) browser.windows.update(windowId, { focused: true });
+        if (windowId && !isAndroid() && browser.windows?.update) {
+          await browser.windows.update(windowId, { focused: true });
+        }
         if (tabId) browser.tabs.update(tabId, { active: true });
       }
       sendResponse(true);

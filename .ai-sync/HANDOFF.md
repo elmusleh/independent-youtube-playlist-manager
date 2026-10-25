@@ -1,5 +1,49 @@
 # Pagination handoff
 
+## Active task: broad UX and release readiness implementation
+
+User authorized implementation of all responsive improvements and publication to
+Firefox/Chrome. Candidate version: 1.1.0 (not yet bumped or submitted). Work is
+uncommitted on main. Preserve pre-existing untracked CHANGELOG.md. No Git push.
+
+Implemented: adaptive popup/native dialogs, focus trap and nested scroll locks,
+responsive shell/search/header/rows/forms, touch reorder buttons, filtered reorder
+identity fix, builder route, mobile YouTube support, IndexedDB popup metadata writes,
+settings cache invalidation, backup validation, OAuth state/redirect validation and
+correct SHA-1 Firefox Android redirect. Portal fails closed on unconfigured sync,
+patched Next.js, restored strict build checks. Build now creates index.html and
+cleans stale generated chunks; package builder copies only runtime assets.
+
+Latest verification: 111 unit tests, zero Svelte errors/warnings; Firefox desktop
+90 route/viewport checks passed; another 90 passed with Android UA (not real Android).
+Portal six sizes and sync rejection checks passed. Chromium 90-layout/interaction
+suite caught a modal teardown error (`dialog` null in queued close event), now fixed
+by guarding the reference. Re-run final suite after current build completes.
+
+Tools/scripts added: packages/build-tools/extension-fixture.js, verify-extension.js,
+verify-firefox.py (requires Selenium), verify-portal.js, build-extension.js. Screenshots
+and reports in dist/verification. Firefox testing Python is /tmp/iypm-release-venv/bin/python;
+uses disposable profiles and geckodriver Service(--allow-system-access). Actual Firefox
+158.0.1 runs successfully. Chromium uses installed Playwright full channel chromium.
+Portal production server is running on localhost:3050 (session 81481).
+
+Publishing access: .env contains AMO_API_KEY and AMO_API_SECRET; authenticated AMO
+profile GET succeeded. Never print their values. web-ext 10.8.0 is available via npx.
+Public AMO addon ID 3059579, slug iypm, current listed version 1.0.1.
+Chrome user reauthenticated via CUA; `storeTab` in cua_repl is live on package screen.
+Publisher e070ead7-65ee-442e-8bc2-3a6a2b3c5f60; item dapjjdcnolpmfcnobilphjfpkmmokgid.
+Existing version 1.0.1 was TAKEN DOWN Oct 15 for unused bookmarks permission; fixed
+in source. Must submit updated package for review, not claim live reinstatement.
+CUA mouse clicks timed out, but locator.press('Enter') works (e.g. Published tab).
+Use observed dashboard links and keyboard activation. No uploads yet. Read CUA
+file-upload docs before upload. Need source-code ZIP for Firefox minified sources.
+
+Next: wait for current build, rerun Chromium; finish final package validation;
+add release notes/readiness report; commit implementation; sync version and lockfiles,
+build/package/test final release, commit bump and tag, create source archive, submit
+both stores, inspect exact review status. Physical Android, OS keyboard, and real
+Google/Supabase account flows remain untested and must be stated honestly.
+
 ## Latest task: responsive layout plan
 
 Completed a source-based review of the toolbar popup, shared dialogs, shell,

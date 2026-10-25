@@ -22,7 +22,7 @@
 <style>
   .sticky-header-container {
     position: sticky;
-    top: 0;
+    top: var(--app-header-height);
     z-index: 10;
     background-color: var(--background-color);
     flex-shrink: 0;

@@ -107,7 +107,7 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     border: 1px solid var(--border-color);
     color: var(--text-color);
-    min-width: 320px;
+    min-width: min(320px, calc(100vw - 32px));
     max-width: 90vw;
     pointer-events: auto;
     overflow: hidden;

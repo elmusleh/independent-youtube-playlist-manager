@@ -935,9 +935,23 @@ window.adoptPlaylist = async (ytId: string): Promise<void> => {
 
 let _cachedSettings: Settings | null = null;
 let _settingsInFlight: Promise<Settings> | null = null;
+let _settingKeys = new Set<string>();
 
 export function invalidateSettingsCache() {
   _cachedSettings = null;
+}
+
+// Settings can change in another extension tab, the popup, or browser sync.
+if (typeof browser !== "undefined") {
+  browser.storage.onChanged.addListener((changes, area) => {
+    if (
+      area === "sync" ||
+      (area === "local" && Object.keys(changes).some((key) => _settingKeys.has(key)))
+    ) {
+      invalidateSettingsCache();
+    }
+    if (area === "local" && changes[LOCAL_PLAYLISTS_KEY]) bustCache();
+  });
 }
 
 if (typeof browser !== "undefined") {
@@ -1087,6 +1101,7 @@ window.getSettings = async (): Promise<Settings> => {
       customInvidiousInstances: "",
       customPipedInstances: "",
     };
+    _settingKeys = new Set(Object.keys(DEFAULT_SETTINGS));
 
     if (typeof browser === "undefined" || !browser.storage) {
       if (typeof localStorage !== "undefined") {

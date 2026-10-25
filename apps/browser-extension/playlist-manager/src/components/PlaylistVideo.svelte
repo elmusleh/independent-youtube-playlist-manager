@@ -21,6 +21,9 @@
     ondelete,
     ontoggleSelect,
     onplayfromhere,
+    onmove,
+    canMoveUp = false,
+    canMoveDown = false,
   }: {
     video: Video;
     active: boolean;
@@ -31,6 +34,9 @@
     ondelete?: (video: Video) => void;
     ontoggleSelect?: (video: Video) => void;
     onplayfromhere?: (video: Video) => void;
+    onmove?: (direction: -1 | 1) => void;
+    canMoveUp?: boolean;
+    canMoveDown?: boolean;
   } = $props();
 
   function videoClicked() {
@@ -53,7 +59,9 @@
   }
 
   function handleKeydown(event: KeyboardEvent) {
+    if (event.target !== event.currentTarget) return;
     if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
       videoClicked();
     }
   }
@@ -196,6 +204,28 @@
   </div>
   {#if !selectable}
     <div class="video-btns">
+      {#if onmove}
+        <button
+          type="button"
+          class="move-btn"
+          aria-label="Move video up"
+          disabled={!canMoveUp}
+          onclick={(e) => {
+            e.stopPropagation();
+            onmove?.(-1);
+          }}>↑</button
+        >
+        <button
+          type="button"
+          class="move-btn"
+          aria-label="Move video down"
+          disabled={!canMoveDown}
+          onclick={(e) => {
+            e.stopPropagation();
+            onmove?.(1);
+          }}>↓</button
+        >
+      {/if}
       <a
         href={video.url}
         target="_blank"
@@ -223,6 +253,21 @@
 </div>
 
 <style>
+  .move-btn {
+    width: 36px;
+    min-height: 36px;
+    padding: 0;
+    margin: 0;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--background-color);
+    color: var(--text-color);
+    cursor: pointer;
+  }
+  .move-btn:disabled {
+    opacity: 0.35;
+    cursor: default;
+  }
   .playlist-video {
     display: flex;
     padding: 0.5em 1em;
@@ -471,11 +516,14 @@
 
   @media (max-width: 768px) {
     .playlist-video {
+      display: grid;
+      grid-template-columns: 24px minmax(0, 80px) minmax(0, 1fr);
       padding: 0.5em;
       gap: 10px;
     }
 
     .thumbnail-wrapper {
+      grid-column: 2;
       width: 80px;
       height: 45px;
     }
@@ -488,10 +536,12 @@
     }
 
     .video-details {
+      grid-column: 3;
       font-size: 13px;
     }
 
-    .video-title {
+    .video-details > .video-title {
+      white-space: normal;
       white-space: normal;
       display: -webkit-box;
       -webkit-line-clamp: 2;
@@ -503,6 +553,15 @@
     .drag-handle,
     .video-btns {
       opacity: 1;
+    }
+    .video-btns {
+      grid-column: 1 / -1;
+      justify-content: flex-end;
+      width: 100%;
+    }
+    .video-link-btn,
+    .move-btn {
+      min-width: 44px;
     }
   }
 

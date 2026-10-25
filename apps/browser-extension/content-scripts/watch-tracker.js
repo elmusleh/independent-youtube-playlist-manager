@@ -165,7 +165,7 @@
     return new Promise((resolve) => {
       let retries = 0;
       const check = () => {
-        const video = document.querySelector("#movie_player video");
+        const video = document.querySelector("#movie_player video, video.html5-main-video, video");
         if (video) {
           resolve(video);
         } else if (retries >= maxRetries) {
@@ -262,13 +262,13 @@
       let videoTitle = "";
       let channelName = "";
       try {
-        const titleEl =
-          document.querySelector("h1.ytd-watch-metadata") ||
-          document.querySelector(".title.ytd-video-primary-info-renderer");
+        const titleEl = document.querySelector(
+          "h1.ytd-watch-metadata, .title.ytd-video-primary-info-renderer, .slim-video-metadata-title"
+        );
         videoTitle = titleEl?.textContent?.trim() || "";
-        const channelEl =
-          document.querySelector("#text.ytd-channel-name") ||
-          document.querySelector("ytd-video-owner-renderer #channel-name #text");
+        const channelEl = document.querySelector(
+          "#text.ytd-channel-name, ytd-video-owner-renderer #channel-name #text, .slim-owner-channel-name"
+        );
         channelName = channelEl?.textContent?.trim() || "";
       } catch {
         /* ignore */
