@@ -36,7 +36,20 @@
 - [x] Correct Firefox data declaration and add optional account/search consent with background request guards.
 - [x] Consent regression coverage: 120 unit tests, zero Svelte diagnostics; 1.1.1 version synchronized.
 - [x] Save accurate Chrome data categories and listing description.
-- [ ] Final 1.1.1 source archive, store packages, commit and tag.
-- [ ] Submit replacement Firefox listed update using verified configured AMO credentials.
-- [ ] Submit Chrome update using the authenticated dashboard (existing listing taken down).
-- [ ] Record exact store outcomes and remaining real-device/authenticated-flow limitations.
+- [x] Final 1.1.1 source archive, store packages, commit dff9c9c and annotated tag v1.1.1.
+- [x] Submit replacement Firefox listed update: version 6620554, unreviewed, source uploaded.
+- [x] Submit Chrome update: 1.1.1 pending review, automatic publication after approval selected.
+- [x] Record exact store outcomes and remaining real-device/authenticated-flow limitations.
+- [x] Create unlisted Firefox test release (v1.2.0.1, AMO version ID 6620940) for external testing.
+- [ ] Await user confirmation before pushing main/tag or updating official public portal release.
+
+## Design Token System & Workflow Analysis (2026-10-25)
+
+- [x] Create comprehensive design-tokens.css (single source of truth for responsive tokens)
+- [x] Update main.ts to import design-tokens.css first
+- [x] Run full check/build/test:extension verification — all pass
+- [x] Create workflow analysis document: ~/Notebooks/Projects/iypm/workflow-analysis-2026-W43.md
+- [x] Create Phase 4 verification checklist: ~/Notebooks/Projects/iypm/phase4-verification-checklist.md
+- [x] Create Tailwind 4 migration research: ~/Notebooks/Areas/_reference/Research/tailwind4-migration-plan.md
+- [x] Create Hermes profile: ~/.hermes/profiles/iypm/ with workflow-analyst, github, vercel skills
+- [x] Configure cron jobs for weekly workflow review and productivity reports

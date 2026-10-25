@@ -1,0 +1,540 @@
+/*
+ * IYPM Design Tokens — Single Source of Truth for Responsive Design
+ * Consolidates all breakpoints, spacing, sizing, and responsive contracts.
+ * Import this FIRST in main.ts before any other CSS.
+ */
+
+/* ============================================================================
+   1. COLOR TOKENS (Semantic, Theme-Aware)
+   ============================================================================ */
+:root {
+  /* Brand Colors */
+  --color-brand-primary: #065fd4;
+  --color-brand-primary-hover: #054fb8;
+  --color-brand-primary-focus: #3ea6ff;
+  --color-brand-danger: #ff0000;
+  --color-brand-danger-hover: #cc0000;
+  --color-brand-success: #2ba640;
+  --color-brand-warning: #f57c00;
+
+  /* Light Theme (Default) */
+  --color-bg-primary: #ffffff;
+  --color-bg-secondary: #f8f8f8;
+  --color-bg-tertiary: #f0f0f0;
+  --color-bg-hover: rgba(0, 0, 0, 0.05);
+  --color-bg-active: rgba(0, 0, 0, 0.1);
+  --color-text-primary: #0f0f0f;
+  --color-text-secondary: #606060;
+  --color-text-muted: #999999;
+  --color-text-inverse: #ffffff;
+  --color-border-primary: #e5e5e5;
+  --color-border-secondary: #d0d0d0;
+  --color-border-focus: #065fd4;
+  --color-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --color-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --color-shadow-lg: 0 12px 48px rgba(0, 0, 0, 0.12);
+  --color-overlay: rgba(0, 0, 0, 0.6);
+  --color-overlay-strong: rgba(0, 0, 0, 0.8);
+}
+
+[data-theme="dark"] {
+  --color-bg-primary: #0f0f0f;
+  --color-bg-secondary: #1f1f1f;
+  --color-bg-tertiary: #2a2a2a;
+  --color-bg-hover: rgba(255, 255, 255, 0.1);
+  --color-bg-active: rgba(255, 255, 255, 0.15);
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #aaaaaa;
+  --color-text-muted: #888888;
+  --color-text-inverse: #0f0f0f;
+  --color-border-primary: #333333;
+  --color-border-secondary: #444444;
+  --color-border-focus: #3ea6ff;
+  --color-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --color-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.5);
+  --color-shadow-lg: 0 12px 48px rgba(0, 0, 0, 0.6);
+  --color-overlay: rgba(0, 0, 0, 0.7);
+  --color-overlay-strong: rgba(0, 0, 0, 0.9);
+}
+
+/* Legacy aliases for backward compatibility */
+:root {
+  --app-bg: var(--color-bg-primary);
+  --app-bg-alt: var(--color-bg-secondary);
+  --text-main: var(--color-text-primary);
+  --text-sub: var(--color-text-secondary);
+  --text-muted: var(--color-text-muted);
+  --border: var(--color-border-primary);
+  --yt-red: var(--color-brand-danger);
+  --yt-blue: var(--color-brand-primary);
+  --hover: var(--color-bg-hover);
+  --shadow: var(--color-shadow-md);
+  --primary-color: var(--color-brand-primary);
+  --background-color: var(--color-bg-primary);
+  --text-color: var(--color-text-primary);
+  --border-color: var(--color-border-primary);
+  --hover-color: var(--color-bg-hover);
+}
+
+/* ============================================================================
+   2. TYPOGRAPHY TOKENS
+   ============================================================================ */
+:root {
+  --font-family-primary: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-family-mono: "Fira Code", "SF Mono", "Monaco", monospace;
+
+  /* Font Sizes (rem-based for accessibility) */
+  --font-size-xs: 0.75rem; /* 12px */
+  --font-size-sm: 0.8125rem; /* 13px */
+  --font-size-base: 0.875rem; /* 14px */
+  --font-size-md: 0.9375rem; /* 15px */
+  --font-size-lg: 1rem; /* 16px */
+  --font-size-xl: 1.125rem; /* 18px */
+  --font-size-2xl: 1.25rem; /* 20px */
+  --font-size-3xl: 1.5rem; /* 24px */
+  --font-size-4xl: 2rem; /* 32px */
+
+  /* Line Heights */
+  --leading-none: 1;
+  --leading-tight: 1.25;
+  --leading-snug: 1.375;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.625;
+  --leading-loose: 2;
+
+  /* Font Weights */
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* Letter Spacing */
+  --tracking-tight: -0.02em;
+  --tracking-normal: 0;
+  --tracking-wide: 0.02em;
+}
+
+/* ============================================================================
+   3. SPACING TOKENS (4px Base Unit)
+   ============================================================================ */
+:root {
+  --space-0: 0;
+  --space-1: 4px; /* 0.25rem */
+  --space-2: 8px; /* 0.5rem */
+  --space-3: 12px; /* 0.75rem */
+  --space-4: 16px; /* 1rem */
+  --space-5: 20px; /* 1.25rem */
+  --space-6: 24px; /* 1.5rem */
+  --space-8: 32px; /* 2rem */
+  --space-10: 40px; /* 2.5rem */
+  --space-12: 48px; /* 3rem */
+  --space-16: 64px; /* 4rem */
+
+  /* Semantic Spacing */
+  --space-gutter: var(--space-6); /* 24px - default page gutter */
+  --space-gutter-sm: var(--space-4); /* 16px - mobile page gutter */
+  --space-card-padding: var(--space-4); /* 16px - card internal padding */
+  --space-card-padding-sm: var(--space-3); /* 12px - mobile card padding */
+  --space-component-gap: var(--space-3); /* 12px - component internal gap */
+  --space-component-gap-lg: var(--space-4); /* 16px - larger component gap */
+  --space-toolbar-gap: var(--space-3); /* 12px - toolbar gap */
+}
+
+/* ============================================================================
+   4. BORDER RADIUS TOKENS
+   ============================================================================ */
+:root {
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-pill: 9999px;
+  --radius-card: var(--radius-lg);
+  --radius-button: var(--radius-pill);
+  --radius-input: var(--radius-pill);
+}
+
+/* ============================================================================
+   5. BREAKPOINT TOKENS
+   ============================================================================ */
+:root {
+  /* Test widths per RESPONSIVE_UI_PLAN.md */
+  --bp-xs: 320px; /* Small phone */
+  --bp-sm: 360px; /* Standard phone */
+  --bp-md: 390px; /* Large phone */
+  --bp-lg: 430px; /* Extra large phone */
+  --bp-tablet: 768px; /* Tablet portrait */
+  --bp-desk: 1024px; /* Desktop / tablet landscape */
+  --bp-wide: 1280px; /* Wide desktop */
+  --bp-ultrawide: 1440px; /* Ultra-wide */
+
+  /* Media query helpers (for use in @media) */
+  --mq-phone-only: "(max-width: 767px)";
+  --mq-tablet-up: "(min-width: 768px)";
+  --mq-desktop-up: "(min-width: 1024px)";
+  --mq-wide-up: "(min-width: 1280px)";
+  --mq-touch: "(pointer: coarse)";
+  --mq-hover: "(pointer: fine)";
+  --mq-reduced-motion: "(prefers-reduced-motion: reduce)";
+  --mq-short: "(max-height: 480px) and (max-width: 1024px)";
+}
+
+/* ============================================================================
+   6. LAYOUT DIMENSION TOKENS
+   ============================================================================ */
+:root {
+  /* Header */
+  --header-height: 56px;
+  --header-height-mobile: 52px;
+  --header-height-with-search: 104px; /* Mobile with search */
+
+  /* Popup */
+  --popup-width-desktop: 380px;
+  --popup-width-max: calc(100vw - 32px);
+
+  /* Sidebar */
+  --sidebar-width: 260px;
+  --sidebar-width-collapsed: 64px;
+  --sidebar-width-mobile: 280px;
+
+  /* Modal/Dialog */
+  --modal-width-small: 400px;
+  --modal-width-standard: 560px;
+  --modal-width-wide: 800px;
+  --modal-width-drawer: 320px;
+  --modal-margin: 16px;
+  --modal-margin-mobile: 12px;
+
+  /* Dropdown/Menu */
+  --dropdown-min-width: 260px;
+  --dropdown-max-width: calc(100vw - 32px);
+
+  /* Search/Input */
+  --search-min-width: 280px;
+  --input-height: 36px;
+  --input-height-mobile: 44px;
+
+  /* Content Widths */
+  --content-width-narrow: 640px;
+  --content-width-standard: 800px;
+  --content-width-wide: 1024px;
+  --content-width-full: 100%;
+}
+
+/* ============================================================================
+   7. TOUCH TARGET TOKENS (WCAG AA: 44×44px minimum)
+   ============================================================================ */
+:root {
+  --touch-target-min: 44px;
+  --touch-target-comfortable: 48px;
+  --touch-target-large: 56px;
+
+  /* Icon button sizing */
+  --icon-btn-size: 36px;
+  --icon-btn-size-touch: 44px;
+  --icon-btn-size-lg: 44px;
+  --icon-btn-size-lg-touch: 48px;
+
+  /* Menu item height */
+  --menu-item-height: 44px;
+  --menu-item-height-comfortable: 48px;
+}
+
+/* ============================================================================
+   8. Z-INDEX TOKENS (Layered Stacking Context)
+   ============================================================================ */
+:root {
+  --z-base: 0;
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-toast: 300;
+  --z-modal-backdrop: 400;
+  --z-modal: 500;
+  --z-popover: 600;
+  --z-tooltip: 700;
+  --z-max: 9999;
+}
+
+/* ============================================================================
+   9. TRANSITION & ANIMATION TOKENS
+   ============================================================================ */
+:root {
+  --transition-fast: 100ms ease;
+  --transition-base: 150ms ease;
+  --transition-smooth: 200ms cubic-bezier(0.2, 0, 0, 1);
+  --transition-slow: 300ms ease;
+  --transition-bounce: 200ms cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Reduced motion override */
+  @media (prefers-reduced-motion: reduce) {
+    --transition-fast: 0.01ms;
+    --transition-base: 0.01ms;
+    --transition-smooth: 0.01ms;
+    --transition-slow: 0.01ms;
+    --transition-bounce: 0.01ms;
+  }
+}
+
+/* ============================================================================
+   10. VIEWPORT & SAFE AREA TOKENS
+   ============================================================================ */
+:root {
+  /* Dynamic viewport units with fallback */
+  --vh: 1vh;
+  --dvh: 1dvh;
+  --svh: 1svh;
+  --lvh: 1lvh;
+
+  /* Safe area insets (iOS/Android notches, browser chrome) */
+  --safe-top: env(safe-area-inset-top, 0);
+  --safe-right: env(safe-area-inset-right, 0);
+  --safe-bottom: env(safe-area-inset-bottom, 0);
+  --safe-left: env(safe-area-inset-left, 0);
+}
+
+/* ============================================================================
+   11. COMPONENT-SPECIFIC TOKEN OVERRIDES
+   ============================================================================ */
+
+/* Card Grid */
+:root {
+  --card-min-width: 280px;
+  --card-gap: var(--space-4);
+  --card-aspect-ratio: 16 / 9;
+}
+
+/* List Row */
+:root {
+  --row-height: 72px;
+  --row-height-compact: 56px;
+  --row-thumb-width: 120px;
+  --row-thumb-height: 65px;
+  --row-thumb-width-mobile: 60px;
+  --row-thumb-height-mobile: 45px;
+}
+
+/* Pagination */
+:root {
+  --pagination-btn-size: 40px;
+  --pagination-btn-size-touch: 44px;
+}
+
+/* Toast/Notification */
+:root {
+  --toast-min-width: min(320px, calc(100vw - 32px));
+  --toast-bottom: max(16px, var(--safe-bottom));
+}
+
+/* ============================================================================
+   12. RESPONSIVE CONTRACTS (Applied via @media)
+   ============================================================================ */
+
+/* --- Mobile First: Base styles are mobile, these override up --- */
+
+/* Tablet and up (768px+) */
+@media (min-width: 768px) {
+  :root {
+    --header-height: 56px;
+    --space-gutter: var(--space-6);
+    --space-card-padding: var(--space-4);
+    --input-height: 36px;
+  }
+
+  /* Show hover-only actions on hover-capable devices */
+  @media (pointer: fine) {
+    .row-actions {
+      opacity: 0;
+    }
+    .list-row:hover .row-actions {
+      opacity: 1;
+    }
+  }
+}
+
+/* Mobile (max-width: 767px) */
+@media (max-width: 767px) {
+  :root {
+    --header-height: 52px;
+    --header-height-with-search: 104px;
+    --space-gutter: var(--space-4);
+    --space-card-padding: var(--space-3);
+    --input-height: 44px; /* 16px font prevents zoom on iOS */
+  }
+
+  /* Force visible actions on touch */
+  .row-actions {
+    opacity: 1;
+  }
+
+  /* Touch target enforcement */
+  button,
+  .btn,
+  a[role="button"],
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea,
+  .icon-btn,
+  .video-link-btn,
+  .drawer-close,
+  .create-btn,
+  .menu-toggle,
+  .close-btn,
+  .check-label,
+  .radio-label,
+  .checkbox-label {
+    min-height: var(--touch-target-min);
+    min-width: var(--touch-target-min);
+  }
+
+  /* Input font size 16px prevents iOS zoom on focus */
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+
+  /* Flexible layouts */
+  .toolbar,
+  .toolbar-left,
+  .toolbar-right,
+  .toolbar-group,
+  .row-meta,
+  .header-actions,
+  .right-actions,
+  .create-playlist-actions,
+  .page-footer,
+  .auth-bar {
+    flex-wrap: wrap;
+    min-width: 0;
+  }
+
+  /* Dropdown/menu constraints */
+  .dropdown-menu {
+    min-width: min(var(--dropdown-min-width), calc(100vw - 32px));
+    max-width: calc(100vw - 32px);
+  }
+
+  /* Undo toast full width */
+  .undo-toast {
+    min-width: 0;
+    width: calc(100vw - 32px);
+    flex-wrap: wrap;
+  }
+
+  /* Card grid single column */
+  .grid-view {
+    grid-template-columns: 1fr;
+  }
+
+  /* Modal padding reduction */
+  .modal-body {
+    padding: 16px;
+  }
+  .modal-body :global(.modal-footer),
+  .modal-body :global(.dialog-actions),
+  .modal-body :global(.multisort-footer) {
+    bottom: -16px;
+  }
+}
+
+/* Short screens (landscape phone, split view) */
+@media (max-height: 480px) and (max-width: 1024px) {
+  .sticky-header-container {
+    position: static;
+  }
+  dialog {
+    max-height: calc(100dvh - 16px);
+  }
+  .modal-body {
+    padding: 12px 16px;
+  }
+}
+
+/* Safe area support */
+@supports (padding: env(safe-area-inset-bottom)) {
+  .router-outlet {
+    padding-bottom: var(--safe-bottom);
+  }
+  .toast-container {
+    margin-bottom: var(--safe-bottom);
+  }
+}
+
+/* ============================================================================
+   13. UTILITY CLASSES (For one-off uses)
+   ============================================================================ */
+
+/* Container query polyfill helper */
+@container (max-width: 360px) {
+  .cq-narrow\:hidden {
+    display: none;
+  }
+  .cq-narrow\:flex {
+    display: flex;
+  }
+  .cq-narrow\:block {
+    display: block;
+  }
+  .cq-narrow\:w-full {
+    width: 100%;
+  }
+}
+
+/* Focus visible polyfill */
+:focus-visible {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: 2px;
+}
+
+/* Scrollbar gutter for layout stability */
+html {
+  scrollbar-gutter: stable;
+}
+
+/* Text wrapping safety */
+*,
+*::before,
+*::after {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* Image safety */
+img,
+video {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Touch action for interactive elements */
+button,
+a,
+input,
+select,
+textarea {
+  touch-action: manipulation;
+}
+
+/* ============================================================================
+   14. PRINT STYLES
+   ============================================================================ */
+@media print {
+  .no-print,
+  .toolbar,
+  .sidebar,
+  .header,
+  .modal,
+  .toast-container,
+  .drawer-close,
+  .menu-toggle {
+    display: none !important;
+  }
+  .view-body {
+    overflow: visible;
+    height: auto;
+  }
+  body {
+    background: white;
+    color: black;
+  }
+}

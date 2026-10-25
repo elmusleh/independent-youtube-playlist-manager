@@ -1,6 +1,41 @@
 # Pagination handoff
 
-## Current continuation — replacement release 1.1.1
+## Current continuation — Firefox Unlisted Test Release (v1.2.0.1) & v1.1.1 Status
+
+CURRENT STATUS:
+
+1. **Firefox Unlisted Test Release Created**:
+   - Manifest temporarily bumped to `1.2.0.1` for unlisted beta channel signing.
+   - Submitted to AMO under the unlisted channel (Version ID `6620940`, File ID `5165054`).
+   - Package artifact saved locally at `dist/firefox/web-ext-artifacts/independent_youtube_playlist_manager-1.2.0.1.xpi`.
+   - Local manifests restored to clean state `1.1.1`.
+   - Current AMO state: `unreviewed` (automated review/signing pending for host/data permissions).
+   - AMO Developer URL: https://addons.mozilla.org/en-US/developers/addon/iypm/versions/6620940
+   - **Local Testing**: Can be loaded immediately via `about:debugging#/runtime/this-firefox` ("Load Temporary Add-on...").
+   - **Public Test Link**: Once automated AMO validation attaches Mozilla signature, the direct link will install without warnings.
+
+2. **Official Store Status (v1.1.1)**:
+   - Chrome Web Store: Version 1.1.1 is submitted and pending review (automatic publication on approval).
+   - Firefox AMO (Listed): Version 1.1.1 (ID 6620554) submitted with source code, pending review.
+   - Web Portal: https://iypm.vercel.app/ remains deployed.
+   - **NEXT STEP FOR USER**: Awaiting user confirmation to publish/push official release once store approvals complete. No AI auto-push permitted.
+
+---
+
+## Previous continuation — replacement release 1.1.1
+
+FINAL STATUS: 1.1.1 is submitted to BOTH stores. Chrome dashboard: Pending review,
+automatic publication on approval. Firefox listed version 6620554: unreviewed,
+not disabled, source uploaded, correct data declarations confirmed by API.
+Source commit dff9c9c, annotated local tag v1.1.1. Never pushed. The owner must
+push main/tag, including the updated public privacy policy. User CHANGELOG.md
+remains untouched/untracked. docs/RELEASE_READINESS.md records exact outcomes,
+package hashes and limitations. Final check/build/pack and all browser suites pass:
+120 units; Chromium 90, Firefox desktop 90, Android-UA 90, portal six sizes;
+web-ext lint clean. Physical Android and real account/provider flows remain untested.
+No implementation work remains in the approved plan; store approvals are external.
+Next: owner pushes; review any marketplace feedback if received. No scheduled
+monitor was created. The chronological notes below predate the final submission.
 
 Earlier implementation and version 1.1.0 were committed as c4a1960/bdeb550 with
 local v1.1.0 tag (no push). Firefox candidate 6620498 was submitted with source,
