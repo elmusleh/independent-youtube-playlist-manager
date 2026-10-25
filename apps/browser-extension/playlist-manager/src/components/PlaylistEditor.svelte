@@ -50,6 +50,7 @@
   import { dbGetMetadataBatch, dbPutMetadataBatch } from "../services/db-service.js";
   import { enrichVideoMetadata } from "../services/enrichment-service.js";
   import { PAGE_SIZES } from "../services/settings-utils.js";
+  import { clampPage } from "../utils/pagination";
 
   const browser = (window as any).browser || (window as any).chrome;
 
@@ -177,22 +178,18 @@
     _isLoadingPage = true;
 
     try {
-      let indicesToLoad = [];
       const start = (page - 1) * pageSize;
-      const end = Math.min(page * pageSize, videos.length);
+      const pageVideos = filteredVideos
+        .slice(start, start + pageSize)
+        .filter((v) => v.title === "");
 
-      for (let i = start; i < end; i++) {
-        if (videos[i].title === "") indicesToLoad.push(i);
-      }
-
-      if (indicesToLoad.length > 0) {
+      if (pageVideos.length > 0) {
         if (autoFetchMetadata) {
           // Silent background fetch for missing metadata on this page
-          const pageVideos = indicesToLoad.map((i) => videos[i]);
           ensureMetadataLoaded(pageVideos, true);
         } else {
           window.info(
-            `${indicesToLoad.length} video(s) on this page are missing metadata. Enable "Auto-fetch metadata" in Settings or use Clean → Refetch Metadata.`
+            `${pageVideos.length} video(s) on this page are missing metadata. Enable "Auto-fetch metadata" in Settings or use Clean → Refetch Metadata.`
           );
         }
       }
@@ -317,6 +314,14 @@
     currentPage = e.detail.page;
     loadPageVideos(currentPage);
   }
+
+  $effect(() => {
+    const validPage = clampPage(currentPage, Math.ceil(filteredVideos.length / pageSize));
+    if (validPage !== currentPage) {
+      currentPage = validPage;
+      loadPageVideos(validPage);
+    }
+  });
 
   // Inline page-size control (persists globally as the `defaultPageSize` setting)
   function applyPageSize(nextSize: number) {
@@ -1570,9 +1575,9 @@
               {/each}
             </select>
           </div>
-          {#if videos.length > pageSize}
+          {#if filteredVideos.length > pageSize}
             <PaginationNav
-              totalItems={videos.length}
+              totalItems={filteredVideos.length}
               {pageSize}
               {currentPage}
               onsetpage={updatePaginationPage}

@@ -19,6 +19,7 @@
   import ErrorState from "../components/ErrorState.svelte";
   import SkeletonCard from "../components/SkeletonCard.svelte";
   import { paginate } from "svelte-paginate";
+  import { clampPage } from "../utils/pagination";
   import PaginationNav from "../components/PaginationNav.svelte";
   import { historySearch } from "../stores/playlists-filters";
   import { requestConfirm } from "../stores/confirmation";
@@ -219,6 +220,10 @@
       currentPage,
     }) as HistoryItem[]
   );
+
+  $effect(() => {
+    currentPage = clampPage(currentPage, Math.ceil(filteredHistory.length / pageSize));
+  });
 
   let groupedHistory = $derived(
     paginatedHistory.reduce(
@@ -455,8 +460,6 @@
               totalItems={filteredHistory.length}
               {pageSize}
               {currentPage}
-              limit={1}
-              showStepOptions={true}
               onsetpage={updatePaginationPage}
             />
           </div>
