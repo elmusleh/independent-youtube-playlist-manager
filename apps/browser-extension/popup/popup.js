@@ -6,13 +6,13 @@ import { getActiveTab, isYoutubeTab } from "./tabs.js";
 import {
   showChannelModal,
   hideChannelModal,
-  detectChannelFromDOM,
-  detectChannelFromURL,
+  isYoutubeChannelPage,
   handleChannelImport,
 } from "./channel.js";
 import { executeQuickAddByScope } from "./quick-add.js";
 import { updateTargetUI, initTargetData, loadDefaultTabScope } from "./target.js";
 import { state } from "./state.js";
+import { preparePageImport, showPageImportError, pageAccessError } from "./page-import.js";
 
 // ---------------------------------------------------------------------------
 // init
@@ -120,32 +120,19 @@ function setupUI() {
   getById("import-channel").onclick = async () => {
     try {
       await log("INFO", "Popup: Import from Channel clicked");
-      const activeTab = await getActiveTab();
-      if (!activeTab) return alert("No active tab found");
-
-      // Detect channel info
-      let channelInfo = await detectChannelFromDOM(activeTab);
-      if (!channelInfo) {
-        channelInfo = detectChannelFromURL(activeTab.url);
-      }
-
-      if (!channelInfo) {
-        return alert(
-          "Could not detect channel information. Please make sure you're on a YouTube channel page."
-        );
-      }
+      const activeTab = await preparePageImport();
 
       // Update channel info display
       const channelInfoDiv = getById("channel-info");
       if (channelInfoDiv) {
-        channelInfoDiv.textContent = `Channel: ${channelInfo.channelName}`;
+        channelInfoDiv.textContent = `${isYoutubeChannelPage(activeTab.url) ? "Channel" : "Page"}: ${activeTab.title || new URL(activeTab.url).hostname}`;
       }
 
       showChannelModal();
     } catch (e) {
       const msg = getErrorMessage(e);
       await log("ERROR", "Popup: Failed to open channel modal", msg);
-      alert("Failed to open channel modal: " + msg);
+      showPageImportError(pageAccessError(e));
     }
   };
 

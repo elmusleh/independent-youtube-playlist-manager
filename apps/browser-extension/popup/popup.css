@@ -1039,6 +1039,15 @@ body {
 }
 
 /* Print styles */
+#page-import-error {
+  margin: 12px;
+  padding: 12px;
+  border: 1px solid currentColor;
+  border-radius: 8px;
+  color: var(--text-color, #c62828);
+  overflow-wrap: anywhere;
+}
+
 @media print {
   .popup-header,
   .quick-add-container,

@@ -1,13 +1,16 @@
 (async function () {
-  const TARGET_QUANTITY = /** @type {number} */ (window["YPH_TARGET_QUANTITY"]) || 500; // Maximum videos to fetch
+  const requested = /** @type {number} */ (window["YPH_TARGET_QUANTITY"]);
+  const TARGET_QUANTITY = requested === 0 ? Infinity : requested || 500;
 
   // Helper to scroll down and wait for content to load
   async function scrollAndLoad(targetCount) {
     let previousHeight = 0;
     let scrollAttempts = 0;
+    let stalledAttempts = 0;
     const maxScrollAttempts = 100; // Prevent infinite loops
 
     while (scrollAttempts < maxScrollAttempts) {
+      scrollAttempts++;
       const currentVideos = document.querySelectorAll(
         "ytd-rich-item-renderer, ytd-grid-video-renderer, ytd-video-renderer, ytd-compact-video-renderer"
       );
@@ -26,12 +29,12 @@
 
       // If height hasn't changed, we've reached the end
       if (newHeight === previousHeight) {
-        scrollAttempts++;
-        if (scrollAttempts >= 3) {
+        stalledAttempts++;
+        if (stalledAttempts >= 3) {
           break; // No more content loading
         }
       } else {
-        scrollAttempts = 0;
+        stalledAttempts = 0;
         previousHeight = newHeight;
       }
     }

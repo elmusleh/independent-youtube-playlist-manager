@@ -26,13 +26,13 @@ The extension manifest requests the following permissions:
 
 - `storage` / `unlimitedStorage` — Save playlists, settings, and the local metadata cache without hitting storage quota limits.
 - `tabs` — Power the "add all open YouTube tabs" feature: enumerate open tabs (across windows) so you can select which YouTube videos to add. Tab data is read on demand and never transmitted.
-- `activeTab` / `scripting` — Extract video metadata or scrape video links from a page **only when you explicitly trigger it** (e.g., clicking the extension icon or a context-menu item).
+- `activeTab` / `scripting` — **Import from Page** scans YouTube links in the webpage you select after invoking the toolbar extension, including a non-YouTube article or blog. `activeTab` grants temporary access to that tab; it does not grant permanent access to all sites. The packaged extractors also read video/channel metadata from permitted YouTube pages. No remote code is executed. Local playback tracking uses its declared YouTube content script, not `activeTab`.
 - `contextMenus` — Provide the right-click "Add to Playlist Builder" menu item (desktop only).
 - `notifications` — Show local status notifications (e.g., sync or import results).
 - `alarms` — Schedule periodic background housekeeping (e.g., cache cleanup, optional background sync).
 - `identity` — Used **only** if you choose to sign in with Google OAuth for YouTube account sync. No sign-in is required to use the extension.
 
-A content script runs on `www.youtube.com/watch*` and `m.youtube.com/watch*` pages to support watch-progress tracking. Host access is limited to `https://*.youtube.com/*`.
+A content script runs on `www.youtube.com/watch*` and `m.youtube.com/watch*` pages to support watch-progress tracking. Required host access is limited to `https://*.youtube.com/*`; user-invoked page import can temporarily access the selected page through `activeTab`. Thumbnail preservation separately requests optional `https://i.ytimg.com/*` access when enabled.
 
 ---
 
