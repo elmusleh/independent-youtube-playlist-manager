@@ -1,5 +1,27 @@
 # Pagination handoff
 
+## Latest task: responsive layout plan
+
+Completed a source-based review of the toolbar popup, shared dialogs, shell,
+active extension routes, settings and portal. Saved the proposed phased work in
+docs/RESPONSIVE_UI_PLAN.md; linked it from PLAN and added pending implementation
+phases to PROGRESS. No application UI code changed for this planning task.
+
+Static popup browser check with app JavaScript disabled confirmed body width
+stays 360px at 320/360/390px viewports; at 320px document content is 360px wide.
+Six visible popup controls are below the proposed 44px touch-target height.
+This is layout evidence, not a functional test of a live extension popup.
+
+Validation: baseline check passed (103 tests; zero Svelte errors/warnings), and
+Chrome/Firefox production builds passed. Existing warnings listed below remain.
+
+Next: implement Phase 1 popup and shared dialogs according to the proposed plan,
+then shell/shared components and the route coverage table. Full route screenshots,
+keyboard-open behavior and Firefox Android real-device testing are still pending.
+Planning files changed: docs/RESPONSIVE_UI_PLAN.md and .ai-sync/{PLAN,PROGRESS,HANDOFF}.md.
+
+## Previous completed task
+
 Changed PaginationNav.svelte, PlaylistEditor.svelte, History.svelte, and added
 utils/pagination.ts and pagination.test.ts. Shared navigation uses native buttons
 and bounded page windows. Editor clamps invalid pages and counts filtered videos.
