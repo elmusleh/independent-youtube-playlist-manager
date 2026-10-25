@@ -1,5 +1,6 @@
 <script lang="ts">
   import SimpleButton from "./SimpleButton.svelte";
+  import ArchivedThumbnail from "./ArchivedThumbnail.svelte";
   import type { Video } from "../types/model.js";
   import { requestConfirm } from "../stores/confirmation.js";
   import Fa from "svelte-fa";
@@ -158,15 +159,20 @@
   {/if}
   {#if !disableThumbnails}
     <div class="thumbnail-wrapper" class:is-enriching={video.isEnriching && !video.title}>
-      <img alt={video.title || "Video thumbnail"} src={video.thumbnailUrl} />
+      <ArchivedThumbnail
+        alt={video.title || "Video thumbnail"}
+        src={video.thumbnailUrl}
+        videoId={video.videoId}
+      />
       {#if video.isLive}
         <span class="status-badge live-badge">LIVE</span>
       {:else if video.isPrivate}
         <span class="status-badge private-badge">Private</span>
       {:else if video.isDeleted}
         <span class="status-badge deleted-badge">Deleted</span>
-      {:else if video.duration || video.durationSeconds}
-        <span class="duration-badge">{formatDuration(video.duration || video.durationSeconds)}</span
+      {:else if video.durationISO || video.duration || video.durationSeconds}
+        <span class="duration-badge"
+          >{formatDuration(video.durationISO || video.duration || video.durationSeconds)}</span
         >
       {/if}
     </div>
@@ -340,7 +346,7 @@
     flex-shrink: 0;
   }
 
-  .thumbnail-wrapper img {
+  .thumbnail-wrapper :global(img) {
     width: 100%;
     height: 100%;
     object-fit: cover;
@@ -432,7 +438,7 @@
     }
   }
 
-  .thumbnail-wrapper.is-enriching img {
+  .thumbnail-wrapper.is-enriching :global(img) {
     opacity: 0.35;
     filter: blur(1px);
   }

@@ -12,6 +12,7 @@
     faFileImport,
   } from "@fortawesome/free-solid-svg-icons";
   import SimpleButton from "../components/SimpleButton.svelte";
+  import ArchivedThumbnail from "../components/ArchivedThumbnail.svelte";
   import SaveStatus from "../components/SaveStatus.svelte";
   import ViewHeader from "../components/ViewHeader.svelte";
   import StickyHeader from "../components/StickyHeader.svelte";
@@ -401,10 +402,10 @@
                       title="Watch on YouTube"
                     >
                       <div class="thumbnail-container">
-                        <img
+                        <ArchivedThumbnail
                           alt={item.title}
                           src="https://i.ytimg.com/vi/{item.videoId}/hqdefault.jpg"
-                          loading="lazy"
+                          videoId={item.videoId}
                         />
                         <div class="duration-overlay">
                           {formatTime(item.duration)}
@@ -552,7 +553,7 @@
     background: #000;
   }
 
-  .thumbnail-container img {
+  .thumbnail-container :global(img) {
     width: 100%;
     height: 100%;
     object-fit: cover;

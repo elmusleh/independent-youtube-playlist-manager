@@ -11,6 +11,7 @@ import {
   dbGetStats,
 } from "./db-service.js";
 import { normalizeVideoMeta, sanitizeVideoId } from "./schema-normalizer.js";
+import { hasCompleteMetadata } from "../utils/metadata-completeness";
 
 window.getMetadataCacheCount = async (): Promise<number> => {
   try {
@@ -66,7 +67,7 @@ function isNegativeCacheFresh(entry: any): boolean {
 }
 
 function isValidAndFresh(entry: any): entry is VideoMetaEntry {
-  return hasValidData(entry);
+  return hasCompleteMetadata(entry);
 }
 
 window.videoIdCount = 100;

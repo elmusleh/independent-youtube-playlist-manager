@@ -1,5 +1,33 @@
 # Pagination handoff
 
+## Latest work — GitHub issues #10/#11/#13/#14 and Dependabot
+
+All four issues addressed locally; details and usage in docs/GITHUB_ISSUE_FIXES.md.
+45 open remote Dependabot alerts checked against local lockfile ranges: no
+vulnerable matches remain; all three full npm audits are clean. Root unused Next
+lock entries pruned; Vitest/mocker, Vite, Undici updated; portal selector-parser
+override fixes the remaining Tailwind 3 dependency without framework migration.
+
+Duration fixes cover partial cache/import hydration, normalized durationISO display,
+and title-only oEmbed blocking later tiers. Pre-paint theme initialization has its
+own external script/CSS and the build uses the canonical public HTML. Thumbnails
+are opt-in, request only optional ytimg host access, use a separate IndexedDB
+archive and shared preview component, and support raster-validated full backups.
+Already missing images cannot be recovered. No archive data goes to cloud sync.
+
+Verification: 130 units, zero Svelte diagnostics, check/build and portal build;
+Chromium 90 checks, Firefox 90 checks, portal six sizes, focused issue suite,
+web-ext lint all pass. Physical phones/real external account flows not retested.
+
+Current store submissions were not changed. No push/issue closure/comment/alert
+dismissal. Local version still 1.1.1: bump a NEW release before any future upload.
+Next: owner pushes the local fix commit to the default branch so GitHub can
+clear dependency alerts, then confirm/close issues when release fixes are available.
+Pre-existing dirty layout/CSS/workflow files and iypm.sh must remain uncommitted
+except the relevant root unused dependency removal required for lockfile consistency.
+Own changes in shared PlaylistEditor/History/ManagePlaylistRow were staged as
+partial patches using /tmp/iypm-issue-baseline snapshots. No Git push.
+
 ## Current continuation — Firefox Unlisted Test Release (v1.2.0.1) & v1.1.1 Status
 
 CURRENT STATUS:

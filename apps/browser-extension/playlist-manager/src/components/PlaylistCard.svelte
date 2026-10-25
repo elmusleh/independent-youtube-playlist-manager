@@ -2,6 +2,7 @@
   import Fa from "svelte-fa";
   import { faListUl, faStar } from "@fortawesome/free-solid-svg-icons";
   import SimpleButton from "./SimpleButton.svelte";
+  import ArchivedThumbnail from "./ArchivedThumbnail.svelte";
   import SyncStatusIndicator from "./SyncStatusIndicator.svelte";
   import type { Playlist } from "../types/model";
 
@@ -64,7 +65,7 @@
 <div class="playlist-card">
   <button type="button" class="playlist-thumbnail" onclick={onOpen} aria-label="Open {title}">
     {#if thumbnailUrl}
-      <img src={thumbnailUrl} alt={title} class="thumbnail-img" />
+      <ArchivedThumbnail src={thumbnailUrl} alt={title} />
     {:else}
       <div class="thumbnail-placeholder">
         <Fa icon={faListUl} size="2x" />
@@ -154,7 +155,7 @@
     padding: 0;
   }
 
-  .thumbnail-img {
+  .playlist-thumbnail :global(img) {
     width: 100%;
     height: 100%;
     object-fit: cover;

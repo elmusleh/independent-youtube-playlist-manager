@@ -5,6 +5,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const { sizes } = require("./extension-fixture.js");
+const portalUrl = process.env.IYPM_PORTAL_URL || "http://localhost:3050";
 
 async function main() {
   const browser = await chromium.launch({ channel: "chromium", headless: true });
@@ -18,7 +19,7 @@ async function main() {
     const report = [];
     for (const [width, height] of sizes) {
       await page.setViewportSize({ width, height });
-      await page.goto("http://localhost:3050/");
+      await page.goto(portalUrl + "/");
       await page.getByRole("heading", { level: 1 }).waitFor();
       assert(
         await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1),
@@ -36,7 +37,7 @@ async function main() {
         await page.screenshot({ path: path.join(output, `portal-${width}.png`), fullPage: true });
     }
     for (const method of ["get", "post"]) {
-      const response = await page.request[method]("http://localhost:3050/api/sync", {
+      const response = await page.request[method](portalUrl + "/api/sync", {
         headers: { authorization: "Bearer yph_invalid_release_test" },
         ...(method === "post" ? { data: { payload: {} } } : {}),
       });

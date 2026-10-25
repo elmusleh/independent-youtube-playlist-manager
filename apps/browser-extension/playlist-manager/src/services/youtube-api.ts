@@ -2,6 +2,7 @@ import { dbPutMetadataBatch } from "./db-service.js";
 import { normalizeVideoMeta } from "./schema-normalizer.js";
 import type { NormalizedVideoMeta, RawVideoMeta } from "../types/model.js";
 import { requireDataConsent } from "../utils/data-consent";
+import { hasCompleteMetadata } from "../utils/metadata-completeness";
 
 // Guard to prevent duplicate declarations on SPA navigation
 if (window._youtubeApiLoaded) {
@@ -1386,6 +1387,27 @@ window.ytFetchVideoDurations = async (
 
   // 4. Batch promise executing configured tiers
   const batchPromise = (async () => {
+    const unresolved = () => toFetch.filter((id) => !hasCompleteMetadata(result.get(id)));
+    const remember = (id: string, raw: any) => {
+      const previous = result.get(id);
+      const meta = normalizeVideoMeta(
+        {
+          ...previous,
+          ...raw,
+          videoId: id,
+          title: raw.title || previous?.title,
+          channel: raw.channel || previous?.channel,
+          durationISO: raw.durationISO || raw.duration || previous?.durationISO,
+          durationSeconds:
+            raw.durationSeconds ||
+            raw.lengthSeconds ||
+            (raw.duration || raw.durationISO ? undefined : previous?.durationSeconds),
+        },
+        id
+      );
+      result.set(id, meta);
+      _metadataSessionCache.set(id, meta);
+    };
     // Helper: Step Innertube with Circuit Breaker
     const runInnertube = async () => {
       if (!enableInnertube) return;
@@ -1397,14 +1419,12 @@ window.ytFetchVideoDurations = async (
           );
         return;
       }
-      const missing = toFetch.filter((id) => !result.has(id));
+      const missing = unresolved();
       if (!missing.length) return;
       try {
         const innertubeResults = await window.fetchMetadataInnertube(missing);
         innertubeResults.forEach((meta: any, videoId: string) => {
-          const normalized = normalizeVideoMeta({ ...meta, videoId }, videoId);
-          result.set(videoId, normalized);
-          _metadataSessionCache.set(videoId, normalized);
+          remember(videoId, meta);
         });
       } catch (e: any) {
         const msg = String(e?.message || e);
@@ -1422,7 +1442,7 @@ window.ytFetchVideoDurations = async (
     // Helper: Step Embed Page Headless Scraper
     const runEmbed = async () => {
       if (!enableEmbed) return;
-      const missing = toFetch.filter((id) => !result.has(id));
+      const missing = unresolved();
       if (!missing.length) return;
       try {
         const embedResults = await Promise.all(
@@ -1433,9 +1453,7 @@ window.ytFetchVideoDurations = async (
         );
         for (const { id, meta } of embedResults) {
           if (meta) {
-            const normalized = normalizeVideoMeta({ ...meta, videoId: id }, id);
-            result.set(id, normalized);
-            _metadataSessionCache.set(id, normalized);
+            remember(id, meta);
           }
         }
       } catch (e) {
@@ -1446,7 +1464,7 @@ window.ytFetchVideoDurations = async (
     // Helper: Step Official YouTube oEmbed
     const runOEmbed = async () => {
       if (!enableOEmbed) return;
-      const missing = toFetch.filter((id) => !result.has(id));
+      const missing = unresolved();
       if (!missing.length) return;
       try {
         const oEmbedResults = await Promise.all(
@@ -1457,9 +1475,7 @@ window.ytFetchVideoDurations = async (
         );
         for (const { id, meta } of oEmbedResults) {
           if (meta) {
-            const normalized = normalizeVideoMeta({ ...meta, videoId: id }, id);
-            result.set(id, normalized);
-            _metadataSessionCache.set(id, normalized);
+            remember(id, meta);
           }
         }
       } catch (e) {
@@ -1469,13 +1485,12 @@ window.ytFetchVideoDurations = async (
 
     // Helper: Step YouTube Data API v3
     const runDataAPI = async () => {
-      const missing = toFetch.filter((id) => !result.has(id));
+      const missing = unresolved();
       if (!missing.length) return;
       try {
         const apiResults = await fetchMetadataFromYouTubeDataAPI(missing);
         apiResults.forEach((meta: any, videoId: string) => {
-          result.set(videoId, meta);
-          _metadataSessionCache.set(videoId, meta);
+          remember(videoId, meta);
         });
       } catch (e) {
         console.warn("[YPH] Data API failed:", e);
@@ -1485,7 +1500,7 @@ window.ytFetchVideoDurations = async (
     // Helper: Step Piped & Invidious Fallback
     const runInvidious = async () => {
       if (!enableInvidious) return;
-      const missing = toFetch.filter((id) => !result.has(id));
+      const missing = unresolved();
       if (!missing.length) return;
       try {
         const invidiousResults = await window.fetchDurationsInvidious(
@@ -1494,8 +1509,7 @@ window.ytFetchVideoDurations = async (
           customInvidious
         );
         invidiousResults.forEach((meta: any, videoId: string) => {
-          result.set(videoId, meta);
-          _metadataSessionCache.set(videoId, meta);
+          remember(videoId, meta);
         });
       } catch (e) {
         console.warn("[YPH] Piped/Invidious failed:", e);

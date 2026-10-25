@@ -1,5 +1,14 @@
 # Pagination progress
 
+## GitHub issues and Dependabot follow-up
+
+- [x] Read all four open issues and 45 open Dependabot alerts through GitHub.
+- [x] Verify #10 pagination; reproduce/fix #13 pre-paint theme and #14 duration enrichment.
+- [x] Add #11 optional persistent thumbnail archive, shared preview fallback, controls and backups.
+- [x] Root/extension/portal audits clean; no versions match any of the 45 alert ranges.
+- [x] Verify check/build/portal build, focused issue suite, Chromium/Firefox and portal layouts.
+- [x] Prepare local fix commit with only this task's changes; preserve pre-existing edits. Owner pushes later.
+
 - [x] Baseline checks: 99 tests passed, no Svelte diagnostics.
 - [x] Implement compact shared navigation and filtered playlist page counts.
 - [x] Add page-window regression tests.

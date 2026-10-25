@@ -1,5 +1,16 @@
 # Current Plan — IYPM (2026-10-25)
 
+## Authorized next work — GitHub issues and security alerts
+
+Read issues #10/#11/#13/#14 and open Dependabot alerts. Preserve pre-existing
+uncommitted layout/workflow changes. Verify #10 pagination; fix partial import
+duration enrichment (#14), pre-paint theme initialization (#13), and opt-in local
+thumbnail preservation with controls and backup portability (#11). Update vulnerable
+dependencies without a framework migration, verify all three dependency trees,
+run unit/check/build and browser regression checks, and document each issue and
+alert disposition. Commit only this task's changes. No Git push, issue closure,
+store resubmission or website deployment as part of this work.
+
 ## Project State: **v1.1.1 Submitted to Stores** ✅
 
 | Component                       | Status                                                             |

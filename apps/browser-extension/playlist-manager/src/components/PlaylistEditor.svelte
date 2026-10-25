@@ -182,7 +182,7 @@
       const start = (page - 1) * pageSize;
       const pageVideos = filteredVideos
         .slice(start, start + pageSize)
-        .filter((v) => v.title === "");
+        .filter(isVideoMissingMetadata);
 
       if (pageVideos.length > 0) {
         if (autoFetchMetadata) {
@@ -819,7 +819,7 @@
   }
 
   /** A video is missing essential metadata if it lacks title, channel, or duration. */
-  function isVideoMissingMetadata(v: Video): boolean {
+  function isVideoMissingMetadata(v: Partial<Video>): boolean {
     const title = (v.title || "").trim();
     const channel = (v.channel || "").trim();
     const hasTitle = title && title !== "undefined";
@@ -848,7 +848,7 @@
           isDeleted: c.isDeleted,
           isBroken: c.isBroken,
           isLive: c.isLive,
-          isEnriching: false,
+          isEnriching: autoFetchMetadata && isVideoMissingMetadata(c),
         };
       });
     } catch (e) {
@@ -1110,9 +1110,12 @@
                 : meta.isDeleted
                   ? "Deleted channel"
                   : "[Unavailable]"),
-            duration: meta.duration || v.duration,
-            durationISO: meta.duration || v.durationISO,
-            durationSeconds: meta.duration ? window.isoToSecs(meta.duration) : v.durationSeconds,
+            duration: meta.durationISO || meta.duration || v.duration,
+            durationISO: meta.durationISO || meta.duration || v.durationISO,
+            durationSeconds:
+              meta.durationSeconds ||
+              window.isoToSecs(meta.durationISO || meta.duration || "") ||
+              v.durationSeconds,
             viewCount: meta.viewCount !== undefined ? meta.viewCount : v.viewCount,
             publishedAt: meta.publishedAt || v.publishedAt,
             isPrivate: meta.isPrivate,

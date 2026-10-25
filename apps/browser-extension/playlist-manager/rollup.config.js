@@ -110,6 +110,7 @@ export default {
       copy({
         targets: [
           { src: "public/global.css", dest: "../editor" },
+          { src: "public/theme-init.*", dest: "../editor" },
           {
             src: "public/index.html",
             dest: "../editor",
