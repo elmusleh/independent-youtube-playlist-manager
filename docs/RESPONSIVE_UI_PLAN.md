@@ -1,13 +1,12 @@
 # Mobile and desktop layout improvement plan
 
-Status: proposed implementation plan. This change documents the work; it does not
-change application behavior. Scope includes the toolbar popup, every active
-extension route, in-app dialogs, and the current web portal landing page.
+**Status:** Phases 1–3 implemented; Phase 4 (real-device verification) pending. Design token system consolidated in `apps/browser-extension/playlist-manager/src/css/design-tokens.css` (single source of truth).
+
+This change documents the work; it does not change application behavior. Scope includes the toolbar popup, every active extension route, in-app dialogs, and the current web portal landing page.
 
 ## Findings and priorities
 
-These findings come from source inspection. Runtime page behavior still needs a
-route-by-route baseline; browser resizing does not replace real mobile testing.
+These findings come from source inspection. Runtime page behavior still needs a route-by-route baseline; browser resizing does not replace real mobile testing.
 
 | Priority | Evidence                                                                                                                                                      | Proposed fix                                                                                                                         |
 | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
@@ -94,8 +93,7 @@ route-by-route baseline; browser resizing does not replace real mobile testing.
 | Logs (`/logs`)                                                                 | Toolbar wrapping and readable log entries; confine necessary horizontal scrolling to code/log blocks.                                                                                                       |
 | Web portal (`/`, not-found)                                                    | Hero, install buttons, footer links, short-height/landscape behavior, text zoom and both themes where supported. Review only components actually rendered by these routes.                                  |
 
-Use the route map as the inventory. `Saved-refactored.svelte` is not the active
-Saved route; do not redesign inactive alternatives or invent dashboard pages.
+Use the route map as the inventory. `Saved-refactored.svelte` is not the active Saved route; do not redesign inactive alternatives or invent dashboard pages.
 API endpoints are outside visual layout scope.
 
 ## Phase 4 — Verification and completion criteria
