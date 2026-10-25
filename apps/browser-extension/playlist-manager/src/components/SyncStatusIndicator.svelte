@@ -17,28 +17,28 @@
     local: {
       icon: faFile,
       text: "Local (Offline)",
-      color: "#ff9800",
+      color: "var(--color-brand-warning)",
       spin: false,
       title: "This playlist is only stored on this device and not synced to YouTube.",
     },
     synced: {
       icon: faCloud,
       text: "Synced",
-      color: "#4caf50",
+      color: "var(--color-brand-success)",
       spin: false,
       title: "This playlist is linked and up-to-date with your YouTube account.",
     },
     online: {
       icon: faYoutube,
       text: "YouTube Native",
-      color: "#ff0000",
+      color: "var(--color-brand-danger)",
       spin: false,
-      title: "This is a native YouTube playlist not managed by [YPH].",
+      title: "This is a native YouTube playlist not managed by the extension.",
     },
     syncing: {
       icon: faArrowsRotate,
       text: "Syncing...",
-      color: "var(--primary-color)",
+      color: "var(--color-brand-primary)",
       spin: true,
       title: "Currently syncing changes with YouTube...",
     },
@@ -64,21 +64,21 @@
   .sync-indicator {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: var(--space-2);
     background: rgba(0, 0, 0, 0.75);
-    padding: 4px;
+    padding: var(--space-1);
     border-radius: 50%;
     z-index: 10;
     backdrop-filter: blur(4px);
     border: 1px solid rgba(255, 255, 255, 0.15);
-    transition: all 0.2s ease;
+    transition: all var(--transition-base) ease;
   }
 
   .sync-indicator.has-text {
-    padding: 4px 10px;
-    border-radius: 20px;
-    background: var(--hover-color);
-    border: 1px solid var(--border-color);
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-pill);
+    background: var(--color-bg-hover);
+    border: 1px solid var(--color-border-primary);
   }
 
   :global([data-theme="dark"]) .sync-indicator.has-text {
@@ -93,20 +93,20 @@
   }
 
   .status-text {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text-color);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
     white-space: nowrap;
   }
 
   /* Sizes */
   .size-sm {
-    width: 24px;
-    height: 24px;
+    width: var(--icon-btn-size);
+    height: var(--icon-btn-size);
   }
   .size-sm.has-text {
     width: auto;
-    height: 28px;
+    height: var(--input-height);
   }
   .size-sm :global(svg) {
     font-size: 11px;
@@ -118,19 +118,19 @@
   }
   .size-md.has-text {
     width: auto;
-    height: 36px;
+    height: var(--touch-target-min);
   }
   .size-md :global(svg) {
     font-size: 14px;
   }
 
   .size-lg {
-    width: 40px;
-    height: 40px;
+    width: var(--touch-target-min);
+    height: var(--touch-target-min);
   }
   .size-lg.has-text {
     width: auto;
-    height: 44px;
+    height: var(--touch-target-comfortable);
   }
   .size-lg :global(svg) {
     font-size: 18px;
@@ -147,6 +147,31 @@
     }
     to {
       transform: rotate(360deg);
+    }
+  }
+
+  /* Touch target enforcement for mobile */
+  @media (pointer: coarse), (max-width: 767px) {
+    .size-sm {
+      width: var(--touch-target-min);
+      height: var(--touch-target-min);
+    }
+    .size-sm.has-text {
+      height: var(--touch-target-min);
+    }
+    .size-md {
+      width: var(--touch-target-min);
+      height: var(--touch-target-min);
+    }
+    .size-md.has-text {
+      height: var(--touch-target-comfortable);
+    }
+  }
+
+  /* Reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    .state-syncing .icon-wrapper {
+      animation: none;
     }
   }
 </style>
