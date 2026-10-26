@@ -5,7 +5,7 @@
   "author": "Mohammad El-Musleh <elmusleh.mohammad@gmail.com>",
   "license": "MIT",
   "scripts": {
-    "build": "cd apps/browser-extension/playlist-manager && npm install && npm run build && cd ../../.. && node packages/build-tools/patch-innerhtml.js && npm run build-chrome && npm run build-firefox && npm run build-edge && node packages/build-tools/validate-manifests.js && node packages/build-tools/verify-css-bundle.js && node packages/build-tools/verify-budgets.js",
+    "build": "cd apps/browser-extension/playlist-manager && npm ci && npm run build && cd ../../.. && node packages/build-tools/patch-innerhtml.js && npm run build-chrome && npm run build-firefox && npm run build-edge && node packages/build-tools/validate-manifests.js && node packages/build-tools/verify-css-bundle.js && node packages/build-tools/verify-budgets.js",
     "prod": "cd apps/browser-extension/playlist-manager && npm run prod",
     "watch": "cd apps/browser-extension/playlist-manager && npm run watch",
     "cors": "cd apps/browser-extension/playlist-manager && npm run cors",
