@@ -241,6 +241,12 @@ export async function importFullDatabaseBackup(
     if (backupJson.data?.thumbnails) {
       if (mode === "overwrite") await clearArchivedThumbnails();
       await restoreThumbnails(backupJson.data.thumbnails);
+    } else if (mode === "overwrite") {
+      // A full restore replaces the database, so the archive is cleared even when the
+      // incoming backup predates thumbnail archiving and carries no `thumbnails`.
+      // Without this, images from the previous database survive the restore and
+      // reappear in later exports.
+      await clearArchivedThumbnails();
     }
     let rawPlaylists: any[] = [];
     if (Array.isArray(backupJson)) {
