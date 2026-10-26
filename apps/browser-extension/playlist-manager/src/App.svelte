@@ -18,6 +18,7 @@
   import Subscriptions from "./views/Subscriptions.svelte";
   import Search from "./views/Search.svelte";
   import OpenById from "./views/OpenById.svelte";
+  import MetadataManager from "./views/MetadataManager.svelte";
   import ConfirmationModal from "./components/ConfirmationModal.svelte";
   import ToastContainer from "./components/ToastContainer.svelte";
   import "./stores/shortcuts";
@@ -113,6 +114,7 @@
     "/subscriptions": Subscriptions,
     "/search": Search,
     "/open-by-id": OpenById,
+    "/metadata": MetadataManager,
     "/*": Saved,
   };
 

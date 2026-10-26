@@ -160,6 +160,16 @@ async function main() {
     assert.equal(Object.keys(backup.data.videoMetadata).length, 205);
     report.interactions.push("Full backup export contains playlists and shared metadata");
 
+    // The Manage view's bulk bar lives in a subBar snippet that must be passed into
+    // StickyHeader; declaring it outside the component renders nothing.
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await visit("/manage");
+    assert(
+      await page.getByRole("checkbox", { name: "Select all playlists", exact: true }).count(),
+      "Manage bulk selection bar is not rendered (subBar snippet missing from StickyHeader)"
+    );
+    report.interactions.push("Manage bulk selection bar renders");
+
     for (const width of [320, 390, 768]) {
       await page.setViewportSize({ width, height: 600 });
       await page.goto(`${base}/popup/popup.html`);

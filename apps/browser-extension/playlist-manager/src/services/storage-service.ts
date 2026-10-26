@@ -141,6 +141,9 @@ function toPlainPlaylists(playlists: Playlist[]): Playlist[] {
 }
 
 async function saveLocalPlaylist(playlist: Playlist): Promise<string> {
+  // Browser storage uses structured cloning, which rejects nested Svelte proxies.
+  // A shallow spread leaves reactive arrays/objects (notably sortRules) intact.
+  playlist = JSON.parse(JSON.stringify(playlist)) as Playlist;
   if (typeof browser === "undefined") return playlist.id;
   const playlists = await getLocalPlaylists();
   let id = playlist.id;
@@ -263,7 +266,7 @@ window.ensureWatchLaterPlaylist = async (
   }
 };
 
-// ─── Sync Snapshot Helpers (used by sync-service for conflict detection) ──────
+// ─── Sync Snapshot Helpers ────────────────────────────────────────────────────
 
 const SYNC_SNAPSHOTS_KEY = "yph_sync_snapshots";
 

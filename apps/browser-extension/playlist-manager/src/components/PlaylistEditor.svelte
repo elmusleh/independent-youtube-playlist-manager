@@ -565,7 +565,12 @@
               timestamp: Date.now(),
             };
       } else {
-        target = await window.getPlaylist(copyMoveTargetPlaylistId as string);
+        const loaded = await window.getPlaylist(copyMoveTargetPlaylistId as string);
+        if (!loaded) {
+          window.error("The target playlist no longer exists. It may have been deleted.");
+          return;
+        }
+        target = loaded;
         const existing = new Set(target.videos.map((v: any) => v.videoId || v));
         const newV = selectedApiIds.filter((id) => !existing.has(id));
         if (newV.length === 0) {
@@ -625,49 +630,55 @@
   }
 
   async function performSave(data: Playlist, sync: boolean, silent = false) {
-    await status.save(
-      async () => {
-        // Guarantee all video metadata in memory is atomically written to IndexedDB
-        const metaBatch: Record<string, any> = {};
-        for (const v of videos) {
-          if (v && v.videoId && (v.title || v.channel || v.durationISO || v.durationSeconds)) {
-            metaBatch[v.videoId] = {
-              videoId: v.videoId,
-              title: v.title,
-              channel: v.channel,
-              durationISO: v.durationISO || v.duration,
-              durationSeconds: v.durationSeconds,
-              viewCount: v.viewCount,
-              publishedAt: v.publishedAt,
-              isPrivate: v.isPrivate,
-              isDeleted: v.isDeleted,
-              isBroken: v.isBroken,
-              isLive: v.isLive,
-            };
+    await status
+      .save(
+        async () => {
+          // Guarantee all video metadata in memory is atomically written to IndexedDB
+          const metaBatch: Record<string, any> = {};
+          for (const v of videos) {
+            if (v && v.videoId && (v.title || v.channel || v.durationISO || v.durationSeconds)) {
+              metaBatch[v.videoId] = {
+                videoId: v.videoId,
+                title: v.title,
+                channel: v.channel,
+                durationISO: v.durationISO || v.duration,
+                durationSeconds: v.durationSeconds,
+                viewCount: v.viewCount,
+                publishedAt: v.publishedAt,
+                isPrivate: v.isPrivate,
+                isDeleted: v.isDeleted,
+                isBroken: v.isBroken,
+                isLive: v.isLive,
+              };
+            }
           }
-        }
-        if (Object.keys(metaBatch).length > 0) {
-          await dbPutMetadataBatch(metaBatch);
-        }
+          if (Object.keys(metaBatch).length > 0) {
+            await dbPutMetadataBatch(metaBatch);
+          }
 
-        const id = await window.savePlaylist(data, { syncToYoutube: sync });
-        const wasLocal = data.isLocal;
-        playlist = {
-          ...data,
-          id,
-          ...(wasLocal && sync ? { isLocal: false, isTagged: true, saved: true } : {}),
-        };
-        loadedPlaylistKey = `${playlist.id}:${(playlist.videos || []).join(",")}`;
-        if (isPlaylistBuilder) await browser.runtime.sendMessage({ cmd: "clear-playlist-builder" });
-        initialHash = calculateStateHash();
-        isDirty = false;
-        if (!silent) {
-          window.success(sync ? "Synced & Saved" : "Saved");
-          if (isNew || isPlaylistBuilder) handleNavigate("#/saved");
-        }
-      },
-      { silent }
-    );
+          const id = await window.savePlaylist(data, { syncToYoutube: sync });
+          const wasLocal = data.isLocal;
+          playlist = {
+            ...data,
+            id,
+            ...(wasLocal && sync ? { isLocal: false, isTagged: true, saved: true } : {}),
+          };
+          loadedPlaylistKey = `${playlist.id}:${(playlist.videos || []).join(",")}`;
+          if (isPlaylistBuilder)
+            await browser.runtime.sendMessage({ cmd: "clear-playlist-builder" });
+          initialHash = calculateStateHash();
+          isDirty = false;
+          if (!silent) {
+            window.success(sync ? "Synced & Saved" : "Saved");
+            if (isNew || isPlaylistBuilder) handleNavigate("#/saved");
+          }
+        },
+        { silent }
+      )
+      .catch(() => {
+        // StatusManager retains the error and dirty state for the visible Retry action.
+        // Event handlers and autosave timers must not leak unhandled rejections.
+      });
   }
 
   async function importVideos() {
@@ -886,7 +897,7 @@
       updateDirtyState();
       await loadPageVideos(currentPage);
       await persistAfterSort();
-      window.success("Reversed");
+      if (!status.error) window.success("Reversed");
       return;
     }
 
@@ -944,7 +955,7 @@
 
     // 6. Persist the new order + sort rules to storage immediately.
     await persistAfterSort();
-    window.success("Sorted");
+    if (!status.error) window.success("Sorted");
   }
 
   /** Callback invoked by the MultiSortModal when the user clicks "Apply & Save". */
@@ -1290,8 +1301,11 @@
 
   // Misc
   async function refresh(options: { skipSave?: boolean } = {}) {
+    if (!options.skipSave && isDirty && dataLoaded) {
+      await savePlaylist({ silent: true });
+      if (status.error) return;
+    }
     await status.refresh(async () => {
-      if (!options.skipSave && isDirty && dataLoaded) await savePlaylist({ silent: true });
       window.invalidatePlaylistCache();
       loadPageVideos(currentPage);
     });
@@ -1676,8 +1690,6 @@
 {/if}
 
 <style>
-  @import "../css/view-layout.css";
-
   .list {
     border: 1px solid var(--border-color);
     border-radius: 12px;

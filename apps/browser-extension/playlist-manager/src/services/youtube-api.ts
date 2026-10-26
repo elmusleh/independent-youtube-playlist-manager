@@ -2,7 +2,7 @@ import { dbPutMetadataBatch } from "./db-service.js";
 import { normalizeVideoMeta } from "./schema-normalizer.js";
 import type { NormalizedVideoMeta, RawVideoMeta } from "../types/model.js";
 import { requireDataConsent } from "../utils/data-consent";
-import { hasCompleteMetadata } from "../utils/metadata-completeness";
+import { hasCompleteMetadata, needsDurationRefresh } from "../utils/metadata-completeness";
 
 // Guard to prevent duplicate declarations on SPA navigation
 if (window._youtubeApiLoaded) {
@@ -753,7 +753,38 @@ const INNERTUBE_API_KEY = ["AIzaSyA8eiZmM1", "FaDVjRy-df2KTy", "Q_vz_yYM39w"].jo
 const INNERTUBE_BASE_URL = "https://www.youtube.com/youtubei/v1/player";
 
 // Multi-Client Contexts for Innertube (bypasses bot verification by using mobile/web/TV player profiles)
+// Order matters: the most duration-reliable clients are tried first. TVHTML5 and iOS
+// return `videoDetails.lengthSeconds` far more consistently than WEB/MWEB, which is
+// what makes duration metadata survive without a Data API quota.
 const INNERTUBE_CLIENTS = [
+  {
+    name: "TVHTML5_SIMPLY_EMBEDDED_PLAYER",
+    context: {
+      client: {
+        clientName: "TVHTML5_SIMPLY_EMBEDDED_PLAYER",
+        clientVersion: "2.0",
+        clientScreen: "EMBED",
+        hl: "en",
+        gl: "US",
+      },
+      thirdParty: {
+        embedUrl: "https://www.youtube.com",
+      },
+    },
+  },
+  {
+    name: "IOS",
+    context: {
+      client: {
+        clientName: "IOS",
+        clientVersion: "19.45.4",
+        deviceModel: "iPhone16,2",
+        userAgent: "com.google.ios.youtube/19.45.4 (iPhone16,2; U; CPU iOS 18_4_0 like Mac OS X;)",
+        hl: "en",
+        gl: "US",
+      },
+    },
+  },
   {
     name: "MWEB",
     context: {
@@ -777,21 +808,6 @@ const INNERTUBE_CLIENTS = [
     },
   },
   {
-    name: "TVHTML5_SIMPLY_EMBEDDED_PLAYER",
-    context: {
-      client: {
-        clientName: "TVHTML5_SIMPLY_EMBEDDED_PLAYER",
-        clientVersion: "2.0",
-        clientScreen: "EMBED",
-        hl: "en",
-        gl: "US",
-      },
-      thirdParty: {
-        embedUrl: "https://www.youtube.com",
-      },
-    },
-  },
-  {
     name: "ANDROID_VR",
     context: {
       client: {
@@ -806,6 +822,36 @@ const INNERTUBE_CLIENTS = [
   },
 ];
 
+/**
+ * Live-ness must only ever come from an explicit signal in the response.
+ * Inferring it from `lengthSeconds === 0` used to mark ordinary videos as live,
+ * which in turn made them look "complete" and stopped all later tiers from
+ * recovering the missing duration.
+ */
+export function detectLiveStream(data: InnertubeResponse | undefined): boolean {
+  if (!data) return false;
+
+  const details = data.videoDetails;
+  if (details?.isLiveContent === true) return true;
+  if (details?.liveBroadcastDetails) return true;
+
+  const renderer = data.microformat?.playerMicroformatRenderer;
+  if (renderer?.liveBroadcastDetails) return true;
+
+  return false;
+}
+
+/** Shorts are served through a different UI; flag them so the UI can label them. */
+export function detectShort(data: InnertubeResponse | undefined): boolean {
+  if (!data) return false;
+  const details = data.videoDetails;
+  if (details?.isShorts === true) return true;
+  if ((data.microformat?.playerMicroformatRenderer as any)?.pageType === "WEB_PAGE_TYPE_SHORTS") {
+    return true;
+  }
+  return false;
+}
+
 interface InnertubeResponse {
   videoDetails?: {
     videoId: string;
@@ -819,11 +865,14 @@ interface InnertubeResponse {
     isOwnerViewing?: boolean;
     isCrawlable?: boolean;
     isLiveContent?: boolean;
+    isShorts?: boolean;
+    liveBroadcastDetails?: unknown;
   };
   microformat?: {
     playerMicroformatRenderer?: {
       publishDate?: string;
       uploadDate?: string;
+      liveBroadcastDetails?: unknown;
     };
   };
   playabilityStatus?: {
@@ -944,6 +993,7 @@ window.fetchVideoMetadataInnertube = async (
   isDeleted?: boolean;
   isBroken?: boolean;
   isLive?: boolean;
+  isShort?: boolean;
 } | null> => {
   for (const clientConfig of INNERTUBE_CLIENTS) {
     try {
@@ -1010,10 +1060,14 @@ window.fetchVideoMetadataInnertube = async (
         else isDeleted = true;
       }
 
-      const isLive =
-        videoDetails.isLiveContent === true ||
-        (lengthSeconds === 0 && !isDeleted && !isPrivate && !isBroken);
-      const durationStr = isLive ? "LIVE" : secsToISO(lengthSeconds);
+      // Only an explicit live signal counts. `lengthSeconds === 0` used to imply
+      // "live", which made ordinary videos look complete and blocked later tiers
+      // from ever recovering their missing duration.
+      const isLive = detectLiveStream(data);
+      const isShort = detectShort(data);
+      // A zero-length, non-live response is *missing* duration — report an empty
+      // duration so the completeness check keeps failing and later tiers run.
+      const durationStr = isLive ? "LIVE" : lengthSeconds > 0 ? secsToISO(lengthSeconds) : "";
 
       return {
         title,
@@ -1026,6 +1080,7 @@ window.fetchVideoMetadataInnertube = async (
         isDeleted,
         isBroken,
         isLive,
+        isShort,
       };
     } catch {
       // Continue to next client
@@ -1081,6 +1136,7 @@ window.fetchVideoMetadataEmbedPage = async (
   isDeleted?: boolean;
   isBroken?: boolean;
   isLive?: boolean;
+  isShort?: boolean;
 } | null> => {
   try {
     const controller = new AbortController();
@@ -1102,13 +1158,13 @@ window.fetchVideoMetadataEmbedPage = async (
       const details = data.videoDetails;
       if (details && details.title) {
         const lengthSeconds = parseInt(details.lengthSeconds || "0", 10);
-        const isLive =
-          details.isLiveContent === true ||
-          (lengthSeconds === 0 && details.title && details.author);
+        // Never infer live from a zero length — see detectLiveStream().
+        const isLive = detectLiveStream(data);
+        const durationStr = isLive ? "LIVE" : lengthSeconds > 0 ? secsToISO(lengthSeconds) : "";
         return {
           title: details.title,
           channel: details.author || "",
-          duration: isLive ? "LIVE" : secsToISO(lengthSeconds),
+          duration: durationStr,
           lengthSeconds,
           viewCount: details.viewCount ? parseInt(details.viewCount, 10) : undefined,
           publishedAt:
@@ -1121,6 +1177,7 @@ window.fetchVideoMetadataEmbedPage = async (
             data.playabilityStatus?.status !== "LOGIN_REQUIRED" &&
             data.playabilityStatus?.status !== "ERROR",
           isLive,
+          isShort: detectShort(data),
         };
       }
     }
@@ -1230,7 +1287,7 @@ window.fetchVideoMetadataInvidious = async (
         return {
           title: data.title || "",
           channel: data.uploader || "",
-          duration: isLive ? "LIVE" : secsToISO(lengthSeconds),
+          duration: isLive ? "LIVE" : lengthSeconds > 0 ? secsToISO(lengthSeconds) : "",
           lengthSeconds,
           viewCount: data.views,
           publishedAt: data.uploadDate,
@@ -1259,14 +1316,16 @@ window.fetchVideoMetadataInvidious = async (
       if (!res.ok || res.status === 401 || res.status === 403 || res.status === 429) continue;
       const data = await res.json();
       if (data && data.videoId) {
-        const isLive =
-          data.liveNow === true || (data.lengthSeconds === 0 && data.title && data.author);
-        const durationStr = isLive ? "LIVE" : secsToISO(data.lengthSeconds || 0);
+        // `liveNow` is the only trustworthy live signal here; a zero length must
+        // stay "missing duration" so the completeness check keeps failing.
+        const isLive = data.liveNow === true;
+        const lengthSeconds = data.lengthSeconds || 0;
+        const durationStr = isLive ? "LIVE" : lengthSeconds > 0 ? secsToISO(lengthSeconds) : "";
         return {
           title: data.title || "",
           channel: data.author || "",
           duration: durationStr,
-          lengthSeconds: data.lengthSeconds || 0,
+          lengthSeconds,
           viewCount: data.viewCount,
           publishedAt: data.publishedDate
             ? new Date(data.publishedDate * 1000).toISOString()
@@ -1516,6 +1575,54 @@ window.ytFetchVideoDurations = async (
       }
     };
 
+    /**
+     * Duration recovery pass.
+     *
+     * An entry that has a title and channel but no duration is almost always a
+     * video whose duration was lost — historically it was mis-flagged as live and
+     * then never retried. Give those entries one focused second pass through the
+     * two sources that most reliably report `lengthSeconds`.
+     */
+    const runDurationRecovery = async () => {
+      const targets = toFetch.filter((id) => needsDurationRefresh(result.get(id)));
+      if (!targets.length) return;
+
+      if (window.logSystemEvent) {
+        await window.logSystemEvent(
+          "INFO",
+          `[YOUTUBE-API] Running duration recovery pass for ${targets.length} entries`
+        );
+      }
+
+      if (enableEmbed) {
+        const embedResults = await Promise.all(
+          targets.map(async (id) => {
+            try {
+              return { id, meta: await window.fetchVideoMetadataEmbedPage(id) };
+            } catch {
+              return { id, meta: null };
+            }
+          })
+        );
+        for (const { id, meta } of embedResults) {
+          if (meta && needsDurationRefresh(result.get(id))) remember(id, meta);
+        }
+      }
+
+      if (enableInnertube) {
+        const stillMissing = toFetch.filter((id) => needsDurationRefresh(result.get(id)));
+        if (!stillMissing.length) return;
+        try {
+          const innertubeResults = await window.fetchMetadataInnertube(stillMissing);
+          innertubeResults.forEach((meta: any, videoId: string) => {
+            if (needsDurationRefresh(result.get(videoId))) remember(videoId, meta);
+          });
+        } catch (e) {
+          console.warn("[YPH] Duration recovery (Innertube) failed:", e);
+        }
+      }
+    };
+
     // Execution sequence based on strategy
     if (strategy === "api_first") {
       await runDataAPI();
@@ -1531,6 +1638,9 @@ window.ytFetchVideoDurations = async (
       await runDataAPI();
       await runInvidious();
     }
+
+    // 5. Focused duration recovery for entries that still lack a duration.
+    await runDurationRecovery();
 
     // Cache null for items that truly could not be found anywhere
     for (const id of toFetch) {

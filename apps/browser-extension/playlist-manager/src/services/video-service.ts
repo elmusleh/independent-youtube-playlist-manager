@@ -1,4 +1,4 @@
-/// <reference path="../types/services.d.ts" />
+/// <reference path="../types/services.ts" />
 
 import type { Playlist, NormalizedVideoMeta } from "../types/model.js";
 import {
@@ -9,14 +9,102 @@ import {
   dbDeleteMetadata,
   dbClearMetadata,
   dbGetStats,
+  dbGetAllMetadata,
 } from "./db-service.js";
 import { normalizeVideoMeta, sanitizeVideoId } from "./schema-normalizer.js";
-import { hasCompleteMetadata } from "../utils/metadata-completeness";
+import {
+  collectMetadataGaps,
+  hasCompleteMetadata,
+  needsDurationRefresh,
+} from "../utils/metadata-completeness.js";
+import type { MetadataGapSummary } from "../utils/metadata-completeness.js";
+import { isForcedRefetch } from "./refresh-registry.js";
 
 window.getMetadataCacheCount = async (): Promise<number> => {
   try {
     const stats = await dbGetStats();
     return stats.totalMetadata;
+  } catch {
+    return 0;
+  }
+};
+
+/**
+ * Aggregate metadata health across the whole cache. Powers the Data Manager view
+ * and the nav-bar badge.
+ */
+window.getMetadataGapSummary = async (): Promise<MetadataGapSummary> => {
+  try {
+    const all = await dbGetAllMetadata();
+    return collectMetadataGaps(all);
+  } catch {
+    return collectMetadataGaps(null);
+  }
+};
+
+/** Entries that are incomplete (missing title, channel or duration). */
+window.getMetadataGaps = async (): Promise<NormalizedVideoMeta[]> => {
+  try {
+    const all = await dbGetAllMetadata();
+    const gaps: NormalizedVideoMeta[] = [];
+    for (const [id, meta] of Object.entries(all)) {
+      if (meta && !hasCompleteMetadata(meta)) {
+        gaps.push(normalizeVideoMeta(meta, id));
+      }
+    }
+    // Most actionable first: duration-only gaps, then the rest.
+    return gaps.sort((a, b) => Number(needsDurationRefresh(b)) - Number(needsDurationRefresh(a)));
+  } catch {
+    return [];
+  }
+};
+
+/**
+ * Re-fetch metadata for every incomplete entry (forced). Returns the number of
+ * entries that were queued for recovery.
+ */
+window.refreshMetadataGaps = async (force = true): Promise<number> => {
+  try {
+    const all = await dbGetAllMetadata();
+    const ids = Object.entries(all)
+      .filter(([, meta]) => (force ? !hasCompleteMetadata(meta) : needsDurationRefresh(meta)))
+      .map(([id]) => id);
+    if (!ids.length) return 0;
+
+    if (window.logSystemEvent) {
+      await window.logSystemEvent(
+        "INFO",
+        `[VIDEO-SERVICE] Refreshing metadata for ${ids.length} incomplete entr${ids.length === 1 ? "y" : "ies"}`
+      );
+    }
+
+    const result = (await import("./enrichment-service.js")).enrichVideoMetadata;
+    const { metaMap } = await result(ids, { force: true });
+    return metaMap.size;
+  } catch (err) {
+    if (window.logSystemEvent) {
+      await window.logSystemEvent("WARN", `[VIDEO-SERVICE] Gap refresh failed: ${err}`);
+    }
+    return 0;
+  }
+};
+
+/**
+ * Drop every incomplete entry from the cache so it is refetched on demand.
+ * Returns the number of entries removed.
+ */
+window.clearIncompleteMetadata = async (): Promise<number> => {
+  try {
+    const all = await dbGetAllMetadata();
+    const ids = Object.entries(all)
+      .filter(([, meta]) => !hasCompleteMetadata(meta))
+      .map(([id]) => id);
+    if (!ids.length) return 0;
+    await dbDeleteMetadata(ids);
+    if (typeof window.clearMetadataSessionCache === "function") {
+      window.clearMetadataSessionCache(ids);
+    }
+    return ids.length;
   } catch {
     return 0;
   }
@@ -100,9 +188,12 @@ class VideoService {
   }
 
   async shouldSkipFetch(videoId: string): Promise<boolean> {
+    // An explicit refresh intent always wins over the persistent cache.
+    if (isForcedRefetch(videoId)) return false;
     const entry = await dbGetMetadata(videoId);
     if (isValidAndFresh(entry)) return true;
     if (isNegativeCacheFresh(entry)) return true;
+    // Anything that is not complete falls through and is refetched.
     return false;
   }
 
@@ -144,8 +235,10 @@ class VideoService {
           );
       }
     }
-    const hasValidData = isValidAndFresh(cached);
-    const isRecentNegativeCache = isNegativeCacheFresh(cached);
+    // A forced refetch must not short-circuit on the cached row.
+    const forced = isForcedRefetch(videoId);
+    const hasValidData = !forced && isValidAndFresh(cached);
+    const isRecentNegativeCache = !forced && isNegativeCacheFresh(cached);
     if (cached && (hasValidData || isRecentNegativeCache)) {
       return {
         id: window.videoIdCount++,

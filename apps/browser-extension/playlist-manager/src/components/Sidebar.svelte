@@ -9,6 +9,7 @@
     faLink,
     faSearch,
     faXmark,
+    faWandMagicSparkles,
   } from "@fortawesome/free-solid-svg-icons";
   import Fa from "svelte-fa";
   import { router } from "svelte-spa-router";
@@ -20,6 +21,7 @@
 
   let settings: Settings | null = $state(null);
   let signedIn = $state(false);
+  let gapCount = $state(0);
 
   let { drawerOpen = false, onClose = () => {} }: { drawerOpen?: boolean; onClose?: () => void } =
     $props();
@@ -36,8 +38,48 @@
     signedIn = await window.isSignedIn();
   }
 
+  /**
+   * Number of cached entries that are not resolved (see `needsAttention` in
+   * utils/metadata-completeness). Surfaced as a badge on the Data Manager nav
+   * item; the summary's own counter keeps it identical to the Data Manager list.
+   */
+  let gapLoading = false;
+
+  async function loadGapCount() {
+    if (gapLoading) return;
+    gapLoading = true;
+    try {
+      if (typeof window.getMetadataGapSummary !== "function") {
+        gapCount = 0;
+        return;
+      }
+      const summary = await window.getMetadataGapSummary();
+      gapCount = summary.needsAttention;
+    } catch {
+      gapCount = 0;
+    } finally {
+      gapLoading = false;
+    }
+  }
+
+  /**
+   * Counting gaps means reading the whole metadata cache, so it is deferred
+   * until the app is idle instead of competing with the first paint.
+   */
+  function scheduleGapCount() {
+    const w = window as any;
+    if (typeof w.requestIdleCallback === "function") {
+      w.requestIdleCallback(() => loadGapCount(), { timeout: 3000 });
+    } else {
+      setTimeout(loadGapCount, 1200);
+    }
+  }
+
   loadSettings();
   checkAuth();
+  scheduleGapCount();
+
+  window.addEventListener("yph-metadata-changed", loadGapCount);
 
   const handleAuthChange = (e: any) => {
     signedIn = e.detail.isSignedIn;
@@ -78,6 +120,7 @@
   onDestroy(() => {
     browser.storage.onChanged.removeListener(handleStorageChange);
     window.removeEventListener("yt-auth-changed", handleAuthChange);
+    window.removeEventListener("yph-metadata-changed", loadGapCount);
   });
 </script>
 
@@ -160,6 +203,24 @@
         <hr class="nav-divider" />
       {/if}
     </div>
+
+    <a
+      href="#/metadata"
+      class="nav-item-bottom"
+      class:active={isActive("/metadata", router.location, router.querystring || "")}
+    >
+      <Fa icon={faWandMagicSparkles} fw />
+      <span>Data Manager</span>
+      {#if gapCount > 0}
+        <span
+          class="nav-badge"
+          title="{gapCount} incomplete entries"
+          aria-label="{gapCount} incomplete {gapCount === 1 ? 'entry' : 'entries'}"
+        >
+          {gapCount > 99 ? "99+" : gapCount}
+        </span>
+      {/if}
+    </a>
   </div>
 </div>
 
@@ -257,6 +318,25 @@
             <hr class="nav-divider" />
           {/if}
         </div>
+
+        <a
+          href="#/metadata"
+          onclick={handleNavClick}
+          class="nav-item-bottom"
+          class:active={isActive("/metadata", router.location, router.querystring || "")}
+        >
+          <Fa icon={faWandMagicSparkles} fw />
+          <span>Data Manager</span>
+          {#if gapCount > 0}
+            <span
+              class="nav-badge"
+              title="{gapCount} incomplete entries"
+              aria-label="{gapCount} incomplete {gapCount === 1 ? 'entry' : 'entries'}"
+            >
+              {gapCount > 99 ? "99+" : gapCount}
+            </span>
+          {/if}
+        </a>
       </div>
     </div>
   </Modal>
@@ -276,6 +356,28 @@
 
   .top-nav {
     flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Pinned to the bottom of the sidebar so the entry point stays reachable */
+  .nav-item-bottom {
+    margin-top: auto;
+  }
+
+  .nav-badge {
+    margin-left: auto;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 10px;
+    background-color: var(--color-brand-primary, var(--active-bg-color));
+    color: var(--color-text-inverse, var(--active-text-color));
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 20px;
+    text-align: center;
+    flex-shrink: 0;
   }
 
   .nav-group {
@@ -378,10 +480,17 @@
       flex: 1;
       overflow-y: auto;
       padding: 0 8px;
+      display: flex;
+      flex-direction: column;
     }
 
     .drawer-nav .nav-group {
       flex-direction: column;
+    }
+
+    .drawer-nav .nav-item-bottom {
+      margin-top: auto;
+      margin-bottom: 8px;
     }
   }
 </style>

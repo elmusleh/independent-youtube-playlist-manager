@@ -22,6 +22,8 @@
   import ViewHeader from "../components/ViewHeader.svelte";
   import StickyHeader from "../components/StickyHeader.svelte";
   import SimpleButton from "../components/SimpleButton.svelte";
+  import Modal from "../components/Modal.svelte";
+  import ProgressBar from "../components/ProgressBar.svelte";
   import { StatusManager } from "../services/status-manager.svelte";
   import SkeletonCard from "../components/SkeletonCard.svelte";
   import SyncStatusIndicator from "../components/SyncStatusIndicator.svelte";
@@ -758,7 +760,9 @@
       const fullPlaylists = await Promise.all(
         targets.map((p: YtPlaylistInfoExtended) => window.getPlaylist(p.id))
       );
-      await window.removePlaylists(fullPlaylists.filter((p: any) => p !== null));
+      await window.removePlaylists(
+        fullPlaylists.filter((p): p is NonNullable<typeof p> => p !== null)
+      );
       await loadPlaylists();
 
       selectedIds = new Set();
@@ -1017,90 +1021,91 @@
 
 <!-- ─── Progress dialog ──────────────────────────────────────────────────── -->
 {#if prog.active}
-  <div class="overlay">
-    <div
-      class="dialog prog-dialog"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="prog-dialog-title"
-    >
-      <h2 class="dialog-title" id="prog-dialog-title">{prog.title}</h2>
-      <div class="prog-container">
-        <p class="dialog-msg">{prog.message}</p>
-        <div class="prog-track">
-          <div class="prog-fill" style="transform: scaleX({progressPct / 100})"></div>
-        </div>
-        <div class="prog-meta">
-          <span>{prog.current} / {prog.total} steps ({progressPct}%)</span>
-          {#if !prog.done}
-            <span>Elapsed: {elapsedDisplay} · ETA: {etaDisplay}</span>
-          {/if}
-        </div>
+  <Modal
+    display={prog.active}
+    onclose={() => (prog = { ...prog, active: false })}
+    dismissible={!!(prog.done || prog.error)}
+    title={prog.title || "Working"}
+    showHeader
+  >
+    <div class="prog-container">
+      <p class="dialog-msg">{prog.message}</p>
+      <ProgressBar progress={progressPct} />
+      <div class="prog-meta">
+        <span>{prog.current} / {prog.total} steps ({progressPct}%)</span>
+        {#if !prog.done}
+          <span>Elapsed: {elapsedDisplay} · ETA: {etaDisplay}</span>
+        {/if}
       </div>
-      {#if prog.error}<p class="dialog-error">{prog.error}</p>{/if}
-      {#if prog.done}
-        <div class="dialog-actions">
-          <SimpleButton onclick={() => (prog = { ...prog, active: false })} primary
-            >Close</SimpleButton
-          >
-        </div>
-      {/if}
     </div>
-  </div>
+    {#if prog.error}<p class="dialog-error">{prog.error}</p>{/if}
+
+    {#snippet footer()}
+      <div class="dialog-actions">
+        {#if prog.done}
+          <SimpleButton primary onclick={() => (prog = { ...prog, active: false })}
+            >Done</SimpleButton
+          >
+        {/if}
+      </div>
+    {/snippet}
+  </Modal>
 {/if}
 
 <!-- ─── Merge dialog ─────────────────────────────────────────────────────── -->
 {#if showMerge}
-  <div class="overlay">
-    <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="merge-dialog-title">
-      <h2 class="dialog-title" id="merge-dialog-title">
-        Merge {selectedIds.size} Playlists
-      </h2>
-      <p class="dialog-info">
-        ~{mergeRawTotal} videos total · duplicates will be removed automatically
-      </p>
+  <Modal
+    bind:display={showMerge}
+    title="Merge {selectedIds.size} Playlists"
+    onclose={() => (showMerge = false)}
+  >
+    <p class="dialog-info">
+      ~{mergeRawTotal} videos total · duplicates will be removed automatically
+    </p>
 
+    <div class="field-group">
+      <label class="field-label" for="mergeTarget">Merge destination</label>
+      <select id="mergeTarget" bind:value={mergeTargetId} class="text-input">
+        <option value="new">✚ Create New Playlist</option>
+        {#each selectedPlaylists as p}
+          <option value={p.id}>{p.title} {p.isLocal ? "(Offline)" : "(YouTube)"}</option>
+        {/each}
+        {#if favMergeTarget}
+          <option value={favMergeTarget.id}
+            >⭐ {favMergeTarget.title} (Favorite {favMergeTarget.isLocal
+              ? "· Offline"
+              : "· YouTube"})</option
+          >
+        {/if}
+      </select>
+    </div>
+
+    {#if mergeTargetId === "new"}
       <div class="field-group">
-        <label class="field-label" for="mergeTarget">Merge destination</label>
-        <select id="mergeTarget" bind:value={mergeTargetId} class="text-input">
-          <option value="new">✚ Create New Playlist</option>
-          {#each selectedPlaylists as p}
-            <option value={p.id}>{p.title} {p.isLocal ? "(Offline)" : "(YouTube)"}</option>
-          {/each}
-          {#if favMergeTarget}
-            <option value={favMergeTarget.id}
-              >⭐ {favMergeTarget.title} (Favorite {favMergeTarget.isLocal
-                ? "· Offline"
-                : "· YouTube"})</option
-            >
-          {/if}
-        </select>
-      </div>
-
-      {#if mergeTargetId === "new"}
-        <div class="field-group">
-          <label class="field-label" for="mergeTitle">New playlist name</label>
-          <input
-            aria-label="New playlist name"
-            id="mergeTitle"
-            class="text-input"
-            bind:value={mergeTitle}
-            placeholder="Enter playlist name…"
-          />
-        </div>
-      {/if}
-
-      <label class="check-label">
+        <label class="field-label" for="mergeTitle">New playlist name</label>
         <input
-          aria-label="Delete source playlists after merge"
-          type="checkbox"
-          bind:checked={deleteAfterMerge}
-          onchange={() => saveSetting("deleteAfterMerge", deleteAfterMerge)}
+          aria-label="New playlist name"
+          id="mergeTitle"
+          class="text-input"
+          bind:value={mergeTitle}
+          placeholder="Enter playlist name…"
         />
-        Delete source playlists after merge
-      </label>
+      </div>
+    {/if}
+
+    <label class="check-label">
+      <input
+        aria-label="Delete source playlists after merge"
+        type="checkbox"
+        bind:checked={deleteAfterMerge}
+        onchange={() => saveSetting("deleteAfterMerge", deleteAfterMerge)}
+      />
+      Delete source playlists after merge
+    </label>
+
+    {#snippet footer()}
       <div class="dialog-actions">
-        <SimpleButton onclick={() => (showMerge = false)} secondary>Cancel</SimpleButton>
+        <SimpleButton secondary onclick={() => (showMerge = false)}>Cancel</SimpleButton>
         <SimpleButton
           onclick={executeMerge}
           primary
@@ -1110,76 +1115,79 @@
           Merge Playlists
         </SimpleButton>
       </div>
-    </div>
-  </div>
+    {/snippet}
+  </Modal>
 {/if}
 
 <!-- ─── Save Offline dialog ─────────────────────────────────────────────── -->
 {#if showSaveOffline}
-  <div class="overlay">
-    <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="offline-dialog-title">
-      <h2 class="dialog-title" id="offline-dialog-title">Save Offline</h2>
-      <p class="dialog-info">
-        {offlinePlaylists.length} playlist{offlinePlaylists.length !== 1 ? "s" : ""} selected
-      </p>
+  <Modal
+    bind:display={showSaveOffline}
+    title="Save Offline"
+    onclose={() => (showSaveOffline = false)}
+  >
+    <p class="dialog-info">
+      {offlinePlaylists.length} playlist{offlinePlaylists.length !== 1 ? "s" : ""} selected
+    </p>
 
-      <div class="offline-playlist-list">
-        {#each offlinePlaylists as item (item.yt.id)}
-          <div class="offline-playlist-item">
-            <div class="offline-playlist-info">
-              <span class="offline-playlist-title">{item.yt.title}</span>
-              <span class="offline-playlist-meta">
-                {item.yt.videoCount} videos
-                {#if item.local}
-                  <span class="badge local">Existing copy</span>
-                {/if}
-              </span>
-            </div>
-            <div class="offline-playlist-options">
+    <div class="offline-playlist-list">
+      {#each offlinePlaylists as item (item.yt.id)}
+        <div class="offline-playlist-item">
+          <div class="offline-playlist-info">
+            <span class="offline-playlist-title">{item.yt.title}</span>
+            <span class="offline-playlist-meta">
+              {item.yt.videoCount} videos
               {#if item.local}
-                <label class="radio-label">
-                  <input
-                    type="radio"
-                    name="mode-{item.yt.id}"
-                    checked={offlineSaveMode[item.yt.id] === "sync"}
-                    onchange={() => handleModeChange(item.yt.id, "sync")}
-                  />
-                  Sync existing
-                </label>
+                <span class="badge local">Existing copy</span>
               {/if}
-              <label class="radio-label">
-                <input
-                  type="radio"
-                  name="mode-{item.yt.id}"
-                  checked={offlineSaveMode[item.yt.id] === "new"}
-                  onchange={() => handleModeChange(item.yt.id, "new")}
-                />
-                {item.local ? "Create new copy" : "Save"}
-              </label>
-              {#if offlineSaveMode[item.yt.id] === "new" && item.local}
-                <input
-                  type="text"
-                  class="text-input offline-title-input"
-                  bind:value={offlineTitles[item.yt.id]}
-                  placeholder="Playlist name"
-                />
-              {/if}
-              <label class="radio-label">
-                <input
-                  type="radio"
-                  name="mode-{item.yt.id}"
-                  checked={offlineSaveMode[item.yt.id] === "skip"}
-                  onchange={() => handleModeChange(item.yt.id, "skip")}
-                />
-                Skip
-              </label>
-            </div>
+            </span>
           </div>
-        {/each}
-      </div>
+          <div class="offline-playlist-options">
+            {#if item.local}
+              <label class="radio-label">
+                <input
+                  type="radio"
+                  name="mode-{item.yt.id}"
+                  checked={offlineSaveMode[item.yt.id] === "sync"}
+                  onchange={() => handleModeChange(item.yt.id, "sync")}
+                />
+                Sync existing
+              </label>
+            {/if}
+            <label class="radio-label">
+              <input
+                type="radio"
+                name="mode-{item.yt.id}"
+                checked={offlineSaveMode[item.yt.id] === "new"}
+                onchange={() => handleModeChange(item.yt.id, "new")}
+              />
+              {item.local ? "Create new copy" : "Save"}
+            </label>
+            {#if offlineSaveMode[item.yt.id] === "new" && item.local}
+              <input
+                type="text"
+                class="text-input offline-title-input"
+                bind:value={offlineTitles[item.yt.id]}
+                placeholder="Playlist name"
+              />
+            {/if}
+            <label class="radio-label">
+              <input
+                type="radio"
+                name="mode-{item.yt.id}"
+                checked={offlineSaveMode[item.yt.id] === "skip"}
+                onchange={() => handleModeChange(item.yt.id, "skip")}
+              />
+              Skip
+            </label>
+          </div>
+        </div>
+      {/each}
+    </div>
 
+    {#snippet footer()}
       <div class="dialog-actions">
-        <SimpleButton onclick={() => (showSaveOffline = false)} secondary>Cancel</SimpleButton>
+        <SimpleButton secondary onclick={() => (showSaveOffline = false)}>Cancel</SimpleButton>
         <SimpleButton
           onclick={executeSaveOffline}
           primary
@@ -1189,8 +1197,8 @@
           Save Offline
         </SimpleButton>
       </div>
-    </div>
-  </div>
+    {/snippet}
+  </Modal>
 {/if}
 
 <!-- ─── Main ─────────────────────────────────────────────────────────────── -->
@@ -1219,6 +1227,116 @@
           {/snippet}
         </ViewHeader>
       {/snippet}
+      {#snippet subBar()}
+        {#if filteredPlaylists.length > 0}
+          <div class="list-header" class:selection-active={selectedIds.size > 0}>
+            <div class="header-left">
+              <label class="check-cell">
+                <input
+                  aria-label="Select all playlists"
+                  type="checkbox"
+                  bind:this={selectAllEl}
+                  checked={allSelected}
+                  onchange={toggleAll}
+                  title={allSelected ? "Deselect all" : "Select all"}
+                />
+              </label>
+              <span class="select-label">
+                {#if selectedIds.size > 0}
+                  {selectedIds.size} of {filteredPlaylists.length} selected
+                {:else}
+                  {filteredPlaylists.length} playlist{filteredPlaylists.length !== 1 ? "s" : ""}
+                {/if}
+              </span>
+              {#if selectedIds.size > 0}
+                <SimpleButton onclick={() => (selectedIds = new Set())} secondary>
+                  <Fa icon={faXmark} fw /><span>Clear</span>
+                </SimpleButton>
+              {/if}
+            </div>
+
+            {#if selectedIds.size > 0}
+              <div class="bulk-actions">
+                <SimpleButton onclick={exportSelected} secondary>
+                  <Fa icon={faFileExport} fw /><span>Export</span>
+                </SimpleButton>
+                {#if canSaveOffline}
+                  <SimpleButton onclick={openSaveOffline} secondary>
+                    <Fa icon={faCloudArrowDown} fw /><span>Save Offline</span>
+                  </SimpleButton>
+                {/if}
+                {#if canMerge}
+                  <SimpleButton
+                    onclick={() => openMerge()}
+                    secondary
+                    disabled={!isMergeTypeCompatible}
+                    title={isMergeTypeCompatible
+                      ? "Merge selected playlists"
+                      : "Cannot merge offline and synced playlists"}
+                  >
+                    <Fa icon={faCodeMerge} fw /><span>Merge</span>
+                  </SimpleButton>
+                {/if}
+                {#if canMergeIntoFav}
+                  <SimpleButton
+                    onclick={() => openMerge(favoritePlaylistId!)}
+                    secondary
+                    disabled={!isFavMergeTypeCompatible}
+                    title={favMergeTitle}
+                  >
+                    <Fa icon={faStar} fw /><span
+                      >{favMergeTarget
+                        ? `Merge into "${favMergeTarget.title.length > 20 ? favMergeTarget.title.slice(0, 18) + "…" : favMergeTarget.title}"`
+                        : "Merge into Favorite"}</span
+                    >
+                  </SimpleButton>
+                {/if}
+                <SimpleButton onclick={requestDelete} danger>
+                  <Fa icon={faTrash} fw /><span>Delete</span>
+                </SimpleButton>
+                {#if canChangePrivacy}
+                  <div class="privacy-dropdown">
+                    <select
+                      aria-label="Change privacy"
+                      bind:value={newPrivacyStatus}
+                      class="text-input privacy-select"
+                      disabled={isPrivacyMixed}
+                      title={isPrivacyMixed
+                        ? "Cannot change privacy for mixed offline and YouTube playlists"
+                        : ""}
+                    >
+                      <option value="" disabled>Change Privacy</option>
+                      <option value="private">Private</option>
+                      <option value="unlisted">Unlisted</option>
+                      <option value="public">Public</option>
+                    </select>
+                    <SimpleButton
+                      onclick={executeChangePrivacy}
+                      secondary
+                      disabled={!newPrivacyStatus || isPrivacyMixed}
+                      title={isPrivacyMixed
+                        ? "Cannot change privacy for mixed offline and YouTube playlists"
+                        : newPrivacyStatus
+                          ? `Change ${selectedYoutubeCount} playlist${selectedYoutubeCount !== 1 ? "s" : ""} to ${newPrivacyStatus}`
+                          : "Select privacy"}
+                    >
+                      <Fa
+                        icon={newPrivacyStatus === "private"
+                          ? faLock
+                          : newPrivacyStatus === "unlisted"
+                            ? faLockOpen
+                            : faEarthAmericas}
+                        fw
+                      />
+                      <span>Set</span>
+                    </SimpleButton>
+                  </div>
+                {/if}
+              </div>
+            {/if}
+          </div>
+        {/if}
+      {/snippet}
     </StickyHeader>
 
     {#if loading}
@@ -1239,113 +1357,6 @@
       </div>
     {:else}
       <div class="list-container">
-        <div class="list-header" class:selection-active={selectedIds.size > 0}>
-          <div class="header-left">
-            <label class="check-cell">
-              <input
-                aria-label="Select all playlists"
-                type="checkbox"
-                bind:this={selectAllEl}
-                checked={allSelected}
-                onchange={toggleAll}
-                title={allSelected ? "Deselect all" : "Select all"}
-              />
-            </label>
-            <span class="select-label">
-              {#if selectedIds.size > 0}
-                {selectedIds.size} of {filteredPlaylists.length} selected
-              {:else}
-                {filteredPlaylists.length} playlist{filteredPlaylists.length !== 1 ? "s" : ""}
-              {/if}
-            </span>
-            {#if selectedIds.size > 0}
-              <SimpleButton onclick={() => (selectedIds = new Set())} secondary>
-                <Fa icon={faXmark} fw /><span>Clear</span>
-              </SimpleButton>
-            {/if}
-          </div>
-
-          {#if selectedIds.size > 0}
-            <div class="bulk-actions">
-              <SimpleButton onclick={exportSelected} secondary>
-                <Fa icon={faFileExport} fw /><span>Export</span>
-              </SimpleButton>
-              {#if canSaveOffline}
-                <SimpleButton onclick={openSaveOffline} secondary>
-                  <Fa icon={faCloudArrowDown} fw /><span>Save Offline</span>
-                </SimpleButton>
-              {/if}
-              {#if canMerge}
-                <SimpleButton
-                  onclick={() => openMerge()}
-                  secondary
-                  disabled={!isMergeTypeCompatible}
-                  title={isMergeTypeCompatible
-                    ? "Merge selected playlists"
-                    : "Cannot merge offline and synced playlists"}
-                >
-                  <Fa icon={faCodeMerge} fw /><span>Merge</span>
-                </SimpleButton>
-              {/if}
-              {#if canMergeIntoFav}
-                <SimpleButton
-                  onclick={() => openMerge(favoritePlaylistId!)}
-                  secondary
-                  disabled={!isFavMergeTypeCompatible}
-                  title={favMergeTitle}
-                >
-                  <Fa icon={faStar} fw /><span
-                    >{favMergeTarget
-                      ? `Merge into "${favMergeTarget.title.length > 20 ? favMergeTarget.title.slice(0, 18) + "…" : favMergeTarget.title}"`
-                      : "Merge into Favorite"}</span
-                  >
-                </SimpleButton>
-              {/if}
-              <SimpleButton onclick={requestDelete} danger>
-                <Fa icon={faTrash} fw /><span>Delete</span>
-              </SimpleButton>
-              {#if canChangePrivacy}
-                <div class="privacy-dropdown">
-                  <select
-                    aria-label="Change privacy"
-                    bind:value={newPrivacyStatus}
-                    class="text-input privacy-select"
-                    disabled={isPrivacyMixed}
-                    title={isPrivacyMixed
-                      ? "Cannot change privacy for mixed offline and YouTube playlists"
-                      : ""}
-                  >
-                    <option value="" disabled>Change Privacy</option>
-                    <option value="private">Private</option>
-                    <option value="unlisted">Unlisted</option>
-                    <option value="public">Public</option>
-                  </select>
-                  <SimpleButton
-                    onclick={executeChangePrivacy}
-                    secondary
-                    disabled={!newPrivacyStatus || isPrivacyMixed}
-                    title={isPrivacyMixed
-                      ? "Cannot change privacy for mixed offline and YouTube playlists"
-                      : newPrivacyStatus
-                        ? `Change ${selectedYoutubeCount} playlist${selectedYoutubeCount !== 1 ? "s" : ""} to ${newPrivacyStatus}`
-                        : "Select privacy"}
-                  >
-                    <Fa
-                      icon={newPrivacyStatus === "private"
-                        ? faLock
-                        : newPrivacyStatus === "unlisted"
-                          ? faLockOpen
-                          : faEarthAmericas}
-                      fw
-                    />
-                    <span>Set</span>
-                  </SimpleButton>
-                </div>
-              {/if}
-            </div>
-          {/if}
-        </div>
-
         <div class="playlist-list">
           {#each filteredPlaylists as p, index (p.id)}
             {#snippet contentSnippet()}
@@ -1484,8 +1495,6 @@
 />
 
 <style>
-  @import "../css/view-layout.css";
-
   .search-sort-bar {
     display: flex;
     justify-content: space-between;
@@ -1583,9 +1592,6 @@
     padding: 12px 16px;
     background: var(--hover-color);
     border-bottom: 1px solid var(--border-color);
-    position: sticky;
-    top: 72px; /* Stick below the sticky view header (min-height: 72px) */
-    z-index: 5;
     transition: background 0.2s;
   }
 
@@ -1873,7 +1879,6 @@
     .list-header {
       flex-direction: column;
       align-items: flex-start;
-      top: 0; /* Header stacks taller on mobile; list-header can stick at top */
     }
 
     .bulk-actions {
