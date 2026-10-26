@@ -106,4 +106,9 @@
   .btn.primary:hover {
     filter: brightness(1.1);
   }
+
+  .btn:focus-visible {
+    outline: 2px solid var(--color-border-focus, #3ea6ff);
+    outline-offset: 2px;
+  }
 </style>

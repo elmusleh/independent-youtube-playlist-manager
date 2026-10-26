@@ -46,63 +46,45 @@
   });
 </script>
 
-<Modal bind:display>
-  <div class="range-modal">
-    <h3>{title}</h3>
-    <p class="hint">Select up to {Math.max(maxValue, 0)} videos</p>
+<Modal bind:display {title} onclose={() => (display = false)}>
+  <p class="hint">Select up to {Math.max(maxValue, 0)} videos</p>
 
-    <input
-      bind:this={inputEl}
-      bind:value={count}
-      type="number"
-      min="1"
-      max={Math.max(maxValue, 1)}
-      step="1"
-      aria-label="Number of videos to select"
-      onkeydown={handleInputKeydown}
-    />
+  <input
+    bind:this={inputEl}
+    bind:value={count}
+    type="number"
+    min="1"
+    max={Math.max(maxValue, 1)}
+    step="1"
+    aria-label="Number of videos to select"
+    onkeydown={handleInputKeydown}
+  />
 
-    <div class="presets">
-      {#each PRESETS as preset}
-        {#if preset <= maxValue}
-          <SimpleButton
-            secondary
-            className={preset === count ? "preset-btn active" : "preset-btn"}
-            onclick={() => (count = preset)}
-          >
-            <span>{preset}</span>
-          </SimpleButton>
-        {/if}
-      {/each}
-    </div>
+  <div class="presets">
+    {#each PRESETS as preset}
+      {#if preset <= maxValue}
+        <SimpleButton
+          secondary
+          className={preset === count ? "preset-btn active" : "preset-btn"}
+          onclick={() => (count = preset)}
+        >
+          <span>{preset}</span>
+        </SimpleButton>
+      {/if}
+    {/each}
+  </div>
 
+  {#snippet footer()}
     <div class="modal-footer">
-      <SimpleButton onclick={() => (display = false)} secondary>
-        <span>Cancel</span>
-      </SimpleButton>
-      <SimpleButton onclick={handleConfirm} primary>
+      <SimpleButton secondary onclick={() => (display = false)}>Cancel</SimpleButton>
+      <SimpleButton primary onclick={handleConfirm}>
         <span>Select</span>
       </SimpleButton>
     </div>
-  </div>
+  {/snippet}
 </Modal>
 
 <style>
-  .range-modal {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    padding: 8px;
-  }
-
-  h3 {
-    margin: 0;
-    font-size: 20px;
-    font-weight: 600;
-    text-align: center;
-  }
-
   .hint {
     margin: 0;
     text-align: center;
@@ -145,9 +127,9 @@
 
   .modal-footer {
     display: flex;
-    justify-content: center;
-    gap: 16px;
-    padding-top: 16px;
+    justify-content: flex-end;
+    gap: 12px;
+    padding-top: 12px;
     border-top: 1px solid var(--border-color);
   }
 </style>

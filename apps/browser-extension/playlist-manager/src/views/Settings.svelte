@@ -104,12 +104,7 @@
 
     {#if settings}
       <div class="settings-grid">
-        <PlaybackSettings
-          {settings}
-          {save}
-          {showPlayAllInfo}
-          setShowPlayAllInfo={(v) => (showPlayAllInfo = v)}
-        />
+        <PlaybackSettings {settings} {save} bind:showPlayAllInfo />
         <HistorySettings {settings} {save} {status} />
         <FavoriteSettings {settings} {save} {status} {signedIn} />
         <EditorSettings {settings} {save} />

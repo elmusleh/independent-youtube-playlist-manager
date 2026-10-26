@@ -84,8 +84,6 @@
 </main>
 
 <style>
-  @import "../css/view-layout.css";
-
   .sub-text {
     opacity: 0.7;
     margin-bottom: 32px;

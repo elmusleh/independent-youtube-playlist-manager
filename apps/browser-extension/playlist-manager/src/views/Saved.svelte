@@ -174,6 +174,10 @@
     }
   });
 
+  let isFirstRun = $derived(
+    !loading && allPlaylists.length === 0 && $playlistsSearch.trim() === ""
+  );
+
   initLoader(callbacks);
 
   function openInEditor(p: { id: string }) {
@@ -255,8 +259,12 @@
     <PlaylistGrid
       loading={loading && allPlaylists.length === 0}
       empty={displayedPlaylists.length === 0}
-      emptyTitle="No Playlists"
-      emptyMessage="No playlists found."
+      emptyTitle={isFirstRun ? "Start your first playlist" : "No Playlists"}
+      emptyMessage={isFirstRun
+        ? "No Google account needed. Add videos from links, open tabs, or the video you're watching. Playlists stay in this browser."
+        : "No playlists found."}
+      emptyActionLabel={isFirstRun ? "Create your first playlist" : undefined}
+      emptyActionHref={isFirstRun ? "#/new" : undefined}
     >
       {#each displayedPlaylists as p (p.id)}
         <PlaylistCard
@@ -287,6 +295,4 @@
   </div>
 </main>
 
-<style>
-  @import "../css/view-layout.css";
-</style>
+<style></style>

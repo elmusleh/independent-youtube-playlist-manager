@@ -35,6 +35,7 @@
 
     // Export Selection
     showExport = $bindable(false),
+    selectedCount = $bindable(0),
     onExecuteExport,
   }: {
     showMerge: boolean;
@@ -56,6 +57,7 @@
     etaDisplay: string;
 
     showExport: boolean;
+    selectedCount: number;
     onExecuteExport: () => void;
   } = $props();
 
@@ -63,37 +65,36 @@
 </script>
 
 {#if showMerge}
-  <Modal bind:display={showMerge} title="Merge Playlists">
-    <div class="dialog">
-      <h3 class="dialog-title">Merge Playlists</h3>
-      <p class="dialog-msg">
-        Merge {selectedPlaylists.length} playlists into one. This will accumulate
-        <strong>~{mergeRawTotal}</strong> videos before de-duplication.
-      </p>
+  <Modal bind:display={showMerge} title="Merge Playlists" onclose={() => (showMerge = false)}>
+    <p class="dialog-msg">
+      Merge {selectedPlaylists.length} playlists into one. This will accumulate
+      <strong>~{mergeRawTotal}</strong> videos before de-duplication.
+    </p>
 
+    <div class="field-group">
+      <label class="field-label" for="merge-target">Destination</label>
+      <select id="merge-target" bind:value={mergeTargetId} class="text-input">
+        <option value="new">Create New Playlist</option>
+        {#each selectedPlaylists as p}
+          <option value={p.id}>Append to: {p.title}</option>
+        {/each}
+      </select>
+    </div>
+
+    {#if mergeTargetId === "new"}
       <div class="field-group">
-        <label class="field-label" for="merge-target">Destination</label>
-        <select id="merge-target" bind:value={mergeTargetId} class="text-input">
-          <option value="new">Create New Playlist</option>
-          {#each selectedPlaylists as p}
-            <option value={p.id}>Append to: {p.title}</option>
-          {/each}
-        </select>
+        <label class="field-label" for="merge-title">New Playlist Title</label>
+        <input
+          id="merge-title"
+          type="text"
+          class="text-input"
+          bind:value={mergeTitle}
+          placeholder="Combined Playlist"
+        />
       </div>
+    {/if}
 
-      {#if mergeTargetId === "new"}
-        <div class="field-group">
-          <label class="field-label" for="merge-title">New Playlist Title</label>
-          <input
-            id="merge-title"
-            type="text"
-            class="text-input"
-            bind:value={mergeTitle}
-            placeholder="Combined Playlist"
-          />
-        </div>
-      {/if}
-
+    {#snippet footer()}
       <div class="dialog-actions">
         <SimpleButton secondary onclick={() => (showMerge = false)}>Cancel</SimpleButton>
         <SimpleButton primary onclick={onExecuteMerge}>
@@ -101,74 +102,78 @@
           <span>Merge Now</span>
         </SimpleButton>
       </div>
-    </div>
+    {/snippet}
   </Modal>
 {/if}
 
 {#if showSaveOffline}
-  <Modal bind:display={showSaveOffline} title="Save YouTube Playlists Offline" size="wide">
-    <div class="dialog large">
-      <h3 class="dialog-title">Save YouTube Playlists Offline</h3>
-      <p class="dialog-msg">Select how you want to save these playlists to your local storage.</p>
+  <Modal
+    bind:display={showSaveOffline}
+    title="Save YouTube Playlists Offline"
+    size="wide"
+    onclose={() => (showSaveOffline = false)}
+  >
+    <p class="dialog-msg">Select how you want to save these playlists to your local storage.</p>
 
-      <div class="offline-playlist-list">
-        {#each offlinePlaylists as { yt, local }}
-          <div class="offline-playlist-item">
-            <div class="offline-playlist-info">
-              <span class="offline-playlist-title">{yt.title}</span>
-              <span class="offline-playlist-meta">{yt.videoCount} videos • {yt.privacyStatus}</span>
-            </div>
-            <div class="offline-playlist-options">
-              {#if local}
-                <label class="radio-label">
-                  <input
-                    type="radio"
-                    value="sync"
-                    bind:group={offlineSaveMode[yt.id]}
-                    onchange={() => onModeChange(yt.id, "sync")}
-                  />
-                  Sync with existing: "{local.title}"
-                </label>
-              {/if}
-              <label class="radio-label">
-                <input
-                  type="radio"
-                  value="new"
-                  bind:group={offlineSaveMode[yt.id]}
-                  onchange={() => onModeChange(yt.id, "new")}
-                />
-                Save as new local playlist
-              </label>
-              {#if offlineSaveMode[yt.id] === "new"}
-                <input
-                  type="text"
-                  class="text-input offline-title-input"
-                  bind:value={offlineTitles[yt.id]}
-                  placeholder="Local Title"
-                />
-              {/if}
-              <label class="radio-label">
-                <input
-                  type="radio"
-                  value="skip"
-                  bind:group={offlineSaveMode[yt.id]}
-                  onchange={() => onModeChange(yt.id, "skip")}
-                />
-                Skip this playlist
-              </label>
-            </div>
+    <div class="offline-playlist-list">
+      {#each offlinePlaylists as { yt, local }}
+        <div class="offline-playlist-item">
+          <div class="offline-playlist-info">
+            <span class="offline-playlist-title">{yt.title}</span>
+            <span class="offline-playlist-meta">{yt.videoCount} videos • {yt.privacyStatus}</span>
           </div>
-        {/each}
-      </div>
+          <div class="offline-playlist-options">
+            {#if local}
+              <label class="radio-label">
+                <input
+                  type="radio"
+                  value="sync"
+                  bind:group={offlineSaveMode[yt.id]}
+                  onchange={() => onModeChange(yt.id, "sync")}
+                />
+                Sync with existing: "{local.title}"
+              </label>
+            {/if}
+            <label class="radio-label">
+              <input
+                type="radio"
+                value="new"
+                bind:group={offlineSaveMode[yt.id]}
+                onchange={() => onModeChange(yt.id, "new")}
+              />
+              Save as new local playlist
+            </label>
+            {#if offlineSaveMode[yt.id] === "new"}
+              <input
+                type="text"
+                class="text-input offline-title-input"
+                bind:value={offlineTitles[yt.id]}
+                placeholder="Local Title"
+              />
+            {/if}
+            <label class="radio-label">
+              <input
+                type="radio"
+                value="skip"
+                bind:group={offlineSaveMode[yt.id]}
+                onchange={() => onModeChange(yt.id, "skip")}
+              />
+              Skip this playlist
+            </label>
+          </div>
+        </div>
+      {/each}
+    </div>
 
+    {#snippet footer()}
       <div class="dialog-actions">
         <SimpleButton secondary onclick={() => (showSaveOffline = false)}>Cancel</SimpleButton>
         <SimpleButton primary onclick={onExecuteSaveOffline}>
           <Fa icon={faCloudArrowDown} fw />
-          <span>Save Selected</span>
+          <span>Save Offline</span>
         </SimpleButton>
       </div>
-    </div>
+    {/snippet}
   </Modal>
 {/if}
 
@@ -178,52 +183,89 @@
     onclose={() => (prog.active = false)}
     dismissible={!!(prog.done || prog.error)}
     title={prog.title || "Working"}
+    showHeader
   >
-    <div class="dialog" role="status" aria-live="polite">
-      <h3 class="dialog-title">{prog.title}</h3>
-      <p class="dialog-msg">{prog.message || "Working..."}</p>
+    <p class="dialog-msg">{prog.message || "Working..."}</p>
 
-      <div class="prog-container">
-        <ProgressBar progress={progressPct} />
-        <div class="prog-meta">
-          <span>{prog.current} / {prog.total} items</span>
-          <span>{progressPct}%</span>
-        </div>
-        <div class="prog-meta">
-          <span>Elapsed: {elapsedDisplay}</span>
-          <span>ETA: {etaDisplay}</span>
-        </div>
+    <div class="prog-container">
+      <ProgressBar progress={progressPct} />
+      <div class="prog-meta">
+        <span>{prog.current} / {prog.total} items</span>
+        <span>{progressPct}%</span>
       </div>
+      <div class="prog-meta">
+        <span>Elapsed: {elapsedDisplay}</span>
+        <span>ETA: {etaDisplay}</span>
+      </div>
+    </div>
 
-      {#if prog.error}
-        <p class="dialog-error">{prog.error}</p>
-      {/if}
+    {#if prog.error}
+      <p class="dialog-error">{prog.error}</p>
+    {/if}
 
+    {#snippet footer()}
       {#if prog.done || prog.error}
         <div class="dialog-actions">
-          <SimpleButton primary onclick={() => (prog.active = false)}>Close</SimpleButton>
+          <SimpleButton primary onclick={() => (prog.active = false)}>Done</SimpleButton>
         </div>
       {/if}
-    </div>
+    {/snippet}
+  </Modal>
+{/if}
+
+{#if showExport}
+  <Modal bind:display={showExport} title="Export Videos" onclose={() => (showExport = false)}>
+    <p class="dialog-msg">
+      Export <strong>{selectedCount}</strong> video{selectedCount !== 1 ? "s" : ""}?
+    </p>
+
+    {#snippet footer()}
+      <div class="dialog-actions">
+        <SimpleButton secondary onclick={() => (showExport = false)}>Cancel</SimpleButton>
+        <SimpleButton primary onclick={onExecuteExport}>
+          <Fa icon={faFileExport} fw />
+          <span>Export</span>
+        </SimpleButton>
+      </div>
+    {/snippet}
   </Modal>
 {/if}
 
 <style>
-  @import "../../css/view-layout.css";
-
-  .dialog {
-    background: var(--background-color);
-    border-radius: 20px;
-    padding: 0;
-    width: 100%;
-    max-width: 480px;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
+  .dialog-msg {
+    margin: 0;
+    font-size: 14px;
+    color: var(--text-color);
+    line-height: 1.6;
   }
 
-  .dialog.large {
-    max-width: 600px;
+  .field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 16px;
+  }
+
+  .field-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-color);
+  }
+
+  .text-input {
+    width: 100%;
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    background: var(--background-color);
+    color: var(--text-color);
+    font-size: 14px;
+    box-sizing: border-box;
+  }
+
+  .text-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
   }
 
   .offline-playlist-list {
@@ -242,6 +284,22 @@
     padding: 16px;
   }
 
+  .offline-playlist-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .offline-playlist-title {
+    font-weight: 500;
+    color: var(--text-color);
+  }
+
+  .offline-playlist-meta {
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+
   .offline-playlist-options {
     display: flex;
     flex-direction: column;
@@ -257,13 +315,15 @@
     cursor: pointer;
   }
 
-  .text-input {
+  .offline-title-input {
     width: 100%;
     padding: 10px 14px;
     border-radius: 8px;
     border: 1px solid var(--border-color);
     background: var(--background-color);
     color: var(--text-color);
+    font-size: 14px;
+    box-sizing: border-box;
   }
 
   .dialog-error {
@@ -272,12 +332,29 @@
     padding: 12px;
     border-radius: 8px;
     font-size: 14px;
+    margin-top: 16px;
   }
 
   .dialog-actions {
     display: flex;
     justify-content: flex-end;
     gap: 12px;
-    margin-top: 8px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-color);
+  }
+
+  .prog-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 16px;
+  }
+
+  .prog-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    color: var(--text-muted);
+    font-weight: 500;
   }
 </style>

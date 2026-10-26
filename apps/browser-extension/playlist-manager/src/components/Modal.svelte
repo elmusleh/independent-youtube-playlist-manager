@@ -2,21 +2,29 @@
   import { untrack } from "svelte";
   import type { Snippet } from "svelte";
   import { lockPageScroll } from "../utils/modal-scroll";
+  import Fa from "svelte-fa";
+  import { faXmark } from "@fortawesome/free-solid-svg-icons";
 
   let {
     display = $bindable(false),
     children,
+    footer,
     title = "Dialog",
     size = "standard",
     dismissible = true,
     onclose,
+    showHeader = true,
+    headerAction,
   }: {
     display?: boolean;
     children?: Snippet;
+    footer?: Snippet;
     title?: string;
     size?: "small" | "standard" | "wide" | "drawer";
     dismissible?: boolean;
     onclose?: () => void;
+    showHeader?: boolean;
+    headerAction?: Snippet;
   } = $props();
 
   let dialog: HTMLDialogElement;
@@ -94,15 +102,20 @@
   }}
 >
   {#if display}
-    {#if dismissible}
-      <div class="modal-chrome">
-        <button type="button" class="modal-close" aria-label="Close dialog" onclick={close}
-          >×</button
-        >
+    {#if showHeader}
+      <div class="modal-header">
+        <h2 class="modal-title">{title}</h2>
+        {#if dismissible}
+          <button type="button" class="modal-close" aria-label="Close dialog" onclick={close}>
+            <Fa icon={faXmark} size="lg" />
+          </button>
+        {/if}
+        {@render headerAction?.()}
       </div>
     {/if}
     <div class="modal-body" tabindex="-1">
       {#if children}{@render children()}{/if}
+      {@render footer?.()}
     </div>
   {/if}
 </dialog>
@@ -121,6 +134,8 @@
     border: 1px solid var(--border-color, #ddd);
     border-radius: 16px;
     box-shadow: 0 12px 48px #0005;
+    display: flex;
+    flex-direction: column;
   }
   dialog[open] {
     display: flex;
@@ -135,48 +150,76 @@
   dialog.wide {
     width: min(800px, calc(100% - 32px));
   }
-  .modal-chrome {
+
+  .modal-header {
     display: flex;
-    justify-content: flex-end;
-    flex-shrink: 0;
-    padding: 4px 8px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 16px 20px;
     border-bottom: 1px solid var(--border-color);
+    flex-shrink: 0;
   }
+
+  .modal-title {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-color);
+    line-height: 1.3;
+  }
+
   .modal-close {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 44px;
-    height: 44px;
+    width: 40px;
+    height: 40px;
     margin: 0;
     padding: 0;
-    font-size: 28px;
+    font-size: 24px;
     border: 0;
     border-radius: 8px;
     background: transparent;
-    color: inherit;
+    color: var(--text-muted);
     cursor: pointer;
+    flex-shrink: 0;
+    transition:
+      background-color 0.15s ease,
+      color 0.15s ease;
   }
   .modal-close:hover {
     background: var(--hover-color);
+    color: var(--text-color);
   }
+  .modal-close:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+  }
+
   .modal-body {
-    padding: 24px;
+    padding: 20px 24px;
     min-height: 0;
     overflow-y: auto;
     overscroll-behavior: contain;
     overflow-wrap: anywhere;
+    flex: 1;
   }
+
+  /* Sticky footer support for slotted footers */
   .modal-body :global(.modal-footer),
   .modal-body :global(.dialog-actions),
   .modal-body :global(.multisort-footer) {
     position: sticky;
-    bottom: -24px;
-    padding-block: 12px;
+    bottom: -20px;
+    margin: 0 -24px;
+    padding: 16px 24px;
     background: var(--background-color);
+    border-top: 1px solid var(--border-color);
     flex-wrap: wrap;
     z-index: 1;
   }
+
   dialog.drawer {
     margin: 0 auto 0 0;
     width: min(320px, calc(100% - 44px));
@@ -188,7 +231,21 @@
   .drawer .modal-body {
     padding: 0;
   }
+  .drawer .modal-body :global(.modal-footer),
+  .drawer .modal-body :global(.dialog-actions),
+  .drawer .modal-body :global(.multisort-footer) {
+    bottom: 0;
+    margin: 0;
+    border-radius: 0 0 16px 0;
+  }
+
   @media (max-width: 600px) {
+    .modal-header {
+      padding: 12px 16px;
+    }
+    .modal-title {
+      font-size: 16px;
+    }
     .modal-body {
       padding: 16px;
     }
@@ -196,6 +253,8 @@
     .modal-body :global(.dialog-actions),
     .modal-body :global(.multisort-footer) {
       bottom: -16px;
+      margin: 0 -16px;
+      padding: 12px 16px;
     }
     dialog.wide {
       height: calc(100dvh - 24px);

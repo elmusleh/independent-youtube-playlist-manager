@@ -255,14 +255,27 @@
     {/if}
 
     {#if showSaveStatus}
-      <SaveStatus onclick={onSave} {status} isDirty={reactiveIsDirty} />
+      <SaveStatus onclick={onSave} {status} isDirty={reactiveIsDirty} showError={false} />
     {/if}
 
     {@render rightActions?.()}
   </div>
 </div>
+{#if showSaveStatus && status?.error}
+  <p class="save-error" role="alert">
+    Could not complete the save or refresh. Your edits are still open. {status.error}
+    Select Retry to try again.
+  </p>
+{/if}
 
 <style>
+  .save-error {
+    color: var(--danger-color, #ef4444);
+    margin: 0;
+    padding: 8px 24px;
+    overflow-wrap: anywhere;
+  }
+
   .view-header {
     display: flex;
     justify-content: space-between;

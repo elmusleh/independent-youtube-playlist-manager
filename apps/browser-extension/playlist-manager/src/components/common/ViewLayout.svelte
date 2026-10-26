@@ -14,6 +14,4 @@
   {@render children?.()}
 </div>
 
-<style>
-  @import "../../css/view-layout.css";
-</style>
+<style></style>

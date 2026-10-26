@@ -196,8 +196,6 @@
 </main>
 
 <style>
-  @import "../css/view-layout.css";
-
   .loading-state {
     padding-top: 20px;
   }

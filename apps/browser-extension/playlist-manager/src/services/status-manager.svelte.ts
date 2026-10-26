@@ -29,8 +29,8 @@ export class StatusManager {
     }
   }
 
-  async save<T>(saveFn: () => Promise<T>, options: { silent?: boolean } = {}): Promise<T> {
-    if (!options.silent) this.saving = true;
+  async save<T>(saveFn: () => Promise<T>, _options: { silent?: boolean } = {}): Promise<T> {
+    this.saving = true;
     this.error = null;
     try {
       const result = await saveFn();
