@@ -7,6 +7,7 @@
 ## ⚡ Quick Reference (first 30 seconds of any session)
 
 ```bash
+git fetch --prune --all   # ALWAYS first. Drops refs to branches deleted on the remote.
 npm run check          # ALWAYS run this first. Lint → format:check → test → file-size → svelte-check. All clear? Proceed.
 npm run format         # Auto-format everything before committing.
 npm run lint:fix       # ESLint auto-fix (handles unused-var prefix, console cleanup).
@@ -326,6 +327,34 @@ release PR would re-display work that has already shipped. `git merge origin/mai
 That sync is the **one** direct push allowed on `next`, and the reason `next` does not
 use `enforce_admins`: a PR cannot carry it, because its diff is empty. Nothing else is
 pushed to `next` directly.
+
+### Branch lifecycle
+
+One branch per task, deleted the moment it is merged. Nothing lingers.
+
+```
+git fetch --prune --all                 # before starting anything
+git switch next && git pull --ff-only
+git switch -c fix/whatever              # isolated branch, off next
+
+# ... PR, review, squash merge ...
+
+git switch next && git pull --prune
+git branch -d fix/whatever              # local: -d refuses unless merged
+git push origin --delete fix/whatever   # only if it still exists remotely
+```
+
+`gh pr merge --squash --delete-branch` removes both the local and the remote branch.
+Repo-level auto-delete covers merges performed in the web UI, which have no local context.
+If a local branch still survives a merge, clean up in bulk:
+
+```bash
+git branch --merged next | grep -vE '^\*|^\s*(main|next)$' | xargs -r git branch -d
+```
+
+**Never delete `main` or `next`.** They are permanent. `-d` (not `-D`) on everything else
+so an unmerged branch is refused rather than silently lost; if `-d` refuses, the branch
+holds work that was never merged — investigate it, do not force.
 
 ### Agents MAY
 
