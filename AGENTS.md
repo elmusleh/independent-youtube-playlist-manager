@@ -232,21 +232,34 @@ npm run web:build       # Web portal production build
 ### Commit
 
 ```
-7. git switch -c <type>/<slug>        # never commit on main
-8. git add <changed files>            # stage explicitly, never `git add -A`
-9. git commit -m "<type>: <subject>"  # conventional prefix (feat/fix/refactor/chore/docs)
-10. git push -u origin <branch>       # branches only — main is protected
-11. gh pr create --fill               # open the PR, then hand back to the owner
+7. git switch next && git pull origin next   # always start from the integration branch
+8. git switch -c <type>/<slug>               # never commit on next or main
+9. git add <changed files>                   # stage explicitly, never `git add -A`
+10. git commit -m "<type>(<scope>): <subject>"
+11. git push -u origin <branch>
+12. gh pr create --base next --fill          # PRs target next, not main
+13. add a `[Unreleased]` bullet to CHANGELOG.md in the same PR
 ```
 
 **Critical rule:** Never skip step 5. Every edit must pass `npm run check` before you declare it done. If the check fails, it's still your problem.
 
 ---
 
-## 🌳 Git Workflow — Protected `main`
+## 🌳 Git Workflow — `next` integrates, `main` releases
 
-`main` is protected on GitHub. Direct pushes are rejected for everyone, including the
-owner's automation token. Every change lands through a pull request; the owner merges.
+Two long-lived branches, one rule each:
+
+| Branch | Holds                 | What reaches it                                  |
+| ------ | --------------------- | ------------------------------------------------ |
+| `next` | everything in flight  | every feature, fix, chore and doc change, via PR |
+| `main` | shipped releases only | one PR per release, from `next`                  |
+
+Followers see `main`: one commit per release, never the micro-commits. That is the whole
+point of the split — `next` absorbs churn, `main` stays a clean list of milestones.
+
+**Merge method everywhere: squash.** A PR is one commit on its target branch. The repo
+has merge commits and rebase merges disabled, and `main` additionally requires linear
+history.
 
 ### Branch naming
 
@@ -258,49 +271,96 @@ fix/duration-zero-length   bug fix
 refactor/split-youtube-api internal restructuring, no behaviour change
 chore/ci-node-22           tooling, deps, CI
 docs/user-guide-refresh    documentation only
-release/1.2.0              release preparation
 ```
 
 One logical change per branch. If the branch name needs an "and", split it.
 
+### Feature / fix loop
+
+```
+git switch next && git pull origin next
+git switch -c fix/duration-zero-length
+
+# ... make the change, and add a bullet under [Unreleased] in CHANGELOG.md ...
+
+npm run check && npm run build          # evidence, not assertion
+git add <changed files>
+git commit -m "fix(metadata): treat zero-length durations as missing"
+git push -u origin fix/duration-zero-length
+gh pr create --base next --fill
+```
+
+Merge with `gh pr merge --squash --delete-branch` once the required checks are green.
+Squash keeps `next` readable and makes reverting a change a single-commit operation.
+
+### Release loop
+
+`next` → `main`, one PR, one commit.
+
+```
+# 1. changelog: rename the section, open a new empty one
+#    ## [Unreleased]  ->  ## [1.3.0] - 2026-11-02  (and a fresh ## [Unreleased] above)
+node packages/build-tools/sync-version.mjs --set 1.3.0
+npm run release-notes
+
+# 2. release PR
+gh pr create --base main --head next --title "release: v1.3.0"
+
+# 3. after the squash merge, tag that commit and push the tag
+git switch main && git pull --ff-only
+git tag -a v1.3.0 -m "Release 1.3.0"
+git push origin v1.3.0
+
+# 4. sync main back into next — see below, this one is not optional
+git switch next && git merge origin/main && git push
+```
+
+The tag triggers `.github/workflows/release.yml`: version sync from the tag, checks,
+store ZIPs, and a GitHub Release whose body is that changelog section.
+
+**Step 4 exists because squash rewrites history.** After a release, `next` and `main`
+hold identical content but no shared commits, so the merge-base is stale and the next
+release PR would re-display work that has already shipped. `git merge origin/main` on
+`next` creates an empty merge commit whose only job is to move the merge-base forward.
+
+That sync is the **one** direct push allowed on `next`, and the reason `next` does not
+use `enforce_admins`: a PR cannot carry it, because its diff is empty. Nothing else is
+pushed to `next` directly.
+
 ### Agents MAY
 
-- create and push branches (`git push -u origin <branch>`)
-- open pull requests (`gh pr create`) and push follow-up commits to their own branch
-- force-push **their own** branch before review starts, when rebasing onto `main`
+- push branches and open PRs against `next`
+- push follow-up commits to their own branch, and force-push **their own** branch before
+  review starts when rebasing onto `next`
+- squash-merge their own PR into `next` once the required checks pass — the integration
+  branch is not the release gate
 
 ### Agents MUST NOT
 
-- push to `main`, merge any pull request, or enable auto-merge
-- delete branches, rewrite history that has already been reviewed, or amend pushed
-  commits that carry review comments
+- push directly to `next` (except the post-release sync merge) or to `main`, ever
+- merge a release PR (`next` → `main`) unless the owner has asked for that release
+- delete branches, rewrite reviewed history, or amend pushed commits that carry review
+  comments
 - use an admin override to bypass a failing check — fix the branch instead
-- declare a PR ready without the evidence listed below
+- declare a PR ready without the evidence below
 
 ### Before opening a PR
 
 ```
-npm run check          # must pass — lint, format, unit tests, file-size, svelte-check
+npm run check          # must pass — lint, format, unit tests, gates, release notes in sync
 npm run build          # must pass — chrome, firefox, edge + bundle budgets
 npm run test:extension # when the change touches a view, route or shared component
 ```
 
-The PR body must state: what changed, why, the exact commands run and their real
-result, and anything that was **not** verified. "Tests pass" without output is not
-evidence.
+The PR body must state: what changed, why, the exact commands run and their real result,
+and anything that was **not** verified. "Tests pass" without output is not evidence.
 
 ### Review loop
 
-The owner reviews and merges. The agent answers review comments with new commits on
-the same branch (never a force-push over reviewed history) and hands back. No self-merge.
-
-### Release branches
-
-`release/x.y.z` carries the version bump, changelog and release notes. Tagging and
-publishing happen **after** the owner merges that PR — the agent prepares, the owner
-ships.
-
----
+Reviews land as comments on the same branch — answer with new commits, never a
+force-push over reviewed history. Unresolved review threads block the merge on both
+`next` and `main` (required conversation resolution), so reply with the fix commit and
+resolve the thread.
 
 ## 🚨 Guidelines & Rules for AI Agents
 
@@ -308,12 +368,12 @@ ships.
 2. **Preserve Compatibility:** Maintain Android (Fenix) compatibility guard checks (`isAndroid()` user-agent detection) before using desktop-only extension APIs (`contextMenus`, `identity.launchWebAuthFlow`).
 3. **Keep Manifests Clean:** Never add `apps/browser-extension/manifest.json` or `manifest.edge.json`. Only edit `apps/browser-extension/manifest.chrome.json` and `apps/browser-extension/manifest.firefox.json`; the Edge manifest is generated from Chrome at build time.
 4. **Debounced Saves:** Ensure UI edits to playlists trigger the debounced autosave in `storage-service.ts`.
-5. **Protected `main`:** AI agents MAY push feature branches and open pull requests. They must NEVER push to `main`, merge a PR, or enable auto-merge — see _Git Workflow — Protected `main`_ above.
+5. **Branch discipline:** all work branches off `next` and PRs target `next`; only a release PR reaches `main`. Never push directly to either long-lived branch (the single exception is the post-release `main` → `next` sync merge) — see _Git Workflow_ above.
 6. **Run check before and after every edit.** This is non-negotiable. A failing check means you broke something.
 
 ## 🚀 Release Process & Staging Status
 
-All project releases must follow the standard procedure defined in [docs/RELEASE_SPEC.md](docs/RELEASE_SPEC.md). AI agents prepare the release branch and open the PR; the owner merges, tags and publishes.
+All project releases follow [docs/RELEASING.md](docs/RELEASING.md). A release is a PR from `next` to `main`, squash-merged, then tagged `vX.Y.Z` from `main`, after which `main` is merged back into `next` to keep the merge-base current.
 
 ### Current Release & Testing State:
 
@@ -326,7 +386,7 @@ All project releases must follow the standard procedure defined in [docs/RELEASE
   - Testing via link or `about:debugging#/runtime/this-firefox`.
 - **Publication Policy**:
   - The AI agent will maintain and prepare all local packages, builds, and metadata.
-  - **Do NOT publish to any public channel (including `https://iypm.vercel.app/`) until explicit user confirmation is given.** Pushing a release branch and opening its PR is allowed; merging is the owner's decision.
+  - **Do NOT publish to any public channel (including `https://iypm.vercel.app/`) until explicit user confirmation is given.** Opening the release PR is always allowed; merging it into `main` happens only when the owner asks for that release.
 
 ## Releases
 
