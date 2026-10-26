@@ -32,7 +32,11 @@ export const features = [
 ];
 
 export const howItWorks = [
-  { step: 1, description: "Install the extension from Chrome Web Store or Firefox Add-ons." },
+  {
+    step: 1,
+    description:
+      "Install the extension from the Chrome Web Store, Firefox Add-ons, or Microsoft Edge Add-ons.",
+  },
   {
     step: 2,
     description: "Navigate to any YouTube page — the manager overlay appears automatically.",
@@ -64,6 +68,11 @@ export const faq = [
     question: "Is it really free and open source?",
     answer:
       "Yes. The extension is 100% free, open source (MIT license), and hosted on GitHub. No premium tiers, no hidden payments.",
+  },
+  {
+    question: "Which browsers are supported?",
+    answer:
+      "Chrome, Microsoft Edge, and Firefox (desktop and Android). Chromium browsers use the Manifest V3 build; Firefox uses its own Manifest V3 build.",
   },
   {
     question: "Does it work on mobile Firefox (Fenix)?",

@@ -1,0 +1,47 @@
+{
+  "productName": "Independent YouTube Playlist Manager",
+  "version": "1.1.1",
+  "category": "Productivity",
+  "language": "en-US",
+  "shortDescription": "Manage YouTube playlists locally: create, edit, sync, and track history. Save videos to watch later. No login required.",
+  "description": "Independent YouTube Playlist Manager gives you full control of YouTube playlists without an account, a server, or API quotas. Save videos from any YouTube page, organize them into unlimited local playlists, reorder with drag and drop, merge or deduplicate lists, and export backups. Optional encrypted Supabase sync keeps playlists available across browsers, and optional Google sign-in lets you push lists to your YouTube account. Metadata is fetched through a zero-quota, multi-tier pipeline and cached locally; no telemetry or tracking is included. The extension is open source under the MIT license.",
+  "searchTerms": [
+    "youtube playlist manager",
+    "youtube playlists",
+    "playlist organizer",
+    "save youtube videos",
+    "watch later",
+    "playlist sync",
+    "privacy"
+  ],
+  "privacyPolicyUrl": "https://github.com/elmusleh/independent-youtube-playlist-manager/blob/main/docs/PRIVACY_POLICY.md",
+  "supportUrl": "https://github.com/elmusleh/independent-youtube-playlist-manager/issues",
+  "websiteUrl": "https://iypm.vercel.app/",
+  "assets": {
+    "package": "dist/independent-youtube-playlist-manager-edge.zip",
+    "storeLogo": "docs/assets/edge-store-logo-300x300.png",
+    "smallPromotionalTile": "docs/assets/small-promo-440x280.png",
+    "largePromotionalTile": "docs/assets/marquee-promo-1400x560.png",
+    "screenshots": [
+      "docs/screenshots/screenshot-01-editor.png",
+      "docs/screenshots/screenshot-02-saved-playlists.png",
+      "docs/screenshots/screenshot-03-new-playlist.png",
+      "docs/screenshots/screenshot-04-settings.png",
+      "docs/screenshots/screenshot-05-shortcuts.png",
+      "docs/screenshots/screenshot-06-history.png"
+    ]
+  },
+  "certificationNotes": "No account is required to test the extension. Open any YouTube watch page, click the toolbar icon, add the video to a playlist, then open the playlist editor to create, reorder, export, and import playlists. Optional Google sign-in and Supabase sync are disabled unless configured and require explicit user consent. The package contains no remote code and no telemetry. Chrome-specific manifest fields (key and browser_specific_settings) are removed from the Edge build. All data is stored locally unless the user opts into sync.",
+  "submissionStatus": "draft",
+  "productId": "20f9b17d-73e7-45f8-8692-796867b7ec80",
+  "storeUrl": null,
+  "storeId": "0RDCKFZCVDRK",
+  "crxId": "ncmipojoamaoacinccopmdkflgocghno",
+  "publicKey": "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA+niPZKflMsMNjpY9Em9D\nAlD7HSBnTFaUZiYUvljoaCcVtPKs9QkRNyPVwVGWoMoeMFnm9awxAVVxmaIAyOUO\nsv6Hj9B5cUpkudhsExuT9gXNLXxCkviXZ9A3Q5fdtbhnQ+pHYikRYkqHWxpd1AVx\nGSw3Uqq06q8l8G3W1VsOQKwKG24NVcXDPWMkNg6n91O2xYoITEwTKKvVk3534RxW\nghcWURAqsyhHeSQR3F5e4BUn4DM1Y7n69x5WVis7tAoUBE6g1YAeY/2qfxFlnKl3\nhIvrPnCED8bQZ2cTOTtraYKG7ccwPiNBaznS9PfPL0CzSPsG48J6lpodX8KdM7fB\nxQIDAQAB\n-----END PUBLIC KEY-----\n",
+  "packageSha256": "4696ecfad281a050ad292b53ee9441c67ec23293b992712f4e7b1254274ca377",
+  "packageVersion": "1.1.1",
+  "redirectUris": [
+    "https://ncmipojoamaoacinccopmdkflgocghno.chromiumapp.org/",
+    "https://ncmipojoamaoacinccopmdkflgocghno.chromiumapp.org/supabase"
+  ]
+}

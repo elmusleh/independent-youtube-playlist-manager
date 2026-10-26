@@ -8,7 +8,7 @@ This document provides examples of how to use and extend the Independent YouTube
 
 ### Basic Usage
 
-1. Install the extension from Chrome Web Store or Firefox Add-ons
+1. Install the extension from the Chrome Web Store, Microsoft Edge Add-ons, or Firefox Add-ons
 2. Click the extension icon to open the popup
 3. Use the "Save Video" button to save the current YouTube video to your playlist
 4. Open the playlist editor to manage your saved videos, create playlists, and sync with YouTube

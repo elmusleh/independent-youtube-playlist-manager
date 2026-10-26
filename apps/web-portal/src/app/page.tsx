@@ -9,6 +9,7 @@ import { headline, subheadline } from "@/components/landing/copy";
 
 export default function Home() {
   const [stars, setStars] = useState<number | null>(null);
+  const edgeStoreUrl = process.env.NEXT_PUBLIC_EDGE_STORE_URL;
 
   useEffect(() => {
     fetch("https://api.github.com/repos/elmusleh/independent-youtube-playlist-manager")
@@ -100,6 +101,24 @@ export default function Home() {
                 </span>
               </span>
             </Button>
+            {edgeStoreUrl && (
+              <Button
+                variant="outline"
+                size="lg"
+                data-testid="edge-install-button"
+                className="group w-full sm:w-auto btn-responsive-lg font-semibold bg-white border-zinc-200 hover:bg-red-600 hover:border-red-600 hover:text-white hover:-translate-y-0.5 hover:shadow-lg hover:shadow-red-600/25 active:translate-y-0 text-zinc-900 touch-target-44 whitespace-nowrap"
+                onClick={() => window.open(edgeStoreUrl, "_blank", "noopener,noreferrer")}
+              >
+                <Image
+                  src="/edge.svg"
+                  alt="Microsoft Edge logo"
+                  width={18}
+                  height={18}
+                  className="mr-2.5 flex-shrink-0"
+                />
+                <span>Add to Edge</span>
+              </Button>
+            )}
           </div>
 
           {/* GitHub Source Button */}

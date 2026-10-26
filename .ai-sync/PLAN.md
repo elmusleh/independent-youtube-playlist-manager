@@ -1,5 +1,12 @@
 # Current Plan — IYPM (2026-10-25)
 
+## Authorized bug fix — sorted local playlist save (2026-10-26)
+
+Reproduce Firefox DataCloneError after sorting with nested reactive sort rules.
+Detach local playlist data at the storage boundary, retain edits on failure, expose
+visible retry feedback, and verify 1,404/14,000-video saves plus real Firefox
+sort/save/reload/failure/retry. Preserve all unrelated in-progress changes and store submissions.
+
 ## Authorized next work — GitHub issues and security alerts
 
 Read issues #10/#11/#13/#14 and open Dependabot alerts. Preserve pre-existing

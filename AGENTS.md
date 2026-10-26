@@ -7,10 +7,10 @@
 ## ⚡ Quick Reference (first 30 seconds of any session)
 
 ```bash
-npm run check          # ALWAYS run this first. Lint → format:check → test → svelte-check. All clear? Proceed.
+npm run check          # ALWAYS run this first. Lint → format:check → test → file-size → svelte-check. All clear? Proceed.
 npm run format         # Auto-format everything before committing.
 npm run lint:fix       # ESLint auto-fix (handles unused-var prefix, console cleanup).
-npm run build          # Full production build (SPA → editor → dist/chrome + dist/firefox).
+npm run build          # Full production build (SPA → editor → dist/chrome + dist/firefox + dist/edge).
 npm run watch          # Dev watch mode for the Svelte SPA.
 npm run web            # Web portal dev server (localhost:3000).
 ```
@@ -24,7 +24,7 @@ npm run web            # Web portal dev server (localhost:3000).
 | `apps/browser-extension/popup/`                | Quick-add popup toolbar           | ES modules: `popup.js` (~346 lines entry), `utils.js`, `tabs.js`, `state.js`, `target.js`, `channel.js`, `quick-add.js`        |
 | `apps/browser-extension/playlist-manager/src/` | Svelte SPA (TypeScript)           | `App.svelte`, `components/` (~38 files), `services/` (17 files), `views/`, `stores/`, `types/`                                 |
 | `apps/web-portal/`                             | Next.js 15 marketing + dashboard  | App Router, Tailwind, shadcn/ui, Playwright e2e                                                                                |
-| `packages/build-tools/`                        | Build/CI scripts (Node.js)        | `capture.js`, `validate-manifests.js`, `patch-innerhtml.js`, `package-chrome-store.js`                                         |
+| `packages/build-tools/`                        | Build/CI scripts (Node.js)        | `build-extension.js`, `validate-manifests.js`, `package-chrome-store.js`, `package-edge-store.js`, `verify-css-bundle.js`      |
 | `docs/`                                        | All documentation + screenshots   | `USAGE_EXAMPLES.md`, `RELEASE_SPEC.md`, `USER_GUIDE.md`                                                                        |
 | Root                                           | Lint, format, test, deploy config | `eslint.config.mjs`, `.prettierrc`, `vitest.config.mjs`, `jsconfig.json`, `vercel.json`                                        |
 
@@ -79,6 +79,25 @@ Follow the pattern established in `popup/` and `background/`:
 
 ---
 
+## 🎨 CSS & Component Styling Rules (CRITICAL — NEVER VIOLATE)
+
+Rollup uses `rollup-plugin-css-only` to bundle all CSS into `editor/bundle.css`. This pipeline has strict behaviors that all AI agents MUST observe:
+
+1. **NEVER use `<style> @import "..." </style>` inside Svelte components.**
+   - Rollup does NOT inline CSS `@import` statements inside Svelte `<style>` blocks.
+   - It outputs `@import` verbatim mid-bundle in `bundle.css`. Browsers strictly ignore mid-bundle `@import` rules (CSS spec), causing styles to silently fail and components to render unstyled.
+   - Component `<style>` tags must ONLY contain local, scoped CSS.
+
+2. **Global / Shared View CSS MUST be imported in `src/main.ts`.**
+   - Styles shared across views or child components (such as `design-tokens.css`, `view-layout.css`, and `settings.css`) must be imported via JavaScript in `apps/browser-extension/playlist-manager/src/main.ts`.
+   - Rollup will properly bundle and inline them into `bundle.css`.
+
+3. **Automated Enforcement:**
+   - Both `npm run check` and `npm run build` run `packages/build-tools/verify-css-bundle.js`.
+   - Any component containing `@import` or any build resulting in stray `@import` in `bundle.css` will trigger a **hard build failure**.
+
+---
+
 ## 🏛️ Architecture Overview
 
 The codebase is split into three layers:
@@ -86,7 +105,7 @@ The codebase is split into three layers:
 1. **`apps/browser-extension/playlist-manager/` (Frontend SPA Extension UI)**
    - Built with **Svelte 5 + TypeScript + Rollup**.
    - Compiles into `apps/browser-extension/editor/` (`main.js`, `bundle.css`, `index.html`).
-   - Location of all UI views (`App.svelte`, `PlaylistEditor.svelte`, `Saved.svelte`, `Settings.svelte`, `History.svelte`, `Search.svelte`) and data services (`video-service.ts`, `youtube-api.ts`, `storage-service.ts`, `sync-service.ts`).
+   - Location of all UI views (`App.svelte`, `PlaylistEditor.svelte`, `Saved.svelte`, `Settings.svelte`, `History.svelte`, `Search.svelte`) and data services (`video-service.ts`, `youtube-api.ts`, `storage-service.ts`, `playlist-actions.ts`).
 
 2. **`apps/web-portal/` (Official SaaS Portal & Interactive Dashboard)**
    - Built with **Next.js 15 (App Router) + TypeScript + Tailwind CSS + shadcn/ui + Lucide icons**.
@@ -98,19 +117,20 @@ The codebase is split into three layers:
    - `background/index.js` — Module entry point that imports `background/background.js` (service worker for Chrome, background scripts for Firefox).
    - `content-scripts/` — Content script injectables (`watch-tracker.js`, and injectors for `getVideoMetadata.js`, `scrapeYouTubeLinks.js`, `getChannelVideoIds.js`, `getPlaylistVideoIds.js`).
    - `popup/` — Quick-add popup toolbar interface.
-   - Manifest templates: `manifest.chrome.json` and `manifest.firefox.json`.
+   - Manifest sources: `manifest.chrome.json` and `manifest.firefox.json`. The Edge manifest is generated from the Chrome manifest at build time.
 
 ---
 
 ## ⚙️ Manifest V3 & Browser Differences
 
-The project target platforms are **Google Chrome**, **Mozilla Firefox Desktop (140.0+)**, and **Firefox for Android / Fenix (142.0+)**.
+The project target platforms are **Google Chrome**, **Microsoft Edge**, **Mozilla Firefox Desktop (140.0+)**, and **Firefox for Android / Fenix (142.0+)**.
 
 ### Critical Manifest Rules:
 
 - **Chrome (`manifest.chrome.json`):** Uses `"service_worker": "background/index.js"`. Requires the public `"key"` copied from the existing Chrome Web Store listing to lock extension ID `dapjjdcnolpmfcnobilphjfpkmmokgid` (verified against the dashboard public key). The store ZIP strips this development key; the installed store ID stays the same.
 - **Firefox (`manifest.firefox.json`):** Uses `"background": {"scripts": ["background/index.js"], "type": "module"}`. Must **NOT** contain a `"key"` field. Uses Gecko extension ID `independent-yt-playlist-manager@elmusleh.github.io`.
-- **Never put `apps/browser-extension/manifest.json` in `apps/browser-extension/`!** Build scripts validate that only `manifest.chrome.json` and `manifest.firefox.json` exist in `apps/browser-extension/`. `npm run build` generates `dist/chrome/manifest.json` and `dist/firefox/manifest.json`.
+- **Edge (generated, no source file):** Edge is Chromium-based and shares Chrome's MV3 runtime. `build-extension.js edge` reads `manifest.chrome.json`, removes `key` and any `browser_specific_settings`, and writes `dist/edge/manifest.json`. Do **not** add a static `manifest.edge.json`; `validate-manifests.js` enforces that the Edge manifest exactly matches the Chrome manifest minus those fields.
+- **Never put `apps/browser-extension/manifest.json` in `apps/browser-extension/`!** `npm run build` generates `dist/chrome/manifest.json`, `dist/firefox/manifest.json`, and `dist/edge/manifest.json`. Only the Chrome and Firefox source manifests belong in `apps/browser-extension/`.
 
 ---
 
@@ -212,12 +232,73 @@ npm run web:build       # Web portal production build
 ### Commit
 
 ```
-7. git add the changed files
-8. git commit (present the message to the user for review)
-9. NEVER git push — notify the user instead
+7. git switch -c <type>/<slug>        # never commit on main
+8. git add <changed files>            # stage explicitly, never `git add -A`
+9. git commit -m "<type>: <subject>"  # conventional prefix (feat/fix/refactor/chore/docs)
+10. git push -u origin <branch>       # branches only — main is protected
+11. gh pr create --fill               # open the PR, then hand back to the owner
 ```
 
 **Critical rule:** Never skip step 5. Every edit must pass `npm run check` before you declare it done. If the check fails, it's still your problem.
+
+---
+
+## 🌳 Git Workflow — Protected `main`
+
+`main` is protected on GitHub. Direct pushes are rejected for everyone, including the
+owner's automation token. Every change lands through a pull request; the owner merges.
+
+### Branch naming
+
+```
+<type>/<short-slug>
+
+feat/data-manager          new user-visible capability
+fix/duration-zero-length   bug fix
+refactor/split-youtube-api internal restructuring, no behaviour change
+chore/ci-node-22           tooling, deps, CI
+docs/user-guide-refresh    documentation only
+release/1.2.0              release preparation
+```
+
+One logical change per branch. If the branch name needs an "and", split it.
+
+### Agents MAY
+
+- create and push branches (`git push -u origin <branch>`)
+- open pull requests (`gh pr create`) and push follow-up commits to their own branch
+- force-push **their own** branch before review starts, when rebasing onto `main`
+
+### Agents MUST NOT
+
+- push to `main`, merge any pull request, or enable auto-merge
+- delete branches, rewrite history that has already been reviewed, or amend pushed
+  commits that carry review comments
+- use an admin override to bypass a failing check — fix the branch instead
+- declare a PR ready without the evidence listed below
+
+### Before opening a PR
+
+```
+npm run check          # must pass — lint, format, unit tests, file-size, svelte-check
+npm run build          # must pass — chrome, firefox, edge + bundle budgets
+npm run test:extension # when the change touches a view, route or shared component
+```
+
+The PR body must state: what changed, why, the exact commands run and their real
+result, and anything that was **not** verified. "Tests pass" without output is not
+evidence.
+
+### Review loop
+
+The owner reviews and merges. The agent answers review comments with new commits on
+the same branch (never a force-push over reviewed history) and hands back. No self-merge.
+
+### Release branches
+
+`release/x.y.z` carries the version bump, changelog and release notes. Tagging and
+publishing happen **after** the owner merges that PR — the agent prepares, the owner
+ships.
 
 ---
 
@@ -225,18 +306,19 @@ npm run web:build       # Web portal production build
 
 1. **Run Verification Commands:** Always run `npm run check` and `npm run build` after making code modifications.
 2. **Preserve Compatibility:** Maintain Android (Fenix) compatibility guard checks (`isAndroid()` user-agent detection) before using desktop-only extension APIs (`contextMenus`, `identity.launchWebAuthFlow`).
-3. **Keep Manifests Clean:** Never add `apps/browser-extension/manifest.json`. Only edit `apps/browser-extension/manifest.chrome.json` and `apps/browser-extension/manifest.firefox.json`.
+3. **Keep Manifests Clean:** Never add `apps/browser-extension/manifest.json` or `manifest.edge.json`. Only edit `apps/browser-extension/manifest.chrome.json` and `apps/browser-extension/manifest.firefox.json`; the Edge manifest is generated from Chrome at build time.
 4. **Debounced Saves:** Ensure UI edits to playlists trigger the debounced autosave in `storage-service.ts`.
-5. **Manual Pushes:** AI agents are NEVER permitted to run `git push`. Always stage and commit your changes, then notify the user to handle the push manually.
+5. **Protected `main`:** AI agents MAY push feature branches and open pull requests. They must NEVER push to `main`, merge a PR, or enable auto-merge — see _Git Workflow — Protected `main`_ above.
 6. **Run check before and after every edit.** This is non-negotiable. A failing check means you broke something.
 
 ## 🚀 Release Process & Staging Status
 
-All project releases must follow the standard procedure defined in [docs/RELEASE_SPEC.md](docs/RELEASE_SPEC.md). AI agents are responsible for all steps up to, but not including, the final `git push`.
+All project releases must follow the standard procedure defined in [docs/RELEASE_SPEC.md](docs/RELEASE_SPEC.md). AI agents prepare the release branch and open the PR; the owner merges, tags and publishes.
 
 ### Current Release & Testing State:
 
 - **Chrome Web Store**: Version 1.1.1 pending review.
+- **Microsoft Edge Add-ons**: Version 1.1.1 package builds and validates locally; submission is pending a Microsoft Partner Center listing and Product ID. See `docs/EDGE_STORE_SUBMISSION.md`.
 - **Firefox AMO (Listed)**: Version 1.1.1 (ID 6620554) pending review.
 - **Firefox Unlisted Test Release**:
   - Version `1.2.0.1` (AMO ID `6620940`) signed under unlisted channel for external tester distribution.
@@ -244,4 +326,4 @@ All project releases must follow the standard procedure defined in [docs/RELEASE
   - Testing via link or `about:debugging#/runtime/this-firefox`.
 - **Publication Policy**:
   - The AI agent will maintain and prepare all local packages, builds, and metadata.
-  - **Do NOT publish or `git push` to main or public channels (including `https://iypm.vercel.app/`) until explicit user confirmation is given.**
+  - **Do NOT publish to any public channel (including `https://iypm.vercel.app/`) until explicit user confirmation is given.** Pushing a release branch and opening its PR is allowed; merging is the owner's decision.

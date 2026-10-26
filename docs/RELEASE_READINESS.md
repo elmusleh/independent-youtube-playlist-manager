@@ -2,18 +2,19 @@
 
 ## Scope and evidence
 
-| Check                                  | Result                                                                         |
-| -------------------------------------- | ------------------------------------------------------------------------------ |
-| Root lint, formatting, unit tests      | Passed; 120 tests                                                              |
-| Svelte/TypeScript diagnostics          | Zero errors and warnings                                                       |
-| Chrome and Firefox production packages | Built; generated entry files validated                                         |
-| Mozilla web-ext 10.8.0 lint            | Zero errors, warnings, notices                                                 |
-| Chromium real loaded extension         | 15 routes × 6 viewport sizes; six interaction groups; no runtime errors        |
-| Firefox 158.0.1 real temporary add-on  | 15 routes × 6 requested window sizes; modal keyboard checks                    |
-| Firefox with Android user agent        | Another 90 route/window checks; mobile platform code branches and modal checks |
-| Web portal                             | Six viewport sizes; footer reachable; unconfigured/unauthorized sync rejected  |
-| Extension dependencies                 | Full npm audit reports zero advisories                                         |
-| Portal production dependencies         | npm audit --omit=dev reports zero advisories                                   |
+| Check                                 | Result                                                                         |
+| ------------------------------------- | ------------------------------------------------------------------------------ |
+| Root lint, formatting, unit tests     | Passed; 130 tests                                                              |
+| Svelte/TypeScript diagnostics         | Zero errors and warnings                                                       |
+| Chrome, Firefox, and Edge packages    | Built; entry files and Edge=Chrome-minus-key manifest validation pass          |
+| Mozilla web-ext 10.8.0 lint           | Zero errors, warnings, notices                                                 |
+| Chromium real loaded extension        | 15 routes × 6 viewport sizes; six interaction groups; no runtime errors        |
+| Firefox 158.0.1 real temporary add-on | 15 routes × 6 requested window sizes; modal keyboard checks                    |
+| Firefox with Android user agent       | Another 90 route/window checks; mobile platform code branches and modal checks |
+| Edge package in Chromium 151          | Popup and Settings render; no console or page errors                           |
+| Web portal                            | Six viewport sizes; footer reachable; unconfigured/unauthorized sync rejected  |
+| Extension dependencies                | Full npm audit reports zero advisories                                         |
+| Portal production dependencies        | npm audit --omit=dev reports zero advisories                                   |
 
 Browser reports and screenshots are generated under `dist/verification`. Firefox
 reports record actual inner viewport dimensions because browser window chrome can
@@ -50,6 +51,10 @@ production build on port 3050, and run `npm run test:portal`.
   key for the actual store ID; store updates retain their existing ID. Developers
   switching an older unpacked build to the stable ID should export their data first,
   since browser storage belongs to an extension ID.
+- No physical Microsoft Edge installation was available for this task. Chromium 151
+  loaded `dist/edge` as an unpacked extension; the popup and Settings route rendered
+  with no console or page errors. Edge uses the same Chromium MV3 runtime, but a real
+  Edge smoke test remains recommended before submitting the package.
 - Portal source improvements are included in Git; this task does not deploy the website.
 - No software release can guarantee that every user will encounter zero issues.
 
@@ -72,8 +77,16 @@ On October 25, 2026, both replacement submissions were accepted for review:
   followed by **Pending review**. Automatic publication after approval is selected.
   The previous takedown is not evidence that the replacement has been approved.
   [Developer dashboard](https://chrome.google.com/webstore/devconsole/e070ead7-65ee-442e-8bc2-3a6a2b3c5f60/dapjjdcnolpmfcnobilphjfpkmmokgid/edit/status).
+- **Microsoft Edge 1.1.1:** a draft listing now exists in Partner Center: Store ID
+  `0RDCKFZCVDRK`, CRX ID `ncmipojoamaoacinccopmdkflgocghno`, Product ID
+  `20f9b17d-73e7-45f8-8692-796867b7ec80`. The listing is **draft-only**: the package
+  is uploaded but **not submitted** for certification and **not approved**, and no
+  public store URL is available until publication. The earlier uploaded ZIP was
+  stale; the rebuilt ZIP is recorded locally and must replace it before submission.
+  See `docs/EDGE_STORE_SUBMISSION.md` for the checklist. Do not claim Edge
+  availability until the listing is approved.
 
-Final 1.1.1 verification: 120 unit tests, root check/build/pack, Chromium 90 checks,
+Final 1.1.1 verification: 130 unit tests, root check/build/pack, Chromium 90 checks,
 Firefox desktop 90 checks, Firefox Android-UA 90 checks, portal six viewport checks,
 and web-ext lint all passed. Native Firefox data-permission checks verified that
 a persisted synthetic Google token cannot bypass absent optional consent.
@@ -84,6 +97,7 @@ ZIP file lists match their built runtime directories exactly. SHA-256:
 
 - Chrome: `898a50e19f0d5114bbc81c1a783cc3bc63cfe63534c4b0ab26c3c3f97dafa015`
 - Firefox: `1294b54da6f7c2877927c5ff89d15b722009b02fb9a5e9d0e4ca42460bd030ff`
+- Edge (rebuilt from the current verified `dist/edge`; 64 entries): `4696ecfad281a050ad292b53ee9441c67ec23293b992712f4e7b1254274ca377`
 
 No Git push was performed, as required by repository instructions. The owner must
 push main and the release tag so the source and updated public privacy document
