@@ -88,6 +88,7 @@ export function normalizeVideoMeta(raw: any, fallbackId = ""): NormalizedVideoMe
     raw.isLiveContent === true ||
     raw.duration === "LIVE" ||
     raw.durationISO === "LIVE";
+  let isShort = raw.isShort === true;
   let isPrivate = raw.isPrivate === true;
   let isDeleted = raw.isDeleted === true;
   let isBroken = raw.isBroken === true;
@@ -140,6 +141,7 @@ export function normalizeVideoMeta(raw: any, fallbackId = ""): NormalizedVideoMe
     isDeleted,
     isBroken,
     isLive,
+    isShort,
     isUnavailable,
     lastCachedAt,
     lastFetchAttempt,
