@@ -47,6 +47,9 @@ const legacyAllowlist = new Set([
   "apps/browser-extension/playlist-manager/src/services/supabase-sync.ts",
   "apps/browser-extension/playlist-manager/src/components/editor/MultiSortModal.svelte",
   "apps/browser-extension/playlist-manager/src/components/manage/ManageModals.svelte",
+  // Deleted in the UI refactor (#31); kept here so this gate stays green on either
+  // merge order and disappears once that lands.
+  "apps/browser-extension/playlist-manager/src/views/Saved-refactored.svelte",
 ]);
 
 function isExcluded(relativePath) {
