@@ -1,5 +1,29 @@
 # Pagination handoff
 
+## Latest work — 1.2.0 released (2026-10-26)
+
+Tag `v1.2.0` on `main`, GitHub Release published by `.github/workflows/release.yml`
+with the four store ZIPs attached.
+
+What the release changed beyond the code:
+
+- **`docs/RELEASING.md` is the release runbook** — version decision, `sync-version`,
+  changelog, `npm run release-notes`, docs, PR, tag, workflow, verification, store
+  uploads, checklist. `AGENTS.md` points at it.
+- **In-app release notes are generated.** `packages/build-tools/gen-release-notes.mjs`
+  turns `CHANGELOG.md` into `src/generated/release-notes.ts`, which
+  `ReleaseNotesModal.svelte` renders. The modal used to carry a hand-copied history
+  (30 sections, a 2020 `[1.2.0]` entry that contradicted the real one); that history is
+  gone and only versions in the changelog appear. `npm run check` fails if the generated
+  file is stale, so the two cannot drift again.
+- **The release page body comes from the changelog** (`--release-body vX.Y.Z`) instead of
+  GitHub's generated notes, so release notes and changelog always agree.
+- Also fixed in the same PR: `README.md`'s Current Status block and its outdated
+  "NEVER git push" rule, which contradicted the PR workflow.
+
+Next time: follow `docs/RELEASING.md`. The only manual step that can bite is store
+uploads — the workflow cannot do those.
+
 ## Latest work — protected main, branch/PR workflow, CI repaired (2026-10-26)
 
 ### Repository workflow changed

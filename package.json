@@ -5,7 +5,7 @@
   "author": "Mohammad El-Musleh <elmusleh.mohammad@gmail.com>",
   "license": "MIT",
   "scripts": {
-    "build": "cd apps/browser-extension/playlist-manager && npm ci && npm run build && cd ../../.. && node packages/build-tools/patch-innerhtml.js && npm run build-chrome && npm run build-firefox && npm run build-edge && node packages/build-tools/validate-manifests.js && node packages/build-tools/verify-css-bundle.js && node packages/build-tools/verify-budgets.js",
+    "build": "node packages/build-tools/gen-release-notes.mjs && cd apps/browser-extension/playlist-manager && npm ci && npm run build && cd ../../.. && node packages/build-tools/patch-innerhtml.js && npm run build-chrome && npm run build-firefox && npm run build-edge && node packages/build-tools/validate-manifests.js && node packages/build-tools/verify-css-bundle.js && node packages/build-tools/verify-budgets.js",
     "prod": "cd apps/browser-extension/playlist-manager && npm run prod",
     "watch": "cd apps/browser-extension/playlist-manager && npm run watch",
     "cors": "cd apps/browser-extension/playlist-manager && npm run cors",
@@ -22,7 +22,7 @@
     "web:build": "npm --prefix apps/web-portal run build",
     "web:test": "npm --prefix apps/web-portal run test:e2e",
     "sync-version": "node packages/build-tools/sync-version.mjs",
-    "check": "npm run lint && npm run format:check && npm run test && node packages/build-tools/verify-file-size.js && cd apps/browser-extension/playlist-manager && npx svelte-check && cd ../../.. && node packages/build-tools/verify-css-bundle.js",
+    "check": "npm run lint && npm run format:check && npm run test && node packages/build-tools/verify-file-size.js && cd apps/browser-extension/playlist-manager && npx svelte-check && cd ../../.. && node packages/build-tools/verify-css-bundle.js && node packages/build-tools/gen-release-notes.mjs --check",
     "lint": "eslint apps/browser-extension/ packages/build-tools/ --ext .js",
     "lint:fix": "eslint apps/browser-extension/ packages/build-tools/ --ext .js --fix",
     "format": "prettier --write .",
@@ -33,7 +33,8 @@
     "test:portal": "node packages/build-tools/verify-portal.js",
     "check:file-size": "node packages/build-tools/verify-file-size.js",
     "audit": "npm audit --audit-level=high",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "release-notes": "node packages/build-tools/gen-release-notes.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

@@ -33,6 +33,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated README.md with developer CLI documentation
 - Edge manifest is generated from the Chrome manifest minus `key`/`browser_specific_settings`; no static Edge manifest is maintained
 - Edge install button is gated by `NEXT_PUBLIC_EDGE_STORE_URL` until the store listing is approved
+- **In-app release notes are generated from this file** (`packages/build-tools/gen-release-notes.mjs`). The modal previously carried a hand-copied history that had drifted into showing a 2020 entry for 1.2.0.
+- The build installs extension dependencies with `npm ci` instead of `npm install`; npm 11 prunes a nested `picomatch` entry npm 10 requires, so a local build could silently break CI.
 
 ### Fixed
 
@@ -43,6 +45,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - GitHub UI issues and dependency alerts
 - Stray `@import` statements in generated `bundle.css` that browsers ignored
 - Vercel configuration for web-portal (rootDirectory set to `apps/web-portal`)
+- The extension E2E suite had never executed an assertion: the fixture resolved the unpacked extension one directory short (`apps/dist/chrome`) while the build writes to `<repo>/dist/chrome`, so Chromium stalled on a missing `--load-extension` path until the 60s timeout. Two stale assertions replaced with ones that survive auth state.
+- The Manage page's bulk action bar was declared as a snippet outside `StickyHeader`, so select-all, Merge, Save Offline, bulk Delete and privacy changes were unreachable.
+- Closed dialogs painted as empty bordered boxes: the base `dialog` rule set `display: flex`, which outranks the browser's `dialog:not([open]) { display: none }`.
+- Saving from the Playlist Builder called `ytUpdatePlaylist()` with a timestamp id that never existed on YouTube; the builder is now a local playlist.
+- Videos added by quick-add while the builder was open were never shown, and saving cleared them.
+- Restoring a backup created before thumbnail archiving replaced the database but left the old images on disk, which were then re-exported.
+- `iypm.sh reset` always failed: `clean` deleted the tracked `package-lock.json` that `npm ci` requires.
 
 ## [1.1.1] - 2026-08-26
 

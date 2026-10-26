@@ -153,7 +153,7 @@ Use `./iypm.sh` at repository root for quick overview and operations:
 
 ### AI Agent Rules (from AGENTS.md)
 
-1. **NEVER `git push`** — Stage, commit, notify user
+1. **Push a branch and open a PR** — `main` is protected; never commit directly to it and do not merge without explicit instruction
 2. **ALWAYS `npm run check` before AND after edits**
 3. **ALWAYS `npm run build` after edits** — verifies `dist/`
 4. **No file > 350 lines** — Split using established module pattern
@@ -163,14 +163,14 @@ Use `./iypm.sh` at repository root for quick overview and operations:
 
 ## 📊 Current Status (2026-10-25)
 
-- **Version**: 1.1.1 (submitted to both stores)
-- **Chrome**: Pending review (auto-publish on approval)
-- **Microsoft Edge**: v1.1.1 package ready; store submission pending Partner Center listing
-- **Firefox Listed**: Unreviewed (ID 6620554)
+- **Version**: 1.2.0 — tagged `v1.2.0`, release assets published
+- **Chrome**: 1.1.1 in review (auto-publish on approval); 1.2.0 package ready
+- **Microsoft Edge**: 1.2.0 package ready; Partner Center listing pending
+- **Firefox Listed**: 1.1.1 (ID 6620554); 1.2.0 package ready
 - **Firefox Unlisted Test**: v1.2.0.1 (ID 6620940)
-- **Source**: Commit `891b343` + `dff9c9c`, Tag `v1.1.1` (local only)
-- **All checks pass**: 120 tests, zero Svelte diagnostics, clean builds
-- **Phase 4 pending**: Real Android device responsive verification
+- **All checks pass**: 187 tests, zero Svelte errors, clean builds, 90 E2E route checks
+- **Enforced on `main`**: quality, extension diagnostics and E2E must pass before merge
+- **Cutting a release**: see [docs/RELEASING.md](docs/RELEASING.md)
 
 ---
 
