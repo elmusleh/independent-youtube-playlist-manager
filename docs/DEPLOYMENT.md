@@ -41,6 +41,29 @@ Vercel's GitHub check is not a required status check on `main`: a red Vercel doe
 block merges, so it must be watched deliberately. It is currently the only signal that
 the portal is deployable.
 
+## Skipping portal builds
+
+`apps/web-portal/vercel.json` sets:
+
+```json
+"ignoreCommand": "git diff --quiet HEAD^ HEAD -- ."
+```
+
+Vercel runs the command from the Root Directory (`apps/web-portal`), so `.` scopes the
+diff to the portal. Exit 0 skips the build, exit 1 builds. Extension, docs and CI-only
+pushes skip the portal build; Vercel still records a deployment, marked _Canceled by
+Ignored Build Step_. Whether that still produces a notification email is unconfirmed —
+the build does not run, the record exists.
+
+Checked against real history before it was added: the three commits that touched
+`apps/web-portal` build, the rest skip.
+
+**What a skip reports.** `Vercel => pass`, with the detail _"Canceled by Ignored Build
+Step"_. A skipped deployment is a green check, not a pending one — which is what makes this
+compatible with Vercel being a required status check on `main`. Verified on a docs-only PR
+before relying on it; had it reported neutral or pending, a release PR that touched
+nothing in the portal would have been unmergeable.
+
 ## Portal build
 
 ```bash
