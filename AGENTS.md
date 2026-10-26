@@ -327,3 +327,12 @@ All project releases must follow the standard procedure defined in [docs/RELEASE
 - **Publication Policy**:
   - The AI agent will maintain and prepare all local packages, builds, and metadata.
   - **Do NOT publish to any public channel (including `https://iypm.vercel.app/`) until explicit user confirmation is given.** Pushing a release branch and opening its PR is allowed; merging is the owner's decision.
+
+## Releases
+
+Every release follows `docs/RELEASING.md`. Short version: bump with
+`sync-version.mjs --set`, write the `CHANGELOG.md` section, run `npm run release-notes`
+(the in-app modal is generated from the changelog and `npm run check` fails when it is
+stale), update `docs/RELEASE_X.Y.Z.md` and the README status block, merge the release PR,
+then push an annotated `vX.Y.Z` tag — the release workflow builds the ZIPs and publishes
+the GitHub Release with the changelog section as its body.
