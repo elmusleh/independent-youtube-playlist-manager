@@ -17,6 +17,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Documentation restructured for handover: `.ai-sync/HANDOFF.md` is now a short, verified
+  current-state file (branches, SHAs, pending work, known traps) instead of 650 lines of
+  per-session narration; the old log is frozen in `.ai-sync/HISTORY.md`. `PLAN.md` and
+  `PROGRESS.md` describe only scheduled and open work, `docs/INDEX.md` maps every document,
+  and `AGENTS.md` opens with an explicit reading order. Removed `docs/RELEASE_SPEC.md`, which
+  still instructed agents to release from `main` and contradicted `docs/RELEASING.md`, and
+  moved three completed implementation plans out of the repository root into `docs/archive/`.
 - Git workflow: `next` is the integration branch and `main` holds releases only. Work
   branches from `next` and PRs into it, squash-merged; a release is one squash-merged PR
   from `next` to `main`, tagged `vX.Y.Z`, after which `main` is merged back into `next`.

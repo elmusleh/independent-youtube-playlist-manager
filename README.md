@@ -177,9 +177,18 @@ npm run lint:fix
 - 14 token categories: colors, typography, spacing, breakpoints, layout, touch targets, z-index, transitions, viewport, component-specific, responsive contracts, utilities, print
 - Backward compatible via legacy aliases (`--app-bg`, `--yt-blue`, `--primary-color`)
 
+### Documentation map
+
+Every document, and who each one is for: [`docs/INDEX.md`](docs/INDEX.md).
+
 ### Release Workflow
 
-See `docs/RELEASE_SPEC.md` — AI agents handle all steps up to `git push` (human only).
+See `docs/RELEASING.md` — the single release runbook: semver decision, version sync,
+changelog, release PR `next` → `main`, tag, store uploads.
+
+Day-to-day: `next` is the integration branch, `main` holds releases only. Agents may push
+branches, open PRs and squash-merge into `next`; a release PR into `main` is merged when the
+owner asks for that release.
 
 ### 🛠️ Developer & Control CLI
 
@@ -196,7 +205,7 @@ Use `./iypm.sh` at repository root for quick overview and operations:
 
 ### AI Agent Rules (from AGENTS.md)
 
-1. **Push a branch and open a PR** — `main` is protected; never commit directly to it and do not merge without explicit instruction
+1. **Branch from `next`, PR into `next`** — squash-merged, branch deleted on merge. `main` only takes release PRs from `next`; never push to either directly
 2. **ALWAYS `npm run check` before AND after edits**
 3. **ALWAYS `npm run build` after edits** — verifies `dist/`
 4. **No file > 350 lines** — Split using established module pattern
@@ -204,7 +213,10 @@ Use `./iypm.sh` at repository root for quick overview and operations:
 
 ---
 
-## 📊 Current Status (2026-10-25)
+## 📊 Current Status
+
+> Live state (branches, SHAs, pending work) is in [`.ai-sync/HANDOFF.md`](.ai-sync/HANDOFF.md).
+> The block below records store submission status as of the 1.2.0 release.
 
 - **Version**: 1.2.0 — tagged `v1.2.0`, release assets published
 - **Chrome**: 1.1.1 in review (auto-publish on approval); 1.2.0 package ready
