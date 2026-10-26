@@ -12,8 +12,8 @@ built/
 *.zip
 test-results/
 
-# Build outputs — browser-specific manifests are copied here by npm run build-all
-# Load dist/chrome/ in Chrome, dist/firefox/ in Firefox
+# Build outputs — browser-specific manifests are generated/copied here by npm run build
+# Load dist/chrome/ in Chrome, dist/firefox/ in Firefox, dist/edge/ in Edge
 /dist
 /dist-zip
 .agents/

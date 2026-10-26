@@ -3,7 +3,8 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const target = process.argv[2];
-if (!["chrome", "firefox"].includes(target)) throw new Error("Expected chrome or firefox.");
+if (!["chrome", "firefox", "edge"].includes(target))
+  throw new Error("Expected chrome, firefox, or edge.");
 const root = path.resolve(__dirname, "../..");
 const source = path.join(root, "apps/browser-extension");
 if (fs.existsSync(path.join(source, "manifest.json")))
@@ -19,8 +20,17 @@ for (const directory of ["assets", "background", "content-scripts", "editor", "p
     filter: (file) => !file.endsWith(".d.ts") && !file.endsWith(".map"),
   });
 }
-fs.copyFileSync(
-  path.join(source, `manifest.${target}.json`),
-  path.join(destination, "manifest.json")
-);
+const destinationManifest = path.join(destination, "manifest.json");
+if (target === "edge") {
+  // Edge is Chromium-based: derive its manifest from Chrome and strip fields
+  // that are Chrome/Firefox-specific or undesirable for Edge Add-ons.
+  const edgeManifest = JSON.parse(
+    fs.readFileSync(path.join(source, "manifest.chrome.json"), "utf8")
+  );
+  delete edgeManifest.key;
+  delete edgeManifest.browser_specific_settings;
+  fs.writeFileSync(destinationManifest, `${JSON.stringify(edgeManifest, null, 2)}\n`);
+} else {
+  fs.copyFileSync(path.join(source, `manifest.${target}.json`), destinationManifest);
+}
 console.log(`Built ${target} package from generated assets and extension runtime files.`);

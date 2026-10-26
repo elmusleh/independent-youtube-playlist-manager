@@ -43,7 +43,7 @@ jobs:
       - name: Run All Checks
         run: npm run check
 
-      - name: Package Chrome and Firefox Extensions
+      - name: Package Chrome, Firefox and Edge Extensions
         run: npm run pack
 
       - name: Verify Loaded Extension
