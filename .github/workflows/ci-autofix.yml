@@ -21,9 +21,13 @@ permissions:
 
 jobs:
   autofix:
+    # SECURITY: workflow_run runs with write permissions. Restrict the job to
+    # failures from THIS repository so a fork can never reach the checkout. The
+    # shell guard repeats this check as defence in depth.
     if: >-
       github.event.workflow_run.conclusion == 'failure' &&
-      github.event.workflow_run.event != 'schedule'
+      github.event.workflow_run.event != 'schedule' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 25
     env:
