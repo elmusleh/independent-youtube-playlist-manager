@@ -7,3 +7,5 @@ apps/web-portal/.next/
 apps/web-portal/out/
 *.min.js
 .worktrees/
+apps/web-portal/playwright-report/
+apps/web-portal/test-results/
