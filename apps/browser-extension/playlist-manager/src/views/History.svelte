@@ -473,8 +473,6 @@
 <input type="file" id="HistoryImportInput" accept="application/json" style="display: none;" />
 
 <style>
-  @import "../css/view-layout.css";
-
   .content {
     flex: 1;
   }

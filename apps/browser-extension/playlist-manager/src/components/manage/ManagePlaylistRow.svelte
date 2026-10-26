@@ -204,8 +204,6 @@
 </div>
 
 <style>
-  @import "../../css/view-layout.css";
-
   .list-row.dragging {
     opacity: 0.5;
     background: var(--active-bg-color);

@@ -44,8 +44,6 @@
 </div>
 
 <style>
-  @import "../../css/view-layout.css";
-
   .view-toolbar {
     transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     border-bottom: 1px solid var(--border-color);

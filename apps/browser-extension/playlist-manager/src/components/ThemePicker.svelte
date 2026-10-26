@@ -4,35 +4,50 @@
   import { theme } from "../stores/theme.store.js";
   import type { ThemeChoice } from "../types/model.js";
 
-  let { onClose = () => {} }: { onClose?: () => void } = $props();
+  let {
+    onClose = () => {},
+    onSubmenuToggle = () => {},
+  }: { onClose?: () => void; onSubmenuToggle?: (open: boolean) => void } = $props();
 
   let showThemeCard = $state(false);
 
   function getThemeLabel(t: ThemeChoice): string {
-    if (t === "device") return "Device theme";
+    if (t === "device") return "Device default";
     return t === "dark" ? "Dark" : "Light";
   }
 
   function toggleThemeCard(event: MouseEvent) {
     event.stopPropagation();
-    showThemeCard = !showThemeCard;
+    const next = !showThemeCard;
+    showThemeCard = next;
+    onSubmenuToggle(next);
   }
 
   function selectTheme(choice: ThemeChoice, event: MouseEvent) {
     event.stopPropagation();
     theme.set(choice);
     showThemeCard = false;
+    onSubmenuToggle(false);
+    onClose();
   }
 
   function handleKeydown(event: KeyboardEvent) {
     if (showThemeCard && event.key === "Escape") {
       showThemeCard = false;
+      onSubmenuToggle(false);
     }
   }
 
   $effect(() => {
+    if (!showThemeCard) return;
     window.addEventListener("keydown", handleKeydown);
     return () => window.removeEventListener("keydown", handleKeydown);
+  });
+
+  // Close submenu when dropdown closes
+  $effect(() => {
+    if (!showThemeCard) return;
+    return () => onSubmenuToggle(false);
   });
 </script>
 
@@ -47,7 +62,7 @@
 </button>
 
 {#if showThemeCard}
-  <div class="theme-card" role="dialog" aria-labelledby="theme-card-title">
+  <div class="theme-submenu" role="menu" aria-labelledby="theme-card-title">
     <div class="theme-card-header">
       <span id="theme-card-title">Appearance</span>
     </div>
@@ -55,6 +70,8 @@
       <button
         class="theme-option"
         class:selected={$theme === "dark"}
+        role="menuitemradio"
+        aria-checked={$theme === "dark"}
         onclick={(e) => selectTheme("dark", e)}
       >
         <span>Dark</span>
@@ -62,6 +79,8 @@
       <button
         class="theme-option"
         class:selected={$theme === "light"}
+        role="menuitemradio"
+        aria-checked={$theme === "light"}
         onclick={(e) => selectTheme("light", e)}
       >
         <span>Light</span>
@@ -69,6 +88,8 @@
       <button
         class="theme-option"
         class:selected={$theme === "device"}
+        role="menuitemradio"
+        aria-checked={$theme === "device"}
         onclick={(e) => selectTheme("device", e)}
       >
         <span>Device default</span>
@@ -89,47 +110,63 @@
     align-items: center;
   }
 
-  .theme-card {
+  /* Submenu positioning - opens to the left of trigger in dropdown */
+  .theme-submenu {
     position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 200px;
+    top: 0;
+    right: 100%;
+    margin-right: 8px;
+    min-width: 180px;
     background-color: var(--background-color);
     border: 1px solid var(--border-color);
-    border-radius: 12px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
     z-index: 2000;
     padding: 0;
     overflow: hidden;
+    animation: scaleIn 0.1s ease-out;
+    transform-origin: right center;
   }
 
-  :global([data-theme="dark"]) .theme-card {
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  @keyframes scaleIn {
+    from {
+      opacity: 0;
+      transform: scale(0.95) translateX(8px);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1) translateX(0);
+    }
+  }
+
+  :global([data-theme="dark"]) .theme-submenu {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
     background-color: #282828;
   }
 
   .theme-card-header {
-    padding: 12px 16px;
+    padding: 10px 14px;
     border-bottom: 1px solid var(--border-color);
   }
 
   .theme-card-header span {
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
     color: var(--text-color);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
   }
 
   .theme-options {
     display: flex;
     flex-direction: column;
-    padding: 8px 0;
+    padding: 4px 0;
   }
 
   .theme-option {
     display: flex;
     align-items: center;
-    padding: 10px 16px;
+    padding: 10px 14px;
     background: none;
     border: none;
     color: var(--text-color);
@@ -137,7 +174,7 @@
     cursor: pointer;
     text-align: left;
     width: 100%;
-    transition: background-color 0.15s ease;
+    transition: background-color 0.1s ease;
   }
 
   .theme-option:hover {
@@ -146,19 +183,46 @@
 
   .theme-option.selected {
     background-color: var(--active-bg-color);
+    color: var(--primary-color);
+    font-weight: 500;
   }
 
+  .theme-option:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: -2px;
+  }
+
+  /* Mobile: when dropdown is full-screen, submenu becomes bottom sheet */
   @media (max-width: 600px) {
-    .theme-card {
+    .theme-submenu {
       position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 80%;
-      max-width: 280px;
-      border-radius: 12px;
-      max-height: 60vh;
-      overflow-y: auto;
+      top: auto;
+      right: auto;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      max-width: none;
+      border-radius: 16px 16px 0 0;
+      box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.2);
+      z-index: 3000;
+      margin-right: 0;
+      transform-origin: bottom center;
+      animation: slideUp 0.2s ease-out;
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(100%);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    :global([data-theme="dark"]) .theme-submenu {
+      background-color: #1e1e1e;
     }
   }
 </style>

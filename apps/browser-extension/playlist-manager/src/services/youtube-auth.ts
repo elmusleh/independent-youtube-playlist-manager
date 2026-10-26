@@ -1,5 +1,6 @@
 /// <reference path="../../node_modules/@types/firefox-webext-browser/index.d.ts" />
 import { parseOAuthResponse, getFirefoxRedirectUri } from "../utils/oauth-response";
+import { hasYoutubeClientId } from "../utils/youtube-credentials";
 import {
   ACCOUNT_DATA,
   hasDataConsent,
@@ -87,10 +88,10 @@ async function fetchFreshToken(
     try {
       const result = await browser.storage.local.get("custom_yt_credentials");
       const creds = result.custom_yt_credentials;
-      if (!creds?.clientId || !creds?.apiKey) {
+      if (!hasYoutubeClientId(creds)) {
         throw Object.assign(
           new Error(
-            "API credentials are not configured. Please go to API Setup to enter your Client ID and API Key."
+            "Client ID is not configured. Please go to API Setup to enter your OAuth Client ID."
           ),
           { code: "credentials_missing" }
         );

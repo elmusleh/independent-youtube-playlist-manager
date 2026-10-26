@@ -11,7 +11,7 @@
     } catch (e) {
       const code = (e as any)?.code;
       if (code === "credentials_missing") {
-        if (window.info) window.info("Please fill in your API credentials first.");
+        if (window.info) window.info("Please enter your OAuth Client ID first.");
         push("/api-setup");
       } else {
         if (window.error) window.error("Sign-in failed. Please try again.");

@@ -154,8 +154,6 @@
 </main>
 
 <style>
-  @import "../css/view-layout.css";
-
   .search-bar {
     display: flex;
     gap: 8px;

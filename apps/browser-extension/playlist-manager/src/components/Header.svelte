@@ -9,6 +9,7 @@
   import HeaderSearchBar from "./HeaderSearchBar.svelte";
   import ProfileDropdown from "./ProfileDropdown.svelte";
   import { logger } from "../services/logger";
+  import { hasYoutubeClientId } from "../utils/youtube-credentials";
 
   const browser = (window as any).browser || (window as any).chrome;
 
@@ -53,9 +54,9 @@
         clientId: "",
         apiKey: "",
       };
-      missingCredentials = !creds.clientId || !creds.apiKey;
+      missingCredentials = !hasYoutubeClientId(creds);
       if (window.logSystemEvent && missingCredentials)
-        await window.logSystemEvent("INFO", "[HEADER] Missing custom API credentials");
+        await window.logSystemEvent("INFO", "[HEADER] Missing custom OAuth Client ID");
     } catch (e) {
       const errMsg = e instanceof Error ? e.message : String(e);
       missingCredentials = true;
@@ -114,7 +115,7 @@
         const errMsg = err instanceof Error ? err.message : String(err);
         const code = (err as any)?.code;
         if (code === "credentials_missing") {
-          if (window.info) window.info("Please fill in your API credentials first.");
+          if (window.info) window.info("Please enter your OAuth Client ID first.");
           push("/api-setup");
         } else {
           logger.error("Sign in failed:", err);

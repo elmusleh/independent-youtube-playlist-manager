@@ -8,6 +8,9 @@
     emptyTitle?: string;
     emptyMessage?: string;
     emptyIcon?: any;
+    emptyActionLabel?: string;
+    emptyActionHref?: string;
+    emptyActionOnClick?: () => void;
     children?: import("svelte").Snippet;
   }
 
@@ -17,6 +20,9 @@
     emptyTitle = "No Playlists",
     emptyMessage = "No playlists found.",
     emptyIcon,
+    emptyActionLabel,
+    emptyActionHref,
+    emptyActionOnClick,
     children,
   }: Props = $props();
 </script>
@@ -28,7 +34,14 @@
     {/each}
   </div>
 {:else if empty}
-  <EmptyState icon={emptyIcon} title={emptyTitle} message={emptyMessage} />
+  <EmptyState
+    icon={emptyIcon}
+    title={emptyTitle}
+    message={emptyMessage}
+    actionLabel={emptyActionLabel}
+    actionHref={emptyActionHref}
+    actionOnClick={emptyActionOnClick}
+  />
 {:else}
   <div class="playlist-grid">
     {@render children?.()}
