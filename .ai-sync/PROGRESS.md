@@ -11,8 +11,9 @@ changelog.
 
 ## Unreleased on `next`
 
-Infrastructure only (#40–#47). Nothing user-facing, so **no release is scheduled** — a
-version number with no user-visible content is not a release.
+A user-facing fix — the popup's page import works on any regular page again — plus
+infrastructure (workflow docs, Vercel skip-build, Dependabot coverage, Playwright guard).
+**Release 1.2.1 (patch) is justified**; it waits on the owner, not on more work.
 
 ## Open work
 

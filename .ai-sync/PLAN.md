@@ -3,10 +3,12 @@
 Short by design. This is the sequence, not the history — see `.ai-sync/HANDOFF.md` for state
 and `.ai-sync/PROGRESS.md` for open tasks.
 
-## Current cycle: none in flight
+## Current cycle: 1.2.1, awaiting the owner
 
-`v1.2.0` shipped on 2026-10-26. `next` carries infrastructure changes only (#40–#47) and is
-not eligible for a release: a version bump needs something a user can notice.
+`v1.2.0` shipped on 2026-10-26. Since then `next` has accumulated one user-visible fix — the
+popup's page import working on any regular page — alongside infrastructure changes. A bug
+fix is a **patch** release: 1.2.1. It needs no further work before shipping, only a decision
+to ship it.
 
 ## What triggers the next release
 

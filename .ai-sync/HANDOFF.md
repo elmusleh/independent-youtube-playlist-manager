@@ -32,21 +32,31 @@ disagrees with them, the command wins and the figure needs updating.
 
 ## What is unreleased on `next`
 
-| PR  | Summary                                                                     |
-| --- | --------------------------------------------------------------------------- |
-| #40 | changelog records the branch model and the Vercel fix                       |
-| #41 | branch lifecycle rules: `fetch --prune` first, delete branches on merge     |
-| #42 | `ignoreCommand`: extension/docs-only pushes skip the portal build           |
-| #43 | DEPLOYMENT docs for the skip behaviour                                      |
-| #44 | Dependabot monitors all three npm trees                                     |
-| #45 | CI autofix workflows (owner-supplied, gated behind `AUTOFIX_AUTO_MERGE`)    |
-| #46 | Playwright version-skew guard + CI installs browsers for both trees         |
-| #47 | generic page import restored in the popup (rescued from an unmerged branch) |
+One user-facing fix plus infrastructure:
+
+- **User-facing:** the popup's page import works again on any regular page instead of
+  requiring a detectable channel; `0` now means "all videos"; failures render inline instead
+  of in an `alert()` that closed the popup. That is a **bug fix**, so the next release is a
+  **patch (1.2.1)**, not a minor.
+- **Infrastructure:** git workflow and branch-lifecycle docs, the Vercel skip-build,
+  Dependabot coverage across all three npm trees, the Playwright version-skew guard, and the
+  CI-autofix workflows.
+
+The authoritative list, which never goes stale:
+
+```bash
+git log --oneline main..next
+```
+
+This file deliberately does not enumerate PR numbers: any list here is out of date within a
+merge, which is how the previous version came to omit its own two doc PRs.
 
 ## Next actions, in order
 
-1. **Do not cut a release yet.** `next` has no user-facing change. Wait for a real fix or
-   feature, then follow `docs/RELEASING.md`.
+1. **A patch release (1.2.1) is justified and waiting on the owner.** `next` carries a real
+   user-visible fix (page import) plus infrastructure. Follow `docs/RELEASING.md` when you
+   want it out; nothing else needs to land first. Do not call it 1.3.0 — no new feature,
+   no breaking change.
 2. **Store uploads for 1.2.0 are manual** — Chrome Web Store, Edge Partner Center, Firefox
    AMO (`docs/RELEASING.md` step 9). Nothing in the repo can confirm they happened.
 3. **Old tags are local-only.** `v1.0.0`, `v1.0.2`, `v1.1.0`, `v1.1.1` were never pushed to
