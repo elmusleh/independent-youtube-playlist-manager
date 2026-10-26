@@ -51,7 +51,9 @@ the portal is deployable.
 
 Vercel runs the command from the Root Directory (`apps/web-portal`), so `.` scopes the
 diff to the portal. Exit 0 skips the build, exit 1 builds. Extension, docs and CI-only
-pushes no longer queue a portal deployment — and no longer send a deployment email.
+pushes skip the portal build; Vercel still records a deployment, marked _Canceled by
+Ignored Build Step_. Whether that still produces a notification email is unconfirmed —
+the build does not run, the record exists.
 
 Checked against real history before it was added: the three commits that touched
 `apps/web-portal` build, the rest skip.
