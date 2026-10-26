@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Git workflow: `next` is the integration branch and `main` holds releases only. Work
+  branches from `next` and PRs into it, squash-merged; a release is one squash-merged PR
+  from `next` to `main`, tagged `vX.Y.Z`, after which `main` is merged back into `next`.
+- CI and security workflows run on `next` as well as `main`.
+- Vercel deployment fixed: `rootDirectory` removed from `vercel.json` (it is a project
+  setting, not a config key) and guarded by `verify-vercel-config.js`, so deployments no
+  longer fail at config parse.
+
 ## [1.2.0] - 2026-10-26
 
 ### Added
