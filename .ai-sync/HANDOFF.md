@@ -1,5 +1,21 @@
 # Pagination handoff
 
+## Branch model changed: `next` integrates, `main` releases (2026-10-26)
+
+- `next` is the integration branch. Every feature, fix, chore and doc change branches off
+  `next` and PRs back into `next`, squash-merged.
+- `main` only receives release PRs from `next`, squash-merged, then tagged `vX.Y.Z`.
+  Followers see one commit per release.
+- CI and security workflows now trigger on PRs and pushes to `next` as well as `main`;
+  without that, required checks on `next` would never report and every PR would hang.
+- **Post-release sync is mandatory.** Squash merges leave `next` and `main` with identical
+  content but no shared commits, so the merge-base goes stale and the next release PR
+  re-displays shipped work. After tagging: `git switch next && git merge origin/main &&
+git push`. That empty merge commit is the only direct push allowed on `next`, which is
+  why `next` runs without admin enforcement and `main` runs with it.
+
+Full rules: `AGENTS.md` → _Git Workflow_. Release steps: `docs/RELEASING.md`.
+
 ## Vercel was red because of an invalid config key (2026-10-26)
 
 Every deployment failed at config parse, before any build step:

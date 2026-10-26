@@ -49,29 +49,62 @@ silently.
 - `README.md` — the **Current Status** block (version, store review state, test counts).
 - `HANDOFF.md` — what shipped and what is next.
 
-## 5. Open the release PR
+## 5. Land the release prep on `next`
+
+The version bump and changelog land on `next` like any other change — they do not carry
+code, so they get their own small PR rather than a long-lived release branch.
 
 ```bash
-git switch -c release/1.2.0
+git switch next && git pull origin next
+git switch -c chore/release-1.3.0
 npm run check && npm run build
-git commit -am "release: 1.2.0"
-git push -u origin release/1.2.0
-gh pr create --base main --head release/1.2.0 --title "release: 1.2.0"
+git commit -am "chore(release): 1.3.0 version and changelog"
+git push -u origin chore/release-1.3.0
+gh pr create --base next --head chore/release-1.3.0 --title "chore(release): 1.3.0"
+gh pr merge --squash --delete-branch
 ```
 
-`main` is protected: three checks must pass (Quality & Security, Extension CI, Web &
-Extension E2E), and every review thread must be resolved. `strict` is off, so no rebase
-is needed first.
+Requirements on both `next` and `main`: the three checks (Quality & Security, Extension
+CI, Web & Extension E2E) plus every review thread resolved. `strict` is off, so no rebase.
 
-## 6. Tag after the merge
+## 6. Release PR: `next` → `main`
 
-Tag the merge commit on `main` — never a branch head, never before the checks pass.
+This is the moment `main` moves. Open it, let the checks run, then **squash** it — `main`
+takes exactly one commit per release.
+
+```bash
+gh pr create --base main --head next --title "release: v1.3.0" --body-file release-notes.md
+gh pr merge --squash
+```
+
+Then tag that commit and push the tag:
 
 ```bash
 git switch main && git pull --ff-only
-git tag -a v1.2.0 -m "Release 1.2.0"
-git push origin v1.2.0
+git tag -a v1.3.0 -m "Release 1.3.0"
+git push origin v1.3.0
 ```
+
+The tag is pushed, never created on the `next` head — the workflow builds whatever the
+tag points at.
+
+## 6b. Sync `main` back into `next`
+
+Do this immediately after every release, or the next release PR will re-show shipped work.
+
+```bash
+git switch next && git pull --ff-only
+git merge origin/main          # empty merge commit: it only moves the merge-base
+git push
+```
+
+Squash merges mean `next` and `main` hold the same content but share no commits after a
+release, so GitHub's merge-base is stale and the next `next → main` diff includes
+already-released changes. The empty merge commit fixes the comparison.
+
+This is the **only** direct push allowed on `next`. It has to be one: the change is a
+merge commit, so a PR cannot carry it (the diff is empty). That is why `next` runs
+without `enforce_admins` while `main` runs with it.
 
 ## 7. Let the release workflow do the rest
 
@@ -114,14 +147,17 @@ listing reflects the new version.
 ```
 [ ] version decided and BREAKING noted if applicable
 [ ] sync-version --set X.Y.Z
-[ ] CHANGELOG section written, npm run release-notes run
+[ ] CHANGELOG: [Unreleased] renamed to [X.Y.Z] - date, fresh [Unreleased] added
+[ ] npm run release-notes run (in-app notes regenerate)
 [ ] docs/RELEASE_X.Y.Z.md written
 [ ] README Current Status updated
 [ ] HANDOFF updated
 [ ] npm run check && npm run build green
-[ ] release PR merged with all checks passing
+[ ] release prep PR squash-merged into next
+[ ] release PR next -> main squash-merged with all checks passing
 [ ] annotated tag vX.Y.Z pushed from main
 [ ] release workflow green, 4 assets, body from changelog
+[ ] main merged back into next (merge-base refreshed)
 [ ] store uploads done, store status updated
 ```
 
