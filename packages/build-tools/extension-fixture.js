@@ -79,6 +79,7 @@ const routes = [
   "/api-setup",
   "/logs",
   "/open-by-id",
+  "/metadata",
 ];
 const sizes = [
   [320, 568],

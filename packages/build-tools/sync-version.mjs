@@ -4,6 +4,9 @@
  * Reads the canonical version from apps/browser-extension/manifest.chrome.json and propagates
  * it to apps/browser-extension/manifest.firefox.json and package.json.
  *
+ * The Edge manifest is generated from manifest.chrome.json at build time, so it needs no
+ * separate version sync.
+ *
  * Usage:
  *   node packages/build-tools/sync-version.mjs            # sync from chrome manifest
  *   node packages/build-tools/sync-version.mjs --set 2.12.25  # set new version everywhere
