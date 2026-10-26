@@ -210,6 +210,26 @@ npm run web             # Web portal dev server (localhost:3000)
 npm run web:build       # Web portal production build
 ```
 
+### Shared toolchain versions (Playwright)
+
+There are no npm workspaces: root, `apps/web-portal` and the playlist manager each install
+their own tree. **Playwright does not follow that rule** — its browsers live in one cache
+(`~/.cache/ms-playwright`) keyed by version, so whichever tree installed them is the only
+one that can launch a browser.
+
+Bump `playwright` and `@playwright/test` in **every** tree in the same PR, then `npm ci` in
+each so the lockfiles agree. `verify-tooling-versions.js` (part of `npm run check`) fails
+with this instruction if the trees drift apart. Skipping it produces this, fifteen minutes
+later, in E2E — which reads like a flake and is not one:
+
+```
+browserType.launchPersistentContext: Executable doesn't exist at
+/home/runner/.cache/ms-playwright/chromium-1248/chrome-linux64/chrome
+```
+
+CI installs browsers for both trees so a drift cannot break the build either, but the guard
+is what keeps a single browser version to debug against.
+
 ---
 
 ## 🤖 AI Agent Workflow (mandatory)

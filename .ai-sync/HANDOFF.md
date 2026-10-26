@@ -1,5 +1,40 @@
 # Pagination handoff
 
+## Post-1.2.0 batch on `next`, unreleased (2026-10-26)
+
+`main` = `3e48b99` (1.2.0, tagged, deployed). `next` is **5+ commits ahead** and none of it
+is user-facing, so **no release is scheduled**: a version bump with only CI and docs churn
+is a number without content. Hold until there is a real fix or feature, then follow
+`docs/RELEASING.md`.
+
+Landed on `next` after the 1.2.0 tag:
+
+| PR  | What                                                                                       |
+| --- | ------------------------------------------------------------------------------------------ |
+| #40 | changelog records the branch model and the Vercel fix                                      |
+| #41 | branch lifecycle: `git fetch --prune` first, delete branches on merge, never `main`/`next` |
+| #42 | `ignoreCommand` — extension/docs-only pushes skip the portal build                         |
+| #43 | DEPLOYMENT docs for the skip, including that a skip reports `pass`                         |
+| #44 | Dependabot monitors all three npm trees, grouped per directory                             |
+
+**Playwright version skew — fixed at the root.** Browsers live in one cache
+(`~/.cache/ms-playwright`) keyed by version, but CI installed them from
+`apps/web-portal` only while the extension suite runs root's Playwright. Any independent
+bump of either tree produced _"Executable doesn't exist at …chromium-1248…"_, which reads
+like a flake. CI now installs browsers for both trees, and
+`packages/build-tools/verify-tooling-versions.js` (in `npm run check`) fails with the
+instruction to bump both trees together.
+
+### Still open
+
+- `codex/page-import-permissions` — unmerged local branch, `fix: restore generic page import
+and document permissions`, 15 files / 611 insertions incl. 121 lines of tests. Either
+  rebase onto `next` and PR it, or delete it deliberately. Do not leave it rotting.
+- **Store uploads for 1.2.0 are manual** (`docs/RELEASING.md` step 9): Chrome Web Store,
+  Edge Partner Center, Firefox AMO. Unverifiable from the repo.
+- Tags `v1.0.0`, `v1.0.2`, `v1.1.0`, `v1.1.1` have no GitHub Release pages (only `v1.0.1`
+  and `v1.2.0` do).
+
 ## Branch model changed: `next` integrates, `main` releases (2026-10-26)
 
 - `next` is the integration branch. Every feature, fix, chore and doc change branches off
