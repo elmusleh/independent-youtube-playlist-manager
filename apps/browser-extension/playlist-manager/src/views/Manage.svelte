@@ -1227,117 +1227,117 @@
           {/snippet}
         </ViewHeader>
       {/snippet}
-    </StickyHeader>
-    {#snippet subBar()}
-      {#if filteredPlaylists.length > 0}
-        <div class="list-header" class:selection-active={selectedIds.size > 0}>
-          <div class="header-left">
-            <label class="check-cell">
-              <input
-                aria-label="Select all playlists"
-                type="checkbox"
-                bind:this={selectAllEl}
-                checked={allSelected}
-                onchange={toggleAll}
-                title={allSelected ? "Deselect all" : "Select all"}
-              />
-            </label>
-            <span class="select-label">
+      {#snippet subBar()}
+        {#if filteredPlaylists.length > 0}
+          <div class="list-header" class:selection-active={selectedIds.size > 0}>
+            <div class="header-left">
+              <label class="check-cell">
+                <input
+                  aria-label="Select all playlists"
+                  type="checkbox"
+                  bind:this={selectAllEl}
+                  checked={allSelected}
+                  onchange={toggleAll}
+                  title={allSelected ? "Deselect all" : "Select all"}
+                />
+              </label>
+              <span class="select-label">
+                {#if selectedIds.size > 0}
+                  {selectedIds.size} of {filteredPlaylists.length} selected
+                {:else}
+                  {filteredPlaylists.length} playlist{filteredPlaylists.length !== 1 ? "s" : ""}
+                {/if}
+              </span>
               {#if selectedIds.size > 0}
-                {selectedIds.size} of {filteredPlaylists.length} selected
-              {:else}
-                {filteredPlaylists.length} playlist{filteredPlaylists.length !== 1 ? "s" : ""}
-              {/if}
-            </span>
-            {#if selectedIds.size > 0}
-              <SimpleButton onclick={() => (selectedIds = new Set())} secondary>
-                <Fa icon={faXmark} fw /><span>Clear</span>
-              </SimpleButton>
-            {/if}
-          </div>
-
-          {#if selectedIds.size > 0}
-            <div class="bulk-actions">
-              <SimpleButton onclick={exportSelected} secondary>
-                <Fa icon={faFileExport} fw /><span>Export</span>
-              </SimpleButton>
-              {#if canSaveOffline}
-                <SimpleButton onclick={openSaveOffline} secondary>
-                  <Fa icon={faCloudArrowDown} fw /><span>Save Offline</span>
+                <SimpleButton onclick={() => (selectedIds = new Set())} secondary>
+                  <Fa icon={faXmark} fw /><span>Clear</span>
                 </SimpleButton>
-              {/if}
-              {#if canMerge}
-                <SimpleButton
-                  onclick={() => openMerge()}
-                  secondary
-                  disabled={!isMergeTypeCompatible}
-                  title={isMergeTypeCompatible
-                    ? "Merge selected playlists"
-                    : "Cannot merge offline and synced playlists"}
-                >
-                  <Fa icon={faCodeMerge} fw /><span>Merge</span>
-                </SimpleButton>
-              {/if}
-              {#if canMergeIntoFav}
-                <SimpleButton
-                  onclick={() => openMerge(favoritePlaylistId!)}
-                  secondary
-                  disabled={!isFavMergeTypeCompatible}
-                  title={favMergeTitle}
-                >
-                  <Fa icon={faStar} fw /><span
-                    >{favMergeTarget
-                      ? `Merge into "${favMergeTarget.title.length > 20 ? favMergeTarget.title.slice(0, 18) + "…" : favMergeTarget.title}"`
-                      : "Merge into Favorite"}</span
-                  >
-                </SimpleButton>
-              {/if}
-              <SimpleButton onclick={requestDelete} danger>
-                <Fa icon={faTrash} fw /><span>Delete</span>
-              </SimpleButton>
-              {#if canChangePrivacy}
-                <div class="privacy-dropdown">
-                  <select
-                    aria-label="Change privacy"
-                    bind:value={newPrivacyStatus}
-                    class="text-input privacy-select"
-                    disabled={isPrivacyMixed}
-                    title={isPrivacyMixed
-                      ? "Cannot change privacy for mixed offline and YouTube playlists"
-                      : ""}
-                  >
-                    <option value="" disabled>Change Privacy</option>
-                    <option value="private">Private</option>
-                    <option value="unlisted">Unlisted</option>
-                    <option value="public">Public</option>
-                  </select>
-                  <SimpleButton
-                    onclick={executeChangePrivacy}
-                    secondary
-                    disabled={!newPrivacyStatus || isPrivacyMixed}
-                    title={isPrivacyMixed
-                      ? "Cannot change privacy for mixed offline and YouTube playlists"
-                      : newPrivacyStatus
-                        ? `Change ${selectedYoutubeCount} playlist${selectedYoutubeCount !== 1 ? "s" : ""} to ${newPrivacyStatus}`
-                        : "Select privacy"}
-                  >
-                    <Fa
-                      icon={newPrivacyStatus === "private"
-                        ? faLock
-                        : newPrivacyStatus === "unlisted"
-                          ? faLockOpen
-                          : faEarthAmericas}
-                      fw
-                    />
-                    <span>Set</span>
-                  </SimpleButton>
-                </div>
               {/if}
             </div>
-          {/if}
-        </div>
-      {/if}
-    {/snippet}
+
+            {#if selectedIds.size > 0}
+              <div class="bulk-actions">
+                <SimpleButton onclick={exportSelected} secondary>
+                  <Fa icon={faFileExport} fw /><span>Export</span>
+                </SimpleButton>
+                {#if canSaveOffline}
+                  <SimpleButton onclick={openSaveOffline} secondary>
+                    <Fa icon={faCloudArrowDown} fw /><span>Save Offline</span>
+                  </SimpleButton>
+                {/if}
+                {#if canMerge}
+                  <SimpleButton
+                    onclick={() => openMerge()}
+                    secondary
+                    disabled={!isMergeTypeCompatible}
+                    title={isMergeTypeCompatible
+                      ? "Merge selected playlists"
+                      : "Cannot merge offline and synced playlists"}
+                  >
+                    <Fa icon={faCodeMerge} fw /><span>Merge</span>
+                  </SimpleButton>
+                {/if}
+                {#if canMergeIntoFav}
+                  <SimpleButton
+                    onclick={() => openMerge(favoritePlaylistId!)}
+                    secondary
+                    disabled={!isFavMergeTypeCompatible}
+                    title={favMergeTitle}
+                  >
+                    <Fa icon={faStar} fw /><span
+                      >{favMergeTarget
+                        ? `Merge into "${favMergeTarget.title.length > 20 ? favMergeTarget.title.slice(0, 18) + "…" : favMergeTarget.title}"`
+                        : "Merge into Favorite"}</span
+                    >
+                  </SimpleButton>
+                {/if}
+                <SimpleButton onclick={requestDelete} danger>
+                  <Fa icon={faTrash} fw /><span>Delete</span>
+                </SimpleButton>
+                {#if canChangePrivacy}
+                  <div class="privacy-dropdown">
+                    <select
+                      aria-label="Change privacy"
+                      bind:value={newPrivacyStatus}
+                      class="text-input privacy-select"
+                      disabled={isPrivacyMixed}
+                      title={isPrivacyMixed
+                        ? "Cannot change privacy for mixed offline and YouTube playlists"
+                        : ""}
+                    >
+                      <option value="" disabled>Change Privacy</option>
+                      <option value="private">Private</option>
+                      <option value="unlisted">Unlisted</option>
+                      <option value="public">Public</option>
+                    </select>
+                    <SimpleButton
+                      onclick={executeChangePrivacy}
+                      secondary
+                      disabled={!newPrivacyStatus || isPrivacyMixed}
+                      title={isPrivacyMixed
+                        ? "Cannot change privacy for mixed offline and YouTube playlists"
+                        : newPrivacyStatus
+                          ? `Change ${selectedYoutubeCount} playlist${selectedYoutubeCount !== 1 ? "s" : ""} to ${newPrivacyStatus}`
+                          : "Select privacy"}
+                    >
+                      <Fa
+                        icon={newPrivacyStatus === "private"
+                          ? faLock
+                          : newPrivacyStatus === "unlisted"
+                            ? faLockOpen
+                            : faEarthAmericas}
+                        fw
+                      />
+                      <span>Set</span>
+                    </SimpleButton>
+                  </div>
+                {/if}
+              </div>
+            {/if}
+          </div>
+        {/if}
+      {/snippet}
+    </StickyHeader>
 
     {#if loading}
       <div class="skeleton-grid">
