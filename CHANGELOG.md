@@ -13,6 +13,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   branches from `next` and PRs into it, squash-merged; a release is one squash-merged PR
   from `next` to `main`, tagged `vX.Y.Z`, after which `main` is merged back into `next`.
 - CI and security workflows run on `next` as well as `main`.
+- Dependabot now monitors all three npm trees: root, `apps/web-portal` and
+  `apps/browser-extension/playlist-manager`. Previously only `/` was configured, so portal
+  and extension dependencies received no update PRs at all. Each tree is grouped
+  separately, and framework majors (next/react/react-dom, svelte) are ignored — they are
+  migrations, not weekly chores.
 - Vercel deployment fixed: `rootDirectory` removed from `vercel.json` (it is a project
   setting, not a config key) and guarded by `verify-vercel-config.js`, so deployments no
   longer fail at config parse.
