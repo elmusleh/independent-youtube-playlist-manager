@@ -44,6 +44,23 @@ export function isYoutubeTab(tab) {
   }
 }
 
+/** @param {Tab} tab @returns {boolean} */
+export function isYoutubeVideoTab(tab) {
+  try {
+    const url = new URL(tab.url || "");
+    if (!isYouTubeHost(url.hostname)) return false;
+    const id =
+      url.hostname === "youtu.be"
+        ? url.pathname.slice(1).split("/")[0]
+        : url.pathname === "/watch"
+          ? url.searchParams.get("v")
+          : url.pathname.match(/^\/(?:shorts|embed)\/([\w-]{11})(?:\/|$)/)?.[1];
+    return typeof id === "string" && /^[\w-]{11}$/.test(id);
+  } catch {
+    return false;
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Tab collection
 // ---------------------------------------------------------------------------
@@ -55,17 +72,7 @@ export function isYoutubeTab(tab) {
  */
 export async function getVideoTabsInWindow(windowId, filterFn) {
   const allTabs = await browser.tabs.query({ windowId });
-  return allTabs.filter((tab) => {
-    if (!tab.url) return false;
-    try {
-      const url = new URL(tab.url);
-      const isShort = url.hostname.toLowerCase() === "youtu.be";
-      const isVideo = (isYouTubeHost(url.hostname) && url.pathname.includes("/watch")) || isShort;
-      return isVideo && (!filterFn || filterFn(tab));
-    } catch {
-      return false;
-    }
-  });
+  return allTabs.filter((tab) => isYoutubeVideoTab(tab) && (!filterFn || filterFn(tab)));
 }
 
 /**
@@ -73,14 +80,5 @@ export async function getVideoTabsInWindow(windowId, filterFn) {
  */
 export async function getAllVideoTabsAcrossWindows() {
   const allTabs = await browser.tabs.query({});
-  return allTabs.filter((tab) => {
-    if (!tab.url) return false;
-    try {
-      const url = new URL(tab.url);
-      const isShort = url.hostname.toLowerCase() === "youtu.be";
-      return (isYouTubeHost(url.hostname) && url.pathname.includes("/watch")) || isShort;
-    } catch {
-      return false;
-    }
-  });
+  return allTabs.filter(isYoutubeVideoTab);
 }

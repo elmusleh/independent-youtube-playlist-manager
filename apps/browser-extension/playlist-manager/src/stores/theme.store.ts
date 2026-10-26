@@ -3,7 +3,14 @@ import type { Theme, ThemeChoice } from "../types/model.js";
 
 const themeStorageKey = "themeChoice";
 
-export const theme = writable<ThemeChoice>("device");
+function initialChoice(): ThemeChoice {
+  try {
+    const saved = localStorage.getItem("yph-theme-choice");
+    if (saved === "dark" || saved === "light") return saved;
+  } catch {}
+  return "device";
+}
+export const theme = writable<ThemeChoice>(initialChoice());
 
 export const currentTheme: Readable<Theme> = derived(theme, ($theme) => {
   if ($theme !== "device") return $theme;
@@ -13,6 +20,10 @@ export const currentTheme: Readable<Theme> = derived(theme, ($theme) => {
 
 function updatePageTheme() {
   document.documentElement.dataset.theme = get(currentTheme);
+  document.documentElement.style.colorScheme = get(currentTheme);
+  try {
+    localStorage.setItem("yph-theme-choice", get(theme));
+  } catch {}
 }
 
 export function initTheme() {

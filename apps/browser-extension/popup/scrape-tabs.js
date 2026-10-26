@@ -9,8 +9,6 @@ import { isYoutubeTab } from "./tabs.js";
  * @typedef {import("webextension-polyfill").Tabs.Tab} Tab
  */
 
-const VIDEO_META_CACHE_KEY = "yph_video_metadata_cache";
-
 /** @param {string} iso @returns {number} */
 const isoToSeconds = (iso) => {
   if (!iso) return 0;
@@ -49,8 +47,7 @@ export async function scrapeMetadataFromTabs(tabs) {
 
   if (results.length > 0) {
     try {
-      const store = await browser.storage.local.get(VIDEO_META_CACHE_KEY);
-      const map = store[VIDEO_META_CACHE_KEY] || {};
+      const map = {};
       results.forEach((r) => {
         map[r.videoId] = {
           title: r.title || "",
@@ -60,7 +57,7 @@ export async function scrapeMetadataFromTabs(tabs) {
           lastUpdated: Date.now(),
         };
       });
-      await browser.storage.local.set({ [VIDEO_META_CACHE_KEY]: map });
+      await window.videoService.cacheMetadata(map);
       await log("INFO", `Popup: Persisted metadata for ${results.length} videos from tabs`);
     } catch (e) {
       console.error("[YPH] Failed to save metadata to cache:", e);

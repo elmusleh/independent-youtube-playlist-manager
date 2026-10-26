@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onDestroy } from "svelte";
+  import Modal from "../Modal.svelte";
   import Fa from "svelte-fa";
   import {
     faArrowUp,
@@ -42,20 +42,6 @@
           ? initialRules.map((r) => ({ ...r }))
           : [{ field: "title", direction: "asc" }];
       error = "";
-    }
-  });
-
-  function handleKeydown(event: KeyboardEvent) {
-    if (display && event.key === "Escape") {
-      display = false;
-    }
-  }
-  if (typeof window !== "undefined") {
-    window.addEventListener("keydown", handleKeydown);
-  }
-  onDestroy(() => {
-    if (typeof window !== "undefined") {
-      window.removeEventListener("keydown", handleKeydown);
     }
   });
 
@@ -105,148 +91,117 @@
   }
 </script>
 
-{#if display}
-  <div
-    class="multisort-overlay"
-    role="presentation"
-    onmousedown={(e) => {
-      if (e.target === e.currentTarget) display = false;
-    }}
-  >
-    <div class="multisort-dialog" role="dialog" aria-modal="true" aria-label="Custom Multi-Sort">
-      <div class="multisort-header">
-        <h2>Custom Multi-Sort</h2>
-        <button
-          class="close-btn"
-          onclick={() => (display = false)}
-          title="Close"
-          aria-label="Close"
-        >
-          <Fa icon={faXmark} fw />
-        </button>
-      </div>
+<Modal bind:display title="Custom Multi-Sort">
+  <div class="multisort-dialog">
+    <div class="multisort-header">
+      <h2>Custom Multi-Sort</h2>
+      <button class="close-btn" onclick={() => (display = false)} title="Close" aria-label="Close">
+        <Fa icon={faXmark} fw />
+      </button>
+    </div>
 
-      <p class="multisort-hint">
-        Videos are sorted by the first rule first, then each subsequent rule breaks ties.
-      </p>
+    <p class="multisort-hint">
+      Videos are sorted by the first rule first, then each subsequent rule breaks ties.
+    </p>
 
-      {#if rules.length > 0}
-        <div class="rule-list">
-          {#each rules as rule, index (index)}
-            <div class="rule-row">
-              <span class="rule-order">
-                {index === 0 ? "Sort by" : index === 1 ? "Then by" : "Then by"}
-              </span>
-              <select
-                class="rule-field"
-                value={rule.field}
-                onchange={(e) =>
-                  setField(index, (e.currentTarget as HTMLSelectElement).value as SortField)}
-                aria-label="Sort field"
-              >
-                {#each fieldOptions as field}
-                  <option value={field}>{SORT_FIELD_LABELS[field]}</option>
-                {/each}
-              </select>
+    {#if rules.length > 0}
+      <div class="rule-list">
+        {#each rules as rule, index (index)}
+          <div class="rule-row">
+            <span class="rule-order">
+              {index === 0 ? "Sort by" : index === 1 ? "Then by" : "Then by"}
+            </span>
+            <select
+              class="rule-field"
+              value={rule.field}
+              onchange={(e) =>
+                setField(index, (e.currentTarget as HTMLSelectElement).value as SortField)}
+              aria-label="Sort field"
+            >
+              {#each fieldOptions as field}
+                <option value={field}>{SORT_FIELD_LABELS[field]}</option>
+              {/each}
+            </select>
+            <button
+              class="direction-toggle"
+              class:desc={rule.direction === "desc"}
+              onclick={() => toggleDirection(index)}
+              title={describeSortRule(rule)}
+              aria-label="Toggle sort direction"
+            >
+              <Fa icon={rule.direction === "asc" ? faArrowUp : faArrowDown} fw />
+              <span>{rule.direction === "asc" ? "Asc" : "Desc"}</span>
+            </button>
+            <div class="rule-actions">
               <button
-                class="direction-toggle"
-                class:desc={rule.direction === "desc"}
-                onclick={() => toggleDirection(index)}
-                title={describeSortRule(rule)}
-                aria-label="Toggle sort direction"
+                class="icon-btn"
+                onclick={() => moveRule(index, -1)}
+                disabled={index === 0}
+                title="Move up"
+                aria-label="Move sort rule up"
               >
-                <Fa icon={rule.direction === "asc" ? faArrowUp : faArrowDown} fw />
-                <span>{rule.direction === "asc" ? "Asc" : "Desc"}</span>
+                <Fa icon={faChevronUp} fw />
               </button>
-              <div class="rule-actions">
-                <button
-                  class="icon-btn"
-                  onclick={() => moveRule(index, -1)}
-                  disabled={index === 0}
-                  title="Move up"
-                  aria-label="Move sort rule up"
-                >
-                  <Fa icon={faChevronUp} fw />
-                </button>
-                <button
-                  class="icon-btn"
-                  onclick={() => moveRule(index, 1)}
-                  disabled={index === rules.length - 1}
-                  title="Move down"
-                  aria-label="Move sort rule down"
-                >
-                  <Fa icon={faChevronDown} fw />
-                </button>
-                <button
-                  class="icon-btn icon-btn--danger"
-                  onclick={() => removeRule(index)}
-                  disabled={rules.length <= 1}
-                  title="Remove rule"
-                  aria-label="Remove sort rule"
-                >
-                  <Fa icon={faXmark} fw />
-                </button>
-              </div>
+              <button
+                class="icon-btn"
+                onclick={() => moveRule(index, 1)}
+                disabled={index === rules.length - 1}
+                title="Move down"
+                aria-label="Move sort rule down"
+              >
+                <Fa icon={faChevronDown} fw />
+              </button>
+              <button
+                class="icon-btn icon-btn--danger"
+                onclick={() => removeRule(index)}
+                disabled={rules.length <= 1}
+                title="Remove rule"
+                aria-label="Remove sort rule"
+              >
+                <Fa icon={faXmark} fw />
+              </button>
             </div>
-          {/each}
-        </div>
-      {/if}
-
-      {#if canAdd}
-        <button class="add-rule-btn" onclick={addRule}>
-          <Fa icon={faPlus} fw />
-          <span>Add Sort Level</span>
-        </button>
-      {:else}
-        <p class="max-rules-hint">Maximum of {maxRules} sort levels.</p>
-      {/if}
-
-      {#if error}
-        <p class="multisort-error">{error}</p>
-      {/if}
-
-      {#if rules.length > 0}
-        <p class="multisort-preview">Preview: {describeSortRules(rules) || "—"}</p>
-      {/if}
-
-      <div class="multisort-footer">
-        <SimpleButton onclick={() => (display = false)} secondary>
-          <span>Cancel</span>
-        </SimpleButton>
-        <SimpleButton onclick={apply} primary>
-          <span>Apply & Save</span>
-        </SimpleButton>
+          </div>
+        {/each}
       </div>
+    {/if}
+
+    {#if canAdd}
+      <button class="add-rule-btn" onclick={addRule}>
+        <Fa icon={faPlus} fw />
+        <span>Add Sort Level</span>
+      </button>
+    {:else}
+      <p class="max-rules-hint">Maximum of {maxRules} sort levels.</p>
+    {/if}
+
+    {#if error}
+      <p class="multisort-error">{error}</p>
+    {/if}
+
+    {#if rules.length > 0}
+      <p class="multisort-preview">Preview: {describeSortRules(rules) || "—"}</p>
+    {/if}
+
+    <div class="multisort-footer">
+      <SimpleButton onclick={() => (display = false)} secondary>
+        <span>Cancel</span>
+      </SimpleButton>
+      <SimpleButton onclick={apply} primary>
+        <span>Apply & Save</span>
+      </SimpleButton>
     </div>
   </div>
-{/if}
+</Modal>
 
 <style>
-  .multisort-overlay {
-    position: fixed;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(4px);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 3000;
-    padding: 20px;
-  }
-
   .multisort-dialog {
     background: var(--background-color);
-    padding: 24px;
+    padding: 0;
     border-radius: 16px;
     max-width: 560px;
     width: 100%;
-    border: 1px solid var(--border-color);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
     animation: multisort-appear 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-    max-height: 85vh;
-    overflow-y: auto;
   }
 
   @keyframes multisort-appear {

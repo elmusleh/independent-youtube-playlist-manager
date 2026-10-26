@@ -24,7 +24,9 @@ export function getSupabaseBrowserClient() {
 
 // Server Admin client (bypasses RLS with service role for token verification)
 export function getSupabaseAdminClient() {
-  const key = supabaseServiceRoleKey || supabaseAnonKey;
+  if (!isSupabaseConfigured || !supabaseServiceRoleKey)
+    throw new Error("Cloud service is not configured.");
+  const key = supabaseServiceRoleKey;
   return createClient(supabaseUrl, key, {
     auth: {
       persistSession: false,
@@ -42,8 +44,7 @@ export async function verifyExtensionToken(
   }
 
   if (!isSupabaseConfigured) {
-    // In local development or standalone demo mode, validate standard formatted tokens
-    return { userId: "dev-local-user-id", valid: true };
+    return { userId: "", valid: false };
   }
 
   try {

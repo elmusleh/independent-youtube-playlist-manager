@@ -4,6 +4,7 @@
   import Sidebar from "./components/Sidebar.svelte";
   import PlaylistEditor from "./components/PlaylistEditor.svelte";
   import New from "./views/New.svelte";
+  import Builder from "./views/Builder.svelte";
   import Saved from "./views/Saved.svelte";
   import Share from "./views/Share.svelte";
   import Settings from "./views/Settings.svelte";
@@ -97,6 +98,7 @@
 
   const routes = {
     "/new": New,
+    "/playlist-builder": Builder,
     "/saved": Saved,
     "/favorite": FavoritePlaylist,
     "/playlist": PlaylistView,
@@ -124,17 +126,15 @@
     mobileMenuOpen = false;
   }
 
-  function handleDrawerKeydown(event) {
-    if (mobileMenuOpen && event.key === "Escape") {
-      closeMobileMenu();
-    }
+  function handleLayoutChange(event) {
+    if (!event.matches) closeMobileMenu();
   }
-
-  window.addEventListener("keydown", handleDrawerKeydown);
+  const mobileLayout = window.matchMedia("(max-width: 768px)");
+  mobileLayout.addEventListener("change", handleLayoutChange);
 
   import { onDestroy } from "svelte";
   onDestroy(() => {
-    window.removeEventListener("keydown", handleDrawerKeydown);
+    mobileLayout.removeEventListener("change", handleLayoutChange);
   });
 </script>
 
@@ -148,16 +148,6 @@
   <Header isMenuOpen={mobileMenuOpen} onToggleMenu={toggleMobileMenu} />
   <div class="content-wrapper">
     <Sidebar drawerOpen={mobileMenuOpen} onClose={closeMobileMenu} />
-    {#if mobileMenuOpen}
-      <div
-        class="mobile-backdrop"
-        onclick={closeMobileMenu}
-        role="button"
-        tabindex="0"
-        aria-label="Close menu"
-        onkeydown={(e) => e.key === "Enter" && closeMobileMenu()}
-      ></div>
-    {/if}
     <div class="router-outlet">
       <Router {routes} />
     </div>
@@ -198,6 +188,7 @@
     display: flex;
     flex-direction: column;
     min-height: 100vh;
+    min-height: 100dvh;
     width: 100%;
     max-width: 100%;
   }
@@ -206,15 +197,16 @@
     display: flex;
     flex: 1;
     position: relative;
-    padding-top: 56px; /* Account for fixed header */
+    padding-top: var(--app-header-height);
   }
 
   /* Fixed sidebar for desktop */
   :global(.sidenav) {
     width: 240px;
-    height: calc(100vh - 56px); /* Viewport height minus header */
+    height: calc(100vh - var(--app-header-height));
+    height: calc(100dvh - var(--app-header-height));
     position: fixed;
-    top: 56px;
+    top: var(--app-header-height);
     left: 0;
     flex-shrink: 0;
     overflow-y: auto;
@@ -233,10 +225,6 @@
     min-height: clamp(100px, 15vh, 250px);
   }
 
-  .mobile-backdrop {
-    display: none;
-  }
-
   @media (max-width: 768px) {
     .content-wrapper {
       flex-direction: column;
@@ -252,13 +240,25 @@
       margin-left: 0; /* Reset margin for mobile */
       margin-top: 0; /* No horizontal sidebar offset */
     }
+  }
 
-    .mobile-backdrop {
-      display: block;
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.5);
-      z-index: 998; /* Below drawer (999) but above content */
+  /* Improved tablet layout (768px - 1023px) */
+  @media (min-width: 768px) and (max-width: 1023px) {
+    :global(.sidenav) {
+      width: 220px;
+    }
+    .router-outlet {
+      margin-left: 220px;
+    }
+  }
+
+  /* Large desktop (1440px+) - wider sidebar for more content */
+  @media (min-width: 1440px) {
+    :global(.sidenav) {
+      width: 280px;
+    }
+    .router-outlet {
+      margin-left: 280px;
     }
   }
 </style>

@@ -14,6 +14,7 @@
   import { router } from "svelte-spa-router";
   import { onDestroy } from "svelte";
   import type { Settings } from "../types/model";
+  import Modal from "./Modal.svelte";
 
   const browser = (window as any).browser || (window as any).chrome;
 
@@ -164,99 +165,101 @@
 
 <!-- Mobile drawer -->
 {#if drawerOpen}
-  <div class="mobile-drawer" class:open={drawerOpen}>
-    <div class="drawer-header">
-      <button class="drawer-close" onclick={() => onClose()} aria-label="Close navigation">
-        <Fa icon={faXmark} size="lg" />
-      </button>
-    </div>
-    <div class="drawer-nav">
-      <div class="nav-group">
-        <a
-          href="#/saved"
-          onclick={handleNavClick}
-          class:active={isActive("/saved", router.location, router.querystring || "")}
-        >
-          <Fa icon={faListUl} fw />
-          <span>All Playlists</span>
-        </a>
-        <a
-          href="#/favorite"
-          onclick={handleNavClick}
-          class:active={isActive("/favorite", router.location, router.querystring || "")}
-        >
-          <Fa icon={faStar} fw />
-          <span>Favorite Playlist</span>
-        </a>
-        <a
-          href="#/history"
-          onclick={handleNavClick}
-          class:active={isActive("/history", router.location, router.querystring || "")}
-        >
-          <Fa icon={faClockRotateLeft} fw />
-          <span>Watch History</span>
-        </a>
-        <a
-          href="#/manage"
-          onclick={handleNavClick}
-          class:active={isActive("/manage", router.location, router.querystring || "")}
-        >
-          <Fa icon={faBoxArchive} fw />
-          <span>Manage Playlists</span>
-        </a>
+  <Modal display={drawerOpen} onclose={onClose} size="drawer" title="Navigation">
+    <div class="mobile-drawer" class:open={drawerOpen}>
+      <div class="drawer-header">
+        <button class="drawer-close" onclick={() => onClose()} aria-label="Close navigation">
+          <Fa icon={faXmark} size="lg" />
+        </button>
+      </div>
+      <div class="drawer-nav">
+        <div class="nav-group">
+          <a
+            href="#/saved"
+            onclick={handleNavClick}
+            class:active={isActive("/saved", router.location, router.querystring || "")}
+          >
+            <Fa icon={faListUl} fw />
+            <span>All Playlists</span>
+          </a>
+          <a
+            href="#/favorite"
+            onclick={handleNavClick}
+            class:active={isActive("/favorite", router.location, router.querystring || "")}
+          >
+            <Fa icon={faStar} fw />
+            <span>Favorite Playlist</span>
+          </a>
+          <a
+            href="#/history"
+            onclick={handleNavClick}
+            class:active={isActive("/history", router.location, router.querystring || "")}
+          >
+            <Fa icon={faClockRotateLeft} fw />
+            <span>Watch History</span>
+          </a>
+          <a
+            href="#/manage"
+            onclick={handleNavClick}
+            class:active={isActive("/manage", router.location, router.querystring || "")}
+          >
+            <Fa icon={faBoxArchive} fw />
+            <span>Manage Playlists</span>
+          </a>
 
-        {#if signedIn && settings && (settings.enableSubscriptions || settings.enableSearch || settings.enableWatchLater || settings.enableOpenById)}
-          <hr class="nav-divider" />
+          {#if signedIn && settings && (settings.enableSubscriptions || settings.enableSearch || settings.enableWatchLater || settings.enableOpenById)}
+            <hr class="nav-divider" />
 
-          {#if settings.enableSubscriptions}
-            <a
-              href="#/subscriptions"
-              onclick={handleNavClick}
-              class:active={isActive("/subscriptions", router.location, router.querystring || "")}
-            >
-              <Fa icon={faUsers} fw />
-              <span>Subscriptions</span>
-            </a>
+            {#if settings.enableSubscriptions}
+              <a
+                href="#/subscriptions"
+                onclick={handleNavClick}
+                class:active={isActive("/subscriptions", router.location, router.querystring || "")}
+              >
+                <Fa icon={faUsers} fw />
+                <span>Subscriptions</span>
+              </a>
+            {/if}
+
+            {#if settings.enableSearch}
+              <a
+                href="#/search"
+                onclick={handleNavClick}
+                class:active={isActive("/search", router.location, router.querystring || "")}
+              >
+                <Fa icon={faSearch} fw />
+                <span>YouTube Search</span>
+              </a>
+            {/if}
+
+            {#if settings.enableWatchLater}
+              <a
+                href="#/editor?id=WL"
+                onclick={handleNavClick}
+                class:active={isActive("/editor", router.location, router.querystring || "", true)}
+              >
+                <Fa icon={faClock} fw />
+                <span>Watch Later</span>
+              </a>
+            {/if}
+
+            {#if settings.enableOpenById}
+              <a
+                href="#/open-by-id"
+                onclick={handleNavClick}
+                class:active={isActive("/open-by-id", router.location, router.querystring || "")}
+              >
+                <Fa icon={faLink} fw />
+                <span>Open by ID</span>
+              </a>
+            {/if}
+
+            <hr class="nav-divider" />
           {/if}
-
-          {#if settings.enableSearch}
-            <a
-              href="#/search"
-              onclick={handleNavClick}
-              class:active={isActive("/search", router.location, router.querystring || "")}
-            >
-              <Fa icon={faSearch} fw />
-              <span>YouTube Search</span>
-            </a>
-          {/if}
-
-          {#if settings.enableWatchLater}
-            <a
-              href="#/editor?id=WL"
-              onclick={handleNavClick}
-              class:active={isActive("/editor", router.location, router.querystring || "", true)}
-            >
-              <Fa icon={faClock} fw />
-              <span>Watch Later</span>
-            </a>
-          {/if}
-
-          {#if settings.enableOpenById}
-            <a
-              href="#/open-by-id"
-              onclick={handleNavClick}
-              class:active={isActive("/open-by-id", router.location, router.querystring || "")}
-            >
-              <Fa icon={faLink} fw />
-              <span>Open by ID</span>
-            </a>
-          {/if}
-
-          <hr class="nav-divider" />
-        {/if}
+        </div>
       </div>
     </div>
-  </div>
+  </Modal>
 {/if}
 
 <style>
@@ -336,21 +339,11 @@
     .mobile-drawer {
       display: flex;
       flex-direction: column;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 260px;
-      height: 100vh;
+      width: 100%;
       background-color: var(--sidebar-bg-color);
       border-right: 1px solid var(--border-color);
-      z-index: 999;
-      transform: translateX(-100%);
       transition: transform 0.25s ease;
       padding: 8px 0;
-    }
-
-    .mobile-drawer.open {
-      transform: translateX(0);
     }
 
     .drawer-header {

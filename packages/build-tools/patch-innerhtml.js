@@ -91,23 +91,15 @@ patchUtilsJs();
 
 function createIndexHtml() {
   const file = path.join(ROOT, "apps", "browser-extension", "editor", "index.html");
-  const html = `<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-
-    <title>Playlist Manager</title>
-
-    <link rel="icon" type="image/png" href="../assets/icons/icon_48.png" />
-    <link rel="stylesheet" href="global.css" />
-    <link rel="stylesheet" href="bundle.css" />
-
-    <script type="module" src="main.js"></script>
-  </head>
-
-  <body></body>
-</html>`;
+  // Keep one canonical template: hard-coded HTML here used to discard the
+  // pre-paint theme bootstrap and mobile viewport attributes from public/.
+  const template = path.join(ROOT, "apps/browser-extension/playlist-manager/public/index.html");
+  const html = fs
+    .readFileSync(template, "utf8")
+    .replace('href="/favicon.png"', 'href="../assets/icons/icon_48.png"')
+    .replace('href="/global.css"', 'href="global.css"')
+    .replace('href="/build/bundle.css"', 'href="bundle.css"')
+    .replace('src="/build/main.js"', 'src="main.js"');
 
   fs.writeFileSync(file, html, "utf-8");
   // // console.log("[patch-innerhtml] Created apps/browser-extension/editor/index.html");

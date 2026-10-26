@@ -430,12 +430,14 @@
   @media (max-width: 600px) {
     .dropdown-menu {
       position: fixed;
-      top: 56px;
+      top: var(--app-header-height);
       right: 0;
       left: 0;
       width: 100%;
       border-radius: 0;
-      height: calc(100vh - 56px);
+      max-height: calc(100dvh - var(--app-header-height));
+      height: auto;
+      overflow-y: auto;
       border: none;
     }
   }

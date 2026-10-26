@@ -5,9 +5,10 @@ export const dynamic = "force-dynamic";
 
 // GET /api/sync: Pull latest snapshot
 export async function GET(req: NextRequest) {
+  if (!isSupabaseConfigured)
+    return NextResponse.json({ error: "Cloud sync is not configured." }, { status: 503 });
   const authHeader = req.headers.get("authorization") || "";
-  const token =
-    authHeader.replace("Bearer ", "").trim() || req.nextUrl.searchParams.get("token") || "";
+  const token = authHeader.replace(/^Bearer\s+/i, "").trim();
 
   const { userId, valid } = await verifyExtensionToken(token);
   if (!valid) {
@@ -15,21 +16,6 @@ export async function GET(req: NextRequest) {
       { error: "Unauthorized: Invalid or missing sync token." },
       { status: 401 }
     );
-  }
-
-  if (!isSupabaseConfigured) {
-    return NextResponse.json({
-      status: "success",
-      mode: "local_mock",
-      snapshot: {
-        id: "snap-latest",
-        timestamp: new Date().toISOString(),
-        playlistCount: 4,
-        videoCount: 842,
-        message:
-          "Supabase credentials not configured in environment; serving verified local snapshot.",
-      },
-    });
   }
 
   try {
@@ -55,6 +41,8 @@ export async function GET(req: NextRequest) {
 
 // POST /api/sync: Push new snapshot & sync playlists
 export async function POST(req: NextRequest) {
+  if (!isSupabaseConfigured)
+    return NextResponse.json({ error: "Cloud sync is not configured." }, { status: 503 });
   const authHeader = req.headers.get("authorization") || "";
   const token = authHeader.replace("Bearer ", "").trim();
 
@@ -70,25 +58,16 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { deviceOrigin = "Browser Extension", payload } = body;
 
-    if (!payload || typeof payload !== "object") {
+    if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
       return NextResponse.json({ error: "Invalid payload format." }, { status: 400 });
     }
 
     const playlists = Array.isArray(payload.playlists) ? payload.playlists : [];
     const metadataCount =
-      typeof payload.metadataCache === "object" ? Object.keys(payload.metadataCache).length : 0;
+      payload.metadataCache && typeof payload.metadataCache === "object"
+        ? Object.keys(payload.metadataCache).length
+        : 0;
     const sizeBytes = Buffer.byteLength(JSON.stringify(payload), "utf8");
-
-    if (!isSupabaseConfigured) {
-      return NextResponse.json({
-        status: "success",
-        mode: "local_mock",
-        syncedPlaylists: playlists.length,
-        syncedVideos: metadataCount,
-        sizeBytes,
-        timestamp: new Date().toISOString(),
-      });
-    }
 
     const supabase = getSupabaseAdminClient();
 

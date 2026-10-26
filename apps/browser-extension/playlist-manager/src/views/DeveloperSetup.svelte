@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { getFirefoxRedirectUri } from "../utils/oauth-response";
   import Fa from "svelte-fa";
   import {
     faKey,
@@ -45,9 +46,7 @@
       const manifest = browser.runtime.getManifest();
       const geckoId = manifest?.browser_specific_settings?.gecko?.id;
       if (geckoId) {
-        // UUID-style IDs (e.g. {abcd-...}) get the braces stripped for the URL
-        const cleanId = geckoId.replace(/^\{|\}$/g, "");
-        redirectUri = `https://${cleanId}.extensions.allizom.org/`;
+        redirectUri = await getFirefoxRedirectUri(geckoId);
       } else {
         // Fallback if gecko ID not found in manifest
         redirectUri = "";
@@ -141,8 +140,9 @@
   async function testConnection() {
     testStatus = "testing";
     testMessage = "Starting authentication flow...";
+    // Keep signIn in the user gesture for Firefox's optional consent prompt.
     if (window.logSystemEvent)
-      await window.logSystemEvent("INFO", "[DEV-SETUP] Testing connection with custom credentials");
+      void window.logSystemEvent("INFO", "[DEV-SETUP] Testing connection with custom credentials");
 
     try {
       // Force sign in to ensure token with new client ID is fetched

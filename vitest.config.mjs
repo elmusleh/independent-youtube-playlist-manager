@@ -6,6 +6,7 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "jsdom",
+    setupFiles: ["./vitest.setup.mjs"],
     include: ["apps/browser-extension/playlist-manager/src/**/*.{test,spec}.{js,ts}"],
     passWithNoTests: true,
     coverage: {

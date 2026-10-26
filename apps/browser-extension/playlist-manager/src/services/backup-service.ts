@@ -1,5 +1,11 @@
 import { dbGetAllMetadata, dbPutMetadataBatch, dbClearMetadata } from "./db-service.js";
 import {
+  archivedThumbnails,
+  clearArchivedThumbnails,
+  restoreThumbnails,
+  validThumbnail,
+} from "./thumbnail-archive";
+import {
   normalizePlaylist,
   normalizeVideoMeta,
   normalizeHistoryRecord,
@@ -90,6 +96,7 @@ export async function exportFullDatabaseBackup(): Promise<CompleteBackupFile> {
       settings,
       playlists,
       videoMetadata,
+      thumbnails: await archivedThumbnails(),
       history,
     },
   };
@@ -125,8 +132,37 @@ export function validateBackupSchema(json: any): {
   }
 
   const schemaVersion = typeof json.schemaVersion === "number" ? json.schemaVersion : 1;
-  if (!json.data || typeof json.data !== "object") {
+  if (![1, CURRENT_SCHEMA_VERSION].includes(schemaVersion)) {
+    errors.push(`Unsupported backup schema version ${schemaVersion}.`);
+  }
+  if (!json.data || typeof json.data !== "object" || Array.isArray(json.data)) {
     errors.push('Missing "data" container in backup payload.');
+  } else {
+    if (!Array.isArray(json.data.playlists)) errors.push('Missing or invalid "playlists" array.');
+    for (const name of ["videoMetadata", "history", "settings", "thumbnails"]) {
+      const value = json.data[name];
+      if (value !== undefined && (!value || typeof value !== "object" || Array.isArray(value))) {
+        errors.push(`Invalid "${name}" object.`);
+      }
+    }
+    if (
+      json.data.thumbnails &&
+      Object.entries(json.data.thumbnails).some(
+        ([id, value]) => !/^[\w-]{11}$/.test(id) || !validThumbnail(value)
+      )
+    ) {
+      errors.push("Invalid saved thumbnail image in backup.");
+    }
+  }
+  const playlists = json.data?.playlists;
+  if (
+    Array.isArray(playlists) &&
+    playlists.some(
+      (p: any) =>
+        !p || typeof p !== "object" || (p.videos !== undefined && !Array.isArray(p.videos))
+    )
+  ) {
+    errors.push("Invalid playlist entry in backup.");
   }
 
   return {
@@ -165,7 +201,7 @@ export async function importFullDatabaseBackup(
     // -------------------------------------------------------------------------
     // 1. Process Video Metadata Cache (IndexedDB)
     // -------------------------------------------------------------------------
-    if (mode === "overwrite") {
+    if (mode === "overwrite" && !Array.isArray(backupJson)) {
       await dbClearMetadata();
     }
 
@@ -202,6 +238,10 @@ export async function importFullDatabaseBackup(
     // -------------------------------------------------------------------------
     // 2. Process Playlists (browser.storage.local)
     // -------------------------------------------------------------------------
+    if (backupJson.data?.thumbnails) {
+      if (mode === "overwrite") await clearArchivedThumbnails();
+      await restoreThumbnails(backupJson.data.thumbnails);
+    }
     let rawPlaylists: any[] = [];
     if (Array.isArray(backupJson)) {
       // Legacy format
@@ -275,7 +315,8 @@ export async function importFullDatabaseBackup(
         }
       }
 
-      await browser.storage.local.set({ [HISTORY_KEY]: finalHistory });
+      if (!Array.isArray(backupJson))
+        await browser.storage.local.set({ [HISTORY_KEY]: finalHistory });
     }
 
     // -------------------------------------------------------------------------

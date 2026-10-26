@@ -87,6 +87,7 @@ export interface CompleteBackupFile {
     settings: Settings;
     playlists: Playlist[];
     videoMetadata: Record<string, NormalizedVideoMeta>;
+    thumbnails?: Record<string, string>;
     history: Record<string, any>;
     syncSnapshots?: Record<string, string[]>;
   };

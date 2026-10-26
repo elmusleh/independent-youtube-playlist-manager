@@ -22,10 +22,10 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="h-dvh flex flex-col bg-mesh-light text-zinc-900 w-full overflow-hidden selection:bg-red-500/10 selection:text-red-900">
+    <div className="min-h-dvh flex flex-col bg-mesh-light text-zinc-900 w-full selection:bg-red-500/10 selection:text-red-900">
       {/* Main View */}
       <main className="flex-1 min-h-0 w-full flex flex-col">
-        <div className="flex flex-col items-center justify-center flex-1 min-h-0 w-full px-4 py-4 sm:py-6 lg:py-8 text-center space-y-4 sm:space-y-6 lg:space-y-6 animate-in fade-in duration-500 relative">
+        <div className="flex flex-col items-center justify-center flex-1 min-h-0 w-full text-center space-y-responsive animate-in fade-in duration-500 relative">
           {/* Background Accent Glows */}
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[280px] sm:w-[500px] h-[280px] sm:h-[400px] bg-red-500/5 blur-[100px] rounded-full pointer-events-none -z-10 animate-float slow" />
 
@@ -47,21 +47,21 @@ export default function Home() {
           </div>
 
           {/* Headline */}
-          <div className="space-y-4">
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-zinc-950 leading-tight">
+          <div className="space-y-responsive">
+            <h1 className="text-responsive-3xl font-extrabold tracking-tight text-zinc-950 leading-tight">
               {headline}
             </h1>
-            <p className="text-zinc-600 text-xs sm:text-base max-w-xl mx-auto leading-relaxed">
+            <p className="text-zinc-600 text-responsive-sm max-w-xl mx-auto leading-relaxed">
               {subheadline}
             </p>
           </div>
 
           {/* Install Buttons */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full max-w-xl mx-auto pt-2">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-responsive w-full max-w-xl mx-auto pt-responsive">
             <Button
               variant="outline"
               size="lg"
-              className="w-full sm:w-auto h-12 px-8 font-semibold text-sm sm:text-base bg-white border-zinc-200 hover:bg-red-600 hover:border-red-600 hover:text-white hover:-translate-y-0.5 hover:shadow-lg hover:shadow-red-600/25 active:translate-y-0 text-zinc-900 touch-target-44 whitespace-nowrap"
+              className="w-full sm:w-auto btn-responsive-lg font-semibold bg-white border-zinc-200 hover:bg-red-600 hover:border-red-600 hover:text-white hover:-translate-y-0.5 hover:shadow-lg hover:shadow-red-600/25 active:translate-y-0 text-zinc-900 touch-target-44 whitespace-nowrap"
               onClick={() =>
                 window.open(
                   "https://chromewebstore.google.com/detail/dapjjdcnolpmfcnobilphjfpkmmokgid",
@@ -81,7 +81,7 @@ export default function Home() {
             <Button
               variant="outline"
               size="lg"
-              className="group w-full sm:w-auto h-12 px-8 font-semibold text-sm sm:text-base bg-white border-zinc-200 hover:bg-red-600 hover:border-red-600 hover:text-white hover:-translate-y-0.5 hover:shadow-lg hover:shadow-red-600/25 active:translate-y-0 text-zinc-900 touch-target-44 whitespace-nowrap"
+              className="group w-full sm:w-auto btn-responsive-lg font-semibold bg-white border-zinc-200 hover:bg-red-600 hover:border-red-600 hover:text-white hover:-translate-y-0.5 hover:shadow-lg hover:shadow-red-600/25 active:translate-y-0 text-zinc-900 touch-target-44 whitespace-nowrap"
               onClick={() =>
                 window.open("https://addons.mozilla.org/en-US/firefox/addon/iypm/", "_blank")
               }
@@ -103,9 +103,9 @@ export default function Home() {
           </div>
 
           {/* GitHub Source Button */}
-          <div className="w-full max-w-xl mx-auto flex justify-center mt-3 sm:mt-6">
+          <div className="w-full max-w-xl mx-auto flex justify-center mt-responsive">
             <button
-              className="inline-flex items-center justify-center transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border-none bg-zinc-900/80 backdrop-blur-lg shadow-xl rounded-xl w-full sm:w-auto h-12 px-8 font-semibold text-sm sm:text-base text-white touch-target-44 whitespace-nowrap gap-3 hover:bg-zinc-900 hover:-translate-y-0.5 hover:shadow-2xl hover:shadow-zinc-900/25 active:translate-y-0 active:scale-[0.98]"
+              className="inline-flex items-center justify-center transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border-none bg-zinc-900/80 backdrop-blur-lg shadow-xl rounded-xl w-full sm:w-auto btn-responsive-lg font-semibold text-white touch-target-44 whitespace-nowrap gap-3 hover:bg-zinc-900 hover:-translate-y-0.5 hover:shadow-2xl hover:shadow-zinc-900/25 active:translate-y-0 active:scale-[0.98]"
               onClick={() =>
                 window.open(
                   "https://github.com/elmusleh/independent-youtube-playlist-manager",

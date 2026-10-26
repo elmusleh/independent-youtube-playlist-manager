@@ -20,7 +20,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: "npm"
 
       - name: Install Dependencies
@@ -40,14 +40,16 @@ jobs:
             node packages/build-tools/sync-version.mjs
           fi
 
-      - name: Run Svelte Diagnostics (Typecheck)
-        run: cd apps/browser-extension/playlist-manager && npx svelte-check
-
-      - name: Run Linter
-        run: npm run lint
+      - name: Run All Checks
+        run: npm run check
 
       - name: Package Chrome and Firefox Extensions
         run: npm run pack
+
+      - name: Verify Loaded Extension
+        run: |
+          npx playwright install --with-deps chromium
+          npm run test:extension
 
       - name: Create and Move Source Code ZIP
         run: |

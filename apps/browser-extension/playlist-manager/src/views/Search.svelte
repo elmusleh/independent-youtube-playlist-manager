@@ -14,6 +14,7 @@
   import EmptyState from "../components/EmptyState.svelte";
   import AuthPlaceholder from "../components/AuthPlaceholder.svelte";
   import StickyHeader from "../components/StickyHeader.svelte";
+  import { requestDataConsent } from "../utils/data-consent";
 
   let signedIn = $state(false);
   const status = new StatusManager();
@@ -32,9 +33,15 @@
 
   async function handleSearch() {
     if (!query.trim()) return;
-    await status.refresh(async () => {
-      results = await window.youtubeSearch(query);
-    });
+    const consent = requestDataConsent(["searchTerms"]);
+    try {
+      await status.refresh(async () => {
+        await consent;
+        results = await window.youtubeSearch(query);
+      });
+    } catch {
+      // StatusManager exposes a readable error without an unhandled rejection.
+    }
   }
 
   function openVideo(videoId: string) {
@@ -71,6 +78,9 @@
         </ViewHeader>
       {/snippet}
     </StickyHeader>
+    {#if status.error}
+      <p role="alert">{status.error}</p>
+    {/if}
     {#if !signedIn}
       <AuthPlaceholder />
     {:else}
@@ -81,7 +91,12 @@
           placeholder="Search for videos..."
           onkeydown={(e) => e.key === "Enter" && handleSearch()}
         />
-        <button class="search-btn" onclick={handleSearch} disabled={status.refreshing}>
+        <button
+          class="search-btn"
+          aria-label="Search YouTube"
+          onclick={handleSearch}
+          disabled={status.refreshing}
+        >
           <Fa icon={faSearch} />
         </button>
       </div>

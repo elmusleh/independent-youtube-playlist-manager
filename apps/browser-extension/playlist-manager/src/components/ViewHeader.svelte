@@ -137,7 +137,7 @@
     <h1>
       <Fa {icon} fw />
       {#if !editingTitle}
-        {title}
+        <span class="title-text">{title}</span>
         {#if onTitleChange}
           <button
             type="button"
@@ -275,6 +275,7 @@
   }
 
   .top-left {
+    min-width: 0;
     display: flex;
     align-items: center;
     gap: 12px;
@@ -287,6 +288,8 @@
   }
 
   h1 {
+    min-width: 0;
+    flex-wrap: wrap;
     margin: 0;
     display: flex;
     align-items: center;
@@ -304,6 +307,8 @@
   }
 
   .count-badge {
+    white-space: nowrap;
+    flex-shrink: 0;
     background: var(--active-bg-color);
     color: var(--primary-color);
     padding: 4px 12px;
@@ -315,6 +320,7 @@
   }
 
   .edit-input {
+    min-width: 0;
     flex: 1;
     max-width: 500px;
     margin: 0;
@@ -393,6 +399,16 @@
   }
 
   @media (max-width: 768px) {
+    .top-left {
+      width: 100%;
+    }
+    h1 {
+      width: 100%;
+    }
+    .title-text {
+      flex: 1 1 180px;
+      min-width: 0;
+    }
     .view-header {
       flex-direction: column;
       align-items: flex-start;

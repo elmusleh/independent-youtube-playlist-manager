@@ -4,6 +4,23 @@
   import { faListCheck } from "@fortawesome/free-solid-svg-icons";
   import type { Settings } from "../types/model.js";
   import { PAGE_SIZES } from "../services/settings-utils.js";
+  import { THUMBNAIL_ORIGINS, clearArchivedThumbnails } from "../services/thumbnail-archive";
+  import { requestConfirm } from "../stores/confirmation";
+  let thumbnailError = $state("");
+  async function toggleArchive(enabled: boolean) {
+    thumbnailError = "";
+    try {
+      const api = (window as any).browser || (window as any).chrome;
+      if (enabled && !(await api.permissions.request({ origins: THUMBNAIL_ORIGINS }))) {
+        throw new Error("Thumbnail access was declined. No new images will be saved.");
+      }
+      await save("saveThumbnailsLocally", enabled);
+      if (settings) settings.saveThumbnailsLocally = enabled;
+      if (!enabled) await api.permissions.remove({ origins: THUMBNAIL_ORIGINS });
+    } catch (error) {
+      thumbnailError = error instanceof Error ? error.message : String(error);
+    }
+  }
 
   let {
     settings,
@@ -16,6 +33,41 @@
 
 <section class="card">
   <h3><Fa icon={faListCheck} /> Playlist Manager</h3>
+  <div class="toggle-row">
+    <div class="toggle-info">
+      <label for="archive-thumbnails">Keep thumbnail images on this device</label>
+      <span class="sub-text"
+        >Save previews as you view playlists, before videos disappear from YouTube. Saved images
+        survive metadata refreshes and are included in full backups. Turning this off keeps existing
+        images.</span
+      >
+    </div>
+    <input
+      id="archive-thumbnails"
+      type="checkbox"
+      checked={settings?.saveThumbnailsLocally ?? false}
+      onchange={(event) => {
+        const enabled = event.currentTarget.checked;
+        event.currentTarget.checked = settings?.saveThumbnailsLocally ?? false;
+        void toggleArchive(enabled);
+      }}
+    />
+  </div>
+  <button
+    type="button"
+    onclick={() =>
+      requestConfirm({
+        title: "Delete saved thumbnails?",
+        message:
+          "This removes locally saved preview images. Your playlists and video metadata are kept.",
+        color: "danger",
+        onConfirm: async () => {
+          await clearArchivedThumbnails();
+          window.success("Saved thumbnails deleted");
+        },
+      })}>Delete saved thumbnail images</button
+  >
+  {#if thumbnailError}<p role="alert">{thumbnailError}</p>{/if}
   <div class="toggle-row">
     <div class="toggle-info">
       <span>Open editor after creation</span>

@@ -108,7 +108,7 @@ The project target platforms are **Google Chrome**, **Mozilla Firefox Desktop (1
 
 ### Critical Manifest Rules:
 
-- **Chrome (`manifest.chrome.json`):** Uses `"service_worker": "background/index.js"`. Requires public `"key"` field to lock extension ID `lppdplclfhchgkgckfmkopomahlpfjok`.
+- **Chrome (`manifest.chrome.json`):** Uses `"service_worker": "background/index.js"`. Requires the public `"key"` copied from the existing Chrome Web Store listing to lock extension ID `dapjjdcnolpmfcnobilphjfpkmmokgid` (verified against the dashboard public key). The store ZIP strips this development key; the installed store ID stays the same.
 - **Firefox (`manifest.firefox.json`):** Uses `"background": {"scripts": ["background/index.js"], "type": "module"}`. Must **NOT** contain a `"key"` field. Uses Gecko extension ID `independent-yt-playlist-manager@elmusleh.github.io`.
 - **Never put `apps/browser-extension/manifest.json` in `apps/browser-extension/`!** Build scripts validate that only `manifest.chrome.json` and `manifest.firefox.json` exist in `apps/browser-extension/`. `npm run build` generates `dist/chrome/manifest.json` and `dist/firefox/manifest.json`.
 
@@ -230,6 +230,18 @@ npm run web:build       # Web portal production build
 5. **Manual Pushes:** AI agents are NEVER permitted to run `git push`. Always stage and commit your changes, then notify the user to handle the push manually.
 6. **Run check before and after every edit.** This is non-negotiable. A failing check means you broke something.
 
-## 🚀 Release Process
+## 🚀 Release Process & Staging Status
 
 All project releases must follow the standard procedure defined in [docs/RELEASE_SPEC.md](docs/RELEASE_SPEC.md). AI agents are responsible for all steps up to, but not including, the final `git push`.
+
+### Current Release & Testing State:
+
+- **Chrome Web Store**: Version 1.1.1 pending review.
+- **Firefox AMO (Listed)**: Version 1.1.1 (ID 6620554) pending review.
+- **Firefox Unlisted Test Release**:
+  - Version `1.2.0.1` (AMO ID `6620940`) signed under unlisted channel for external tester distribution.
+  - Local artifact: `dist/firefox/web-ext-artifacts/independent_youtube_playlist_manager-1.2.0.1.xpi`.
+  - Testing via link or `about:debugging#/runtime/this-firefox`.
+- **Publication Policy**:
+  - The AI agent will maintain and prepare all local packages, builds, and metadata.
+  - **Do NOT publish or `git push` to main or public channels (including `https://iypm.vercel.app/`) until explicit user confirmation is given.**

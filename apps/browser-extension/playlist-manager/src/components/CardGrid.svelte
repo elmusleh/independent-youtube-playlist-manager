@@ -31,7 +31,7 @@
 <div
   class="card-grid {className}"
   style="
-    grid-template-columns: repeat({columns}, minmax({minWidthMap[minWidth]}, 1fr));
+    grid-template-columns: repeat({columns}, minmax(min(100%, {minWidthMap[minWidth]}), 1fr));
     gap: {gapMap[gap]};
   "
 >
