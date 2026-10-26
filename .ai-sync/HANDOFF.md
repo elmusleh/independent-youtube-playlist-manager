@@ -1,5 +1,56 @@
 # Pagination handoff
 
+## Latest work — protected main, branch/PR workflow, CI repaired (2026-10-26)
+
+### Repository workflow changed
+
+`main` is now a protected branch: pull request required, admin enforcement on, no
+force-push, no deletion, conversation resolution required. AGENTS.md documents the
+workflow (branch naming, required PR evidence, no self-merge, no admin override).
+Agents push branches and open PRs; the owner merges.
+
+Undo in an emergency:
+`gh api -X DELETE repos/elmusleh/independent-youtube-playlist-manager/branches/main/protection`
+
+### CI had been red for two real reasons, both fixed in #28
+
+1. `apps/browser-extension/playlist-manager/package-lock.json` was missing
+   `picomatch@4.0.7`. npm 11 accepted it, npm 10 (what CI runs) refused with
+   `npm ci can only install packages when ... in sync`, so every workflow died at the
+   install step in ~14s. Regenerated with `npm@10.8.2`.
+2. `undici@8.12.3` requires Node >= 22.19 and threw
+   `Cannot read properties of undefined (reading 'bind')` on the Node 20 runner,
+   killing the vitest forks pool. CI now runs Node 22.
+
+`vitest.setup.mjs` (Node's experimental `localStorage` shadowing jsdom's) also lives in
+#28, so every branch is green locally and in CI.
+
+### Outstanding PRs (merge order matters)
+
+| PR  | Branch                     | Notes                                                                                                   |
+| --- | -------------------------- | ------------------------------------------------------------------------------------------------------- |
+| #28 | `chore/reconcile-main`     | 10 unpushed release commits + lockfile + Node 22 + vitest setup. Merge first — everything stacks on it. |
+| #31 | `refactor/ui-shared`       | Modal system, theme picker, OAuth copy; also fixes the proxy `DataCloneError` on save.                  |
+| #29 | `feat/data-manager`        | Metadata correctness + Data Manager view. **Depends on #31** (uses the new Modal props); stacked on it. |
+| #30 | `chore/build-and-ci`       | Size/budget/CSS gates, release workflow, iypm CLI.                                                      |
+| #33 | `fix/ci-security-workflow` | Drops the duplicate CodeQL job; the repo uses default setup.                                            |
+| #32 | `release/1.2.0`            | Version bump, changelog, USER_GUIDE. Merge last.                                                        |
+
+### Known infra failures (not code)
+
+- `Vercel` deployment check fails on every PR. Needs `vercel inspect <deployment> --logs`
+  with an authenticated CLI; the two `vercel.json` files (root `rootDirectory` +
+  `apps/web-portal/vercel.json`) are consistent, so the cause is project settings.
+- Four Dependabot PRs (#9, #25, #26, #27) were failing for the lockfile reason and need
+  rebasing once #28 lands.
+
+### Next steps
+
+1. Merge #28, then #31, then rebase #29 (its checks re-run against the new base).
+2. After the first green run on `main`, add the two CI job names as required status
+   checks — deliberately left off until CI was proven green.
+3. Then the Edge submission (rebuilt ZIP replaces the stale Partner Center package).
+
 ## Latest work — sorted local playlist save failure (2026-10-26)
 
 User log shows 1,404 videos and `DataCloneError: Proxy object could not be cloned`
