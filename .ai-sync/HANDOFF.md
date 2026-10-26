@@ -1,5 +1,23 @@
 # Pagination handoff
 
+## Vercel was red because of an invalid config key (2026-10-26)
+
+Every deployment failed at config parse, before any build step:
+
+```
+The `vercel.json` schema validation failed with the following message:
+should NOT have additional property `rootDirectory`
+```
+
+`rootDirectory` is a **project setting**, not a `vercel.json` property, and the schema is
+`additionalProperties: false`. The root `vercel.json` has been deleted;
+`packages/build-tools/verify-vercel-config.js` (in `npm run check`) now rejects it.
+
+**Owner action required:** set Project `iypm` → Settings → Build & Development Settings →
+Root Directory = `apps/web-portal`. Until that is set, deployments from the repo root will
+fail with a different error (no build output) — the repo fix removes the invalid config,
+the dashboard fix is what restores deploys. Details: `docs/DEPLOYMENT.md`.
+
 ## Latest work — 1.2.0 released (2026-10-26)
 
 Tag `v1.2.0` on `main`, GitHub Release published by `.github/workflows/release.yml`
