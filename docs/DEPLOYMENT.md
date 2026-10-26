@@ -1,0 +1,50 @@
+# Deployment (web portal)
+
+The web portal lives in `apps/web-portal` and is deployed by Vercel as the project
+`iypm`, serving <https://iypm.vercel.app/>.
+
+## Where the project root is configured
+
+In the Vercel dashboard, **not in the repository**:
+
+> Project `iypm` → Settings → Build & Development Settings → **Root Directory** =
+> `apps/web-portal`
+
+That is the only supported way to point a monorepo project at a subdirectory.
+`apps/web-portal/vercel.json` then supplies the build settings
+(`buildCommand`, `outputDirectory`, `installCommand`).
+
+## Why there is no root `vercel.json`
+
+There used to be one, containing `"rootDirectory": "apps/web-portal"`. `rootDirectory`
+is a project setting, not a `vercel.json` property, and the project-config schema sets
+`additionalProperties: false` — so every deployment failed before building anything:
+
+```
+The `vercel.json` schema validation failed with the following message:
+should NOT have additional property `rootDirectory`
+```
+
+That error red-flagged every commit on `main` and every pull request. The file is gone
+and `packages/build-tools/verify-vercel-config.js` (wired into `npm run check`) rejects
+it if it comes back.
+
+## Checking a deployment
+
+```bash
+gh run list --branch main --limit 5     # CI
+vercel ls iypm                          # needs an authenticated CLI: vercel login
+vercel inspect <deployment-url> --logs
+```
+
+Vercel's GitHub check is not a required status check on `main`: a red Vercel does not
+block merges, so it must be watched deliberately. It is currently the only signal that
+the portal is deployable.
+
+## Portal build
+
+```bash
+cd apps/web-portal
+npm ci && npm run build      # Next.js
+npm run test:e2e             # Playwright, loads the built extension
+```
