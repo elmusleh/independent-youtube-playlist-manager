@@ -56,12 +56,11 @@ pushes no longer queue a portal deployment — and no longer send a deployment e
 Checked against real history before it was added: the three commits that touched
 `apps/web-portal` build, the rest skip.
 
-**Caveat — required checks.** Vercel is a required status check on `main`, and a skipped
-deployment does not produce a normal successful build. `next` therefore keeps Vercel
-non-required, and the behaviour of a skip on `main` was verified separately before
-relying on it. If a skipped deployment ever leaves the check unresolved, drop Vercel from
-`main`'s required checks — the alternative is a release PR that can never merge because
-nothing needed deploying.
+**What a skip reports.** `Vercel => pass`, with the detail _"Canceled by Ignored Build
+Step"_. A skipped deployment is a green check, not a pending one — which is what makes this
+compatible with Vercel being a required status check on `main`. Verified on a docs-only PR
+before relying on it; had it reported neutral or pending, a release PR that touched
+nothing in the portal would have been unmergeable.
 
 ## Portal build
 
