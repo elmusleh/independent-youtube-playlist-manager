@@ -75,14 +75,14 @@ A comprehensive, side-by-side comparison of every capability — the single sour
 
 ### Privacy, Openness & Platform
 
-| Capability        | IYPM                                        | Native YouTube Playlists         |
-| ----------------- | ------------------------------------------- | -------------------------------- |
-| Data collection   | ✅ Zero telemetry, zero tracking            | ❌ Google collects usage data    |
-| Login required    | ✅ Not required for basic use               | ❌ Google account required       |
-| Open source       | ✅ MIT license, fully auditable             | ❌ Proprietary, closed source    |
-| Permissions scope | ✅ Strictly youtube.com watch pages         | ⚠️ Broad Google account scope    |
-| Platform support  | ✅ Chrome, Firefox Desktop, Firefox Android | ⚠️ Web + mobile apps only        |
-| Cost              | ✅ 100% free & open source                  | ✅ Free (ad-supported ecosystem) |
+| Capability        | IYPM                                              | Native YouTube Playlists         |
+| ----------------- | ------------------------------------------------- | -------------------------------- |
+| Data collection   | ✅ Zero telemetry, zero tracking                  | ❌ Google collects usage data    |
+| Login required    | ✅ Not required for basic use                     | ❌ Google account required       |
+| Open source       | ✅ MIT license, fully auditable                   | ❌ Proprietary, closed source    |
+| Permissions scope | ✅ Strictly youtube.com watch pages               | ⚠️ Broad Google account scope    |
+| Platform support  | ✅ Chrome, Edge, Firefox Desktop, Firefox Android | ⚠️ Web + mobile apps only        |
+| Cost              | ✅ 100% free & open source                        | ✅ Free (ad-supported ecosystem) |
 
 ---
 
@@ -99,7 +99,7 @@ A comprehensive, side-by-side comparison of every capability — the single sour
 # ALWAYS RUN FIRST - verify clean baseline
 npm run check          # lint → format:check → test → svelte-check
 
-# Full production build (Chrome + Firefox extension packages)
+# Full production build (Chrome + Firefox + Edge extension packages)
 npm run build
 
 # Extension verification (90 real-extension route/viewport checks)
@@ -138,13 +138,26 @@ npm run lint:fix
 
 See `docs/RELEASE_SPEC.md` — AI agents handle all steps up to `git push` (human only).
 
+### 🛠️ Developer & Control CLI
+
+Use `./iypm.sh` at repository root for quick overview and operations:
+
+```bash
+./iypm.sh             # Displays command menu and available actions
+./iypm.sh status      # Current versions, AMO & store status, test release state
+./iypm.sh features    # Complete feature catalog and capabilities
+./iypm.sh changes     # Recent version changes and release notes
+./iypm.sh check       # Run all linters, unit tests, and bundle verification
+./iypm.sh build       # Production builds for Chrome, Firefox, and Edge
+```
+
 ### AI Agent Rules (from AGENTS.md)
 
 1. **NEVER `git push`** — Stage, commit, notify user
 2. **ALWAYS `npm run check` before AND after edits**
 3. **ALWAYS `npm run build` after edits** — verifies `dist/`
 4. **No file > 350 lines** — Split using established module pattern
-5. **Preserve `CHANGELOG.md`** — User-owned, untracked
+5. **Preserve `CHANGELOG.md`** — User-authored entries are not overwritten
 
 ---
 
@@ -152,6 +165,7 @@ See `docs/RELEASE_SPEC.md` — AI agents handle all steps up to `git push` (huma
 
 - **Version**: 1.1.1 (submitted to both stores)
 - **Chrome**: Pending review (auto-publish on approval)
+- **Microsoft Edge**: v1.1.1 package ready; store submission pending Partner Center listing
 - **Firefox Listed**: Unreviewed (ID 6620554)
 - **Firefox Unlisted Test**: v1.2.0.1 (ID 6620940)
 - **Source**: Commit `891b343` + `dff9c9c`, Tag `v1.1.1` (local only)

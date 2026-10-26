@@ -1,6 +1,351 @@
 # Pagination handoff
 
-## Latest work — GitHub issues #10/#11/#13/#14 and Dependabot
+## Latest work — protected main, branch/PR workflow, CI repaired (2026-10-26)
+
+### Repository workflow changed
+
+`main` is now a protected branch: pull request required, admin enforcement on, no
+force-push, no deletion, conversation resolution required. AGENTS.md documents the
+workflow (branch naming, required PR evidence, no self-merge, no admin override).
+Agents push branches and open PRs; the owner merges.
+
+Undo in an emergency:
+`gh api -X DELETE repos/elmusleh/independent-youtube-playlist-manager/branches/main/protection`
+
+### CI had been red for two real reasons, both fixed in #28
+
+1. `apps/browser-extension/playlist-manager/package-lock.json` was missing
+   `picomatch@4.0.7`. npm 11 accepted it, npm 10 (what CI runs) refused with
+   `npm ci can only install packages when ... in sync`, so every workflow died at the
+   install step in ~14s. Regenerated with `npm@10.8.2`.
+2. `undici@8.12.3` requires Node >= 22.19 and threw
+   `Cannot read properties of undefined (reading 'bind')` on the Node 20 runner,
+   killing the vitest forks pool. CI now runs Node 22.
+
+`vitest.setup.mjs` (Node's experimental `localStorage` shadowing jsdom's) also lives in
+#28, so every branch is green locally and in CI.
+
+### Outstanding PRs (merge order matters)
+
+| PR  | Branch                     | Notes                                                                                                   |
+| --- | -------------------------- | ------------------------------------------------------------------------------------------------------- |
+| #28 | `chore/reconcile-main`     | 10 unpushed release commits + lockfile + Node 22 + vitest setup. Merge first — everything stacks on it. |
+| #31 | `refactor/ui-shared`       | Modal system, theme picker, OAuth copy; also fixes the proxy `DataCloneError` on save.                  |
+| #29 | `feat/data-manager`        | Metadata correctness + Data Manager view. **Depends on #31** (uses the new Modal props); stacked on it. |
+| #30 | `chore/build-and-ci`       | Size/budget/CSS gates, release workflow, iypm CLI.                                                      |
+| #33 | `fix/ci-security-workflow` | Drops the duplicate CodeQL job; the repo uses default setup.                                            |
+| #32 | `release/1.2.0`            | Version bump, changelog, USER_GUIDE. Merge last.                                                        |
+
+### Known infra failures (not code)
+
+- `Vercel` deployment check fails on every PR. Needs `vercel inspect <deployment> --logs`
+  with an authenticated CLI; the two `vercel.json` files (root `rootDirectory` +
+  `apps/web-portal/vercel.json`) are consistent, so the cause is project settings.
+- Four Dependabot PRs (#9, #25, #26, #27) were failing for the lockfile reason and need
+  rebasing once #28 lands.
+
+### Next steps
+
+1. Merge #28, then #31, then rebase #29 (its checks re-run against the new base).
+2. After the first green run on `main`, add the two CI job names as required status
+   checks — deliberately left off until CI was proven green.
+3. Then the Edge submission (rebuilt ZIP replaces the stale Partner Center package).
+
+## Latest work — sorted local playlist save failure (2026-10-26)
+
+User log shows 1,404 videos and `DataCloneError: Proxy object could not be cloned`
+after sorting by channel; user also requested coverage for 14,000 videos. Nested
+Svelte sortRules proxies survived shallow playlist spreads into Firefox storage.
+
+- `services/storage-service.ts`: detach incoming local playlist JSON data before
+  browser storage writes, preserving order and nested sort rules.
+- `services/storage-service.test.ts`: regression at both sizes using structured
+  cloning, plus storage failure preservation and successful retry. Original nested
+  proxy tests failed before the fix.
+- `components/SaveStatus.svelte`, `components/ViewHeader.svelte`: visible error
+  explanation below the header and Retry action instead of tooltip-only Error;
+  standalone SaveStatus retains an inline error option.
+- `components/PlaylistEditor.svelte`: consume save rejections after StatusManager
+  records them, retain dirty edits, avoid refresh after a failed save, and suppress
+  misleading Sorted/Reversed success messages after save failure.
+- `services/status-manager.svelte.ts`: silent saves also mark the save in progress,
+  so the editor's existing saving guard applies to autosaves.
+- `packages/build-tools/verify-large-playlist-save.py`: disposable Firefox test of
+  actual UI channel sort, saving 14,000 videos, reload persistence, injected save
+  failure, visible desktop/mobile feedback, retained stored data, and Retry.
+
+Verification: `npm run check` passed (184 tests, zero Svelte errors; two pre-existing
+unused CSS warnings); `npm run build` passed Chrome/Firefox/Edge and bundle gates.
+Firefox 158.0.1 passed the 14,000-video UI flow, reload, failure/retry and zero
+unhandled-rejection assertions; Chromium passed 96 route/viewport checks and six
+interaction groups. Browser evidence: `dist/verification/large-playlist-save-report.json` and retry
+screenshots. This task did not alter manifests, publish, or push. All pre-existing
+working changes (including user CHANGELOG) were preserved; this fix remains in the
+working tree alongside them, so do not commit all files indiscriminately.
+
+Next: review/integrate the intended release changes, produce a newly versioned
+tester package, and have the user verify their own playlist. Store candidates
+already under review do not contain this fix. Do not reload their unsaved editor
+as part of installing a test update without first preserving their edits.
+
+## Latest work — Data Manager hardening + checked type contracts (2026-10-26)
+
+Follow-up to a self-review of the Data Manager work. Every item below is covered by
+tests or by the type checker.
+
+### Correctness fixes
+
+- **Refresh no longer destroys cached data.** A forced refresh used to call
+  `videoService.clearCache()`, i.e. `dbDeleteMetadata()`, _before_ fetching — so an
+  entry that only lacked a duration could lose its title and channel when the refetch
+  failed. `services/refresh-registry.ts` now records a per-pass in-memory intent;
+  `shouldSkipFetch`/`fetchVideo` bypass the cache for those ids, results overwrite the
+  old rows on success, failures leave the previous entry untouched.
+- **One definition of "incomplete".** `collectMetadataGaps()` counts resolved entries
+  (`hasCompleteMetadata`: field-complete OR terminal) and exposes `needsAttention`, so
+  `complete + needsAttention === total`. The nav badge, the stat cards and the gaps
+  list now all read the same number; the badge used to include private/deleted videos
+  that the list deliberately hides.
+- **Zero-length durations are missing, not zero.** `durationStringToSeconds()` decodes
+  ISO-8601 / clock notation / seconds and returns 0 for `PT0S`, `0:00`, `00:00:00`.
+  Before, `"PT0S"` was a truthy string and satisfied the duration requirement — the
+  exact bug the module's own header describes.
+- **Accurate refresh reporting.** The view consumed `metaMap.size` and
+  `unavailableIds` instead of claiming `ids.length` were refreshed.
+- `refreshMetadataGaps()` returned `ids.length` when nothing resolved; now returns 0.
+- `reasonLabel` was a divergent re-implementation of `getMetadataGaps()`; the gaps list
+  now renders `reasons` from the util.
+
+### Checked type contracts
+
+- `types/services.d.ts` → `types/services.ts` and `types/window.d.ts` → `types/window.ts`,
+  both wrapped in `declare global` + `export {}`. `skipLibCheck: true` (from
+  `@tsconfig/svelte`) skips **all** `.d.ts` files, so the entire `window` API contract
+  was never type-checked. Proof: conflicting `interface Window` members error with
+  `--skipLibCheck` off and are silent with it on.
+- That blind spot had been hiding real defects: `saveUserProfile`, `getUserProfile` and
+  `ytGetMyChannel` were declared twice with different shapes; `services.d.ts` referenced
+  `Playlist` / `Settings` / `PlaylistExport` without importing them; `getPlaylist` was
+  declared `Promise<Playlist>` while returning `Promise<Playlist | null>`.
+- Making `getPlaylist` truthful surfaced two real null-handling gaps:
+  `PlaylistEditor.svelte` (copy/move target) and `Manage.svelte` (bulk delete). Both now
+  guard.
+
+### UI structure
+
+- `views/MetadataManager.svelte` (295 lines) is now orchestration only. The three
+  sections are `components/metadata/{MetadataStatGrid,MetadataEngineList,MetadataGapList}.svelte`
+  with **scoped** styles. `css/metadata-manager.css` is deleted — as a plain imported
+  stylesheet its `.card`, `.loading-state` and `.progress-text` were global and collided
+  with `css/settings.css`, `Card.svelte`, `PlaylistLoader.svelte` and `ProgressBar.svelte`.
+- The gaps list renders at most 100 rows with a "Show N more" control instead of
+  thousands of thumbnails.
+- Progress text is a `role="status" aria-live="polite"` region; the badge carries an
+  `aria-label` with the exact count.
+- Engine labels/order come from `services/metadata-engines.ts` (`METADATA_ENGINES`)
+  instead of being copied into the view.
+- The Sidebar badge is computed on idle (`requestIdleCallback`, 3s timeout) rather than
+  competing with first paint, and is guarded against concurrent loads.
+
+### Tests added (+30, total 181)
+
+- `utils/metadata-completeness.test.ts` — 23 tests: duration decoding (incl. `PT0S`
+  regressions), placeholders, terminal entries, `needsDurationRefresh`, and the
+  `complete + needsAttention === total` invariant across record/iterable/empty inputs.
+- `services/enrichment-service.test.ts` — 7 tests: force never deletes cached rows,
+  forced ids are scoped to the pass and cleared on throw, unavailable ids are reported.
+
+### Verification
+
+- `npm run check` → PASS: 19 test files / 181 tests, Prettier clean, file-size gate
+  clean (163 files, 22 allowlisted), svelte-check 0 errors (only the 2 pre-existing
+  unused-CSS warnings in `PlaylistModals.svelte`), CSS bundle gate passes.
+- `npm run build` → PASS for chrome, firefox, edge; all bundle budgets pass.
+- `tsc --noEmit -p tsconfig.json` is now meaningful for `src/types/**`.
+
+### Next steps
+
+1. `VideoService.clearCache()` has no remaining callers (`enrichment-service` was the
+   only one). Decide whether to keep it as a deliberate "delete cached metadata" API or
+   remove it.
+2. Run `npm run test:extension` for a real browser pass over `#/metadata`.
+3. Everything in the older sections below about store submissions still applies.
+
+## Latest work — Data Manager view + Node 26 localStorage fix (2026-10-26)
+
+### Data Manager (`#/metadata`)
+
+- New `views/MetadataManager.svelte` (323 lines, at the 350-line budget): stat grid
+  (cached / complete / missing duration / live / terminal), engine-status list,
+  bulk "Refresh Missing Metadata", "Remove Incomplete Entries", "Clear All Cache",
+  and a per-entry retry list with thumbnails and a reason label.
+- View CSS lives in `css/metadata-manager.css` (imported by the view), NOT in an
+  in-component `<style>` block — the file was 511 lines and failed the size gate.
+- `Sidebar.svelte` has a bottom "Data Manager" nav item with a badge fed by
+  `window.getMetadataGapSummary()`; it refreshes on the `yph-metadata-changed` event.
+- `MetadataSettings.svelte` links to the view and can clear the cache.
+- Route added in `App.svelte` (`"/metadata": MetadataManager`).
+- `types/services.d.ts` was trimmed back under the limit (323 lines) by replacing
+  four duplicated 11-field inline return types with a shared `YtVideoMetaResult`
+  interface. No type semantics changed.
+
+### Test environment fix (root cause, not a workaround)
+
+- Node >= 22.4 exposes an experimental `localStorage` global that is `undefined`
+  unless the process is started with `--localstorage-file`.
+- Vitest's jsdom environment copies jsdom's window keys onto `globalThis` via
+  `populateGlobal()`, but _skips keys Node already defines_ — so the broken Node
+  getter won and bare `localStorage` was undefined. Vitest then sets
+  `globalThis.window = globalThis`, so `window.localStorage` was undefined too.
+- Fix: `vitest.setup.mjs` re-points `globalThis.localStorage` at
+  `globalThis.jsdom.window.localStorage`; registered via `setupFiles` in
+  `vitest.config.mjs`. `theme.store.test.ts` passes untouched — do not "fix" it by
+  editing the assertion or switching to `window.localStorage`.
+
+### Verification
+
+- `npm run check` → PASS: 17 test files / 151 tests, Prettier clean, file-size gate
+  clean (158 files, 22 allowlisted legacy files), svelte-check 0 errors and only the
+  2 pre-existing unused-CSS-selector warnings in `PlaylistModals.svelte`, CSS bundle
+  gate passes.
+- Directly run: `npx vitest run` → 17/17 files, 151/151 tests.
+
+### Next steps
+
+1. Give the Data Manager a manual smoke test in a loaded unpacked extension:
+   badge count, refresh-missing progress, retry-one failure path, clear-all confirm.
+2. Do not add `MetadataManager.svelte` to the file-size allowlist; split it instead
+   if it grows past 350 lines.
+3. Everything in the older sections below about store submissions still applies.
+
+## Latest work — CI gates, onboarding, Svelte repair, OAuth UX (2026-10-26)
+
+### CI / quality gates
+
+- `.github/workflows/ci.yml`: Node 20 → 22 in all jobs.
+- High-severity root `npm audit` is now blocking.
+- `npm run test:extension` added to the PR `test-web` job after Playwright install.
+- New `packages/build-tools/verify-budgets.js` wired into `npm run build`. Ceilings:
+  `main.js` 380 KiB, `bundle.css` 175 KiB, `popup.css` 22 KiB, `background.js` 16 KiB.
+- New `packages/build-tools/verify-file-size.js` with an exact-path allowlist for
+  22 legacy files >350 lines; wired into `npm run check` / `check:file-size`.
+
+### Onboarding
+
+- `Saved.svelte` now distinguishes a true first run from filtered-empty results.
+  First-run CTA “Create your first playlist” → `#/new`; copy explains local-first
+  usage and that no Google account is needed.
+- `PlaylistGrid.svelte` passes empty-state action props; `EmptyState.svelte` gained
+  `focus-visible` styling.
+
+### Cleanup and tests
+
+- Deleted unused `services/sync-service.ts` and `views/Saved-refactored.svelte`.
+- Removed dead `_syncServiceLoaded` / `SyncService` window declarations.
+- Added `services/playlist-actions.test.ts` with 16 tests; fixed stale sync-state
+  cleanup when a remote playlist no longer exists.
+
+### Svelte repair
+
+- `Modal.svelte` now supports a `footer` snippet; all 15 legacy `slot="footer"`
+  callers converted.
+- Restored missing `Modal` / `ProgressBar` imports in `Manage.svelte`; fixed
+  `Settings.svelte` to `bind:showPlayAllInfo`.
+- Restored metadata types (`isShorts`, `liveBroadcastDetails`,
+  `RawVideoMeta.isShort`) so youtube-api typechecking passes.
+
+### OAuth UX
+
+- Built-in shared OAuth is NOT enabled. BYO Google OAuth Client ID remains required;
+  the API key is now optional and only used for signed-out metadata fallback.
+- Added `utils/youtube-credentials.ts` + 5 tests; updated auth guard/messages,
+  `Header` / `ProfileDropdown` / `AuthPlaceholder` / `OfflineNotice` /
+  `FavoriteSettings` copy, and `DeveloperSetup` copy/labels.
+- `docs/USER_GUIDE.md` updated: API key optional, no source editing, redirect URI
+  copied from API Setup, quota per Google Cloud project.
+- Do not claim the shared `CLIENT_ID` is operational; it remains effectively
+  unused/legacy.
+
+### Verification (run after all code changes)
+
+- `npm run check` → PASS: 17 test files, 151 tests; 0 svelte-check errors, 2
+  pre-existing unused-CSS warnings in `PlaylistModals.svelte`; file-size and CSS
+  gates pass.
+- `npm run build` → PASS for Chrome, Firefox, Edge; manifest validation and bundle
+  budgets pass.
+- `npm run test:extension` → PASS: 90 route/viewport checks, 6 interaction groups,
+  no runtime errors.
+- `npm audit --audit-level=high` was previously clean at root; playlist-manager
+  install reports 0 vulnerabilities.
+- Working tree remains dirty with pre-existing Edge, modal/theme, portal, and docs
+  changes. No commit or push was performed.
+
+### Next steps
+
+1. Split/commit the intended release scope; Edge/issue fixes should not be mixed
+   with unrelated UI work.
+2. Add Phase 1 reliability tests for active sync: quota failure/resume, local-wins
+   overwrite/conflict policy, and `savePlaylist` failure handling.
+3. Real Microsoft Edge smoke test and IARC/submission remain external. A Partner
+   Center draft now exists: Store ID `0RDCKFZCVDRK`, CRX ID
+   `ncmipojoamaoacinccopmdkflgocghno`, Product ID
+   `20f9b17d-73e7-45f8-8692-796867b7ec80`. The draft package was replaced locally
+   with the rebuilt ZIP. The uploaded package must still be replaced with that
+   rebuilt ZIP before certification; real Edge browser smoke test, IARC
+   questionnaire, and submission remain pending.
+4. OAuth silent-refresh fragility and the unused built-in `CLIENT_ID` remain known
+   risks; do not ship a shared built-in client without Google verification/quota
+   plan.
+
+### Useful files
+
+`.github/workflows/ci.yml`, `package.json`,
+`packages/build-tools/verify-budgets.js`, `packages/build-tools/verify-file-size.js`,
+`apps/browser-extension/playlist-manager/src/views/Saved.svelte`,
+`apps/browser-extension/playlist-manager/src/services/playlist-actions.ts`,
+`apps/browser-extension/playlist-manager/src/services/playlist-actions.test.ts`,
+`apps/browser-extension/playlist-manager/src/components/Modal.svelte`,
+`apps/browser-extension/playlist-manager/src/services/youtube-auth.ts`,
+`apps/browser-extension/playlist-manager/src/utils/youtube-credentials.ts`,
+`docs/USER_GUIDE.md`.
+
+## Latest work — Microsoft Edge support and store submission prep (2026-10-25)
+
+Edge (Chromium/MV3) support is implemented and verified locally. `dist/edge/manifest.json`
+is generated from `manifest.chrome.json` with `key`/`browser_specific_settings`
+removed; there is no static Edge manifest. `docs/EDGE_STORE_SUBMISSION.md` contains
+the Partner Center checklist, listing copy, IARC/certification notes, and post-approval
+wiring. `docs/edge-release-metadata.json` holds the listing fields; the 300×300 store
+logo is `docs/assets/edge-store-logo-300x300.png`. The portal Edge button is hidden
+unless `NEXT_PUBLIC_EDGE_STORE_URL` is set.
+
+Verification on the current working tree:
+
+- `npm run check`: 130 unit tests pass, zero Svelte diagnostics, CSS gate passes.
+- `npm run build`: Chrome, Firefox, and Edge builds pass; manifest validation passes.
+- `npm run pack:edge`: 64-entry ZIP, no maps, no `key`, no `browser_specific_settings`.
+- Negative validation: adding `browser_specific_settings` makes validation fail.
+- Portal production build passes; Edge button is absent with the env var unset.
+  A dev build with a test URL renders the button and inlines the URL client-side.
+- `npm run web:test`: exit 0; both extension tests skip in headless mode by design.
+- Chromium 151 loaded `dist/edge` unpacked: popup and Settings rendered, no errors.
+  A real Edge browser smoke test is still required.
+- Edge ZIP SHA-256: `4696ecfad281a050ad292b53ee9441c67ec23293b992712f4e7b1254274ca377`.
+
+The rebuilt ZIP comes from the current verified `dist/edge`. Before uploading, push
+`main` so the privacy policy URL is current; the draft listing is still version 1.1.1.
+A Partner Center draft exists (Store ID `0RDCKFZCVDRK`, CRX ID
+`ncmipojoamaoacinccopmdkflgocghno`, Product ID
+`20f9b17d-73e7-45f8-8692-796867b7ec80`), but submission, IARC, listing publication,
+and a real Edge smoke test remain external user actions. The earlier uploaded ZIP was
+stale (required an API key, lacked the new first-run onboarding) and must be replaced
+before certification. No commit or push was performed.
+
+During verification, two unresolved identifiers in the unrelated dirty `Manage.svelte`
+broke `svelte-check`; they were restored to the existing names (`executeChangePrivacy`,
+`faEarthAmericas`). No other unrelated runtime edits were made.
+
+## Previous work — GitHub issues #10/#11/#13/#14 and Dependabot
 
 All four issues addressed locally; details and usage in docs/GITHUB_ISSUE_FIXES.md.
 45 open remote Dependabot alerts checked against local lockfile ranges: no

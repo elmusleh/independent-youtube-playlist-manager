@@ -5,6 +5,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Unreleased] — Microsoft Edge support
+
+- Edge (Chromium) build generated from the Chrome manifest, with `key` and `browser_specific_settings` removed.
+- Edge Add-ons store package via `npm run pack:edge`.
+- Manifest validation now enforces Edge = Chrome minus Chrome/Firefox-only fields.
+- Portal Edge install button, gated by `NEXT_PUBLIC_EDGE_STORE_URL` until the listing is approved.
+- Edge store submission guide and listing metadata.
+- Chrome and Firefox runtime behavior is unchanged; Edge support does not alter the pending 1.1.1 packages.
+
 ## [1.0.0] - 2026-08-24
 
 This is the initial stable release of the **Independent YouTube Playlist Manager** (IYPM). It consolidates the client-side WebExtension and the Next.js web portal into a unified, monorepo structure.

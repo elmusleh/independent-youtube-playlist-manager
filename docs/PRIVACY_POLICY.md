@@ -46,7 +46,7 @@ The extension is fully functional offline for editing and managing playlists. Wh
 
 Each metadata engine (Innertube, embed scraping, oEmbed, Piped/Invidious) can be individually toggled off in Settings.
 
-Firefox declares browsing activity and website content for video links and metadata requests during installation/update. Optional account features request authentication and identifying-information consent when you sign in; YouTube Search separately requests search-term consent. Denying those optional requests leaves local playlist management available. You can revoke optional consent in Firefox's extension settings. Chrome's store disclosures also cover data handled locally, including account information, web history, local activity and website content.
+Firefox declares browsing activity and website content for video links and metadata requests during installation/update. Optional account features request authentication and identifying-information consent when you sign in; YouTube Search separately requests search-term consent. Denying those optional requests leaves local playlist management available. You can revoke optional consent in Firefox's extension settings. Chrome's and Microsoft Edge's store disclosures also cover data handled locally, including account information, web history, local activity and website content.
 
 ---
 
