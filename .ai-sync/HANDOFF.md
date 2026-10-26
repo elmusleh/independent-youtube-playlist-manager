@@ -6,18 +6,29 @@
 
 ## Where we are
 
-|                | Value                                                                                          |
-| -------------- | ---------------------------------------------------------------------------------------------- |
-| `main`         | `3e48b99` — **v1.2.0**, tagged, GitHub Release published (4 assets), production deployed       |
-| `next`         | `8237681` — 8 commits ahead of `main`, **nothing user-facing yet**, so no release is scheduled |
-| Version        | `1.2.0` in `package.json` and `apps/browser-extension/manifest.chrome.json`                    |
-| Open PRs       | none                                                                                           |
-| Branches       | `main`, `next` only. One worktree (the primary). Clean tree.                                   |
-| Tests          | 195 passing across 22 files (`npm run test`)                                                   |
-| Default branch | **`next`** — new PRs, clones and Dependabot all target it                                      |
+|                | Value                                                                                                                |
+| -------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `main`         | **v1.2.0** — tagged, GitHub Release published (4 assets), production deployed. Head moves only on a release.         |
+| `next`         | Ahead of `main`, **nothing user-facing yet**, so no release is scheduled. Head moves on every merge — do not pin it. |
+| Version        | `1.2.0` in `package.json` and `apps/browser-extension/manifest.chrome.json`                                          |
+| Open PRs       | none                                                                                                                 |
+| Branches       | `main`, `next` only. One worktree (the primary). Clean tree.                                                         |
+| Tests          | 195 passing across 22 files (`npm run test`)                                                                         |
+| Default branch | **`next`** — new PRs, clones and Dependabot all target it                                                            |
 
 `main` holds releases only. `next` absorbs everything else. A release is a squash-merged PR
 from `next` → `main`, tagged, and then `main` is merged back into `next` (see _Traps_ #5).
+
+### Re-verify this file in three commands
+
+```bash
+git fetch --prune --all
+git log --oneline main..next     # what is unreleased, and whether it is user-facing
+gh pr list --state open          # anything in flight
+```
+
+Numbers and SHAs go stale within a merge; these three commands do not. If a figure below
+disagrees with them, the command wins and the figure needs updating.
 
 ## What is unreleased on `next`
 
