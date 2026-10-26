@@ -25,24 +25,56 @@ Undo in an emergency:
 `vitest.setup.mjs` (Node's experimental `localStorage` shadowing jsdom's) also lives in
 #28, so every branch is green locally and in CI.
 
-### Outstanding PRs (merge order matters)
+### 1.2.0 landed — every slice merged
 
-| PR  | Branch                     | Notes                                                                                                   |
-| --- | -------------------------- | ------------------------------------------------------------------------------------------------------- |
-| #28 | `chore/reconcile-main`     | 10 unpushed release commits + lockfile + Node 22 + vitest setup. Merge first — everything stacks on it. |
-| #31 | `refactor/ui-shared`       | Modal system, theme picker, OAuth copy; also fixes the proxy `DataCloneError` on save.                  |
-| #29 | `feat/data-manager`        | Metadata correctness + Data Manager view. **Depends on #31** (uses the new Modal props); stacked on it. |
-| #30 | `chore/build-and-ci`       | Size/budget/CSS gates, release workflow, iypm CLI.                                                      |
-| #33 | `fix/ci-security-workflow` | Drops the duplicate CodeQL job; the repo uses default setup.                                            |
-| #32 | `release/1.2.0`            | Version bump, changelog, USER_GUIDE. Merge last.                                                        |
+All six review slices plus three follow-ups are on `main`. Merging used
+`--merge` (history preserved). Order was: #28 -> #34 -> #33 -> #31 -> #29 -> #30 -> #32.
 
-### Known infra failures (not code)
+| PR  | What it carried                                                                                 |
+| --- | ----------------------------------------------------------------------------------------------- |
+| #28 | 10 unpushed release commits, npm-10 lockfile, Node 22, vitest `localStorage` fix, Builder fixes |
+| #34 | E2E suite had never run: extension resolved to `apps/dist/chrome`, now `<root>/dist/chrome`     |
+| #33 | Dropped the duplicate CodeQL job (repo uses default setup)                                      |
+| #31 | Modal system, theme picker, OAuth copy, proxy `DataCloneError` on save                          |
+| #29 | Metadata correctness + Data Manager, bulk bar restored to `StickyHeader`                        |
+| #30 | Size/budget/CSS gates, release workflow, `iypm.sh` (clean keeps the lockfile)                   |
+| #32 | Version 1.2.0, CHANGELOG, USER_GUIDE Data Manager section                                       |
+| #35 | Thumbnail archive cleared on every overwrite restore; build uses `npm ci`                       |
 
-- `Vercel` deployment check fails on every PR. Needs `vercel inspect <deployment> --logs`
-  with an authenticated CLI; the two `vercel.json` files (root `rootDirectory` +
-  `apps/web-portal/vercel.json`) are consistent, so the cause is project settings.
-- Four Dependabot PRs (#9, #25, #26, #27) were failing for the lockfile reason and need
-  rebasing once #28 lands.
+Review findings that were fixed rather than dismissed: Builder saving against a
+nonexistent YouTube playlist, quick-added videos being dropped, the Manage bulk bar
+never rendering (P1), closed dialogs painting as empty boxes, `iypm.sh reset` failing
+because `clean` deleted the lockfile.
+
+### Branch protection now enforces CI
+
+Required status checks on `main` (admin-enforced):
+
+- Quality & Security (Lint, Format, Audit, Unit Tests)
+- Extension CI (Svelte Diagnostics & Manifest Validation)
+- Web & Extension E2E Integration (Typecheck, Build, E2E)
+
+`strict` is false, so a PR does not need to be rebased first. Conversation resolution
+is required, which means an unresolved Codex/CodeRabbit thread blocks the merge —
+resolve it with a reply.
+
+### Still open
+
+- **#27 (dev-deps bump)** cannot merge: it raises Playwright, so CI installs
+  `chromium-1234` (portal) while `test:extension` wants `chromium-1248` (root).
+  Align one Playwright version across root and `apps/web-portal` first.
+- **#9** is conflicted and stale; a rebase was requested from Dependabot.
+- **Vercel** still fails on every PR. The local CLI token is expired
+  (`vercel whoami` -> "token is not valid"); needs `vercel login` and then
+  `vercel inspect <deployment> --logs`. Project settings, not code.
+
+### Watch out
+
+- `dist/chrome/editor/main.js` is ~98 bytes under its 380 KiB budget. The next
+  feature added to the editor will trip `verify-budgets`.
+- Never run `npm install` in `apps/browser-extension/playlist-manager` with npm 11: it
+  prunes the nested `picomatch@4.0.7` entry npm 10 needs and breaks CI. The build now
+  uses `npm ci`, which is safe.
 
 ### Next steps
 
