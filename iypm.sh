@@ -517,15 +517,21 @@ cmd_audit() { run_npm audit; }
 cmd_clean() {
   print_header
   echo -e "${C_BOLD}🧹 Clean Build Artifacts:${C_RESET}"
-  echo -e "  Removing ${C_YELLOW}dist/${C_RESET}, ${C_YELLOW}node_modules/${C_RESET}, ${C_YELLOW}package-lock.json${C_RESET}..."
-  rm -rf dist node_modules package-lock.json
+  echo -e "  Removing ${C_YELLOW}dist/${C_RESET}, ${C_YELLOW}node_modules/${C_RESET}..."
+  rm -rf dist node_modules
+  # package-lock.json is tracked. Deleting it would also break `npm ci`, which
+  # requires an existing lockfile, so removing it is opt-in and pairs with npm install.
+  if [[ "${1:-}" == "--with-lock" ]]; then
+    echo -e "  ${C_YELLOW}Also removing package-lock.json${C_RESET} (tracked; reinstall with ${C_CYAN}npm install${C_RESET}, not npm ci)"
+    rm -f package-lock.json
+  fi
   echo -e "  ${C_GREEN}Done.${C_RESET} Run ${C_CYAN}npm ci${C_RESET} to reinstall."
 }
 
 cmd_reset() {
   cmd_clean
   print_header
-  echo -e "  ${C_BOLD}Reinstalling dependencies...${C_RESET}"
+  echo -e "  ${C_BOLD}Reinstalling dependencies from the lockfile...${C_RESET}"
   npm ci
 }
 
@@ -704,7 +710,7 @@ case "${1:-help}" in
 
   # Clean & Reset
   clean)
-    cmd_clean
+    cmd_clean "${2:-}"
     ;;
   reset)
     cmd_reset
