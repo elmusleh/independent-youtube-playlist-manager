@@ -344,9 +344,9 @@ git branch -d fix/whatever              # local: -d refuses unless merged
 git push origin --delete fix/whatever   # only if it still exists remotely
 ```
 
-`gh pr merge --squash --delete-branch` already deletes the remote branch (auto-delete is
-on at repo level), so the only manual step is the local one. If a local branch survives a
-merge, clean up in bulk:
+`gh pr merge --squash --delete-branch` removes both the local and the remote branch.
+Repo-level auto-delete covers merges performed in the web UI, which have no local context.
+If a local branch still survives a merge, clean up in bulk:
 
 ```bash
 git branch --merged next | grep -vE '^\*|^\s*(main|next)$' | xargs -r git branch -d
