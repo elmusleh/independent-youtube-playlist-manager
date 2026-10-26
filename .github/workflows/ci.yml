@@ -24,7 +24,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: "npm"
           cache-dependency-path: |
             package-lock.json
@@ -41,7 +41,6 @@ jobs:
 
       - name: Audit Dependencies
         run: npm audit --audit-level=high
-        continue-on-error: true
 
   test-web:
     name: Web & Extension E2E Integration (Typecheck, Build, E2E)
@@ -56,7 +55,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: "npm"
           cache-dependency-path: |
             apps/web-portal/package-lock.json
@@ -68,7 +67,7 @@ jobs:
           npm ci
           cd apps/browser-extension/playlist-manager && npm ci
 
-      - name: Build Extension (Chrome & Firefox Bundles)
+      - name: Build Extension (Chrome, Firefox & Edge Bundles)
         run: npm run build
 
       - name: Install Web Dependencies
@@ -76,6 +75,9 @@ jobs:
 
       - name: Install Playwright Browsers
         run: npx --prefix apps/web-portal playwright install --with-deps chromium
+
+      - name: Run Extension Regression Suite
+        run: npm run test:extension
 
       - name: Build Web Production Bundle
         run: npm --prefix apps/web-portal run build
@@ -103,7 +105,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: "npm"
           cache-dependency-path: |
             package-lock.json
@@ -123,7 +125,7 @@ jobs:
       - name: Run Svelte Diagnostics (Typecheck)
         run: cd apps/browser-extension/playlist-manager && npx svelte-check
 
-      - name: Build Extension (Chrome & Firefox Bundles)
+      - name: Build Extension (Chrome, Firefox & Edge Bundles)
         run: npm run build
 
       - name: Validate Manifests
