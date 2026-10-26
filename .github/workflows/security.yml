@@ -12,6 +12,15 @@ on:
 permissions:
   contents: read
 
+# CodeQL is intentionally NOT defined here. The repository uses GitHub's default
+# code-scanning setup (Settings -> Code security), which already covers
+# actions, javascript and typescript. Running codeql-action/analyze in a workflow
+# as well makes the upload fail with:
+#   "CodeQL analyses from advanced configurations cannot be processed when the
+#    default setup is enabled"
+# Pick one: either delete this comment block and the default setup, or leave CodeQL
+# to the default setup as it is now.
+
 jobs:
   dependency-review:
     name: Dependency Review
@@ -32,7 +41,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: "npm"
           cache-dependency-path: |
             package-lock.json
@@ -53,20 +62,3 @@ jobs:
       - name: Audit Web Dependencies
         run: cd apps/web-portal && npm audit --audit-level=high
         continue-on-error: true
-
-  codeql:
-    name: CodeQL Analysis
-    runs-on: ubuntu-latest
-    permissions:
-      security-events: write
-      actions: read
-      contents: read
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
-        with:
-          languages: javascript
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
