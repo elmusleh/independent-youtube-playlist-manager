@@ -21,6 +21,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   branches from `next` and PRs into it, squash-merged; a release is one squash-merged PR
   from `next` to `main`, tagged `vX.Y.Z`, after which `main` is merged back into `next`.
 - CI and security workflows run on `next` as well as `main`.
+- The extension E2E suite no longer breaks when the root and portal trees resolve different
+  Playwright versions: CI now installs browsers for both trees, and
+  `verify-tooling-versions.js` (in `npm run check`) fails with the fix instead of leaving a
+  missing-executable error that reads like a flake.
 - Dependabot now monitors all three npm trees: root, `apps/web-portal` and
   `apps/browser-extension/playlist-manager`. Previously only `/` was configured, so portal
   and extension dependencies received no update PRs at all. Each tree is grouped

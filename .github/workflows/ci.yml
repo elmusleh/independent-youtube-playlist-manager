@@ -73,8 +73,17 @@ jobs:
       - name: Install Web Dependencies
         run: npm --prefix apps/web-portal ci
 
-      - name: Install Playwright Browsers
+      # Browsers live in one shared cache (~/.cache/ms-playwright) keyed by Playwright
+      # version, so a tree whose version is not installed fails with a missing-executable
+      # error that looks like a flake. Install for BOTH trees: the portal runs the E2E
+      # suite, the root runs the extension regression suite. When the versions agree the
+      # second call is a cache hit; when they drift, both builds exist and neither suite
+      # breaks. `verify-tooling-versions.js` is what stops the drift in the first place.
+      - name: Install Playwright Browsers (Portal)
         run: npx --prefix apps/web-portal playwright install --with-deps chromium
+
+      - name: Install Playwright Browsers (Root — extension suite)
+        run: npx playwright install --with-deps chromium
 
       - name: Run Extension Regression Suite
         run: npm run test:extension
