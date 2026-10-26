@@ -134,8 +134,11 @@
     border: 1px solid var(--border-color, #ddd);
     border-radius: 16px;
     box-shadow: 0 12px 48px #0005;
-    display: flex;
-    flex-direction: column;
+  }
+  /* Closed dialogs stay mounted, so an unconditional display here would beat the
+     browser's dialog:not([open]) rule and leave empty bordered boxes on the page. */
+  dialog:not([open]) {
+    display: none;
   }
   dialog[open] {
     display: flex;
