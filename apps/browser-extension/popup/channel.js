@@ -2,8 +2,14 @@
 /// <reference path="../popup.d.ts" />
 /// <reference path="../../playlist-manager/src/types/services.d.ts" />
 
-import { getById, getErrorMessage, log, alert } from "./utils.js";
-import { getActiveTab, isYouTubeHost } from "./tabs.js";
+import { getById, getErrorMessage, log } from "./utils.js";
+import { isYouTubeHost } from "./tabs.js";
+import {
+  getPageImportTab,
+  importQuantity,
+  showPageImportError,
+  pageAccessError,
+} from "./page-import.js";
 
 /**
  * @typedef {import("webextension-polyfill").Tabs.Tab} Tab
@@ -170,19 +176,20 @@ export async function handleChannelImport(videoService) {
   const channelInfo = getById("channel-info");
 
   try {
+    showPageImportError();
     // Disable button during import
     if (confirmBtn) confirmBtn.disabled = true;
     if (progressSection) progressSection.style.display = "block";
 
     // Get selected options
-    const quantity = parseInt(getById("input-quantity").value, 10) || 25;
+    const quantity = importQuantity(getById("input-quantity").value);
     const order = getById("select-order").value;
 
     await log("INFO", `Popup: Starting page import - Quantity: ${quantity}, Order: ${order}`);
 
     // Get active tab
     updateProgress(10, "Detecting page...");
-    const activeTab = await getActiveTab();
+    const activeTab = await getPageImportTab();
     if (!activeTab) throw new Error("No active tab found");
     if (!activeTab.id) throw new Error("Active tab has no ID");
 
@@ -276,6 +283,7 @@ export async function handleChannelImport(videoService) {
     updateProgress(50, `Processing ${filteredIds.length} videos...`);
 
     // Create playlist
+    await getPageImportTab();
     updateProgress(60, "Creating playlist...");
     const playlistName = `${pageTitle}`;
     const signedIn = await window.isSignedIn();
@@ -301,7 +309,7 @@ export async function handleChannelImport(videoService) {
   } catch (e) {
     const msg = getErrorMessage(e);
     await log("ERROR", "Popup: Page import failed", msg);
-    alert("Import failed: " + msg);
+    showPageImportError("Import failed: " + pageAccessError(e));
 
     // Re-enable button on error
     if (confirmBtn) confirmBtn.disabled = false;

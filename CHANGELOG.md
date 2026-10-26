@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Import from Page works on any regular web page again, not only pages whose channel could
+  be detected: the popup no longer requires a channel name to scan a tab. Quantity `0`
+  now means "all videos" (the injector treats it as unlimited), scrolling stops after
+  three _consecutive_ stalled attempts instead of three attempts in total, and failures are
+  reported inline under the form instead of in an `alert()` that dismissed the popup.
+
 ### Changed
 
 - Git workflow: `next` is the integration branch and `main` holds releases only. Work

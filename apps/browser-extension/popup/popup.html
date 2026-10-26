@@ -119,7 +119,7 @@
           <input
             id="input-quantity"
             type="number"
-            min="1"
+            min="0"
             max="1000"
             value="25"
             class="page-input"
@@ -132,9 +132,8 @@
           <label for="select-order">Order</label>
           <div class="select-wrapper">
             <select id="select-order" class="page-select">
-              <option value="newest">Newest first</option>
-              <option value="oldest">Oldest first</option>
-              <option value="top">Top videos</option>
+              <option value="newest">Page order</option>
+              <option value="oldest">Reverse page order</option>
             </select>
             <i class="fa-solid fa-chevron-down select-icon"></i>
           </div>
@@ -152,6 +151,7 @@
       </div>
     </div>
 
+    <p id="page-import-error" role="alert" hidden></p>
     <script src="../assets/browser-polyfill.min.js"></script>
     <script type="module" src="../editor/youtube-auth.js"></script>
     <script type="module" src="../editor/youtube-api.js"></script>
