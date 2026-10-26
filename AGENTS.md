@@ -4,6 +4,24 @@
 
 ---
 
+## 📍 Start here — reading order
+
+Read in this order, and stop when you have what you need:
+
+| #   | File                   | Why                                                                                                                  |
+| --- | ---------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| 1   | `.ai-sync/HANDOFF.md`  | Current state: branches, SHAs, what is pending, known traps. **Verified facts — trust it until the repo disagrees.** |
+| 2   | `.ai-sync/PLAN.md`     | What is being built next, and the sequencing rules.                                                                  |
+| 3   | `.ai-sync/PROGRESS.md` | Open tasks and what "done" means for each.                                                                           |
+| 4   | `docs/INDEX.md`        | Map of every other document.                                                                                         |
+| 5   | `.ai-sync/HISTORY.md`  | Only when you need the reasoning behind an old decision. Frozen.                                                     |
+
+**The repo is the truth, not these files.** If a document disagrees with code, tests or
+`git log`, the document is stale: fix it in the same PR rather than working around it.
+
+**On stop, update `.ai-sync/HANDOFF.md`** — state, not narrative — and tick off
+`PROGRESS.md`. Append to `HISTORY.md` only when retiring detail from `HANDOFF.md`.
+
 ## ⚡ Quick Reference (first 30 seconds of any session)
 
 ```bash
@@ -18,16 +36,16 @@ npm run web            # Web portal dev server (localhost:3000).
 
 ### File Map
 
-| Path                                           | Contains                          | Notes                                                                                                                          |
-| ---------------------------------------------- | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| `apps/browser-extension/background/`           | Service worker entry point        | `index.js` → imports modules: `background.js` (~300 lines), `utils.js`, `context-menus.js`, `history.js`, `sync.js`, `init.js` |
-| `apps/browser-extension/content-scripts/`      | Page-injected scripts             | `watch-tracker.js`, `injectors/` (5 small files)                                                                               |
-| `apps/browser-extension/popup/`                | Quick-add popup toolbar           | ES modules: `popup.js` (~346 lines entry), `utils.js`, `tabs.js`, `state.js`, `target.js`, `channel.js`, `quick-add.js`        |
-| `apps/browser-extension/playlist-manager/src/` | Svelte SPA (TypeScript)           | `App.svelte`, `components/` (~38 files), `services/` (17 files), `views/`, `stores/`, `types/`                                 |
-| `apps/web-portal/`                             | Next.js 15 marketing + dashboard  | App Router, Tailwind, shadcn/ui, Playwright e2e                                                                                |
-| `packages/build-tools/`                        | Build/CI scripts (Node.js)        | `build-extension.js`, `validate-manifests.js`, `package-chrome-store.js`, `package-edge-store.js`, `verify-css-bundle.js`      |
-| `docs/`                                        | All documentation + screenshots   | `USAGE_EXAMPLES.md`, `RELEASE_SPEC.md`, `USER_GUIDE.md`                                                                        |
-| Root                                           | Lint, format, test, deploy config | `eslint.config.mjs`, `.prettierrc`, `vitest.config.mjs`, `jsconfig.json`, `vercel.json`                                        |
+| Path                                           | Contains                         | Notes                                                                                                                                                                                               |
+| ---------------------------------------------- | -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `apps/browser-extension/background/`           | Service worker entry point       | `index.js` → imports modules: `background.js` (~300 lines), `utils.js`, `context-menus.js`, `history.js`, `sync.js`, `init.js`                                                                      |
+| `apps/browser-extension/content-scripts/`      | Page-injected scripts            | `watch-tracker.js`, `injectors/` (5 small files)                                                                                                                                                    |
+| `apps/browser-extension/popup/`                | Quick-add popup toolbar          | ES modules: `popup.js` (~346 lines entry), `utils.js`, `tabs.js`, `state.js`, `target.js`, `channel.js`, `quick-add.js`                                                                             |
+| `apps/browser-extension/playlist-manager/src/` | Svelte SPA (TypeScript)          | `App.svelte`, `components/` (~38 files), `services/` (17 files), `views/`, `stores/`, `types/`                                                                                                      |
+| `apps/web-portal/`                             | Next.js 15 marketing + dashboard | App Router, Tailwind, shadcn/ui, Playwright e2e                                                                                                                                                     |
+| `packages/build-tools/`                        | Build/CI scripts (Node.js)       | Build + package scripts, and the guards wired into `npm run check`: `verify-file-size.js`, `verify-css-bundle.js`, `verify-vercel-config.js`, `verify-tooling-versions.js`, `gen-release-notes.mjs` |
+| `docs/`                                        | Documentation + screenshots      | Start at `docs/INDEX.md` — it maps every document. `RELEASING.md` is the release runbook.                                                                                                           |
+| Root                                           | Lint, format, test config        | `eslint.config.mjs`, `.prettierrc`, `vitest.config.mjs`, `jsconfig.json`. **No root `vercel.json`** — see `docs/DEPLOYMENT.md`.                                                                     |
 
 ---
 
