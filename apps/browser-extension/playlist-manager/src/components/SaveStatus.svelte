@@ -12,6 +12,7 @@
     refreshing = false,
     hasSavedOnce = false,
     title = "",
+    showError = true,
   }: {
     onclick?: () => void;
     status?: StatusManager;
@@ -20,6 +21,7 @@
     refreshing?: boolean;
     hasSavedOnce?: boolean;
     title?: string;
+    showError?: boolean;
   } = $props();
 
   const _isDirty = $derived(isDirty !== undefined ? isDirty : status ? status.isDirty : false);
@@ -57,12 +59,12 @@
   const icon = $derived(_error ? faCircleExclamation : justSaved ? faCheck : faArrowsRotate);
 </script>
 
-<SimpleButton {onclick} secondary title={_error || buttonTitle}>
+<SimpleButton {onclick} secondary title={_error ? "Retry: " + _error : buttonTitle}>
   <span class="refresh-icon" class:spinning={_saving || _refreshing} class:success={justSaved}>
     <Fa {icon} fw />
   </span>
   {#if _error}
-    <span class="auto-save-status error" title={_error}>Error</span>
+    <span class="auto-save-status error">Retry</span>
   {:else if _saving}
     <span class="auto-save-status saving">
       {progress !== null ? `Saving (${progress}%)…` : "Saving…"}
@@ -79,8 +81,22 @@
     <span class="auto-save-status refresh">Refresh</span>
   {/if}
 </SimpleButton>
+{#if _error && showError}
+  <span class="save-error" role="alert">
+    Could not complete the save or refresh. Your edits are still open. {_error}
+    Select Retry to try again.
+  </span>
+{/if}
 
 <style>
+  .save-error {
+    color: var(--danger-color, #ef4444);
+    font-size: 13px;
+    flex-basis: 100%;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+
   .auto-save-status {
     font-size: 13px;
     font-weight: 500;

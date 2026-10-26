@@ -1,0 +1,5 @@
+html { background: #fff; color-scheme: light; }
+html[data-theme="dark"] { background: #0f0f0f; color-scheme: dark; }
+@media (prefers-color-scheme: dark) {
+  html:not([data-theme="light"]) { background: #0f0f0f; color-scheme: dark; }
+}

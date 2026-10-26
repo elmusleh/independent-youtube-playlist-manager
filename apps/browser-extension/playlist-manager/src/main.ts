@@ -14,10 +14,14 @@ import "./services/storage-service.js";
 import "./services/sync-state-service.js";
 import "./services/video-service.js";
 
-// Import the canonical view layout CSS as a JS module so rollup bundles it
-// into bundle.css (native `@import` in Svelte <style> blocks is ignored when
-// it doesn't appear at the top of the compiled stylesheet).
+// Import the canonical design tokens FIRST — single source of truth for all
+// responsive, spacing, color, and layout tokens. Must be before other CSS.
+import "./css/design-tokens.css";
+
+// View layout and responsive contracts (now consume tokens from design-tokens.css)
 import "./css/view-layout.css";
+import "./css/responsive.css";
+import "./css/settings.css";
 
 import { mount } from "svelte";
 import App from "./App.svelte";

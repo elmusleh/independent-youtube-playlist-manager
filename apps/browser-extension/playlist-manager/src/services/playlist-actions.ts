@@ -134,6 +134,7 @@ export async function requestSyncConfirm(
         });
         return;
       }
+      await window.clearSyncState(p.id);
     } catch {
       await window.clearSyncState(p.id);
     }

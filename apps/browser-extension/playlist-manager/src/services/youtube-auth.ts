@@ -1,4 +1,12 @@
 /// <reference path="../../node_modules/@types/firefox-webext-browser/index.d.ts" />
+import { parseOAuthResponse, getFirefoxRedirectUri } from "../utils/oauth-response";
+import { hasYoutubeClientId } from "../utils/youtube-credentials";
+import {
+  ACCOUNT_DATA,
+  hasDataConsent,
+  requestDataConsent,
+  requireDataConsent,
+} from "../utils/data-consent";
 
 const AUTH_LOG_KEY = "yt_auth_debug_log";
 const CLIENT_ID = "456478079131-cu0s6f03kou9obge8olkron2frju5j2s.apps.googleusercontent.com";
@@ -35,6 +43,7 @@ function updateIsSignedIn(val: boolean) {
 }
 
 async function getCachedToken(): Promise<string | null> {
+  if (!(await hasDataConsent(ACCOUNT_DATA))) return null;
   try {
     const result = await browser.storage.local.get(TOKEN_CACHE_KEY);
     const cached = result[TOKEN_CACHE_KEY] as TokenCache | undefined;
@@ -70,6 +79,8 @@ async function fetchFreshToken(
   interactive: boolean = true,
   selectAccount: boolean = false
 ): Promise<string> {
+  if (interactive) await requestDataConsent(ACCOUNT_DATA);
+  else await requireDataConsent(ACCOUNT_DATA);
   if (tokenRefreshPromise && !interactive) return tokenRefreshPromise;
 
   // Guard: for interactive sign-in, require custom credentials to be set
@@ -77,10 +88,10 @@ async function fetchFreshToken(
     try {
       const result = await browser.storage.local.get("custom_yt_credentials");
       const creds = result.custom_yt_credentials;
-      if (!creds?.clientId || !creds?.apiKey) {
+      if (!hasYoutubeClientId(creds)) {
         throw Object.assign(
           new Error(
-            "API credentials are not configured. Please go to API Setup to enter your Client ID and API Key."
+            "Client ID is not configured. Please go to API Setup to enter your OAuth Client ID."
           ),
           { code: "credentials_missing" }
         );
@@ -108,34 +119,11 @@ async function fetchFreshToken(
   const isAndroid = /Android/i.test(navigator.userAgent);
   const hasIdentityAPI =
     !isAndroid && typeof (browser as any).identity?.launchWebAuthFlow === "function";
+  const oauthState = crypto.randomUUID();
 
   /**
    * Parse an OAuth token from a redirect URL (handles both hash and query params).
    */
-  function parseTokenFromUrl(responseUrl: string): { token: string; expiresIn: number } | null {
-    const parsed = new URL(responseUrl);
-    // Implicit grant: token is in hash fragment
-    const hash = parsed.hash.slice(1);
-    const hashParams = new URLSearchParams(hash);
-    const hashToken = hashParams.get("access_token");
-    const hashError = hashParams.get("error");
-    if (hashError) throw new Error(`Auth error: ${hashError}`);
-    if (hashToken) {
-      return { token: hashToken, expiresIn: parseInt(hashParams.get("expires_in") ?? "3600", 10) };
-    }
-    // Fallback: token in query params
-    const qToken = parsed.searchParams.get("access_token");
-    const qError = parsed.searchParams.get("error");
-    if (qError) throw new Error(`Auth error: ${qError}`);
-    if (qToken) {
-      return {
-        token: qToken,
-        expiresIn: parseInt(parsed.searchParams.get("expires_in") ?? "3600", 10),
-      };
-    }
-    return null;
-  }
-
   /**
    * Tabs-based OAuth flow for Firefox for Android (Fenix).
    * Opens a tab, monitors navigation until it hits the redirect URI, then extracts the token.
@@ -144,8 +132,13 @@ async function fetchFreshToken(
     return new Promise<string>((resolve, reject) => {
       let authTabId: number | null = null;
       let settled = false;
+      const timeout = setTimeout(
+        () => settle(() => reject(new Error("Sign-in timed out. Please try again."))),
+        120000
+      );
 
       function cleanup() {
+        clearTimeout(timeout);
         browser.tabs.onUpdated.removeListener(onUpdated);
         browser.tabs.onRemoved.removeListener(onRemoved);
         if (authTabId !== null) {
@@ -166,7 +159,7 @@ async function fetchFreshToken(
         const url: string = changeInfo.url || tab.url || "";
         if (!url.startsWith(redirectUri)) return;
         try {
-          const result = parseTokenFromUrl(url);
+          const result = parseOAuthResponse(url, redirectUri, oauthState);
           if (result) {
             settle(() => resolve(result.token));
             cacheToken(result.token, result.expiresIn);
@@ -211,16 +204,17 @@ async function fetchFreshToken(
 
     // On Android, compute the Firefox extension redirect URI manually since
     // browser.identity is unavailable. The redirect URI for Firefox extensions
-    // is https://<gecko-id>.extensions.allizom.org/ (same as getRedirectURL() on desktop).
+    // uses the SHA-1 hash of the add-on ID, matching Firefox's native implementation.
     const redirectUri = hasIdentityAPI
       ? browser.identity.getRedirectURL()
-      : `https://${browser.runtime.id}.extensions.allizom.org/`;
+      : await getFirefoxRedirectUri(browser.runtime.id);
 
     const url = new URL("https://accounts.google.com/o/oauth2/v2/auth");
     url.searchParams.set("client_id", effectiveClientId);
     url.searchParams.set("response_type", "token");
     url.searchParams.set("redirect_uri", redirectUri);
     url.searchParams.set("scope", YT_SCOPE);
+    url.searchParams.set("state", oauthState);
     if (!interactive) {
       url.searchParams.set("prompt", "none");
     } else if (selectAccount) {
@@ -260,7 +254,7 @@ async function fetchFreshToken(
         return token;
       }
 
-      const result = parseTokenFromUrl(responseUrl);
+      const result = parseOAuthResponse(responseUrl, redirectUri, oauthState);
       if (!result) throw new Error("No token in response");
 
       console.log("[YT-AUTH] Successfully received token");
@@ -359,7 +353,7 @@ window.signIn = async (): Promise<string> => fetchFreshToken(true, true);
 window.revokeYouTubeToken = async (): Promise<void> => {
   const result = await browser.storage.local.get(TOKEN_CACHE_KEY);
   const cached = result[TOKEN_CACHE_KEY];
-  if (cached?.token) {
+  if (cached?.token && (await hasDataConsent(ACCOUNT_DATA))) {
     try {
       await fetch(`https://accounts.google.com/o/oauth2/revoke?token=${cached.token}`);
       appendAuthLog("Token revoked from Google");

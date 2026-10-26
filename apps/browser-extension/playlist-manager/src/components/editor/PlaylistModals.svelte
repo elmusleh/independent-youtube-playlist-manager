@@ -1,6 +1,13 @@
 <script lang="ts">
   import Fa from "svelte-fa";
-  import { faCopy, faPlus, faCut, faInfoCircle, faCode } from "@fortawesome/free-solid-svg-icons";
+  import {
+    faCopy,
+    faPlus,
+    faCut,
+    faInfoCircle,
+    faCode,
+    faXmark,
+  } from "@fortawesome/free-solid-svg-icons";
   import Modal from "../Modal.svelte";
   import SimpleButton from "../SimpleButton.svelte";
   import type { Playlist } from "../../types/model";
@@ -53,50 +60,55 @@
       exportTextArea.select();
       exportTextArea.setSelectionRange(0, 99999);
       document.execCommand("copy");
-      notificationText = "Copied !";
+      notificationText = "Copied!";
       setTimeout(() => (notificationText = ""), 2000);
       onExport();
     }
   }
 </script>
 
-<Modal bind:display>
+{#if display}
   {#if modalType === "Export"}
-    <div class="modal-container">
-      <h3>Export Video URLs</h3>
-      <textarea bind:value={exportText} bind:this={exportTextArea} readonly></textarea>
-      <div class="modal-footer">
-        <SimpleButton onclick={handleExport} secondary>
-          <Fa icon={faCopy} fw />
-          <span>Copy to Clipboard</span>
-        </SimpleButton>
-        <span class="notification">{notificationText}</span>
-      </div>
-    </div>
+    <Modal bind:display title="Export Video URLs" size="wide" onclose={onExport}>
+      <textarea bind:value={exportText} bind:this={exportTextArea} readonly class="export-textarea"
+      ></textarea>
+      {#if notificationText}
+        <p class="notification">{notificationText}</p>
+      {/if}
+
+      {#snippet footer()}
+        <div class="modal-footer">
+          <SimpleButton secondary onclick={handleExport}>
+            <Fa icon={faCopy} fw />
+            <span>Copy to Clipboard</span>
+          </SimpleButton>
+        </div>
+      {/snippet}
+    </Modal>
   {:else if modalType === "Import"}
-    <div class="modal-container">
-      <h3>Import Videos</h3>
+    <Modal bind:display title="Import Videos" size="wide" onclose={() => (display = false)}>
       <textarea
         bind:value={importText}
         placeholder="Paste one or more YouTube URLs or Video IDs here (one per line)…"></textarea>
-      <div class="import-footer">
-        <div class="import-options">
-          <label class="check-label">
-            <input aria-label="Add to top" type="checkbox" bind:checked={importAtTop} />
-            <span>Add to top of playlist</span>
-          </label>
-        </div>
+
+      <div class="import-options">
+        <label class="check-label">
+          <input aria-label="Add to top" type="checkbox" bind:checked={importAtTop} />
+          <span>Add to top of playlist</span>
+        </label>
+      </div>
+
+      {#snippet footer()}
         <div class="modal-footer">
           <SimpleButton onclick={onImport} primary>
             <Fa icon={faPlus} fw />
             <span>Import Video(s)</span>
           </SimpleButton>
         </div>
-      </div>
-    </div>
+      {/snippet}
+    </Modal>
   {:else if modalType === "CopyMove"}
-    <div class="modal-container">
-      <h3>Copy/Move Videos</h3>
+    <Modal bind:display title="Copy/Move Videos" size="wide" onclose={() => (display = false)}>
       <p class="count-info">
         {selectedCount} video{selectedCount !== 1 ? "s" : ""} selected
       </p>
@@ -163,93 +175,98 @@
         {/if}
       </div>
 
-      <div class="modal-footer">
-        <SimpleButton onclick={() => (display = false)} secondary>
-          <span>Cancel</span>
-        </SimpleButton>
-        <SimpleButton
-          onclick={onExecuteCopyMove}
-          primary
-          disabled={(copyMoveCreateNew && !copyMoveNewPlaylistTitle.trim()) ||
-            (!copyMoveCreateNew && !copyMoveTargetPlaylistId) ||
-            copyMoveLoading}
-        >
-          {#if copyMoveLoading}
-            <span>Processing...</span>
-          {:else}
-            <Fa icon={copyMoveAction === "copy" ? faCopy : faCut} fw />
-            <span>{copyMoveAction === "copy" ? "Copy" : "Move"}</span>
-          {/if}
-        </SimpleButton>
-      </div>
-    </div>
+      {#snippet footer()}
+        <div class="modal-footer">
+          <SimpleButton secondary onclick={() => (display = false)}>Cancel</SimpleButton>
+          <SimpleButton
+            onclick={onExecuteCopyMove}
+            primary
+            disabled={(copyMoveCreateNew && !copyMoveNewPlaylistTitle.trim()) ||
+              (!copyMoveCreateNew && !copyMoveTargetPlaylistId) ||
+              copyMoveLoading}
+          >
+            {#if copyMoveLoading}
+              <span>Processing...</span>
+            {:else}
+              <Fa icon={copyMoveAction === "copy" ? faCopy : faCut} fw />
+              <span>{copyMoveAction === "copy" ? "Copy" : "Move"}</span>
+            {/if}
+          </SimpleButton>
+        </div>
+      {/snippet}
+    </Modal>
   {:else if modalType === "PlayAllInfo"}
-    <div class="modal-container info-modal">
-      <h3>About Temporary Playlists</h3>
+    <Modal
+      bind:display
+      title="Play All Video Limits"
+      size="standard"
+      onclose={() => (display = false)}
+    >
       <div class="info-scroll">
-        <p>
-          Because this playlist is generated on the fly, it will always default to <strong
-            >"Untitled List"</strong
-          > on YouTube.
-        </p>
-        <ul>
-          <li>
-            <strong>Ephemeral:</strong> Queue URLs expire periodically. Share the base generator link
-            instead.
-          </li>
-          <li>
-            <strong>No Privacy Controls:</strong> Concept does not apply to anonymous queues.
-          </li>
-          <li>
-            <strong>Locked Order:</strong> Once generated, the order is fixed in the URL.
-          </li>
-        </ul>
+        <div class="info-section signed-in">
+          <div class="section-header">
+            <span class="section-badge">Signed In</span>
+          </div>
+          <p class="section-text">
+            No video limit per tab. All videos can load in a single tab, giving you the best
+            playback experience.
+          </p>
+        </div>
+
+        <div class="info-section guest">
+          <div class="section-header">
+            <span class="section-badge guest-badge">Guest User</span>
+          </div>
+          <p class="section-text">
+            YouTube enforces a limit of approximately <strong>50 videos per tab</strong>
+            regardless of your extension settings. This is a YouTube server-side restriction and cannot
+            be bypassed.
+          </p>
+        </div>
+
+        <div class="info-note">
+          <Fa icon={faInfoCircle} />
+          <p>
+            These limits apply when using the "Play All" feature to open your playlist on YouTube.
+          </p>
+        </div>
       </div>
-      <div class="modal-footer">
-        <SimpleButton onclick={() => (display = false)} primary>
-          <span>Got it!</span>
-        </SimpleButton>
-      </div>
-    </div>
+
+      {#snippet footer()}
+        <div class="modal-footer">
+          <SimpleButton primary onclick={() => (display = false)}>Got it</SimpleButton>
+        </div>
+      {/snippet}
+    </Modal>
   {:else if modalType === "ScrapeHtml"}
-    <div class="modal-container">
-      <h3>Scrape YouTube Links from HTML</h3>
+    <Modal
+      bind:display
+      title="Scrape YouTube Links from HTML"
+      size="wide"
+      onclose={() => (display = false)}
+    >
       <textarea
         bind:value={htmlText}
         placeholder="Paste the HTML content of a webpage here. The tool will extract all YouTube video links and add them to your playlist."
       ></textarea>
-      <div class="modal-footer">
-        <SimpleButton onclick={() => (display = false)} secondary>
-          <span>Cancel</span>
-        </SimpleButton>
-        <SimpleButton onclick={onScrapeHtml} primary>
-          <Fa icon={faCode} fw />
-          <span>Scrape Links</span>
-        </SimpleButton>
-      </div>
-    </div>
+
+      {#snippet footer()}
+        <div class="modal-footer">
+          <SimpleButton secondary onclick={() => (display = false)}>Cancel</SimpleButton>
+          <SimpleButton primary onclick={onScrapeHtml}>
+            <Fa icon={faCode} fw />
+            <span>Scrape Links</span>
+          </SimpleButton>
+        </div>
+      {/snippet}
+    </Modal>
   {/if}
-</Modal>
+{/if}
 
 <style>
-  .modal-container {
+  .export-textarea {
     width: 100%;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    padding: 8px;
-  }
-
-  h3 {
-    margin: 0;
-    font-size: 20px;
-    font-weight: 600;
-    text-align: center;
-  }
-
-  textarea {
-    width: 100%;
-    min-height: 350px;
+    min-height: min(240px, 35dvh);
     padding: 16px;
     border-radius: 12px;
     border: 1px solid var(--border-color);
@@ -262,28 +279,17 @@
     box-sizing: border-box;
   }
 
-  .modal-footer {
-    display: flex;
-    justify-content: center;
-    gap: 16px;
-    padding-top: 16px;
-    border-top: 1px solid var(--border-color);
-    position: relative;
-  }
-
   .notification {
-    position: absolute;
-    right: 0;
     color: var(--success-color, #43a047);
     font-size: 13px;
     font-weight: 600;
+    margin-top: 12px;
   }
 
-  .import-footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 16px;
+  .import-options {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-color);
   }
 
   .check-label {
@@ -373,8 +379,60 @@
     margin-bottom: 12px;
   }
 
+  .info-section {
+    margin-bottom: 20px;
+    padding: 16px;
+    border-radius: 12px;
+    background: var(--hover-color);
+    border: 1px solid var(--border-color);
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .section-badge {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: 6px;
+    background: var(--primary-color);
+    color: white;
+  }
+
+  .guest-badge {
+    background: var(--text-muted);
+  }
+
+  .section-text {
+    margin: 0;
+    color: var(--text-color);
+  }
+
+  .info-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 16px;
+    background: rgba(62, 166, 255, 0.1);
+    border: 1px solid var(--primary-color);
+    border-radius: 8px;
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+
+  .modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-color);
+  }
+
   @media (max-width: 600px) {
-    .import-footer,
     .radio-group,
     .dest-options {
       flex-direction: column;

@@ -4,6 +4,9 @@
  * Reads the canonical version from apps/browser-extension/manifest.chrome.json and propagates
  * it to apps/browser-extension/manifest.firefox.json and package.json.
  *
+ * The Edge manifest is generated from manifest.chrome.json at build time, so it needs no
+ * separate version sync.
+ *
  * Usage:
  *   node packages/build-tools/sync-version.mjs            # sync from chrome manifest
  *   node packages/build-tools/sync-version.mjs --set 2.12.25  # set new version everywhere
@@ -12,6 +15,7 @@
 import { readFileSync, writeFileSync } from "fs";
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
+import { format, resolveConfig } from "prettier";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, "../..");
@@ -20,8 +24,10 @@ function readJson(filePath) {
   return JSON.parse(readFileSync(filePath, "utf-8"));
 }
 
-function writeJson(filePath, data) {
-  writeFileSync(filePath, JSON.stringify(data, null, 2) + "\n", "utf-8");
+async function writeJson(filePath, data) {
+  const config = await resolveConfig(filePath);
+  const text = await format(JSON.stringify(data, null, 2), { ...config, filepath: filePath });
+  writeFileSync(filePath, text, "utf-8");
 }
 
 const chromeManifestPath = resolve(root, "apps/browser-extension/manifest.chrome.json");
@@ -52,14 +58,14 @@ console.log(`\nSyncing version: ${canonicalVersion}\n`);
 
 // Update Chrome manifest
 chromeManifest.version = canonicalVersion;
-writeJson(chromeManifestPath, chromeManifest);
+await writeJson(chromeManifestPath, chromeManifest);
 console.log(`  apps/browser-extension/manifest.chrome.json -> ${canonicalVersion}`);
 
 // Update Firefox manifest
 const firefoxManifest = readJson(firefoxManifestPath);
 const firefoxPrev = firefoxManifest.version;
 firefoxManifest.version = canonicalVersion;
-writeJson(firefoxManifestPath, firefoxManifest);
+await writeJson(firefoxManifestPath, firefoxManifest);
 console.log(
   `  apps/browser-extension/manifest.firefox.json -> ${canonicalVersion} (was ${firefoxPrev})`
 );
@@ -68,14 +74,14 @@ console.log(
 const pkg = readJson(packageJsonPath);
 const pkgPrev = pkg.version;
 pkg.version = canonicalVersion;
-writeJson(packageJsonPath, pkg);
+await writeJson(packageJsonPath, pkg);
 console.log(`  package.json -> ${canonicalVersion} (was ${pkgPrev})`);
 
 // Update playlist-manager package.json
 const pePkg = readJson(playlistEditorPackageJsonPath);
 const pePkgPrev = pePkg.version;
 pePkg.version = canonicalVersion;
-writeJson(playlistEditorPackageJsonPath, pePkg);
+await writeJson(playlistEditorPackageJsonPath, pePkg);
 console.log(
   `  apps/browser-extension/playlist-manager/package.json -> ${canonicalVersion} (was ${pePkgPrev})`
 );
@@ -84,7 +90,16 @@ console.log(
 const wpPkg = readJson(webPortalPackageJsonPath);
 const wpPkgPrev = wpPkg.version;
 wpPkg.version = canonicalVersion;
-writeJson(webPortalPackageJsonPath, wpPkg);
+await writeJson(webPortalPackageJsonPath, wpPkg);
 console.log(`  apps/web-portal/package.json -> ${canonicalVersion} (was ${wpPkgPrev})`);
+
+// Keep npm ci metadata aligned with the manifest and package versions.
+for (const directory of [".", "apps/browser-extension/playlist-manager", "apps/web-portal"]) {
+  const lockPath = resolve(root, directory, "package-lock.json");
+  const lock = readJson(lockPath);
+  lock.version = canonicalVersion;
+  if (lock.packages?.[""]) lock.packages[""].version = canonicalVersion;
+  await writeJson(lockPath, lock);
+}
 
 console.log(`\nAll files synced to version ${canonicalVersion}\n`);

@@ -124,8 +124,6 @@
 </main>
 
 <style>
-  @import "../css/view-layout.css";
-
   main {
     display: flex;
     flex-direction: column;

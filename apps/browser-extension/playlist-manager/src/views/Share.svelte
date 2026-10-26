@@ -139,8 +139,6 @@
 </main>
 
 <style>
-  @import "../css/view-layout.css";
-
   .share-intro {
     text-align: center;
     margin-bottom: 40px;

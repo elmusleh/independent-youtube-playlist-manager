@@ -3,6 +3,7 @@
   import { faInfoCircle, faPlayCircle } from "@fortawesome/free-solid-svg-icons";
   import ToggleSwitch from "./ToggleSwitch.svelte";
   import SimpleButton from "./SimpleButton.svelte";
+  import Modal from "./Modal.svelte";
   import type { Settings } from "../types/model.js";
 
   const browser = (window as any).browser || (window as any).chrome;
@@ -10,13 +11,11 @@
   let {
     settings,
     save,
-    showPlayAllInfo,
-    setShowPlayAllInfo,
+    showPlayAllInfo = $bindable(false),
   }: {
     settings: Settings | null;
     save: (key: string, value: unknown, onDone?: () => void) => Promise<void>;
     showPlayAllInfo: boolean;
-    setShowPlayAllInfo: (val: boolean) => void;
   } = $props();
 </script>
 
@@ -75,7 +74,7 @@
         <label for="playAllChunkSize">Videos per tab</label>
         <button
           class="info-icon-btn"
-          onclick={() => setShowPlayAllInfo(true)}
+          onclick={() => (showPlayAllInfo = true)}
           title="Learn about video limits for signed-in vs guest users"
           aria-label="Show information about play all video limits"
         >
@@ -104,70 +103,210 @@
   </section>
 {/if}
 
-{#if showPlayAllInfo}
-  <div
-    class="modal-overlay"
-    onmousedown={(e) => {
-      if (e.target === e.currentTarget) setShowPlayAllInfo(false);
-    }}
-    role="presentation"
-  >
-    <div
-      class="modal-content info-modal"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="play-all-title"
-    >
-      <div class="modal-header">
-        <h3 id="play-all-title">
-          <Fa icon={faPlayCircle} /> Play All Video Limits
-        </h3>
-        <button
-          class="close-btn"
-          onclick={() => setShowPlayAllInfo(false)}
-          aria-label="Close dialog"
-          title="Close (Esc)"
-        >
-          ×
-        </button>
+<Modal
+  bind:display={showPlayAllInfo}
+  title="Play All Video Limits"
+  onclose={() => (showPlayAllInfo = false)}
+>
+  <div class="info-scroll">
+    <div class="info-section signed-in">
+      <div class="section-header">
+        <span class="section-badge">Signed In</span>
       </div>
+      <p class="section-text">
+        No video limit per tab. All videos can load in a single tab, giving you the best playback
+        experience.
+      </p>
+    </div>
 
-      <div class="modal-body-content">
-        <div class="info-section signed-in">
-          <div class="section-header">
-            <span class="section-badge">Signed In</span>
-          </div>
-          <p class="section-text">
-            No video limit per tab. All videos can load in a single tab, giving you the best
-            playback experience.
-          </p>
-        </div>
-
-        <div class="info-section guest">
-          <div class="section-header">
-            <span class="section-badge guest-badge">Guest User</span>
-          </div>
-          <p class="section-text">
-            YouTube enforces a limit of approximately <strong>50 videos per tab</strong> regardless of
-            your extension settings?. This is a YouTube server-side restriction and cannot be bypassed.
-          </p>
-        </div>
-
-        <div class="info-note">
-          <Fa icon={faInfoCircle} />
-          <p>
-            These limits apply when using the "Play All" feature to open your playlist on YouTube.
-          </p>
-        </div>
+    <div class="info-section guest">
+      <div class="section-header">
+        <span class="section-badge guest-badge">Guest User</span>
       </div>
+      <p class="section-text">
+        YouTube enforces a limit of approximately <strong>50 videos per tab</strong>
+        regardless of your extension settings. This is a YouTube server-side restriction and cannot be
+        bypassed.
+      </p>
+    </div>
 
-      <div class="modal-footer">
-        <SimpleButton primary onclick={() => setShowPlayAllInfo(false)}>Got it</SimpleButton>
-      </div>
+    <div class="info-note">
+      <Fa icon={faInfoCircle} />
+      <p>These limits apply when using the "Play All" feature to open your playlist on YouTube.</p>
     </div>
   </div>
-{/if}
+
+  {#snippet footer()}
+    <div class="modal-footer">
+      <SimpleButton primary onclick={() => (showPlayAllInfo = false)}>Got it</SimpleButton>
+    </div>
+  {/snippet}
+</Modal>
 
 <style>
-  @import "../views/settings.css";
+  .card {
+    background: var(--background-color);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+
+  .info-card {
+    background: rgba(62, 166, 255, 0.08);
+    border-color: var(--primary-color);
+  }
+
+  .info-header,
+  .card h3 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 12px;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-color);
+  }
+
+  .info-content {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .info-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 14px;
+  }
+
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .toggle-row:last-child {
+    border-bottom: none;
+  }
+
+  .toggle-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .sub-text {
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+
+  .field {
+    margin-top: 16px;
+  }
+
+  .label-with-info {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+
+  .label-with-info label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-color);
+  }
+
+  .info-icon-btn {
+    background: none;
+    border: none;
+    padding: 4px;
+    cursor: pointer;
+    color: var(--text-muted);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .info-icon-btn:hover {
+    background: var(--hover-color);
+    color: var(--primary-color);
+  }
+
+  .number-input-group input {
+    width: 100%;
+    max-width: 120px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    background: var(--background-color);
+    color: var(--text-color);
+    font-size: 14px;
+  }
+
+  /* Modal styles */
+  .info-scroll {
+    max-height: 50vh;
+    overflow-y: auto;
+    font-size: 14px;
+    line-height: 1.6;
+    padding-right: 10px;
+  }
+
+  .info-section {
+    margin-bottom: 20px;
+    padding: 16px;
+    border-radius: 12px;
+    background: var(--hover-color);
+    border: 1px solid var(--border-color);
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .section-badge {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: 6px;
+    background: var(--primary-color);
+    color: white;
+  }
+
+  .guest-badge {
+    background: var(--text-muted);
+  }
+
+  .section-text {
+    margin: 0;
+    color: var(--text-color);
+  }
+
+  .info-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 16px;
+    background: rgba(62, 166, 255, 0.1);
+    border: 1px solid var(--primary-color);
+    border-radius: 8px;
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+
+  .modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-color);
+  }
 </style>

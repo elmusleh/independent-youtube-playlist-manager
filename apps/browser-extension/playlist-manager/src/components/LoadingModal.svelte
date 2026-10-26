@@ -1,25 +1,23 @@
 <script>
   import Fa from "svelte-fa";
   import { faCircleNotch } from "@fortawesome/free-solid-svg-icons";
+  import Modal from "./Modal.svelte";
 </script>
 
-<div class="loading-modal">
-  <Fa icon={faCircleNotch} spin size="3x" />
-</div>
+<Modal display={true} dismissible={false} size="small" title="Loading">
+  <div class="loading-modal" role="status" aria-live="polite">
+    <Fa icon={faCircleNotch} spin size="3x" />
+    <span>Loading…</span>
+  </div>
+</Modal>
 
 <style>
   .loading-modal {
     display: flex;
     justify-content: center;
     align-items: center;
-    position: fixed;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 10000;
-    overflow: auto;
-    background-color: rgba(0, 0, 0, 0.5);
-    color: #ccffff;
+    gap: 16px;
+    min-height: 100px;
+    color: var(--text-color);
   }
 </style>

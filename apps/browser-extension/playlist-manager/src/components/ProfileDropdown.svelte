@@ -40,6 +40,7 @@
   } = $props();
 
   let open = $state(false);
+  let themeSubmenuOpen = $state(false);
 
   function toggleDropdown(event: MouseEvent) {
     event.stopPropagation();
@@ -48,6 +49,11 @@
 
   function closeDropdown() {
     open = false;
+    themeSubmenuOpen = false;
+  }
+
+  function setThemeSubmenuOpen(value: boolean) {
+    themeSubmenuOpen = value;
   }
 
   function navigateTo(path: string, event: MouseEvent) {
@@ -89,8 +95,15 @@
 
   function handleWindowClick(event: MouseEvent) {
     const target = event.target as HTMLElement;
-    if (open && !target.closest(".profile-container")) {
+    if (open && !target.closest(".profile-container") && !target.closest(".theme-submenu")) {
       closeDropdown();
+    } else if (
+      themeSubmenuOpen &&
+      target.closest(".dropdown-menu") &&
+      !target.closest(".theme-submenu")
+    ) {
+      // Clicked in dropdown but outside theme submenu - close theme submenu only
+      setThemeSubmenuOpen(false);
     }
   }
 
@@ -161,7 +174,7 @@
       <div class="divider mobile-only-menu-item"></div>
 
       <div class="menu-section">
-        <ThemePicker onClose={closeDropdown} />
+        <ThemePicker onClose={closeDropdown} onSubmenuToggle={setThemeSubmenuOpen} />
         <button class="menu-item" onclick={(e) => navigateTo("/shortcuts", e)}>
           <div class="icon-box"><Fa icon={faKeyboard} fw /></div>
           <span>Keyboard shortcuts</span>
@@ -175,7 +188,7 @@
           <div class="icon-box">
             <Fa icon={faKey} fw />
             {#if missingCredentials}
-              <div class="warning-badge" title="API credentials missing">!</div>
+              <div class="warning-badge" title="OAuth Client ID missing">!</div>
             {/if}
           </div>
           <span>API Setup</span>
@@ -430,12 +443,14 @@
   @media (max-width: 600px) {
     .dropdown-menu {
       position: fixed;
-      top: 56px;
+      top: var(--app-header-height);
       right: 0;
       left: 0;
       width: 100%;
       border-radius: 0;
-      height: calc(100vh - 56px);
+      max-height: calc(100dvh - var(--app-header-height));
+      height: auto;
+      overflow-y: auto;
       border: none;
     }
   }

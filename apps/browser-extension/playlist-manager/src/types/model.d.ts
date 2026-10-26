@@ -8,13 +8,16 @@ export interface Video {
   duration?: string; // ISO 8601 (e.g. "PT4M20S"); absent = not fetched
   durationISO?: string; // ISO 8601 duration (alias for duration)
   durationSeconds?: number; // total absolute length in seconds
+  /** True when the source explicitly reported a live/upcoming stream */
+  isLive?: boolean;
+  /** True when the source reported a YouTube Short */
+  isShort?: boolean;
   progress?: number; // watched progress in seconds
   viewCount?: number;
   publishedAt?: string; // ISO 8601 date string
   isPrivate?: boolean;
   isDeleted?: boolean;
   isBroken?: boolean;
-  isLive?: boolean;
   isUnavailable?: boolean;
   /** Transient UI flag: background metadata enrichment in progress (never persisted) */
   isEnriching?: boolean;
@@ -33,6 +36,7 @@ export interface NormalizedVideoMeta {
   isDeleted: boolean;
   isBroken: boolean;
   isLive: boolean;
+  isShort?: boolean;
   isUnavailable?: boolean;
   lastCachedAt: number;
   lastFetchAttempt?: number;
@@ -50,6 +54,7 @@ export interface RawVideoMeta {
   isDeleted?: boolean;
   isBroken?: boolean;
   isLive?: boolean;
+  isShort?: boolean;
 }
 
 export interface VideoMetaExport {
@@ -87,6 +92,7 @@ export interface CompleteBackupFile {
     settings: Settings;
     playlists: Playlist[];
     videoMetadata: Record<string, NormalizedVideoMeta>;
+    thumbnails?: Record<string, string>;
     history: Record<string, any>;
     syncSnapshots?: Record<string, string[]>;
   };

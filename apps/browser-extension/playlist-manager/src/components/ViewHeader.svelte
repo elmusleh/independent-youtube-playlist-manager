@@ -137,7 +137,7 @@
     <h1>
       <Fa {icon} fw />
       {#if !editingTitle}
-        {title}
+        <span class="title-text">{title}</span>
         {#if onTitleChange}
           <button
             type="button"
@@ -255,14 +255,27 @@
     {/if}
 
     {#if showSaveStatus}
-      <SaveStatus onclick={onSave} {status} isDirty={reactiveIsDirty} />
+      <SaveStatus onclick={onSave} {status} isDirty={reactiveIsDirty} showError={false} />
     {/if}
 
     {@render rightActions?.()}
   </div>
 </div>
+{#if showSaveStatus && status?.error}
+  <p class="save-error" role="alert">
+    Could not complete the save or refresh. Your edits are still open. {status.error}
+    Select Retry to try again.
+  </p>
+{/if}
 
 <style>
+  .save-error {
+    color: var(--danger-color, #ef4444);
+    margin: 0;
+    padding: 8px 24px;
+    overflow-wrap: anywhere;
+  }
+
   .view-header {
     display: flex;
     justify-content: space-between;
@@ -275,6 +288,7 @@
   }
 
   .top-left {
+    min-width: 0;
     display: flex;
     align-items: center;
     gap: 12px;
@@ -287,6 +301,8 @@
   }
 
   h1 {
+    min-width: 0;
+    flex-wrap: wrap;
     margin: 0;
     display: flex;
     align-items: center;
@@ -304,6 +320,8 @@
   }
 
   .count-badge {
+    white-space: nowrap;
+    flex-shrink: 0;
     background: var(--active-bg-color);
     color: var(--primary-color);
     padding: 4px 12px;
@@ -315,6 +333,7 @@
   }
 
   .edit-input {
+    min-width: 0;
     flex: 1;
     max-width: 500px;
     margin: 0;
@@ -393,6 +412,16 @@
   }
 
   @media (max-width: 768px) {
+    .top-left {
+      width: 100%;
+    }
+    h1 {
+      width: 100%;
+    }
+    .title-text {
+      flex: 1 1 180px;
+      min-width: 0;
+    }
     .view-header {
       flex-direction: column;
       align-items: flex-start;

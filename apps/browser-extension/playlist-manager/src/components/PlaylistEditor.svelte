@@ -50,6 +50,8 @@
   import { dbGetMetadataBatch, dbPutMetadataBatch } from "../services/db-service.js";
   import { enrichVideoMetadata } from "../services/enrichment-service.js";
   import { PAGE_SIZES } from "../services/settings-utils.js";
+  import { clampPage } from "../utils/pagination";
+  import { reorderItems } from "../utils/reorder";
 
   const browser = (window as any).browser || (window as any).chrome;
 
@@ -177,22 +179,18 @@
     _isLoadingPage = true;
 
     try {
-      let indicesToLoad = [];
       const start = (page - 1) * pageSize;
-      const end = Math.min(page * pageSize, videos.length);
+      const pageVideos = filteredVideos
+        .slice(start, start + pageSize)
+        .filter(isVideoMissingMetadata);
 
-      for (let i = start; i < end; i++) {
-        if (videos[i].title === "") indicesToLoad.push(i);
-      }
-
-      if (indicesToLoad.length > 0) {
+      if (pageVideos.length > 0) {
         if (autoFetchMetadata) {
           // Silent background fetch for missing metadata on this page
-          const pageVideos = indicesToLoad.map((i) => videos[i]);
           ensureMetadataLoaded(pageVideos, true);
         } else {
           window.info(
-            `${indicesToLoad.length} video(s) on this page are missing metadata. Enable "Auto-fetch metadata" in Settings or use Clean → Refetch Metadata.`
+            `${pageVideos.length} video(s) on this page are missing metadata. Enable "Auto-fetch metadata" in Settings or use Clean → Refetch Metadata.`
           );
         }
       }
@@ -317,6 +315,14 @@
     currentPage = e.detail.page;
     loadPageVideos(currentPage);
   }
+
+  $effect(() => {
+    const validPage = clampPage(currentPage, Math.ceil(filteredVideos.length / pageSize));
+    if (validPage !== currentPage) {
+      currentPage = validPage;
+      loadPageVideos(validPage);
+    }
+  });
 
   // Inline page-size control (persists globally as the `defaultPageSize` setting)
   function applyPageSize(nextSize: number) {
@@ -559,7 +565,12 @@
               timestamp: Date.now(),
             };
       } else {
-        target = await window.getPlaylist(copyMoveTargetPlaylistId as string);
+        const loaded = await window.getPlaylist(copyMoveTargetPlaylistId as string);
+        if (!loaded) {
+          window.error("The target playlist no longer exists. It may have been deleted.");
+          return;
+        }
+        target = loaded;
         const existing = new Set(target.videos.map((v: any) => v.videoId || v));
         const newV = selectedApiIds.filter((id) => !existing.has(id));
         if (newV.length === 0) {
@@ -619,49 +630,55 @@
   }
 
   async function performSave(data: Playlist, sync: boolean, silent = false) {
-    await status.save(
-      async () => {
-        // Guarantee all video metadata in memory is atomically written to IndexedDB
-        const metaBatch: Record<string, any> = {};
-        for (const v of videos) {
-          if (v && v.videoId && (v.title || v.channel || v.durationISO || v.durationSeconds)) {
-            metaBatch[v.videoId] = {
-              videoId: v.videoId,
-              title: v.title,
-              channel: v.channel,
-              durationISO: v.durationISO || v.duration,
-              durationSeconds: v.durationSeconds,
-              viewCount: v.viewCount,
-              publishedAt: v.publishedAt,
-              isPrivate: v.isPrivate,
-              isDeleted: v.isDeleted,
-              isBroken: v.isBroken,
-              isLive: v.isLive,
-            };
+    await status
+      .save(
+        async () => {
+          // Guarantee all video metadata in memory is atomically written to IndexedDB
+          const metaBatch: Record<string, any> = {};
+          for (const v of videos) {
+            if (v && v.videoId && (v.title || v.channel || v.durationISO || v.durationSeconds)) {
+              metaBatch[v.videoId] = {
+                videoId: v.videoId,
+                title: v.title,
+                channel: v.channel,
+                durationISO: v.durationISO || v.duration,
+                durationSeconds: v.durationSeconds,
+                viewCount: v.viewCount,
+                publishedAt: v.publishedAt,
+                isPrivate: v.isPrivate,
+                isDeleted: v.isDeleted,
+                isBroken: v.isBroken,
+                isLive: v.isLive,
+              };
+            }
           }
-        }
-        if (Object.keys(metaBatch).length > 0) {
-          await dbPutMetadataBatch(metaBatch);
-        }
+          if (Object.keys(metaBatch).length > 0) {
+            await dbPutMetadataBatch(metaBatch);
+          }
 
-        const id = await window.savePlaylist(data, { syncToYoutube: sync });
-        const wasLocal = data.isLocal;
-        playlist = {
-          ...data,
-          id,
-          ...(wasLocal && sync ? { isLocal: false, isTagged: true, saved: true } : {}),
-        };
-        loadedPlaylistKey = `${playlist.id}:${(playlist.videos || []).join(",")}`;
-        if (isPlaylistBuilder) await browser.runtime.sendMessage({ cmd: "clear-playlist-builder" });
-        initialHash = calculateStateHash();
-        isDirty = false;
-        if (!silent) {
-          window.success(sync ? "Synced & Saved" : "Saved");
-          if (isNew || isPlaylistBuilder) handleNavigate("#/saved");
-        }
-      },
-      { silent }
-    );
+          const id = await window.savePlaylist(data, { syncToYoutube: sync });
+          const wasLocal = data.isLocal;
+          playlist = {
+            ...data,
+            id,
+            ...(wasLocal && sync ? { isLocal: false, isTagged: true, saved: true } : {}),
+          };
+          loadedPlaylistKey = `${playlist.id}:${(playlist.videos || []).join(",")}`;
+          if (isPlaylistBuilder)
+            await browser.runtime.sendMessage({ cmd: "clear-playlist-builder" });
+          initialHash = calculateStateHash();
+          isDirty = false;
+          if (!silent) {
+            window.success(sync ? "Synced & Saved" : "Saved");
+            if (isNew || isPlaylistBuilder) handleNavigate("#/saved");
+          }
+        },
+        { silent }
+      )
+      .catch(() => {
+        // StatusManager retains the error and dirty state for the visible Retry action.
+        // Event handlers and autosave timers must not leak unhandled rejections.
+      });
   }
 
   async function importVideos() {
@@ -813,7 +830,7 @@
   }
 
   /** A video is missing essential metadata if it lacks title, channel, or duration. */
-  function isVideoMissingMetadata(v: Video): boolean {
+  function isVideoMissingMetadata(v: Partial<Video>): boolean {
     const title = (v.title || "").trim();
     const channel = (v.channel || "").trim();
     const hasTitle = title && title !== "undefined";
@@ -842,7 +859,7 @@
           isDeleted: c.isDeleted,
           isBroken: c.isBroken,
           isLive: c.isLive,
-          isEnriching: false,
+          isEnriching: autoFetchMetadata && isVideoMissingMetadata(c),
         };
       });
     } catch (e) {
@@ -880,7 +897,7 @@
       updateDirtyState();
       await loadPageVideos(currentPage);
       await persistAfterSort();
-      window.success("Reversed");
+      if (!status.error) window.success("Reversed");
       return;
     }
 
@@ -938,7 +955,7 @@
 
     // 6. Persist the new order + sort rules to storage immediately.
     await persistAfterSort();
-    window.success("Sorted");
+    if (!status.error) window.success("Sorted");
   }
 
   /** Callback invoked by the MultiSortModal when the user clicks "Apply & Save". */
@@ -1104,9 +1121,12 @@
                 : meta.isDeleted
                   ? "Deleted channel"
                   : "[Unavailable]"),
-            duration: meta.duration || v.duration,
-            durationISO: meta.duration || v.durationISO,
-            durationSeconds: meta.duration ? window.isoToSecs(meta.duration) : v.durationSeconds,
+            duration: meta.durationISO || meta.duration || v.duration,
+            durationISO: meta.durationISO || meta.duration || v.durationISO,
+            durationSeconds:
+              meta.durationSeconds ||
+              window.isoToSecs(meta.durationISO || meta.duration || "") ||
+              v.durationSeconds,
             viewCount: meta.viewCount !== undefined ? meta.viewCount : v.viewCount,
             publishedAt: meta.publishedAt || v.publishedAt,
             isPrivate: meta.isPrivate,
@@ -1281,8 +1301,11 @@
 
   // Misc
   async function refresh(options: { skipSave?: boolean } = {}) {
+    if (!options.skipSave && isDirty && dataLoaded) {
+      await savePlaylist({ silent: true });
+      if (status.error) return;
+    }
     await status.refresh(async () => {
-      if (!options.skipSave && isDirty && dataLoaded) await savePlaylist({ silent: true });
       window.invalidatePlaylistCache();
       loadPageVideos(currentPage);
     });
@@ -1366,18 +1389,24 @@
   // Drag & Drop
   let hovering = $state(-1);
   const dragstart = (event: any, i: number) => {
-    event.dataTransfer.setData("text/plain", (currentPage - 1) * pageSize + i);
+    event.dataTransfer.setData("text/plain", String(paginatedVideos[i].id));
   };
   const drop = async (event: any, targetIdx: number) => {
-    const start = parseInt(event.dataTransfer.getData("text/plain"));
-    const target = (currentPage - 1) * pageSize + targetIdx;
-    const updated = [...videos];
-    const item = updated.splice(start, 1)[0];
-    updated.splice(target, 0, item);
-    videos = updated;
+    const source = event.dataTransfer.getData("text/plain");
+    const target = paginatedVideos[targetIdx];
+    if (!target) return;
+    videos = reorderItems(videos, source, target.id);
     updateDirtyState();
     hovering = -1;
   };
+
+  function moveVideo(video: Video, direction: -1 | 1) {
+    const index = filteredVideos.findIndex((item) => item.id === video.id);
+    const target = filteredVideos[index + direction];
+    if (!target) return;
+    videos = reorderItems(videos, video.id, target.id);
+    updateDirtyState();
+  }
 
   const customFlip: typeof flip = (node, animation, _) => {
     return flip(node, animation, { duration: 800, easing: expoOut });
@@ -1545,6 +1574,9 @@
               }}
               ontoggleSelect={toggleSelect}
               onplayfromhere={playFromHere}
+              onmove={(direction) => moveVideo(video, direction)}
+              canMoveUp={filteredVideos[0]?.id !== video.id}
+              canMoveDown={filteredVideos[filteredVideos.length - 1]?.id !== video.id}
               {video}
               playlistId={playlist?.id}
               active={hovering === index}
@@ -1570,9 +1602,9 @@
               {/each}
             </select>
           </div>
-          {#if videos.length > pageSize}
+          {#if filteredVideos.length > pageSize}
             <PaginationNav
-              totalItems={videos.length}
+              totalItems={filteredVideos.length}
               {pageSize}
               {currentPage}
               onsetpage={updatePaginationPage}
@@ -1658,8 +1690,6 @@
 {/if}
 
 <style>
-  @import "../css/view-layout.css";
-
   .list {
     border: 1px solid var(--border-color);
     border-radius: 12px;

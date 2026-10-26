@@ -7,7 +7,7 @@ const { chromium } = require("playwright");
 const fs = require("fs");
 const path = require("path");
 
-let extId = "lppdplclfhchgkgckfmkopomahlpfjok"; // default fallback
+let extId = "dapjjdcnolpmfcnobilphjfpkmmokgid"; // verified store identity fallback
 const pathToExtension = path.resolve(__dirname, "../../dist/chrome");
 const OUT = path.resolve(__dirname, "../../docs/screenshots");
 fs.mkdirSync(OUT, { recursive: true });

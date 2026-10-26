@@ -1,5 +1,6 @@
 <script lang="ts">
   import SimpleButton from "./SimpleButton.svelte";
+  import ArchivedThumbnail from "./ArchivedThumbnail.svelte";
   import type { Video } from "../types/model.js";
   import { requestConfirm } from "../stores/confirmation.js";
   import Fa from "svelte-fa";
@@ -21,6 +22,9 @@
     ondelete,
     ontoggleSelect,
     onplayfromhere,
+    onmove,
+    canMoveUp = false,
+    canMoveDown = false,
   }: {
     video: Video;
     active: boolean;
@@ -31,6 +35,9 @@
     ondelete?: (video: Video) => void;
     ontoggleSelect?: (video: Video) => void;
     onplayfromhere?: (video: Video) => void;
+    onmove?: (direction: -1 | 1) => void;
+    canMoveUp?: boolean;
+    canMoveDown?: boolean;
   } = $props();
 
   function videoClicked() {
@@ -53,7 +60,9 @@
   }
 
   function handleKeydown(event: KeyboardEvent) {
+    if (event.target !== event.currentTarget) return;
     if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
       videoClicked();
     }
   }
@@ -150,15 +159,20 @@
   {/if}
   {#if !disableThumbnails}
     <div class="thumbnail-wrapper" class:is-enriching={video.isEnriching && !video.title}>
-      <img alt={video.title || "Video thumbnail"} src={video.thumbnailUrl} />
+      <ArchivedThumbnail
+        alt={video.title || "Video thumbnail"}
+        src={video.thumbnailUrl}
+        videoId={video.videoId}
+      />
       {#if video.isLive}
         <span class="status-badge live-badge">LIVE</span>
       {:else if video.isPrivate}
         <span class="status-badge private-badge">Private</span>
       {:else if video.isDeleted}
         <span class="status-badge deleted-badge">Deleted</span>
-      {:else if video.duration || video.durationSeconds}
-        <span class="duration-badge">{formatDuration(video.duration || video.durationSeconds)}</span
+      {:else if video.durationISO || video.duration || video.durationSeconds}
+        <span class="duration-badge"
+          >{formatDuration(video.durationISO || video.duration || video.durationSeconds)}</span
         >
       {/if}
     </div>
@@ -196,6 +210,28 @@
   </div>
   {#if !selectable}
     <div class="video-btns">
+      {#if onmove}
+        <button
+          type="button"
+          class="move-btn"
+          aria-label="Move video up"
+          disabled={!canMoveUp}
+          onclick={(e) => {
+            e.stopPropagation();
+            onmove?.(-1);
+          }}>↑</button
+        >
+        <button
+          type="button"
+          class="move-btn"
+          aria-label="Move video down"
+          disabled={!canMoveDown}
+          onclick={(e) => {
+            e.stopPropagation();
+            onmove?.(1);
+          }}>↓</button
+        >
+      {/if}
       <a
         href={video.url}
         target="_blank"
@@ -223,37 +259,64 @@
 </div>
 
 <style>
+  .move-btn {
+    width: var(--icon-btn-size);
+    min-height: var(--icon-btn-size);
+    padding: 0;
+    margin: 0;
+    border: 1px solid var(--color-border-primary);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-primary);
+    color: var(--color-text-primary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .move-btn:disabled {
+    opacity: 0.35;
+    cursor: default;
+  }
+  .move-btn:focus-visible {
+    outline: 2px solid var(--color-border-focus);
+    outline-offset: 2px;
+  }
+
   .playlist-video {
     display: flex;
-    padding: 0.5em 1em;
+    padding: var(--space-2) var(--space-4);
     cursor: pointer;
     align-items: center;
-    gap: 8px;
+    gap: var(--space-2);
     position: relative;
     user-select: none;
+    min-height: var(--touch-target-min);
   }
 
   .playlist-video:hover {
-    background-color: var(--hover-color);
+    background-color: var(--color-bg-hover);
   }
 
   .playlist-video.is-selected {
-    background-color: var(--active-bg-color);
+    background-color: var(--color-bg-active);
   }
 
   .playlist-video.is-active {
-    background-color: var(--primary-color);
-    color: #fff;
+    background-color: var(--color-brand-primary);
+    color: var(--color-text-inverse);
   }
 
   .drag-handle {
-    width: 24px;
-    height: 24px;
-    color: var(--text-muted);
+    width: var(--icon-btn-size);
+    height: var(--icon-btn-size);
+    color: var(--color-text-muted);
     cursor: grab;
     flex-shrink: 0;
     opacity: 0;
-    transition: opacity 0.2s;
+    transition: opacity var(--transition-base);
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .playlist-video:hover .drag-handle {
@@ -264,7 +327,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 24px;
+    width: var(--icon-btn-size);
     flex-shrink: 0;
   }
 
@@ -272,48 +335,48 @@
     width: 18px;
     height: 18px;
     cursor: pointer;
-    accent-color: var(--primary-color);
+    accent-color: var(--color-brand-primary);
   }
 
   .thumbnail-wrapper {
     position: relative;
     display: inline-block;
-    width: 120px;
-    height: 65px;
+    width: var(--row-thumb-width);
+    height: var(--row-thumb-height);
     flex-shrink: 0;
   }
 
-  .thumbnail-wrapper img {
+  .thumbnail-wrapper :global(img) {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
     display: block;
   }
 
   .duration-badge {
     position: absolute;
-    bottom: 4px;
-    right: 4px;
+    bottom: var(--space-1);
+    right: var(--space-1);
     background-color: rgba(0, 0, 0, 0.8);
     color: white;
-    font-size: 11px;
-    font-weight: 500;
-    padding: 2px 4px;
-    border-radius: 4px;
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    padding: var(--space-0) var(--space-1);
+    border-radius: var(--radius-sm);
     line-height: 1;
     pointer-events: none;
   }
 
   .status-badge {
     position: absolute;
-    bottom: 4px;
-    right: 4px;
+    bottom: var(--space-1);
+    right: var(--space-1);
     color: white;
-    font-size: 11px;
-    font-weight: 600;
-    padding: 2px 5px;
-    border-radius: 4px;
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+    padding: var(--space-0) var(--space-1);
+    border-radius: var(--radius-sm);
     line-height: 1;
     pointer-events: none;
     text-transform: uppercase;
@@ -352,13 +415,13 @@
     );
     background-size: 200% 100%;
     animation: shimmer 1.5s infinite;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
   }
 
   .skeleton-title {
     height: 16px;
     width: 75%;
-    margin-bottom: 6px;
+    margin-bottom: var(--space-2);
   }
 
   .skeleton-channel {
@@ -375,7 +438,7 @@
     }
   }
 
-  .thumbnail-wrapper.is-enriching img {
+  .thumbnail-wrapper.is-enriching :global(img) {
     opacity: 0.35;
     filter: blur(1px);
   }
@@ -383,10 +446,10 @@
   .loading-info {
     display: flex;
     align-items: center;
-    gap: 6px;
-    font-size: 13px;
-    color: var(--text-muted);
-    margin-bottom: 6px;
+    gap: var(--space-2);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+    margin-bottom: var(--space-2);
   }
 
   .video-details {
@@ -394,8 +457,8 @@
     display: flex;
     flex-direction: column;
     justify-content: center;
-    padding: 0 0.5em;
-    font-size: 14px;
+    padding: 0 var(--space-2);
+    font-size: var(--font-size-md);
     min-width: 0;
   }
 
@@ -407,33 +470,33 @@
   }
 
   .video-title {
-    font-weight: bold;
-    font-size: 15px;
-    margin-bottom: 2px;
+    font-weight: var(--font-weight-bold);
+    font-size: var(--font-size-md);
+    margin-bottom: var(--space-1);
   }
 
   .video-channel {
-    color: var(--text-muted);
+    color: var(--color-text-muted);
   }
 
   .video-meta {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 6px;
-    font-size: 13px;
-    color: var(--text-muted);
+    gap: var(--space-2);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
   }
 
   .video-stats {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: var(--space-1);
     opacity: 0.8;
   }
 
   .stat-separator {
-    margin: 0 2px;
+    margin: 0 var(--space-1);
     opacity: 0.6;
   }
 
@@ -441,28 +504,33 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    margin-left: 10px;
+    margin-left: var(--space-3);
     flex-shrink: 0;
     opacity: 0;
-    transition: opacity 0.2s;
-    gap: 4px;
+    transition: opacity var(--transition-base);
+    gap: var(--space-1);
   }
 
   .video-link-btn {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 32px;
-    height: 32px;
+    width: var(--icon-btn-size);
+    height: var(--icon-btn-size);
     border-radius: 50%;
-    color: var(--text-muted);
+    color: var(--color-text-muted);
     text-decoration: none;
-    transition: all 0.2s;
+    transition: all var(--transition-base);
   }
 
   .video-link-btn:hover {
-    background: var(--hover-color);
-    color: var(--primary-color);
+    background: var(--color-bg-hover);
+    color: var(--color-brand-primary);
+  }
+
+  .video-link-btn:focus-visible {
+    outline: 2px solid var(--color-border-focus);
+    outline-offset: 2px;
   }
 
   .playlist-video:hover .video-btns {
@@ -471,13 +539,19 @@
 
   @media (max-width: 768px) {
     .playlist-video {
-      padding: 0.5em;
-      gap: 10px;
+      display: grid;
+      grid-template-columns: var(--icon-btn-size) minmax(0, var(--row-thumb-width-mobile)) minmax(
+          0,
+          1fr
+        );
+      padding: var(--space-2);
+      gap: var(--space-3);
     }
 
     .thumbnail-wrapper {
-      width: 80px;
-      height: 45px;
+      grid-column: 2;
+      width: var(--row-thumb-width-mobile);
+      height: var(--row-thumb-height-mobile);
     }
 
     .duration-badge {
@@ -488,10 +562,11 @@
     }
 
     .video-details {
-      font-size: 13px;
+      grid-column: 3;
+      font-size: var(--font-size-sm);
     }
 
-    .video-title {
+    .video-details > .video-title {
       white-space: normal;
       display: -webkit-box;
       -webkit-line-clamp: 2;
@@ -504,12 +579,41 @@
     .video-btns {
       opacity: 1;
     }
+    .video-btns {
+      grid-column: 1 / -1;
+      justify-content: flex-end;
+      width: 100%;
+    }
+    .video-link-btn,
+    .move-btn {
+      min-width: var(--touch-target-min);
+    }
   }
 
   @media (max-width: 480px) {
     .video-link-btn {
-      width: 28px;
-      height: 28px;
+      width: var(--icon-btn-size);
+      height: var(--icon-btn-size);
+    }
+  }
+
+  /* Touch target enforcement for mobile */
+  @media (pointer: coarse), (max-width: 767px) {
+    .move-btn,
+    .video-link-btn,
+    .playlist-video .video-btns > * {
+      min-width: var(--touch-target-min);
+      min-height: var(--touch-target-min);
+    }
+  }
+
+  /* Reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    .skeleton-shimmer {
+      animation: none;
+    }
+    .live-badge {
+      animation: none;
     }
   }
 </style>

@@ -5,7 +5,6 @@ declare global {
     // SPA navigation guard flags
     _storageServiceLoaded?: boolean;
     _youtubeApiLoaded?: boolean;
-    _syncServiceLoaded?: boolean;
     _utilsLoaded?: boolean;
     _syncStateServiceLoaded?: boolean;
 
@@ -20,14 +19,6 @@ declare global {
 
     // ytFetch exposed on window
     ytFetch: (path: string, options?: RequestInit) => Promise<unknown>;
-
-    // SyncService class instance
-    SyncService: {
-      syncPlaylist: (playlistId: string) => Promise<void>;
-      refreshAllManaged: () => Promise<void>;
-      syncAllDirty: () => Promise<void>;
-      isSyncing: () => boolean;
-    };
 
     // Supabase sync engine
     syncEngine?: {

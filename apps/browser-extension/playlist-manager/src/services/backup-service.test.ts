@@ -2,6 +2,24 @@ import { describe, it, expect } from "vitest";
 import { validateBackupSchema } from "./backup-service";
 
 describe("validateBackupSchema", () => {
+  it("rejects active image content in thumbnail archives before any restore writes", () => {
+    expect(
+      validateBackupSchema({
+        format: "yph_full_backup",
+        schemaVersion: 2,
+        data: { playlists: [], thumbnails: { dQw4w9WgXcQ: "data:image/svg+xml;base64,YWJj" } },
+      }).valid
+    ).toBe(false);
+  });
+  it("accepts optional raster-image archives while retaining legacy backup support", () => {
+    expect(
+      validateBackupSchema({
+        format: "yph_full_backup",
+        schemaVersion: 2,
+        data: { playlists: [], thumbnails: { dQw4w9WgXcQ: "data:image/jpeg;base64,YWJj" } },
+      }).valid
+    ).toBe(true);
+  });
   it("validates a correct schemaVersion 2 backup", () => {
     const backup = {
       format: "yph_full_backup",
@@ -77,7 +95,7 @@ describe("validateBackupSchema", () => {
     const backup = {
       format: "yph_full_backup",
       schemaVersion: 2,
-      data: {},
+      data: { playlists: [] },
       extraField: "should be ignored",
       nested: { also: "ignored" },
     };
@@ -89,5 +107,29 @@ describe("validateBackupSchema", () => {
     expect(validateBackupSchema("hello").valid).toBe(false);
     expect(validateBackupSchema(42).valid).toBe(false);
     expect(validateBackupSchema(true).valid).toBe(false);
+  });
+
+  it("rejects future schemas and malformed data before an overwrite can start", () => {
+    expect(
+      validateBackupSchema({
+        format: "yph_full_backup",
+        schemaVersion: 99,
+        data: { playlists: [] },
+      }).valid
+    ).toBe(false);
+    for (const data of [
+      [],
+      {},
+      { playlists: {} },
+      { playlists: [null] },
+      { playlists: [{ videos: "invalid" }] },
+      { playlists: [], videoMetadata: [] },
+      { playlists: [], history: null },
+      { playlists: [], settings: "invalid" },
+    ]) {
+      expect(
+        validateBackupSchema({ format: "yph_full_backup", schemaVersion: 2, data }).valid
+      ).toBe(false);
+    }
   });
 });

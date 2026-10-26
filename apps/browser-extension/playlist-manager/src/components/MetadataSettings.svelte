@@ -1,6 +1,11 @@
 <script lang="ts">
   import Fa from "svelte-fa";
-  import { faGlobe, faDatabase, faTrash } from "@fortawesome/free-solid-svg-icons";
+  import {
+    faGlobe,
+    faDatabase,
+    faTrash,
+    faWandMagicSparkles,
+  } from "@fortawesome/free-solid-svg-icons";
   import SimpleButton from "./SimpleButton.svelte";
   import ToggleSwitch from "./ToggleSwitch.svelte";
   import type { Settings } from "../types/model.js";
@@ -190,12 +195,17 @@
         {metadataCacheCount === 1 ? "video" : "videos"} stored in IndexedDB (24h TTL)
       </p>
     </div>
-    <SimpleButton
-      danger={true}
-      onclick={requestClearMetadataCache}
-      title="Clear cached video titles and durations"
-    >
-      <Fa icon={faTrash} /> Clear Metadata Cache
-    </SimpleButton>
+    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+      <SimpleButton onclick={() => (window.location.hash = "#/metadata")}>
+        <Fa icon={faWandMagicSparkles} /> Open Data Manager
+      </SimpleButton>
+      <SimpleButton
+        danger={true}
+        onclick={requestClearMetadataCache}
+        title="Clear cached video titles and durations"
+      >
+        <Fa icon={faTrash} /> Clear Metadata Cache
+      </SimpleButton>
+    </div>
   </div>
 </section>

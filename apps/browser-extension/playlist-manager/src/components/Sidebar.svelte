@@ -9,16 +9,19 @@
     faLink,
     faSearch,
     faXmark,
+    faWandMagicSparkles,
   } from "@fortawesome/free-solid-svg-icons";
   import Fa from "svelte-fa";
   import { router } from "svelte-spa-router";
   import { onDestroy } from "svelte";
   import type { Settings } from "../types/model";
+  import Modal from "./Modal.svelte";
 
   const browser = (window as any).browser || (window as any).chrome;
 
   let settings: Settings | null = $state(null);
   let signedIn = $state(false);
+  let gapCount = $state(0);
 
   let { drawerOpen = false, onClose = () => {} }: { drawerOpen?: boolean; onClose?: () => void } =
     $props();
@@ -35,8 +38,48 @@
     signedIn = await window.isSignedIn();
   }
 
+  /**
+   * Number of cached entries that are not resolved (see `needsAttention` in
+   * utils/metadata-completeness). Surfaced as a badge on the Data Manager nav
+   * item; the summary's own counter keeps it identical to the Data Manager list.
+   */
+  let gapLoading = false;
+
+  async function loadGapCount() {
+    if (gapLoading) return;
+    gapLoading = true;
+    try {
+      if (typeof window.getMetadataGapSummary !== "function") {
+        gapCount = 0;
+        return;
+      }
+      const summary = await window.getMetadataGapSummary();
+      gapCount = summary.needsAttention;
+    } catch {
+      gapCount = 0;
+    } finally {
+      gapLoading = false;
+    }
+  }
+
+  /**
+   * Counting gaps means reading the whole metadata cache, so it is deferred
+   * until the app is idle instead of competing with the first paint.
+   */
+  function scheduleGapCount() {
+    const w = window as any;
+    if (typeof w.requestIdleCallback === "function") {
+      w.requestIdleCallback(() => loadGapCount(), { timeout: 3000 });
+    } else {
+      setTimeout(loadGapCount, 1200);
+    }
+  }
+
   loadSettings();
   checkAuth();
+  scheduleGapCount();
+
+  window.addEventListener("yph-metadata-changed", loadGapCount);
 
   const handleAuthChange = (e: any) => {
     signedIn = e.detail.isSignedIn;
@@ -77,6 +120,7 @@
   onDestroy(() => {
     browser.storage.onChanged.removeListener(handleStorageChange);
     window.removeEventListener("yt-auth-changed", handleAuthChange);
+    window.removeEventListener("yph-metadata-changed", loadGapCount);
   });
 </script>
 
@@ -159,104 +203,143 @@
         <hr class="nav-divider" />
       {/if}
     </div>
+
+    <a
+      href="#/metadata"
+      class="nav-item-bottom"
+      class:active={isActive("/metadata", router.location, router.querystring || "")}
+    >
+      <Fa icon={faWandMagicSparkles} fw />
+      <span>Data Manager</span>
+      {#if gapCount > 0}
+        <span
+          class="nav-badge"
+          title="{gapCount} incomplete entries"
+          aria-label="{gapCount} incomplete {gapCount === 1 ? 'entry' : 'entries'}"
+        >
+          {gapCount > 99 ? "99+" : gapCount}
+        </span>
+      {/if}
+    </a>
   </div>
 </div>
 
 <!-- Mobile drawer -->
 {#if drawerOpen}
-  <div class="mobile-drawer" class:open={drawerOpen}>
-    <div class="drawer-header">
-      <button class="drawer-close" onclick={() => onClose()} aria-label="Close navigation">
-        <Fa icon={faXmark} size="lg" />
-      </button>
-    </div>
-    <div class="drawer-nav">
-      <div class="nav-group">
-        <a
-          href="#/saved"
-          onclick={handleNavClick}
-          class:active={isActive("/saved", router.location, router.querystring || "")}
-        >
-          <Fa icon={faListUl} fw />
-          <span>All Playlists</span>
-        </a>
-        <a
-          href="#/favorite"
-          onclick={handleNavClick}
-          class:active={isActive("/favorite", router.location, router.querystring || "")}
-        >
-          <Fa icon={faStar} fw />
-          <span>Favorite Playlist</span>
-        </a>
-        <a
-          href="#/history"
-          onclick={handleNavClick}
-          class:active={isActive("/history", router.location, router.querystring || "")}
-        >
-          <Fa icon={faClockRotateLeft} fw />
-          <span>Watch History</span>
-        </a>
-        <a
-          href="#/manage"
-          onclick={handleNavClick}
-          class:active={isActive("/manage", router.location, router.querystring || "")}
-        >
-          <Fa icon={faBoxArchive} fw />
-          <span>Manage Playlists</span>
-        </a>
+  <Modal display={drawerOpen} onclose={onClose} size="drawer" title="Navigation">
+    <div class="mobile-drawer" class:open={drawerOpen}>
+      <div class="drawer-header">
+        <button class="drawer-close" onclick={() => onClose()} aria-label="Close navigation">
+          <Fa icon={faXmark} size="lg" />
+        </button>
+      </div>
+      <div class="drawer-nav">
+        <div class="nav-group">
+          <a
+            href="#/saved"
+            onclick={handleNavClick}
+            class:active={isActive("/saved", router.location, router.querystring || "")}
+          >
+            <Fa icon={faListUl} fw />
+            <span>All Playlists</span>
+          </a>
+          <a
+            href="#/favorite"
+            onclick={handleNavClick}
+            class:active={isActive("/favorite", router.location, router.querystring || "")}
+          >
+            <Fa icon={faStar} fw />
+            <span>Favorite Playlist</span>
+          </a>
+          <a
+            href="#/history"
+            onclick={handleNavClick}
+            class:active={isActive("/history", router.location, router.querystring || "")}
+          >
+            <Fa icon={faClockRotateLeft} fw />
+            <span>Watch History</span>
+          </a>
+          <a
+            href="#/manage"
+            onclick={handleNavClick}
+            class:active={isActive("/manage", router.location, router.querystring || "")}
+          >
+            <Fa icon={faBoxArchive} fw />
+            <span>Manage Playlists</span>
+          </a>
 
-        {#if signedIn && settings && (settings.enableSubscriptions || settings.enableSearch || settings.enableWatchLater || settings.enableOpenById)}
-          <hr class="nav-divider" />
+          {#if signedIn && settings && (settings.enableSubscriptions || settings.enableSearch || settings.enableWatchLater || settings.enableOpenById)}
+            <hr class="nav-divider" />
 
-          {#if settings.enableSubscriptions}
-            <a
-              href="#/subscriptions"
-              onclick={handleNavClick}
-              class:active={isActive("/subscriptions", router.location, router.querystring || "")}
-            >
-              <Fa icon={faUsers} fw />
-              <span>Subscriptions</span>
-            </a>
+            {#if settings.enableSubscriptions}
+              <a
+                href="#/subscriptions"
+                onclick={handleNavClick}
+                class:active={isActive("/subscriptions", router.location, router.querystring || "")}
+              >
+                <Fa icon={faUsers} fw />
+                <span>Subscriptions</span>
+              </a>
+            {/if}
+
+            {#if settings.enableSearch}
+              <a
+                href="#/search"
+                onclick={handleNavClick}
+                class:active={isActive("/search", router.location, router.querystring || "")}
+              >
+                <Fa icon={faSearch} fw />
+                <span>YouTube Search</span>
+              </a>
+            {/if}
+
+            {#if settings.enableWatchLater}
+              <a
+                href="#/editor?id=WL"
+                onclick={handleNavClick}
+                class:active={isActive("/editor", router.location, router.querystring || "", true)}
+              >
+                <Fa icon={faClock} fw />
+                <span>Watch Later</span>
+              </a>
+            {/if}
+
+            {#if settings.enableOpenById}
+              <a
+                href="#/open-by-id"
+                onclick={handleNavClick}
+                class:active={isActive("/open-by-id", router.location, router.querystring || "")}
+              >
+                <Fa icon={faLink} fw />
+                <span>Open by ID</span>
+              </a>
+            {/if}
+
+            <hr class="nav-divider" />
           {/if}
+        </div>
 
-          {#if settings.enableSearch}
-            <a
-              href="#/search"
-              onclick={handleNavClick}
-              class:active={isActive("/search", router.location, router.querystring || "")}
+        <a
+          href="#/metadata"
+          onclick={handleNavClick}
+          class="nav-item-bottom"
+          class:active={isActive("/metadata", router.location, router.querystring || "")}
+        >
+          <Fa icon={faWandMagicSparkles} fw />
+          <span>Data Manager</span>
+          {#if gapCount > 0}
+            <span
+              class="nav-badge"
+              title="{gapCount} incomplete entries"
+              aria-label="{gapCount} incomplete {gapCount === 1 ? 'entry' : 'entries'}"
             >
-              <Fa icon={faSearch} fw />
-              <span>YouTube Search</span>
-            </a>
+              {gapCount > 99 ? "99+" : gapCount}
+            </span>
           {/if}
-
-          {#if settings.enableWatchLater}
-            <a
-              href="#/editor?id=WL"
-              onclick={handleNavClick}
-              class:active={isActive("/editor", router.location, router.querystring || "", true)}
-            >
-              <Fa icon={faClock} fw />
-              <span>Watch Later</span>
-            </a>
-          {/if}
-
-          {#if settings.enableOpenById}
-            <a
-              href="#/open-by-id"
-              onclick={handleNavClick}
-              class:active={isActive("/open-by-id", router.location, router.querystring || "")}
-            >
-              <Fa icon={faLink} fw />
-              <span>Open by ID</span>
-            </a>
-          {/if}
-
-          <hr class="nav-divider" />
-        {/if}
+        </a>
       </div>
     </div>
-  </div>
+  </Modal>
 {/if}
 
 <style>
@@ -273,6 +356,28 @@
 
   .top-nav {
     flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Pinned to the bottom of the sidebar so the entry point stays reachable */
+  .nav-item-bottom {
+    margin-top: auto;
+  }
+
+  .nav-badge {
+    margin-left: auto;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 10px;
+    background-color: var(--color-brand-primary, var(--active-bg-color));
+    color: var(--color-text-inverse, var(--active-text-color));
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 20px;
+    text-align: center;
+    flex-shrink: 0;
   }
 
   .nav-group {
@@ -336,21 +441,11 @@
     .mobile-drawer {
       display: flex;
       flex-direction: column;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 260px;
-      height: 100vh;
+      width: 100%;
       background-color: var(--sidebar-bg-color);
       border-right: 1px solid var(--border-color);
-      z-index: 999;
-      transform: translateX(-100%);
       transition: transform 0.25s ease;
       padding: 8px 0;
-    }
-
-    .mobile-drawer.open {
-      transform: translateX(0);
     }
 
     .drawer-header {
@@ -385,10 +480,17 @@
       flex: 1;
       overflow-y: auto;
       padding: 0 8px;
+      display: flex;
+      flex-direction: column;
     }
 
     .drawer-nav .nav-group {
       flex-direction: column;
+    }
+
+    .drawer-nav .nav-item-bottom {
+      margin-top: auto;
+      margin-bottom: 8px;
     }
   }
 </style>

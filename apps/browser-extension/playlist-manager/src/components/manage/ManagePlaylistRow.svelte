@@ -15,6 +15,7 @@
     faHeart,
   } from "@fortawesome/free-solid-svg-icons";
   import SimpleButton from "../SimpleButton.svelte";
+  import ArchivedThumbnail from "../ArchivedThumbnail.svelte";
   import type { Playlist } from "../../types/model";
 
   let {
@@ -85,7 +86,7 @@
 
   <div class="row-thumb">
     {#if playlist.thumbnailUrl}
-      <img src={playlist.thumbnailUrl} alt={playlist.title} loading="lazy" />
+      <ArchivedThumbnail src={playlist.thumbnailUrl} alt={playlist.title} />
     {:else}
       <div class="thumb-placeholder">
         <Fa icon={faBars} size="lg" />
@@ -203,8 +204,6 @@
 </div>
 
 <style>
-  @import "../../css/view-layout.css";
-
   .list-row.dragging {
     opacity: 0.5;
     background: var(--active-bg-color);

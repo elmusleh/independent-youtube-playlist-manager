@@ -2,6 +2,7 @@
   import Fa from "svelte-fa";
   import { faListUl, faStar } from "@fortawesome/free-solid-svg-icons";
   import SimpleButton from "./SimpleButton.svelte";
+  import ArchivedThumbnail from "./ArchivedThumbnail.svelte";
   import SyncStatusIndicator from "./SyncStatusIndicator.svelte";
   import type { Playlist } from "../types/model";
 
@@ -44,15 +45,15 @@
   function getCategoryBadge(category?: string) {
     switch (category) {
       case "local":
-        return { label: "Local", color: "#06b6d4" };
+        return { label: "Local", color: "var(--color-brand-primary)" };
       case "youtube":
-        return { label: "YouTube", color: "#ef4444" };
+        return { label: "YouTube", color: "var(--color-brand-danger)" };
       case "liked":
-        return { label: "Liked", color: "#ec4899" };
+        return { label: "Liked", color: "var(--color-brand-pink)" };
       case "uploaded":
-        return { label: "Uploaded", color: "#8b5cf6" };
+        return { label: "Uploaded", color: "var(--color-brand-purple)" };
       case "account":
-        return { label: "Account", color: "#f59e0b" };
+        return { label: "Account", color: "var(--color-brand-warning)" };
       default:
         return null;
     }
@@ -64,7 +65,7 @@
 <div class="playlist-card">
   <button type="button" class="playlist-thumbnail" onclick={onOpen} aria-label="Open {title}">
     {#if thumbnailUrl}
-      <img src={thumbnailUrl} alt={title} class="thumbnail-img" />
+      <ArchivedThumbnail src={thumbnailUrl} alt={title} />
     {:else}
       <div class="thumbnail-placeholder">
         <Fa icon={faListUl} size="2x" />
@@ -122,29 +123,29 @@
 
 <style>
   .playlist-card {
-    flex: 0 1 300px;
-    max-width: 300px;
-    border-radius: 12px;
+    flex: 0 1 var(--card-min-width);
+    max-width: var(--card-min-width);
+    border-radius: var(--radius-card);
     overflow: hidden;
-    background: var(--background-color);
-    border: 1px solid var(--border-color);
+    background: var(--color-bg-primary);
+    border: 1px solid var(--color-border-primary);
     transition:
-      box-shadow 0.2s,
-      transform 0.2s;
+      box-shadow var(--transition-base),
+      transform var(--transition-base);
     display: flex;
     flex-direction: column;
   }
 
   .playlist-card:hover {
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
-    transform: translateY(-3px);
+    box-shadow: var(--color-shadow-lg);
+    transform: translateY(-4px);
   }
 
   .playlist-thumbnail {
     position: relative;
     aspect-ratio: 16 / 9;
     width: 100%;
-    background: #1a1a1a;
+    background: var(--color-bg-secondary);
     cursor: pointer;
     overflow: hidden;
     display: flex;
@@ -154,14 +155,14 @@
     padding: 0;
   }
 
-  .thumbnail-img {
+  .playlist-thumbnail :global(img) {
     width: 100%;
     height: 100%;
     object-fit: cover;
   }
 
   .thumbnail-placeholder {
-    color: #555;
+    color: var(--color-text-muted);
   }
 
   .view-overlay {
@@ -172,7 +173,7 @@
     align-items: center;
     justify-content: center;
     opacity: 0;
-    transition: opacity 0.2s ease;
+    transition: opacity var(--transition-base) ease;
   }
 
   .playlist-thumbnail:hover .view-overlay {
@@ -180,48 +181,48 @@
   }
 
   .view-overlay-text {
-    color: #fff;
-    font-size: 13px;
-    font-weight: 600;
+    color: var(--color-text-inverse);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
     background: rgba(0, 0, 0, 0.45);
-    padding: 6px 14px;
-    border-radius: 20px;
+    padding: var(--space-2) var(--space-4);
+    border-radius: var(--radius-pill);
     border: 1px solid rgba(255, 255, 255, 0.25);
   }
 
   .video-count-overlay {
     position: absolute;
-    bottom: 8px;
-    right: 8px;
+    bottom: var(--space-2);
+    right: var(--space-2);
     background: rgba(0, 0, 0, 0.85);
-    color: white;
-    padding: 3px 8px;
-    border-radius: 4px;
-    font-size: 12px;
-    font-weight: 600;
+    color: var(--color-text-inverse);
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: var(--space-1);
     z-index: 1;
   }
 
   .playlist-details {
-    padding: 12px;
+    padding: var(--space-3);
   }
 
   .playlist-title-row {
     display: flex;
     align-items: flex-start;
-    gap: 6px;
-    margin-bottom: 10px;
+    gap: var(--space-2);
+    margin-bottom: var(--space-3);
   }
 
   .playlist-title {
     margin: 0;
     flex: 1;
     min-width: 0;
-    font-size: 14px;
-    font-weight: 700;
+    font-size: var(--font-size-md);
+    font-weight: var(--font-weight-bold);
     line-height: 1.4;
     height: 40px;
     cursor: pointer;
@@ -232,28 +233,28 @@
     overflow: hidden;
     background: none;
     border: none;
-    color: var(--text-color);
+    color: var(--color-text-primary);
     padding: 0;
     text-align: left;
   }
 
   .status-overlay {
     position: absolute;
-    top: 8px;
-    left: 8px;
+    top: var(--space-2);
+    left: var(--space-2);
     z-index: 2;
   }
 
   .favorite-overlay {
     position: absolute;
-    bottom: 8px;
-    left: 8px;
+    bottom: var(--space-2);
+    left: var(--space-2);
     z-index: 3;
   }
 
   .favorite-badge {
-    background: rgba(255, 193, 7, 0.92);
-    color: #111;
+    background: var(--color-brand-warning);
+    color: var(--color-text-inverse);
     width: 26px;
     height: 26px;
     border-radius: 50%;
@@ -261,12 +262,12 @@
     align-items: center;
     justify-content: center;
     font-size: 12px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+    box-shadow: var(--color-shadow-md);
   }
 
   .fav-star-inline {
-    color: #ffc107;
-    font-size: 13px;
+    color: var(--color-brand-warning);
+    font-size: var(--font-size-sm);
     flex-shrink: 0;
     padding-top: 3px;
     pointer-events: none;
@@ -274,13 +275,13 @@
 
   .category-badge {
     position: absolute;
-    top: 8px;
-    right: 8px;
-    color: white;
-    font-size: 10px;
-    font-weight: 700;
-    padding: 4px 8px;
-    border-radius: 12px;
+    top: var(--space-2);
+    right: var(--space-2);
+    color: var(--color-text-inverse);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-bold);
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-pill);
     text-transform: uppercase;
     letter-spacing: 0.5px;
     z-index: 2;
@@ -288,7 +289,7 @@
 
   .playlist-actions {
     display: flex;
-    gap: 8px;
+    gap: var(--space-2);
     flex-wrap: wrap;
   }
 
@@ -299,11 +300,31 @@
     }
 
     .playlist-actions {
-      gap: 6px;
+      gap: var(--space-2);
     }
 
     .playlist-actions :global(.btn span) {
-      font-size: 12px;
+      font-size: var(--font-size-sm);
+    }
+  }
+
+  /* Touch target enforcement for mobile */
+  @media (pointer: coarse), (max-width: 767px) {
+    .playlist-actions :global(.btn) {
+      min-height: var(--touch-target-comfortable);
+    }
+  }
+
+  /* Reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    .playlist-card {
+      transition: none;
+    }
+    .playlist-card:hover {
+      transform: none;
+    }
+    .view-overlay {
+      transition: none;
     }
   }
 </style>

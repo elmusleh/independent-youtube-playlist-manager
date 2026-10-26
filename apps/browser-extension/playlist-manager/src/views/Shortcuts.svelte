@@ -224,8 +224,6 @@
 </main>
 
 <style>
-  @import "../css/view-layout.css";
-
   .shortcuts-container {
     background: var(--background-color);
     border: 1px solid var(--border-color);

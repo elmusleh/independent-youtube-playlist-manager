@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { getFirefoxRedirectUri } from "../utils/oauth-response";
   import Fa from "svelte-fa";
   import {
     faKey,
@@ -45,9 +46,7 @@
       const manifest = browser.runtime.getManifest();
       const geckoId = manifest?.browser_specific_settings?.gecko?.id;
       if (geckoId) {
-        // UUID-style IDs (e.g. {abcd-...}) get the braces stripped for the URL
-        const cleanId = geckoId.replace(/^\{|\}$/g, "");
-        redirectUri = `https://${cleanId}.extensions.allizom.org/`;
+        redirectUri = await getFirefoxRedirectUri(geckoId);
       } else {
         // Fallback if gecko ID not found in manifest
         redirectUri = "";
@@ -141,8 +140,9 @@
   async function testConnection() {
     testStatus = "testing";
     testMessage = "Starting authentication flow...";
+    // Keep signIn in the user gesture for Firefox's optional consent prompt.
     if (window.logSystemEvent)
-      await window.logSystemEvent("INFO", "[DEV-SETUP] Testing connection with custom credentials");
+      void window.logSystemEvent("INFO", "[DEV-SETUP] Testing connection with custom credentials");
 
     try {
       // Force sign in to ensure token with new client ID is fetched
@@ -161,7 +161,7 @@
           );
       } else {
         testStatus = "error";
-        testMessage = "Failed to fetch channel data. Check your API Key and quotas.";
+        testMessage = "Failed to fetch channel data. Check your OAuth access and quota.";
         if (window.logSystemEvent)
           await window.logSystemEvent(
             "ERROR",
@@ -179,7 +179,7 @@
         testMessage =
           "Redirect URI mismatch: Copy the redirect URI(s) shown below and add them to your Google Cloud Console OAuth client under Authorized redirect URIs.";
       } else if (code === "credentials_missing") {
-        testMessage = "No credentials set. Enter your Client ID and API Key above first.";
+        testMessage = "No OAuth Client ID set. Enter your Client ID above first.";
       } else {
         testMessage = "Connection failed: " + errMsg;
       }
@@ -230,8 +230,9 @@
         </div>
         <p>
           To prevent hitting the extension's shared usage limits, you can configure the extension to
-          use your own Google Cloud Console credentials. This requires setting up a project and
-          generating your own Client ID and API Key.
+          use your own Google Cloud Console credentials. A Client ID is required for interactive
+          sign-in. An API key is optional and is only used for public metadata fallback while signed
+          out.
         </p>
       </section>
 
@@ -274,7 +275,8 @@
               Go to <strong>APIs & Services > Credentials</strong>.
             </li>
             <li>
-              Click <strong>Create Credentials > API Key</strong>. Copy the generated key.
+              <strong>Optional:</strong> Click <strong>Create Credentials > API Key</strong>. Copy
+              the generated key. This is only needed for signed-out public metadata fallback.
             </li>
             <li>
               Click <strong>Create Credentials > OAuth client ID</strong>.
@@ -353,9 +355,9 @@
           </div>
 
           <div class="field">
-            <label for="apiKey">API Key / Client Secret</label>
+            <label for="apiKey">API Key (optional)</label>
             <input
-              aria-label="API Key or Client Secret"
+              aria-label="API Key (optional)"
               id="apiKey"
               type="text"
               bind:value={apiKey}
@@ -389,8 +391,6 @@
 </main>
 
 <style>
-  @import "../css/view-layout.css";
-
   .status-container {
     height: 32px;
     display: flex;

@@ -9,7 +9,7 @@ The fastest and most reliable way to reach us is through GitHub Issues:
 
 When reporting a bug, please include:
 
-1. **Browser & version** (e.g., Chrome 126, Firefox 140).
+1. **Browser & version** (e.g., Chrome 126, Edge 126, Firefox 140).
 2. **Extension version** (visible in Settings → System Info).
 3. **Steps to reproduce** — what you did, what you expected, what happened.
 4. **Screenshots** or error messages, if any.

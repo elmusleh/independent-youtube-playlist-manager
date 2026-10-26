@@ -1,0 +1,156 @@
+/* Shared responsive contracts. Component-specific layout remains in components. */
+:root {
+  --app-header-height: 56px;
+  --page-gutter: 24px;
+}
+html {
+  scroll-padding-top: calc(var(--app-header-height) + 16px);
+}
+body {
+  overflow-wrap: anywhere;
+}
+button,
+a,
+input,
+select,
+textarea {
+  touch-action: manipulation;
+}
+:focus-visible {
+  outline: 2px solid var(--primary-color, #065fd4);
+  outline-offset: 3px;
+}
+input,
+select,
+textarea {
+  max-width: 100%;
+}
+img {
+  max-width: 100%;
+}
+.router-outlet .view-scroll-container {
+  height: auto;
+  min-width: 0;
+  overflow: visible;
+}
+.router-outlet .view-body {
+  min-width: 0;
+  overflow: visible;
+}
+.router-outlet .view-container {
+  height: auto;
+  overflow: visible;
+}
+.router-outlet .toolbar,
+.router-outlet .toolbar-left,
+.router-outlet .toolbar-right,
+.router-outlet .toolbar-group,
+.router-outlet .row-meta {
+  flex-wrap: wrap;
+  min-width: 0;
+}
+.row-actions:focus-within,
+.list-row:focus-within .row-actions {
+  opacity: 1;
+}
+.router-outlet .search-box {
+  min-width: min(280px, 100%);
+}
+.router-outlet .grid-view {
+  grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr));
+}
+
+@media (max-width: 768px) {
+  :root {
+    --app-header-height: 52px;
+    --page-gutter: 16px;
+  }
+  :root:has(header .search-container) {
+    --app-header-height: 104px;
+  }
+  html {
+    scrollbar-gutter: auto;
+  }
+  body input:not([type="checkbox"]):not([type="radio"]),
+  body textarea,
+  body select {
+    font-size: 16px;
+  }
+  .router-outlet .view-header {
+    min-width: 0;
+    gap: 12px;
+  }
+  .router-outlet .right-actions,
+  .router-outlet .header-actions {
+    flex-wrap: wrap;
+    min-width: 0;
+  }
+  .router-outlet .card {
+    padding: 16px;
+    gap: 16px;
+  }
+  .router-outlet .row-main,
+  .router-outlet .video-info {
+    min-width: 0;
+  }
+  .router-outlet .video-btns {
+    flex-wrap: wrap;
+  }
+  .router-outlet .playlist-video {
+    flex-wrap: wrap;
+  }
+  .router-outlet .playlist-video .video-btns {
+    margin-left: auto;
+  }
+  .router-outlet .undo-toast {
+    min-width: 0;
+    width: calc(100vw - 32px);
+    flex-wrap: wrap;
+  }
+  .router-outlet .dropdown-menu {
+    min-width: min(260px, calc(100vw - 32px));
+    max-width: calc(100vw - 32px);
+  }
+}
+@media (pointer: coarse), (max-width: 768px) {
+  body button,
+  body .btn,
+  body .video-link-btn,
+  body .drawer-close {
+    min-height: 44px;
+  }
+  body .icon-btn,
+  body .icon-only,
+  body .video-link-btn,
+  body .drawer-close,
+  body .create-btn,
+  body .menu-toggle,
+  body .close-btn {
+    min-width: 44px;
+  }
+  body input:not([type="checkbox"]):not([type="radio"]),
+  body select {
+    min-height: 44px;
+  }
+  body .check-label,
+  body .radio-label,
+  body .checkbox-label {
+    min-height: 44px;
+  }
+  .row-actions {
+    opacity: 1;
+  }
+}
+@media (max-height: 480px) and (max-width: 1024px) {
+  .router-outlet .sticky-header-container {
+    position: static;
+  }
+}
+@supports (padding: env(safe-area-inset-bottom)) {
+  .router-outlet {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .toast-container {
+    margin-bottom: env(safe-area-inset-bottom);
+  }
+}

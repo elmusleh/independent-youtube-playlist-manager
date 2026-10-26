@@ -18,6 +18,7 @@ export const metadata: Metadata = {
     "offline YouTube playlists",
     "browser extension",
     "Chrome Web Store",
+    "Microsoft Edge Add-on",
     "Firefox Add-on",
     "zero quota scraping",
     "playlist backup",

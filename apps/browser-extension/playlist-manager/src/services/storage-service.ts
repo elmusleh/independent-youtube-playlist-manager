@@ -129,7 +129,21 @@ window.getLocalPlaylists = async (): Promise<Playlist[]> => {
 // Keep a local reference for internal use
 const getLocalPlaylists = window.getLocalPlaylists;
 
+/**
+ * Playlists reach the storage layer carrying whatever the UI handed us — often a
+ * Svelte 5 reactive proxy (`$state`). `structuredClone`, and therefore both
+ * IndexedDB and extension storage, refuses to clone a Proxy and throws
+ * DataCloneError. Persist a plain snapshot so a playlist with reactive
+ * `sortRules` (or any nested reactive array) still saves.
+ */
+function toPlainPlaylists(playlists: Playlist[]): Playlist[] {
+  return JSON.parse(JSON.stringify(playlists)) as Playlist[];
+}
+
 async function saveLocalPlaylist(playlist: Playlist): Promise<string> {
+  // Browser storage uses structured cloning, which rejects nested Svelte proxies.
+  // A shallow spread leaves reactive arrays/objects (notably sortRules) intact.
+  playlist = JSON.parse(JSON.stringify(playlist)) as Playlist;
   if (typeof browser === "undefined") return playlist.id;
   const playlists = await getLocalPlaylists();
   let id = playlist.id;
@@ -147,7 +161,7 @@ async function saveLocalPlaylist(playlist: Playlist): Promise<string> {
     playlists.push(newPlaylist);
   }
 
-  await browser.storage.local.set({ [LOCAL_PLAYLISTS_KEY]: playlists });
+  await browser.storage.local.set({ [LOCAL_PLAYLISTS_KEY]: toPlainPlaylists(playlists) });
   return id;
 }
 
@@ -155,7 +169,7 @@ async function removeLocalPlaylist(id: string): Promise<void> {
   if (typeof browser === "undefined") return;
   const playlists = await getLocalPlaylists();
   const filtered = playlists.filter((p) => p.id !== id);
-  await browser.storage.local.set({ [LOCAL_PLAYLISTS_KEY]: filtered });
+  await browser.storage.local.set({ [LOCAL_PLAYLISTS_KEY]: toPlainPlaylists(filtered) });
 }
 
 window.ensureWatchLaterPlaylist = async (
@@ -252,7 +266,7 @@ window.ensureWatchLaterPlaylist = async (
   }
 };
 
-// ─── Sync Snapshot Helpers (used by sync-service for conflict detection) ──────
+// ─── Sync Snapshot Helpers ────────────────────────────────────────────────────
 
 const SYNC_SNAPSHOTS_KEY = "yph_sync_snapshots";
 
@@ -935,9 +949,23 @@ window.adoptPlaylist = async (ytId: string): Promise<void> => {
 
 let _cachedSettings: Settings | null = null;
 let _settingsInFlight: Promise<Settings> | null = null;
+let _settingKeys = new Set<string>();
 
 export function invalidateSettingsCache() {
   _cachedSettings = null;
+}
+
+// Settings can change in another extension tab, the popup, or browser sync.
+if (typeof browser !== "undefined") {
+  browser.storage.onChanged.addListener((changes, area) => {
+    if (
+      area === "sync" ||
+      (area === "local" && Object.keys(changes).some((key) => _settingKeys.has(key)))
+    ) {
+      invalidateSettingsCache();
+    }
+    if (area === "local" && changes[LOCAL_PLAYLISTS_KEY]) bustCache();
+  });
 }
 
 if (typeof browser !== "undefined") {
@@ -1087,6 +1115,7 @@ window.getSettings = async (): Promise<Settings> => {
       customInvidiousInstances: "",
       customPipedInstances: "",
     };
+    _settingKeys = new Set(Object.keys(DEFAULT_SETTINGS));
 
     if (typeof browser === "undefined" || !browser.storage) {
       if (typeof localStorage !== "undefined") {

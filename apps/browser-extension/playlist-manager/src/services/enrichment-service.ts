@@ -1,4 +1,4 @@
-/// <reference path="../types/services.d.ts" />
+/// <reference path="../types/services.ts" />
 
 /**
  * Background metadata enrichment coordinator.
@@ -10,6 +10,7 @@
  */
 import { dbPutMetadataBatch } from "./db-service.js";
 import type { NormalizedVideoMeta } from "../types/model.js";
+import { clearForcedRefetch, markForcedRefetch } from "./refresh-registry.js";
 
 export interface EnrichmentResult {
   /** videoId -> resolved metadata (only videos the engine actually resolved) */
@@ -19,7 +20,13 @@ export interface EnrichmentResult {
 }
 
 export interface EnrichmentOptions {
-  /** Clear the persistent IndexedDB cache first (full source refetch) */
+  /**
+   * Re-fetch even when a cached row exists.
+   *
+   * This does NOT delete cached rows. Ids are marked in the refresh registry so
+   * the fetch path bypasses the persistent cache, results overwrite the old rows
+   * on success, and a failed fetch leaves the previous entry intact.
+   */
   force?: boolean;
   /** Called after each batch: (fetchedCount, totalCount) */
   onProgress?: (fetched: number, total: number) => void;
@@ -46,21 +53,23 @@ export async function enrichVideoMetadata(
     window.clearMetadataSessionCache(videoIds);
   }
 
-  // For a force refetch, also clear the persistent cache so we hit the APIs.
-  if (force && window.videoService) {
-    await window.videoService.clearCache(videoIds);
-  }
+  // A forced refetch bypasses the cache without deleting it.
+  if (force) markForcedRefetch(videoIds);
 
-  for (let i = 0; i < videoIds.length; i += BATCH_SIZE) {
-    if (shouldCancel?.()) break;
+  try {
+    for (let i = 0; i < videoIds.length; i += BATCH_SIZE) {
+      if (shouldCancel?.()) break;
 
-    const batch = videoIds.slice(i, i + BATCH_SIZE);
-    const batchResults = await window.ytFetchVideoDurations(batch);
-    batchResults.forEach((val, key) => {
-      metaMap.set(key, val);
-    });
+      const batch = videoIds.slice(i, i + BATCH_SIZE);
+      const batchResults = await window.ytFetchVideoDurations(batch);
+      batchResults.forEach((val, key) => {
+        metaMap.set(key, val);
+      });
 
-    onProgress?.(Math.min(i + BATCH_SIZE, videoIds.length), videoIds.length);
+      onProgress?.(Math.min(i + BATCH_SIZE, videoIds.length), videoIds.length);
+    }
+  } finally {
+    if (force) clearForcedRefetch(videoIds);
   }
 
   // IDs not resolved by any tier are flagged as unavailable. These placeholders
