@@ -5,10 +5,20 @@ const DB_VERSION = 1;
 const STORE_NAME = "metadata";
 const VIDEO_META_PREFIX = "yph:meta:";
 
+/**
+ * Generates the IndexedDB key for a video's metadata entry.
+ * @param videoId - The YouTube video ID
+ * @returns The prefixed key string (yph:meta:<videoId>)
+ */
 export function metaKey(videoId: string): string {
   return VIDEO_META_PREFIX + sanitizeVideoId(videoId);
 }
 
+/**
+ * Checks whether a key string follows the metadata key pattern.
+ * @param key - The key to check
+ * @returns true if the key starts with the metadata prefix
+ */
 export function isMetaKey(key: any): boolean {
   return typeof key === "string" && key.startsWith(VIDEO_META_PREFIX);
 }

@@ -828,6 +828,11 @@ const INNERTUBE_CLIENTS = [
  * which in turn made them look "complete" and stopped all later tiers from
  * recovering the missing duration.
  */
+/**
+ * Detects whether a video is a live stream from Innertube player response data.
+ * @param data - The Innertube player response object
+ * @returns true if the video is currently live or an upcoming premiere
+ */
 export function detectLiveStream(data: InnertubeResponse | undefined): boolean {
   if (!data) return false;
 
@@ -842,6 +847,11 @@ export function detectLiveStream(data: InnertubeResponse | undefined): boolean {
 }
 
 /** Shorts are served through a different UI; flag them so the UI can label them. */
+/**
+ * Detects whether a video is a YouTube Short from Innertube player response data.
+ * @param data - The Innertube player response object
+ * @returns true if the video duration is ≤ 60 seconds (Shorts threshold)
+ */
 export function detectShort(data: InnertubeResponse | undefined): boolean {
   if (!data) return false;
   const details = data.videoDetails;

@@ -258,6 +258,21 @@
       background: rgba(0, 0, 0, 0);
     }
   }
+
+  /* Fallback for browsers that don't support transition-behavior: allow-discrete */
+  @supports not (transition-behavior: allow-discrete) {
+    dialog.drawer {
+      transform: none;
+      transition: none;
+    }
+    dialog.drawer[open] {
+      transform: none;
+    }
+    dialog.drawer::backdrop {
+      background: rgba(0, 0, 0, 0.5);
+      transition: none;
+    }
+  }
   .drawer .modal-body {
     padding: 0;
   }

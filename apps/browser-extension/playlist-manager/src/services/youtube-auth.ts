@@ -13,6 +13,15 @@ const CLIENT_ID = "456478079131-cu0s6f03kou9obge8olkron2frju5j2s.apps.googleuser
 const YT_SCOPE = "https://www.googleapis.com/auth/youtube";
 const TOKEN_CACHE_KEY = "yt_auth_token_cache";
 
+/**
+ * SECURITY NOTE: OAuth tokens are stored in browser.storage.local which persists
+ * across browser sessions and is accessible to any content script with storage
+ * permission. Consider using browser.storage.session (if available) for tokens
+ * that should be cleared when the browser closes. The current approach trades
+ * security for convenience (users stay signed in across sessions).
+ * @see https://developer.chrome.com/docs/extensions/reference/api/storage
+ */
+
 interface TokenCache {
   token: string;
   expiry: number;
