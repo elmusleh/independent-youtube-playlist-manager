@@ -1723,6 +1723,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    min-width: var(--touch-target-min);
+    min-height: var(--touch-target-min);
     transition: all 0.2s;
   }
 

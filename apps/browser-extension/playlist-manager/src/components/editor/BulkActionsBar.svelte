@@ -69,12 +69,14 @@
 
 <div class="selection-bar">
   <div class="selection-info">
-    <input
-      aria-label="Select all videos"
-      type="checkbox"
-      checked={isAllSelected}
-      onchange={onToggleSelectAll}
-    />
+    <label class="selection-checkbox">
+      <input
+        aria-label="Select all videos"
+        type="checkbox"
+        checked={isAllSelected}
+        onchange={onToggleSelectAll}
+      />
+    </label>
     <span>{selectedCount} selected</span>
   </div>
 
@@ -237,7 +239,16 @@
     font-weight: 600;
   }
 
-  .selection-info input[type="checkbox"] {
+  .selection-checkbox {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: var(--touch-target-min);
+    min-height: var(--touch-target-min);
+    cursor: pointer;
+  }
+
+  .selection-checkbox input[type="checkbox"] {
     width: 18px;
     height: 18px;
     cursor: pointer;

@@ -244,8 +244,8 @@
     }
   }
 
-  /* Improved tablet layout (768px - 1023px) */
-  @media (min-width: 768px) and (max-width: 1023px) {
+  /* Improved tablet layout (769px - 1023px) */
+  @media (min-width: 769px) and (max-width: 1023px) {
     :global(.sidenav) {
       width: 220px;
     }

@@ -103,7 +103,7 @@
   {/if}
 
   {#if selectable}
-    <div class="checkbox-cell">
+    <label class="checkbox-cell">
       {#if checkbox}
         {@render checkbox()}
       {:else}
@@ -115,7 +115,7 @@
           onclick={(e) => e.stopPropagation()}
         />
       {/if}
-    </div>
+    </label>
   {/if}
 
   {#if content}
@@ -180,6 +180,8 @@
   .drag-handle {
     width: 24px;
     height: 24px;
+    min-width: var(--icon-btn-size-touch);
+    min-height: var(--icon-btn-size-touch);
     color: var(--text-muted);
     cursor: grab;
     opacity: 0;
@@ -193,7 +195,11 @@
   .checkbox-cell {
     display: flex;
     align-items: center;
+    justify-content: center;
     flex-shrink: 0;
+    min-width: var(--touch-target-min);
+    min-height: var(--touch-target-min);
+    cursor: pointer;
   }
 
   .checkbox-cell input[type="checkbox"] {

@@ -86,8 +86,10 @@
     background: none;
     border: none;
     color: var(--text-muted);
-    width: 24px;
-    height: 24px;
+    width: var(--touch-target-min);
+    min-width: var(--touch-target-min);
+    height: var(--touch-target-min);
+    min-height: var(--touch-target-min);
     border-radius: 50%;
     display: flex;
     align-items: center;

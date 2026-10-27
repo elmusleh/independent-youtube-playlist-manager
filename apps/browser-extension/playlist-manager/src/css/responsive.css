@@ -134,8 +134,11 @@ img {
   }
   body .check-label,
   body .radio-label,
-  body .checkbox-label {
+  body .checkbox-label,
+  body .check-cell,
+  body .checkbox-cell {
     min-height: 44px;
+    min-width: 44px;
   }
   .row-actions {
     opacity: 1;

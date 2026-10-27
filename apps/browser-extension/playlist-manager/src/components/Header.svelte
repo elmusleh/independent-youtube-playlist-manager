@@ -490,16 +490,16 @@
       height: 24px;
     }
     .create-btn {
-      width: 40px;
-      height: 40px;
+      width: 44px;
+      height: 44px;
     }
     .sign-in-btn {
-      width: 40px;
-      height: 40px;
+      width: 44px;
+      height: 44px;
     }
     .menu-toggle {
-      width: 40px;
-      height: 40px;
+      width: 44px;
+      height: 44px;
     }
   }
 

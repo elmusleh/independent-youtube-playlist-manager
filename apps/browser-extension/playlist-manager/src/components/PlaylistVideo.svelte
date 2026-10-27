@@ -143,7 +143,7 @@
   tabindex="0"
 >
   {#if selectable}
-    <div class="check-cell">
+    <label class="check-cell">
       <input
         aria-label="Select video"
         type="checkbox"
@@ -151,7 +151,7 @@
         onchange={() => toggleSelect()}
         onclick={(e) => e.stopPropagation()}
       />
-    </div>
+    </label>
   {:else}
     <div class="drag-handle" title="Drag to reorder">
       <Fa icon={faGripVertical} />
@@ -329,6 +329,15 @@
     justify-content: center;
     width: var(--icon-btn-size);
     flex-shrink: 0;
+  }
+
+  .check-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: var(--touch-target-min);
+    min-height: var(--touch-target-min);
+    cursor: pointer;
   }
 
   .check-cell input[type="checkbox"] {

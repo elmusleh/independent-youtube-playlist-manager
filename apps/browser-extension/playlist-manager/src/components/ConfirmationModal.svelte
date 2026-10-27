@@ -9,29 +9,34 @@
   size="small"
   title={$activeConfirmation.title}
 >
-  <h3 id="modal-title">{$activeConfirmation.title}</h3>
   <p style="white-space: pre-line">{$activeConfirmation.message}</p>
-  <div class="actions">
-    <button class="cancel" onclick={executeCancel} data-initial-focus>
-      {$activeConfirmation.cancelLabel || "Cancel"}
-    </button>
-    <button class="confirm {$activeConfirmation.color}" onclick={executeConfirm}>
-      {$activeConfirmation.confirmLabel || "Confirm"}
-    </button>
-  </div>
+  {#snippet footer()}
+    <div class="actions modal-footer">
+      <button
+        class="cancel"
+        onclick={executeCancel}
+        data-initial-focus
+        aria-label={$activeConfirmation.cancelLabel || "Cancel"}
+      >
+        {$activeConfirmation.cancelLabel || "Cancel"}
+      </button>
+      <button
+        class="confirm {$activeConfirmation.color}"
+        onclick={executeConfirm}
+        aria-label={$activeConfirmation.confirmLabel || "Confirm"}
+      >
+        {$activeConfirmation.confirmLabel || "Confirm"}
+      </button>
+    </div>
+  {/snippet}
 </Modal>
 
 <style>
-  h3 {
-    margin-top: 0;
-  }
-
   .actions {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
     gap: 1rem;
-    margin-top: 2rem;
   }
 
   button {

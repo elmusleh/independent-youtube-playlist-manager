@@ -14,6 +14,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   now means "all videos" (the injector treats it as unlimited), scrolling stops after
   three _consecutive_ stalled attempts instead of three attempts in total, and failures are
   reported inline under the form instead of in an `alert()` that dismissed the popup.
+- Mobile UX improvements across the extension popup and SPA editor: touch targets now meet
+  the 44px minimum on all interactive elements (ProfileDropdown avatar, dropdown menu items,
+  modal actions, MultiSortModal controls, SearchInput clear button, ListRow drag handles,
+  popup menu items, Header sign-in/create/menu-toggle buttons, Manage action buttons,
+  PlaybackSettings info icon, checkboxes in ListRow/PlaylistVideo/BulkActionsBar); ConfirmationModal
+  migrated to the shared Modal component with focus restoration and Escape handling; popup widths
+  aligned to design tokens (`--popup-max-width: calc(100vw - 32px)`); sidebar drawer and header
+  heights standardized via `--header-height-mobile`; tablet (768px) horizontal overflow fixed
+  by correcting media query overlap in App.svelte. Phase 4 real-device verification (screenshots,
+  manual Firefox Android test) remains pending.
 
 ### Changed
 

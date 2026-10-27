@@ -17,7 +17,7 @@
   --popup-width-mobile-lg: 390px;
   --popup-width-mobile: 360px;
   --popup-width-mobile-sm: 320px;
-  --popup-max-width: calc(100vw - 16px);
+  --popup-max-width: calc(100vw - 32px);
 }
 
 [data-theme="dark"] {
@@ -898,10 +898,11 @@ body {
   .menu-item {
     padding: 12px 12px;
     gap: 12px;
+    min-height: 48px;
   }
   .menu-item-icon {
-    width: 36px;
-    height: 36px;
+    width: 40px;
+    height: 40px;
     font-size: 14px;
   }
   .menu-item-title {

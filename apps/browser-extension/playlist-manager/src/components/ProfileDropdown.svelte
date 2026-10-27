@@ -255,7 +255,8 @@
     background: none;
     border: none;
     cursor: pointer;
-    height: 34px;
+    height: var(--touch-target-min);
+    min-height: var(--touch-target-min);
     display: flex;
     align-items: center;
     gap: 6px;
@@ -275,16 +276,18 @@
   }
 
   .avatar-btn.icon-only {
-    width: 34px;
-    height: 34px;
+    width: var(--icon-btn-size-touch);
+    min-width: var(--icon-btn-size-touch);
+    height: var(--icon-btn-size-touch);
     border-radius: 50%;
     justify-content: center;
     padding: 0;
   }
 
   .avatar-btn .avatar {
-    width: 30px;
-    height: 30px;
+    width: var(--icon-btn-size);
+    min-width: var(--icon-btn-size);
+    height: var(--icon-btn-size);
     border-radius: 50%;
     flex-shrink: 0;
     object-fit: cover;
@@ -345,7 +348,8 @@
     align-items: center;
     gap: 16px;
     padding: 0 16px;
-    height: 40px;
+    height: var(--touch-target-min);
+    min-height: var(--touch-target-min);
     background: none;
     border: none;
     color: var(--text-color);
@@ -419,7 +423,8 @@
     }
 
     .avatar-btn.logged-in {
-      height: 32px;
+      height: var(--touch-target-min);
+      min-height: var(--touch-target-min);
       padding-left: 2px;
       padding-right: 8px;
       border-radius: 16px;
@@ -435,8 +440,9 @@
     }
 
     .avatar-btn.icon-only {
-      width: 32px;
-      height: 32px;
+      width: var(--icon-btn-size-touch);
+      min-width: var(--icon-btn-size-touch);
+      height: var(--icon-btn-size-touch);
     }
   }
 

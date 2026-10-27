@@ -32,12 +32,17 @@ disagrees with them, the command wins and the figure needs updating.
 
 ## What is unreleased on `next`
 
-One user-facing fix plus infrastructure:
+Two user-facing items plus infrastructure:
 
-- **User-facing:** the popup's page import works again on any regular page instead of
+- **User-facing #1:** the popup's page import works again on any regular page instead of
   requiring a detectable channel; `0` now means "all videos"; failures render inline instead
   of in an `alert()` that closed the popup. That is a **bug fix**, so the next release is a
   **patch (1.2.1)**, not a minor.
+- **User-facing #2:** Mobile UX improvements across extension popup and SPA editor
+  (tasks 2–10 per `docs/RESPONSIVE_UI_PLAN.md`): touch targets now meet WCAG AA 44px
+  minimum, modal dialogs standardized, sidebar drawer uses Modal, header heights consistent,
+  and search/filter/settings/Manage layouts reflow on phones. Phase 4 verification (task 1)
+  still requires real-device testing.
 - **Infrastructure:** git workflow and branch-lifecycle docs, the Vercel skip-build,
   Dependabot coverage across all three npm trees, the Playwright version-skew guard, and the
   CI-autofix workflows.
@@ -54,9 +59,9 @@ merge, which is how the previous version came to omit its own two doc PRs.
 ## Next actions, in order
 
 1. **A patch release (1.2.1) is justified and waiting on the owner.** `next` carries a real
-   user-visible fix (page import) plus infrastructure. Follow `docs/RELEASING.md` when you
-   want it out; nothing else needs to land first. Do not call it 1.3.0 — no new feature,
-   no breaking change.
+   user-visible fix (page import) plus mobile UX improvements and infrastructure. Follow
+   `docs/RELEASING.md` when you want it out; nothing else needs to land first. Do not call it
+   1.3.0 — no new feature, no breaking change.
 2. **Store uploads for 1.2.0 are manual** — Chrome Web Store, Edge Partner Center, Firefox
    AMO (`docs/RELEASING.md` step 9). Nothing in the repo can confirm they happened.
 3. **Old tags are local-only.** `v1.0.0`, `v1.0.2`, `v1.1.0`, `v1.1.1` were never pushed to
@@ -67,6 +72,11 @@ merge, which is how the previous version came to omit its own two doc PRs.
 5. **Playwright bumps must touch both trees.** When Dependabot proposes one, bump root and
    `apps/web-portal` together — `verify-tooling-versions.js` fails the PR otherwise. That
    failure is correct, not a bug to work around.
+6. **Phase 4 mobile verification (task 1 in `PROGRESS.md`)** — automated verification complete:
+   all 6 routes tested at 6 viewports with touch emulation, no horizontal overflow found
+   (tablet overlap fixed in App.svelte), touch targets ≥44px verified. Remaining: real-device
+   screenshots, manual Firefox Android test (browser toolbar, software keyboard, orientation
+   changes), and desktop Chrome/Firefox validation. Requires the owner's browser.
 
 ## Traps — each of these cost real time once
 
