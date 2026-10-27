@@ -463,3 +463,7 @@ Every release follows `docs/RELEASING.md`. Short version: bump with
 stale), update `docs/RELEASE_X.Y.Z.md` and the README status block, merge the release PR,
 then push an annotated `vX.Y.Z` tag — the release workflow builds the ZIPs and publishes
 the GitHub Release with the changelog section as its body.
+
+## Post-Implementation Suggestions
+
+After each implementation, give the user exactly 3 potential improvements or next-step suggestions for this project (see `~/dev/AGENTS.md` § Post-Implementation Suggestions for format).
