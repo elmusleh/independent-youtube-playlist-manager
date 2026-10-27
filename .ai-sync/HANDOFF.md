@@ -1,5 +1,27 @@
 # Handoff — current state
 
+## Latest planning task — 2026-10-27
+
+Owner requested a OneTab-style page right-click menu matching popup capabilities.
+Plan: `docs/CONTEXT_MENU_PLAN.md`; indexed in `docs/INDEX.md`. No runtime,
+permission, version, changelog, store or deployment changes. Working branch:
+`codex/context-menu-plan`, based on `next` at `3712b8d`.
+
+Audit found limited single-video menus; popup scope/target behavior can be extracted
+into a shared headless controller. Plan covers seven tab scopes, a bounded native
+menu, searchable destination chooser, page import, remote review, safe writes/retry/
+optional closing, desktop support and Android fallback.
+
+Next: user reviews the plan, then requests implementation of its four stages. Keep
+the new feature separate from the proposed 1.2.1 patch. CM-F1/F2/F3 are recorded
+later ideas so they are not suggested again. The older state below describes the
+baseline before this documentation task.
+
+Verification: `npm run check` passed (195 tests in 22 files; zero Svelte errors,
+two existing unused-CSS warnings). `npm run build` passed for Chrome/Firefox/Edge,
+including manifest, CSS and bundle-budget gates. These verify the existing baseline;
+the proposed menu's acceptance tests have not been implemented or run.
+
 > **Read this first.** It describes the repo as of 2026-10-26, not as of whenever it was
 > written. Everything here was verified with a command at the time of writing; if something
 > looks wrong, trust the repo and fix this file.
