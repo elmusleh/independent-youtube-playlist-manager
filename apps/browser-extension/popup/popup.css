@@ -49,10 +49,53 @@ body {
 
 /* Popup responsive width breakpoints — full width on mobile, fixed on desktop */
 @media (max-width: 767px) {
+  html {
+    height: 100%;
+  }
+
   body {
     width: 100%;
     max-width: 100%;
     min-height: 100vh;
+    min-height: 100dvh;
+    font-size: 14px;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)
+      env(safe-area-inset-left);
+  }
+
+  /* Full-width primary action on mobile for easier thumb reach */
+  .action-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .execute-btn {
+    width: 100%;
+  }
+
+  /* Slightly larger fonts on mobile for readability */
+  .app-name {
+    font-size: 16px;
+  }
+
+  .section-title {
+    font-size: 14px;
+  }
+
+  .section-subtitle {
+    font-size: 12px;
+  }
+
+  .target-btn {
+    font-size: 14px;
+  }
+
+  .target-select,
+  .scope-select {
+    font-size: 14px;
+  }
+
+  .execute-btn {
+    font-size: 14px;
   }
 }
 

@@ -230,6 +230,33 @@
     height: 100dvh;
     max-height: 100dvh;
     border-radius: 0 16px 16px 0;
+    /* Slide-in animation */
+    transform: translateX(-100%);
+    transition:
+      transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+      opacity 0.3s ease,
+      display 0.3s allow-discrete,
+      overlay 0.3s allow-discrete;
+  }
+  dialog.drawer[open] {
+    transform: translateX(0);
+  }
+  @starting-style {
+    dialog.drawer[open] {
+      transform: translateX(-100%);
+    }
+  }
+  dialog.drawer::backdrop {
+    background: rgba(0, 0, 0, 0);
+    transition: background 0.3s ease;
+  }
+  dialog.drawer[open]::backdrop {
+    background: rgba(0, 0, 0, 0.5);
+  }
+  @starting-style {
+    dialog.drawer[open]::backdrop {
+      background: rgba(0, 0, 0, 0);
+    }
   }
   .drawer .modal-body {
     padding: 0;
