@@ -17,10 +17,18 @@ the new feature separate from the proposed 1.2.1 patch. CM-F1/F2/F3 are recorded
 later ideas so they are not suggested again. The older state below describes the
 baseline before this documentation task.
 
+Core implementation is now in `apps/browser-extension/shared/tab-selection.js`,
+`apps/browser-extension/background/context-menu-actions.js`, and
+`apps/browser-extension/background/context-menus.js`. It provides a desktop native
+menu with seven scopes and four destinations, keeps Android on the popup fallback,
+uses the clicked tab, deduplicates IDs, and performs local bulk writes. Page-import
+chooser, remote-write review, and native-browser integration tests remain follow-up work.
+
 Verification: `npm run check` passed (195 tests in 22 files; zero Svelte errors,
 two existing unused-CSS warnings). `npm run build` passed for Chrome/Firefox/Edge,
-including manifest, CSS and bundle-budget gates. These verify the existing baseline;
-the proposed menu's acceptance tests have not been implemented or run.
+including manifest, CSS and bundle-budget gates. `npm run test:extension` currently
+fails at the existing `/playlist-builder` fixture wait because `.playlist-video` never
+becomes visible; investigate that fixture separately before release.
 
 > **Read this first.** It describes the repo as of 2026-10-26, not as of whenever it was
 > written. Everything here was verified with a command at the time of writing; if something
@@ -28,15 +36,15 @@ the proposed menu's acceptance tests have not been implemented or run.
 
 ## Where we are
 
-|                | Value                                                                                                                |
-| -------------- | -------------------------------------------------------------------------------------------------------------------- |
-| `main`         | **v1.2.0** — tagged, GitHub Release published (4 assets), production deployed. Head moves only on a release.         |
-| `next`         | Ahead of `main`, **nothing user-facing yet**, so no release is scheduled. Head moves on every merge — do not pin it. |
-| Version        | `1.2.0` in `package.json` and `apps/browser-extension/manifest.chrome.json`                                          |
-| Open PRs       | none                                                                                                                 |
-| Branches       | `main`, `next` only. One worktree (the primary). Clean tree.                                                         |
-| Tests          | 195 passing across 22 files (`npm run test`)                                                                         |
-| Default branch | **`next`** — new PRs, clones and Dependabot all target it                                                            |
+|                | Value                                                                                                                                        |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `main`         | **v1.2.0** — tagged, GitHub Release published (4 assets), production deployed. Head moves only on a release.                                 |
+| `next`         | Ahead of `main`, **v1.2.1 patch prepared** — nothing user-facing yet, so no release is scheduled. Head moves on every merge — do not pin it. |
+| Version        | `1.2.1` in `package.json` and `apps/browser-extension/manifest.chrome.json`                                                                  |
+| Open PRs       | none                                                                                                                                         |
+| Branches       | `main`, `next` only. One worktree (the primary). Clean tree.                                                                                 |
+| Tests          | 195 passing across 22 files (`npm run test`)                                                                                                 |
+| Default branch | **`next`** — new PRs, clones and Dependabot all target it                                                                                    |
 
 `main` holds releases only. `next` absorbs everything else. A release is a squash-merged PR
 from `next` → `main`, tagged, and then `main` is merged back into `next` (see _Traps_ #5).
@@ -54,7 +62,7 @@ disagrees with them, the command wins and the figure needs updating.
 
 ## What is unreleased on `next`
 
-Two user-facing items plus infrastructure:
+One user-facing patch plus infrastructure:
 
 - **User-facing #1:** the popup's page import works again on any regular page instead of
   requiring a detectable channel; `0` now means "all videos"; failures render inline instead
@@ -80,7 +88,7 @@ merge, which is how the previous version came to omit its own two doc PRs.
 
 ## Next actions, in order
 
-1. **A patch release (1.2.1) is justified and waiting on the owner.** `next` carries a real
+1. **A patch release (1.2.1) is prepared and waiting on the owner.** `next` carries a real
    user-visible fix (page import) plus mobile UX improvements and infrastructure. Follow
    `docs/RELEASING.md` when you want it out; nothing else needs to land first. Do not call it
    1.3.0 — no new feature, no breaking change.

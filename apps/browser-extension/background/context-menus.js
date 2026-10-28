@@ -1,4 +1,4 @@
-/* eslint-disable no-console */
+/* OneTab-style native menu for YouTube tabs and links. */
 import {
   isAndroid,
   playlistBuilderId,
@@ -11,218 +11,124 @@ import {
   handleError,
   updateBadge,
 } from "./utils.js";
+import { runTabCapture, scopes, targets, videoIdFromMenu } from "./context-menu-actions.js";
+const rootId = "yphContextRoot";
+const captureId = "yphContextCapture";
+const scopeId = (scope, target) => `${captureId}${idSep}${scope}${idSep}${target}`;
 
-// ---------------------------------------------------------------------------
-// Context menu building
-// ---------------------------------------------------------------------------
-
-/**
- * @param {import("../../playlist-manager/src/types/model").Settings} settings
- */
 export async function buildContextMenus(settings) {
   const start = Date.now();
   try {
     if (isAndroid()) return;
+    browser.contextMenus.create({
+      id: rootId,
+      title: "Playlist Manager",
+      contexts: ["page", "link", "video"],
+    });
+    browser.contextMenus.create({
+      id: captureId,
+      parentId: rootId,
+      title: "Add tabs to…",
+      contexts: ["page", "link", "video"],
+    });
+    for (const [target, title] of targets) {
+      const targetId = `${captureId}${idSep}target${idSep}${target}`;
+      browser.contextMenus.create({
+        id: targetId,
+        parentId: captureId,
+        title,
+        contexts: ["page", "link", "video"],
+      });
+      for (const [scope, scopeTitle] of scopes)
+        browser.contextMenus.create({
+          id: scopeId(scope, target),
+          parentId: targetId,
+          title: scopeTitle,
+          contexts: ["page", "link", "video"],
+        });
+    }
     if (!settings.disableContextBuilder) {
       browser.contextMenus.create({
         id: playlistBuilderId,
-        title: "Add video to the playlist builder",
+        parentId: rootId,
+        title: "Add video to Playlist Builder",
         contexts: ["link", "video"],
       });
       browser.contextMenus.create({
         id: playlistBuilderPageId,
-        title: "Add video to the playlist builder",
+        parentId: rootId,
+        title: "Add video to Playlist Builder",
         contexts: ["page"],
-        documentUrlPatterns: ["https://www.youtube.com/watch*"],
       });
     }
-
     if (!settings.disableContextSaved) {
       browser.contextMenus.create({
         id: addVideoToPlaylistId,
-        title: "Add video to saved playlist",
+        parentId: rootId,
+        title: "Add video to saved playlist…",
         contexts: ["link", "video"],
       });
       browser.contextMenus.create({
         id: addVideoToPlaylistPageId,
-        title: "Add video to saved playlist",
+        parentId: rootId,
+        title: "Add video to saved playlist…",
         contexts: ["page"],
-        documentUrlPatterns: ["https://www.youtube.com/watch*"],
       });
       await buildAddVideoToPlaylistItems();
     }
   } finally {
     const duration = Date.now() - start;
-    if (duration > 100 && window.logSystemEvent) {
+    if (duration > 100 && window.logSystemEvent)
       window.logSystemEvent("PERF", `buildContextMenus took ${duration}ms`);
-    }
   }
 }
-
 async function buildAddVideoToPlaylistItems() {
-  const start = Date.now();
-  try {
-    if (isAndroid()) return;
-    const playlists = await window.getPlaylists();
-    for (const playlist of playlists) {
-      const contextId = `${addVideoToPlaylistItemPrefix}${playlist.id}`;
-      const pageContextId = `${addVideoToPlaylistPageItemPrefix}${playlist.id}`;
-      browser.contextMenus.create({
-        id: contextId,
-        title: playlist.title,
-        parentId: addVideoToPlaylistId,
-      });
-      browser.contextMenus.create({
-        id: pageContextId,
-        title: playlist.title,
-        parentId: addVideoToPlaylistPageId,
-      });
-    }
-  } finally {
-    const duration = Date.now() - start;
-    if (duration > 100 && window.logSystemEvent) {
-      window.logSystemEvent("PERF", `buildAddVideoToPlaylistItems took ${duration}ms`);
-    }
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Context menu click handler (top-level registration)
-// ---------------------------------------------------------------------------
-
-if (!isAndroid())
-  browser.contextMenus.onClicked.addListener(async (info, _tab) => {
-    const clickedMenuId = info.menuItemId.toString();
-    try {
-      if (clickedMenuId === playlistBuilderId || clickedMenuId === playlistBuilderPageId) {
-        addVideoToPlaylistBuilder(info);
-      } else if (
-        clickedMenuId.startsWith(addVideoToPlaylistItemPrefix) ||
-        clickedMenuId.startsWith(addVideoToPlaylistPageItemPrefix)
-      ) {
-        addVideoToPlaylist(info, clickedMenuId);
-      }
-    } catch (error_inner) {
-      handleError(error_inner);
-    }
-  });
-
-// ---------------------------------------------------------------------------
-// Builder helpers
-// ---------------------------------------------------------------------------
-
-/**
- * @param {browser.contextMenus.OnClickData} info
- */
-function parseVideoId(info) {
-  const link = info.linkUrl || info.pageUrl;
-  const videoId = link && window.videoService.parseYoutubeId(link);
-  if (!videoId) {
-    throw new Error("Invalid YouTube video link: " + link);
-  }
-  return videoId;
-}
-
-async function fetchBuilder() {
-  try {
-    const items = await browser.storage.local.get(playlistBuilderId);
-    if (items && items[playlistBuilderId] != null) {
-      return items[playlistBuilderId] || [];
-    }
-  } catch (err) {
-    console.error("Failed to fetch builder from storage:", err);
-  }
-  return [];
-}
-
-async function saveBuilder(playlistBuilder) {
-  const items = {};
-  items[playlistBuilderId] = playlistBuilder;
-  try {
-    await browser.storage.local.set(items);
-  } catch (err) {
-    console.error("Failed to save builder to storage:", err);
-    if (err.name === "QuotaExceededError") {
-      console.error("Storage quota exceeded!");
-    }
-  }
-}
-
-async function getPlaylistBuilderTab() {
-  const tabs = await browser.tabs.query({
-    url: browser.runtime.getURL(`/editor/index.html`),
-  });
-  return tabs.filter((tab) => tab.url && new URL(tab.url).hash === "#/playlist-builder");
-}
-
-async function openPlaylistBuilderTab() {
-  const builderTabs = await getPlaylistBuilderTab();
-  if (builderTabs.length === 0) {
-    await browser.tabs.create({
-      url: browser.runtime.getURL(`/editor/index.html#/playlist-builder`),
+  for (const playlist of await window.getPlaylists()) {
+    browser.contextMenus.create({
+      id: `${addVideoToPlaylistItemPrefix}${playlist.id}`,
+      title: playlist.title,
+      parentId: addVideoToPlaylistId,
     });
-    return [];
-  }
-  return builderTabs;
-}
-
-/**
- * @param {browser.contextMenus.OnClickData} info
- */
-async function addVideoToPlaylistBuilder(info) {
-  const start = Date.now();
-  try {
-    const videoId = parseVideoId(info);
-    const playlistBuilder = await fetchBuilder();
-    playlistBuilder.push(videoId);
-    updateBadge("" + playlistBuilder.length);
-    await saveBuilder(playlistBuilder);
-    const settings = await window.getSettings();
-    /** @type {browser.tabs.Tab[]} */
-    let builderTabs = [];
-    if (settings.openPlaylistBuilderAfterAdd) {
-      builderTabs = await openPlaylistBuilderTab();
-    } else {
-      builderTabs = await getPlaylistBuilderTab();
-    }
-    builderTabs.forEach((tab) => browser.tabs.reload(tab.id));
-  } finally {
-    const duration = Date.now() - start;
-    if (duration > 100 && window.logSystemEvent) {
-      window.logSystemEvent("PERF", `addVideoToPlaylistBuilder took ${duration}ms`);
-    }
+    browser.contextMenus.create({
+      id: `${addVideoToPlaylistPageItemPrefix}${playlist.id}`,
+      title: playlist.title,
+      parentId: addVideoToPlaylistPageId,
+    });
   }
 }
-
-/**
- * @param {browser.contextMenus.OnClickData} info
- * @param {string} clickedMenuId
- */
-async function addVideoToPlaylist(info, clickedMenuId) {
-  const start = Date.now();
-  try {
-    const videoId = parseVideoId(info);
-    const playlistId = clickedMenuId.split(idSep)[1];
-    const playlist = await window.getPlaylist(playlistId);
-    if (!playlist.videos.includes(videoId)) {
-      playlist.videos.push(videoId);
+if (!isAndroid())
+  browser.contextMenus.onClicked.addListener(async (info, tab) => {
+    const clicked = String(info.menuItemId);
+    try {
+      const match = clicked.match(new RegExp(`^${captureId}#([^#]+)#([^#]+)$`));
+      if (match && match[1] !== "target") return await runTabCapture(match[1], match[2], tab);
+      if (clicked === playlistBuilderId || clicked === playlistBuilderPageId)
+        return await addVideoToBuilder(info, tab);
+      if (
+        clicked.startsWith(addVideoToPlaylistItemPrefix) ||
+        clicked.startsWith(addVideoToPlaylistPageItemPrefix)
+      )
+        return await addVideoToPlaylist(info, clicked, tab);
+    } catch (error) {
+      handleError(error);
     }
-
-    const signedIn = await window.isSignedIn();
-    const isLocal = playlistId.startsWith("local-");
-    await window.savePlaylist(playlist, { syncToYoutube: signedIn && !isLocal });
-
-    const settings = await window.getSettings();
-    if (settings.openSavedPlaylistAfterAdd) {
-      const localParam = isLocal ? "local=true" : "saved=true";
-      await browser.tabs.create({
-        url: browser.runtime.getURL(`/editor/index.html?id=${playlistId}&${localParam}#/editor`),
-      });
-    }
-  } finally {
-    const duration = Date.now() - start;
-    if (duration > 100 && window.logSystemEvent) {
-      window.logSystemEvent("PERF", `addVideoToPlaylist took ${duration}ms`);
-    }
-  }
+  });
+async function addVideoToBuilder(info, tab) {
+  const videoId = videoIdFromMenu(info, tab);
+  if (!videoId) throw new Error("This is not a YouTube video link.");
+  const stored = await browser.storage.local.get(playlistBuilderId);
+  const current = stored[playlistBuilderId] || [];
+  if (!current.includes(videoId)) current.push(videoId);
+  await browser.storage.local.set({ [playlistBuilderId]: current });
+  updateBadge(String(current.length));
+}
+async function addVideoToPlaylist(info, clickedMenuId, tab) {
+  const videoId = videoIdFromMenu(info, tab);
+  if (!videoId) throw new Error("This is not a YouTube video link.");
+  const playlistId = clickedMenuId.split(idSep)[1];
+  const playlist = await window.getPlaylist(playlistId);
+  if (!playlist)
+    throw new Error("That playlist is no longer available. Reopen the menu to refresh it.");
+  if (!playlist.videos.includes(videoId)) playlist.videos.push(videoId);
+  await window.savePlaylist(playlist, { syncToYoutube: false });
 }

@@ -16,15 +16,23 @@ Mobile UX improvements across extension popup and SPA editor, organized per
 
 ## Open work
 
-### Proposed page context menu — plan complete, implementation not started
+### Proposed page context menu — core implementation complete
 
 - [x] Audit native menus, popup scopes/targets, import and permissions.
 - [x] Record menu design, architecture, safety rules and browser tests in
       `docs/CONTEXT_MENU_PLAN.md` (2026-10-27).
-- [ ] Implement its four delivery stages after the owner requests implementation.
+- [x] Implement desktop native menu with seven tab scopes and four safe destinations.
+- [x] Retain saved-playlist link actions, use clicked-tab context, and deduplicate captures.
+- [ ] Add page-import chooser, remote-write review, and native-browser integration tests.
 
 Later ideas CM-F1 (localization), CM-F2 (excluded sites), CM-F3 (performance budget)
 are recorded in the plan; they are suggestions, not this cycle's scope.
+
+### New follow-up suggestions (2026-10-28)
+
+- Add a first-run walkthrough for the new right-click menu and keyboard paths.
+- Add a redacted local audit log for native-menu capture jobs.
+- Add property-based URL and tab-order tests for unusual links and multi-window layouts.
 
 | #   | Task                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | Done means                                                                                                                                                                                                                                                                                                                                                                                                        | Owner |
 | --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- |
