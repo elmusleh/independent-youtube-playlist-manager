@@ -24,6 +24,9 @@ What each document is for, and who it is for. If you are an agent starting a ses
 
 ## Technical reference
 
+[CONTEXT_MENU_PLAN.md](CONTEXT_MENU_PLAN.md) — proposed OneTab-style page menu,
+shared capture design, permissions and browser tests; implementation pending.
+
 | Document                                | Purpose                                                               |
 | --------------------------------------- | --------------------------------------------------------------------- |
 | `PAGE_IMPORT_VERIFICATION.md`           | How the popup scans an arbitrary page, and how to verify it manually. |

@@ -16,6 +16,24 @@ Mobile UX improvements across extension popup and SPA editor, organized per
 
 ## Open work
 
+### Proposed page context menu — core implementation complete
+
+- [x] Audit native menus, popup scopes/targets, import and permissions.
+- [x] Record menu design, architecture, safety rules and browser tests in
+      `docs/CONTEXT_MENU_PLAN.md` (2026-10-27).
+- [x] Implement desktop native menu with seven tab scopes and four safe destinations.
+- [x] Retain saved-playlist link actions, use clicked-tab context, and deduplicate captures.
+- [ ] Add page-import chooser, remote-write review, and native-browser integration tests.
+
+Later ideas CM-F1 (localization), CM-F2 (excluded sites), CM-F3 (performance budget)
+are recorded in the plan; they are suggestions, not this cycle's scope.
+
+### New follow-up suggestions (2026-10-28)
+
+- Add a first-run walkthrough for the new right-click menu and keyboard paths.
+- Add a redacted local audit log for native-menu capture jobs.
+- Add property-based URL and tab-order tests for unusual links and multi-window layouts.
+
 | #   | Task                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | Done means                                                                                                                                                                                                                                                                                                                                                                                                        | Owner |
 | --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- |
 | 1   | **Phase 4: Real-device verification** — run the verification checklist from `docs/RESPONSIVE_UI_PLAN.md#Phase-4` on phone, tablet, and desktop widths (320×568, 390×844, 844×390, 768×1024, 1024×768, 1440×900). Capture before/after screenshots for every active page and distinct dialog families at each width. Assert no horizontal document overflow at test widths. Log every abnormality and fix it.                                                                                                                                | All active routes (Saved, Playlist/Editor, Manage, History, Search, Settings, Share, Shortcuts, Developer setup, Logs) and all dialog families (quick-add, import/export, copy/move/sort, auth, confirmation, loading) pass: no horizontal overflow, touch targets ≥44px, readable text, bounded scrolling, Escape/focus/drawer behavior. Screenshots captured. Build passes `npm run check` and `npm run build`. | agent |

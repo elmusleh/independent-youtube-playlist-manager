@@ -41,7 +41,9 @@ check` rather than a reminder in a document. Existing guards: file size, CSS bun
   benefit.
 - Sync conflict policy and OAuth refresh — need a decision before code.
 
-## Not planned
+## Proposed feature — page context menu (2026-10-27)
 
-Nothing else. If you are about to add a phase here, first check whether `PROGRESS.md`
-already lists it as open work.
+The owner requested a plan, not implementation. See `docs/CONTEXT_MENU_PLAN.md` for
+the OneTab-style menu, shared capture design, permission contract and acceptance
+tests. Keep this separate from the existing patch-release decision. Implementation
+is not started; the three later ideas at the end of the plan are outside its scope.
