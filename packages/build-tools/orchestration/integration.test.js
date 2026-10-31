@@ -7,7 +7,7 @@ import { IntegrationResult, integrateOnce } from "./integration.js";
 
 function createRepo() {
   const dir = fs.mkdtempSync(join("/tmp", "integration-test-"));
-  execSync("git init -q", { cwd: dir, stdio: "ignore" });
+  execSync("git init -q -b main", { cwd: dir, stdio: "ignore" });
   execSync('git config user.email "i@test.local"', { cwd: dir, stdio: "ignore" });
   execSync('git config user.name "Integration Test"', { cwd: dir, stdio: "ignore" });
   fs.writeFileSync(join(dir, "README.md"), "# test\n");

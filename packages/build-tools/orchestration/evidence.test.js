@@ -21,7 +21,7 @@ function sh(cwd, args) {
 
 function createRepo() {
   const dir = fs.mkdtempSync(join("/tmp", "evidence-test-"));
-  sh(dir, ["init", "-q"]);
+  sh(dir, ["init", "-q", "-b", "main"]);
   sh(dir, ["config", "user.email", "evidence@test.local"]);
   sh(dir, ["config", "user.name", "Evidence Test"]);
   fs.writeFileSync(join(dir, "README.md"), "# Evidence\n");

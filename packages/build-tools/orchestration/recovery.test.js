@@ -7,7 +7,7 @@ import { RecoveryManager, RecoveryError } from "./recovery.js";
 
 function createTempRepo() {
   const tmpDir = fs.mkdtempSync(join("/tmp", "orchestration-test-"));
-  execSync("git init", { cwd: tmpDir, stdio: "ignore" });
+  execSync("git init -b main", { cwd: tmpDir, stdio: "ignore" });
   execSync('git config user.email "test@test.com"', { cwd: tmpDir, stdio: "ignore" });
   execSync('git config user.name "Test User"', { cwd: tmpDir, stdio: "ignore" });
   fs.writeFileSync(join(tmpDir, "README.md"), "# Test Repo\n");

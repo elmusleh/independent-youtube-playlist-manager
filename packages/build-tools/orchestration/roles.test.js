@@ -22,7 +22,7 @@ import {
 
 function createTempRepo() {
   const dir = fs.mkdtempSync(join("/tmp", "roles-test-"));
-  execSync("git init -q", { cwd: dir, stdio: "ignore" });
+  execSync("git init -q -b main", { cwd: dir, stdio: "ignore" });
   execSync('git config user.email "test@test.com"', { cwd: dir, stdio: "ignore" });
   execSync('git config user.name "Test User"', { cwd: dir, stdio: "ignore" });
   fs.writeFileSync(join(dir, "README.md"), "# Test\n");
