@@ -44,8 +44,8 @@ not an assumed clean `origin/next`, when preparing prerequisites.
 
 - [x] 7.1 Have Hermes run unit/fake-service/local-remote tests and repository check/build gates sequentially; save exact commands, exit codes and tested tree/artifact identity without live remote mutation.
 - [x] 7.2 Demonstrate two disposable independent jobs and one queued job, including manual dispatch fallback, pause/review/resume and a conflict requiring intervention; deliver the status table and evidence that no shared-worktree writer overlap occurred.
-- [ ] 7.3 With an explicitly authorized real feature request and publication scope, pilot pushing its feature branch and opening one draft PR, then demonstrate idempotent resume; keep automatic merging off and preserve the current unmerged feature.
-- [ ] 7.4 Review pilot evidence and update workflow/templates with observed limitations; leave unavailable native/remote checks pending and document the explicit owner decision required before any guarded merge opt-in.
+- [x] 7.3 With an explicitly authorized real feature request and publication scope, pilot pushing its feature branch and opening one draft PR, then demonstrate idempotent resume; keep automatic merging off and preserve the current unmerged feature.
+- [x] 7.4 Review pilot evidence and update workflow/templates with observed limitations; leave unavailable native/remote checks pending and document the explicit owner decision required before any guarded merge opt-in.
 
 ## Workflow follow-up
 

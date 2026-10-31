@@ -69,6 +69,35 @@ limit, manual dispatch handoff when no agent adapter is available, implementer�
 writer handoff and resume, a conflicting target update that needs intervention, and a
 zero-overlap writer proof. The fixture is deleted afterwards.
 
+## Task 7.3 — live pilot (draft PR)
+
+Authorized by the owner ("run tasks 7.3 and 7.4"). One new feature branch, one push, one
+draft PR; no merge, release, tag or settings change.
+
+```bash
+node packages/build-tools/orchestration/pilot-review.js --pr <number> --out <file>
+```
+
+Recorded in `task-7.3-pilot.json`: branch `feat/orchestration-coordinator` based on
+`origin/next`, head SHA, the PR number/URL and its draft state, plus the idempotent-resume
+check (a repeated push reports "Everything up-to-date" and exactly one PR exists for that
+head, so a second create is never attempted).
+
+Scope is deliberately the coordinator only; the context-menu/capture work stays in its own
+PR. The first CI run failed on `format-check` because generated evidence JSON was not
+covered by `.prettierignore` on that branch (`05f0227`), then the quality gate failed on
+three fixture tests that assumed `main` as the default branch (`4c154f0`). Both are fixed
+and CI is green.
+
+## Task 7.4 — pilot review
+
+`task-7.4-pilot-review.json` is produced by the same readiness gates the coordinator uses
+(`review.js`), fed with real `gh pr view` data including a GraphQL query for unresolved
+review threads. Read-only: no merge, approve, comment or push.
+
+Observed outcome: required checks pass, mergeability `MERGEABLE`, decision `blocked` only
+because the PR is a draft — which is the intended pilot state. Automated merge stays off.
+
 ## Deliberate exceptions
 
 `registry.js`, `recovery.js` and `workspace.js` exceed the 350-line file-size gate and are

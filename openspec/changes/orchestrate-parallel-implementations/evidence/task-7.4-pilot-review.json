@@ -1,0 +1,110 @@
+{
+  "task": "7.4",
+  "generatedAt": "2026-10-31T19:20:22.511Z",
+  "repository": "elmusleh/independent-youtube-playlist-manager",
+  "remoteMutation": "none (read-only gh calls)",
+  "pr": {
+    "number": 52,
+    "url": "https://github.com/elmusleh/independent-youtube-playlist-manager/pull/52",
+    "draft": true,
+    "base": "next",
+    "head": "feat/orchestration-coordinator",
+    "headSha": "4c154f0851a6358f27bd81d08fcf2e90555d0dfe",
+    "mergeable": "MERGEABLE",
+    "mergeStateStatus": "CLEAN",
+    "reviewDecision": "",
+    "author": "elmusleh"
+  },
+  "observed": {
+    "checks": [
+      {
+        "name": "auto-merge",
+        "status": "completed",
+        "conclusion": "skipped"
+      },
+      {
+        "name": "Quality & Security (Lint, Format, Audit, Unit Tests)",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "name": "Analyze (actions)",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "name": "Dependency Review",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "name": "Analyze (javascript-typescript)",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "name": "Analyze (python)",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "name": "Web & Extension E2E Integration (Typecheck, Build, E2E)",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "name": "npm Audit",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "name": "Extension CI (Svelte Diagnostics & Manifest Validation)",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "name": "CodeRabbit",
+        "status": "completed",
+        "conclusion": "skipped"
+      },
+      {
+        "name": "CodeQL",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "name": "Vercel",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "name": "Vercel Preview Comments",
+        "status": "completed",
+        "conclusion": "success"
+      }
+    ],
+    "approvals": 0,
+    "unresolvedThreads": 0,
+    "requiredChecks": [
+      "Quality & Security (Lint, Format, Audit, Unit Tests)",
+      "Web & Extension E2E Integration (Typecheck, Build, E2E)",
+      "Extension CI (Svelte Diagnostics & Manifest Validation)"
+    ]
+  },
+  "readiness": {
+    "decision": "blocked",
+    "mergeMode": "manual",
+    "automatedMerge": false,
+    "mergePerformed": false,
+    "head": "4c154f0851a6358f27bd81d08fcf2e90555d0dfe",
+    "base": "next",
+    "blockers": [
+      {
+        "code": "DRAFT_PR"
+      }
+    ],
+    "approvals": 0,
+    "nonAuthorApprovals": 0
+  },
+  "mergePerformed": false
+}
