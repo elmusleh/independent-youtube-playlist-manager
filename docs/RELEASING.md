@@ -118,6 +118,29 @@ without `enforce_admins` while `main` runs with it.
 6. creates the GitHub Release with the **changelog section for that tag** as its body
    and the ZIPs attached.
 
+## Beta releases — testing `next` before an official release
+
+`.github/workflows/beta-release.yml` runs on **every push to `next`** (and manual
+`workflow_dispatch`) and is fully independent of the official release flow above. It
+builds the extension and cuts a public **GitHub Prerelease** so builds can be tested
+before they ship.
+
+- **Version, derived and never committed.** The beta tag is `vX.Y.Z-beta.N`, where
+  `X.Y.Z` is the canonical version in `manifest.chrome.json` and `N` is the number of
+  commits since the last **official** `v*` tag (beta tags are excluded so `N` keeps
+  growing across successive betas instead of resetting). Inside the throwaway CI checkout only, the version is
+  patched to the numeric build `X.Y.Z.N` (Chrome's manifest accepts numeric versions
+  only) via `sync-version.mjs --set X.Y.Z.N`; nothing is committed, so `next` keeps its
+  `x.y.z` version and never churns version files or lockfiles. `main` and the official
+  release flow are untouched.
+- **Assets.** The same `npm run pack` Chrome/Edge/Firefox ZIPs plus a source-code ZIP,
+  attached to the prerelease and also kept as workflow artifacts for 30 days.
+- **Promotion rule.** A beta manifest build `X.Y.Z.N` is numerically _higher_ than its
+  base `X.Y.Z`. When you promote tested betas to an official release, ship the official
+  at a strictly higher version (e.g. betas on `1.2.1.N` → release the official at
+  `1.2.2` or later). Otherwise Chrome/Edge treat the official `1.2.1` as a downgrade and
+  beta users will not receive it as an auto-update.
+
 ## 8. Verify the release
 
 ```bash
