@@ -1,7 +1,11 @@
 import { derived, get, readable, writable, type Readable } from "svelte/store";
 import type { Theme, ThemeChoice } from "../types/model.js";
 
-const themeStorageKey = "themeChoice";
+// Must match the key theme-init.js (public/theme-init.js) and localStorage use,
+// otherwise the synchronous pre-paint theme and the async extension-storage value
+// disagree — which is what caused the dark-mode white flash (initTheme() would
+// re-set the theme from browser.storage.sync under a different key).
+const themeStorageKey = "yph-theme-choice";
 
 function initialChoice(): ThemeChoice {
   try {
