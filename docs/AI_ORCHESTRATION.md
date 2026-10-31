@@ -309,9 +309,11 @@ a worktree-writing prompt.
 - Observed protection on `next` at pilot time: three required checks, conversation
   resolution required, zero required approvals, `enforce_admins` disabled — so an admin
   bypass exists and is reported as `allowsAdminBypass` rather than silently ignored.
-- **Build failures have their own gate.** `Build & Bundle Inventory` runs `npm run build`,
-  `npm run audit:all` and `npm run audit:bundles`, so a Rollup/CJS or inventory break fails
-  in about a minute instead of inside the E2E job.
+- **Build failures have their own check.** `Build & Bundle Inventory` runs `npm run build`,
+  `npm run audit:all` and `npm run audit:bundles` (44 s in CI), so a Rollup/CJS or inventory
+  break fails there instead of inside the E2E job. To make it gating, add it to the base
+  branch's required status checks — the CLI token here cannot write branch protection, so
+  that remains an owner action in Settings → Branches.
 - **Guarded merge is off and requires an owner decision.** Enabling it means setting
   `mergeMode: guarded`, recording `mergeOptIn: true` per job and confirming that branch
   protection requires the checks/review and forbids admin bypass. Until then the
