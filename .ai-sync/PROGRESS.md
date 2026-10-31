@@ -16,6 +16,44 @@ Mobile UX improvements across extension popup and SPA editor, organized per
 
 ## Open work
 
+### Page context menu — All automated gates pass; manual acceptance remaining
+
+Owner authorized completing the plan and CM-R1/R2/R3 on 2026-10-31; owner delegated
+all test execution to Hermes. Checkmarks below mean code written, not release approval.
+
+- [x] Strict shared URL/scope ordering, private exclusion, selected scope and normal windows.
+- [x] Shared cached destinations, popup adapter, defaults/custom selection/insertion rules.
+- [x] Whole-array/builder mutation authority, revisions, conflicts and idempotent receipts.
+- [x] Route editor, import/restore, cloud, watched cleanup and keyboard writes through authority.
+- [x] Bounded menu, lifecycle reconciliation, settings switches, chooser and Android fallback.
+- [x] Import options/source validation, channel scanning/cancellation and explicit remote review.
+- [x] Persisted remote progress, uncertain-request reconciliation and safe optional closure.
+- [x] Capture UI and source/privacy/concurrency/retry/large-destination regression cases written.
+- [x] Fix omitted `shared/` packaging; add runtime module graph guard and nonblocking builder.
+- [x] CM-R1 glossary; CM-R2 audit reporter/template; CM-R3 disposable mutation runner.
+- [x] README/User Guide/Hermes native-browser matrix and fixtures prepared.
+- [x] Hermes: check → build → check, extension route E2E, mutations, portal build and Firefox lint.
+- [x] Audit PASS: high finding fixed (follow-redirects 1.16.2); production deps clean; exit code 0.
+- [x] Declaration/runtime mismatches repaired: canonical protocol contracts created and all call sites updated.
+- [ ] Run headed portal extension E2E with HEADED=true under Xvfb; a skipped suite is not passed.
+- [ ] Actual native Firefox/Chromium gestures, source permissions and browser restart checks.
+- [ ] Validate #10/#11/#13/#14 fixes; keep issues open until evidence exists.
+- [ ] Real-device/mobile acceptance and any authorized live remote-account checks.
+
+Hermes executed verification after implementation; this review did not rerun tests.
+Automated successes are reported with disputed audit status and skipped headed coverage. See `docs/testing/HERMES_CONTEXT_MENU_VERIFICATION.md` for commands,
+expected behavior and how to record failures. No merge/release authorized.
+
+Later CM-F1 (localization), CM-F2 (excluded sites), CM-F3 (performance budget) remain
+outside this implementation. Previously suggested first-run walkthrough, redacted
+capture audit log and property-based tab/URL tests remain recorded below.
+
+### New follow-up suggestions (2026-10-28)
+
+- Add a first-run walkthrough for the new right-click menu and keyboard paths.
+- Add a redacted local audit log for native-menu capture jobs.
+- Add property-based URL and tab-order tests for unusual links and multi-window layouts.
+
 | #   | Task                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | Done means                                                                                                                                                                                                                                                                                                                                                                                                        | Owner |
 | --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- |
 | 1   | **Phase 4: Real-device verification** — run the verification checklist from `docs/RESPONSIVE_UI_PLAN.md#Phase-4` on phone, tablet, and desktop widths (320×568, 390×844, 844×390, 768×1024, 1024×768, 1440×900). Capture before/after screenshots for every active page and distinct dialog families at each width. Assert no horizontal document overflow at test widths. Log every abnormality and fix it.                                                                                                                                | All active routes (Saved, Playlist/Editor, Manage, History, Search, Settings, Share, Shortcuts, Developer setup, Logs) and all dialog families (quick-add, import/export, copy/move/sort, auth, confirmation, loading) pass: no horizontal overflow, touch targets ≥44px, readable text, bounded scrolling, Escape/focus/drawer behavior. Screenshots captured. Build passes `npm run check` and `npm run build`. | agent |
@@ -63,3 +101,80 @@ Mobile UX improvements across extension popup and SPA editor, organized per
 Remaining tasks:
 
 - **Task 1 / Task 11 — Phase 4 verification & regression pass**: Requires real-device screenshot capture and manual testing on phone/tablet/desktop widths; cannot be fully automated in this environment.
+
+## New suggestions recorded 2026-10-31 (outside implementation scope)
+
+- CM-R1 — Document a consistent glossary for builder, favorite, saved and remote destinations; use it in labels and help text to reduce ambiguity.
+- CM-R2 — Triage dependency audit results separately in all three npm trees, distinguishing shipped runtime dependencies from build tools; assign owners and track fixes without forced major upgrades.
+- CM-R3 — Run mutation testing selectively on capture safety guards to verify tests fail when privacy, host validation or durable-save conditions are removed.
+
+## New later suggestions recorded 2026-10-31 after implementation
+
+- CM-R4 — Quarantine malformed stored playlist records with an export option instead of offering only a repair error, so recovery preserves original bytes.
+- CM-R5 — Add privacy-safe crash recovery diagnostics (operation/state codes only, never page data) so interrupted capture failures can be investigated without sensitive exports.
+- CM-R6 — Add a backup preflight estimate of required disk/storage space and recovery steps before large restores, reducing partial failures on constrained devices.
+
+## New recommendations from post-Hermes review (2026-10-31)
+
+- CM-R7 — Durable verification receipts with actual exit codes and tested tree/artifact identity.
+- CM-R8 — Generate protocol declarations from checked JS/JSDoc and canonical shared types.
+- CM-R9 — Inventory bundled code separately from development/build-only dependencies for security triage.
+
+See `docs/testing/POST_HERMES_PLAN.md` for why, implementation approach and acceptance.
+
+## Shared agent workflow — 2026-10-31
+
+- [x] Add model-neutral workflow, reusable start prompt and blank task/review/verification/handoff templates; link from AGENTS.md. Documentation only; tests remain delegated.
+
+## OpenSpec setup — 2026-10-31
+
+- [x] Install OpenSpec 1.16.0, initialize Codex/Hermes, enable Hermes project skills and document usage.
+- [x] Import existing remaining work into the open complete-context-menu-acceptance change without certifying completion.
+- Acceptance tasks: see `openspec/changes/complete-context-menu-acceptance/tasks.md`; all are initially pending and current-tree evidence must be rechecked.
+
+### New OpenSpec follow-up suggestions (OS-1/OS-2/OS-3)
+
+- OS-1 — Add a version-pinned bootstrap helper for other machines so agents use a reproducible CLI release.
+- OS-2 — Add strict OpenSpec validation to CI so malformed requirements/tasks are caught before merge.
+- OS-3 — Add secret scanning for planning/evidence artifacts so credentials pasted into handoffs are detected automatically.
+
+## Worktree documentation update — 2026-10-31
+
+- [x] Update shared workflow and reusable implementation/review prompts with worktree selection, starting snapshots, one-writer coordination and safe cleanup.
+- [x] Extend all four blank templates with absolute worktree/branch/base identity, owners, environment setup, evidence and integration/resume fields.
+- [x] Align AGENTS.md, OpenSpec usage, documentation index and .ai-sync summaries; preserve newer Hermes results.
+- Documentation only. No worktree creation, application changes, dependency changes or application verification performed. Tests/builds remain delegated.
+
+### Later worktree improvements (WT-1 / WT-2 / WT-3)
+
+- WT-1 — Add a small machine-readable assignment registry to detect duplicate ownership and make parallel-agent coordination easier.
+- WT-2 — Add a pre-write workspace guard that checks expected path/branch before agent mutations, reducing accidental edits to the wrong checkout.
+- WT-3 — Add an automated integration rehearsal against the target branch to catch overlapping changes before combining independently verified implementations.
+
+## Relevant-skill documentation: 2026-10-31
+
+- [x] Add task-based skill discovery to AGENTS.md, shared workflow, implementation/review prompts and OpenSpec usage.
+- [x] Add blank skill-selection fields to task/review/verification/handoff templates.
+- [x] Preserve scope, worktree ownership, delegated verification and release restrictions.
+- Documentation only; no application verification performed.
+
+## Parallel orchestration proposal: 2026-10-31
+
+- [x] Document coordinator/worker roles, dedicated feature worktrees, two-job limit, verifier ownership, target refresh, push-before-PR and manual-by-default merge policy.
+- [x] Create proposal, behavior spec, design and implementation/verification tasks for `orchestrate-parallel-implementations`.
+- [x] Link the policy from AGENTS.md, shared workflow, prompts, blank templates, OpenSpec guide and docs index.
+- [x] Implement runtime tooling and verify it: workspace preflight, lifecycle adapters, dispatch adapters, role/resource leases, target sync, evidence receipts, scoped publication, uncertain-effect reconciliation, review/CI readiness, guarded merge gates, single-slot integration and cancellation. 19/21 change tasks done.
+- [x] Live pilot (task 7.3): branch `feat/orchestration-coordinator` pushed from `origin/next`, draft PR #52 opened, idempotent resume verified (repeat push is a no-op, one PR per head).
+- [x] Pilot review (task 7.4): real `gh` data fed through the readiness gates; required checks pass, decision `blocked` only because the PR is a draft. Merge mode stays manual; nothing merged.
+- No agents launched, worktrees created, commits/pushes/PRs/merges performed, GitHub settings changed or application tests run in this planning turn.
+
+## Latest Hermes review — acceptance still pending (2026-10-31)
+
+- [x] Fix missing/unknown review, protection and remote-head cases in guarded merge/integration; require explicit validated readiness and zero service calls on refusal.
+- [x] Bind evidence to modified/untracked source (workingTree hash, STALE_WORKING_TREE / SOURCE_IDENTITY_UNAVAILABLE).
+- [x] Resolve contracts-check exit 1 (typed job payloads, regenerated declarations) and re-run task 7.1 evidence: all eight gates exit 0, allPassed=true, treeUnchanged=true.
+- [~] Remove new oversized-file exemptions: done (registry/recovery/workspace/dispatch split, allowlist entries deleted).
+- [ ] Finish interrupted CM-R7/R8/R9 implementation and mandatory headed coverage.
+- [ ] Obtain current sequential Hermes evidence before native acceptance or an explicitly authorized draft-PR pilot. Merge mode remains manual.
+
+Review: sessions/2026-10-31-latest-hermes-review.md. No tests rerun by Codex.

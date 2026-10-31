@@ -39,6 +39,14 @@ jobs:
       - name: Run Full Quality Check (lint + format + test + svelte-check)
         run: npm run check
 
+      - name: Orchestration safety harnesses
+        run: |
+          set -euo pipefail
+          git config --global user.email "ci@example.invalid"
+          git config --global user.name "CI"
+          node packages/build-tools/orchestration/evidence-preflight.js
+          node packages/build-tools/orchestration/demo-parallel.js
+
       - name: Audit Dependencies
         run: npm audit --audit-level=high
 
