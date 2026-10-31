@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { mapGhPr, parseRequiredChecks } from "./pilot-review.js";
+import { mapGhPr, parseRequiredChecks, readBranchProtection } from "./pilot-review.js";
 import { evaluateReviewState } from "./review.js";
 
 const prView = {
@@ -108,5 +108,37 @@ describe("Required check parsing", () => {
     expect(parseRequiredChecks("")).toEqual([]);
     expect(parseRequiredChecks(undefined)).toEqual([]);
     expect(parseRequiredChecks("[not json")).toEqual([]);
+  });
+});
+
+describe("Branch protection read", () => {
+  const raw = JSON.stringify({
+    required_status_checks: { strict: false, contexts: ["verify", "e2e"] },
+    required_pull_request_reviews: { required_approving_review_count: 1 },
+    required_conversation_resolution: { enabled: true },
+    enforce_admins: { enabled: false },
+  });
+
+  it("maps a readable rule set", () => {
+    const protection = readBranchProtection("owner/repo", "next", () => raw);
+
+    expect(protection.complete).toBe(true);
+    expect(protection.requiredChecks).toEqual(["verify", "e2e"]);
+    expect(protection.requireConversationResolution).toBe(true);
+    expect(protection.requiredApprovals).toBe(1);
+    expect(protection.base).toBe("next");
+  });
+
+  it("reports an unreadable branch as incomplete instead of unprotected", () => {
+    const failure = Object.assign(new Error("boom"), {
+      stderr: "gh: Branch not protected (HTTP 404)",
+    });
+    const protection = readBranchProtection("owner/repo", "next", () => {
+      throw failure;
+    });
+
+    expect(protection.complete).toBe(false);
+    expect(protection.missing).toEqual(["branch protection endpoint"]);
+    expect(protection.error).toContain("404");
   });
 });

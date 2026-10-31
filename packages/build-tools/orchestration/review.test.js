@@ -5,6 +5,7 @@ import {
   ReviewStateError,
   evaluateGuardedMerge,
   evaluateReviewState,
+  protectionFromGitHub,
 } from "./review.js";
 import { readFileSync } from "fs";
 import { fileURLToPath } from "url";
@@ -190,5 +191,97 @@ describe("Review - merge stays manual", () => {
 
   it("requires a PR to evaluate", () => {
     expect(() => evaluateReviewState(baseState({ pr: null }))).toThrow(ReviewStateError);
+  });
+});
+
+const PROTECTION = {
+  required_status_checks: { strict: false, contexts: ["Quality & Security (Lint, Format)"] },
+  required_pull_request_reviews: { required_approving_review_count: 0 },
+  required_conversation_resolution: { enabled: true },
+  enforce_admins: { enabled: false },
+};
+
+describe("Review - server branch protections", () => {
+  it("maps the fields readiness depends on", () => {
+    const protection = protectionFromGitHub(PROTECTION);
+
+    expect(protection.complete).toBe(true);
+    expect(protection.requiredChecks).toEqual(["Quality & Security (Lint, Format)"]);
+    expect(protection.requireConversationResolution).toBe(true);
+    expect(protection.enforceAdmins).toBe(false);
+    expect(protection.allowsAdminBypass).toBe(true);
+    expect(protection.requiredApprovals).toBe(0);
+  });
+
+  it("treats a missing rule as unknown instead of absent", () => {
+    const incomplete = protectionFromGitHub({
+      required_status_checks: { strict: false, contexts: ["verify"] },
+      enforce_admins: { enabled: true },
+    });
+
+    expect(incomplete.complete).toBe(false);
+    expect(incomplete.missing).toEqual(["required_conversation_resolution.enabled"]);
+  });
+
+  it("fails closed with PROTECTIONS_UNKNOWN when the rules are incomplete", () => {
+    const state = evaluateReviewState(
+      baseState({
+        protection: { complete: false, base: "next", missing: ["enforce_admins.enabled"] },
+      })
+    );
+
+    expect(state.decision).toBe("blocked");
+    expect(state.blockers.map((blocker) => blocker.code)).toContain(Blocker.PROTECTIONS_UNKNOWN);
+    expect(state.blockers.find((b) => b.code === Blocker.PROTECTIONS_UNKNOWN).detail).toContain(
+      "enforce_admins.enabled"
+    );
+  });
+
+  it("fails closed when no protection data is supplied and it is required", () => {
+    const state = evaluateReviewState(baseState({ requireProtection: true }));
+
+    expect(state.blockers.map((blocker) => blocker.code)).toContain(Blocker.PROTECTIONS_UNKNOWN);
+  });
+
+  it("uses the server rule set for required checks", () => {
+    const state = evaluateReviewState(
+      baseState({
+        checks: [{ name: "verify", status: "completed", conclusion: "success" }],
+        protection: protectionFromGitHub(PROTECTION),
+      })
+    );
+
+    expect(state.blockers.map((blocker) => blocker.code)).toContain(Blocker.CHECKS_PENDING);
+    expect(state.requiredChecks).toContain("Quality & Security (Lint, Format)");
+  });
+
+  it("requires the number of non-author approvals the branch demands", () => {
+    const protectedWithReview = {
+      ...PROTECTION,
+      required_pull_request_reviews: { required_approving_review_count: 2 },
+    };
+    const state = evaluateReviewState(
+      baseState({ protection: protectionFromGitHub(protectedWithReview) })
+    );
+
+    expect(state.decision).toBe("blocked");
+    expect(state.blockers.map((blocker) => blocker.code)).toContain(
+      Blocker.NON_AUTHOR_REVIEW_REQUIRED
+    );
+  });
+
+  it("only blocks admin bypass when the policy forbids it", () => {
+    const protection = protectionFromGitHub(PROTECTION);
+    const allowed = evaluateReviewState(baseState({ protection }));
+    expect(allowed.blockers.map((blocker) => blocker.code)).not.toContain(
+      Blocker.PROTECTIONS_UNKNOWN
+    );
+
+    const forbidden = evaluateReviewState(
+      baseState({ protection, policy: { ...policy, requireAdminEnforcement: true } })
+    );
+    expect(forbidden.blockers.map((blocker) => blocker.code)).toContain(
+      Blocker.PROTECTIONS_UNKNOWN
+    );
   });
 });
