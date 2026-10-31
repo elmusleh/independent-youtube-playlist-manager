@@ -1,6 +1,11 @@
+import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import { resolve, dirname } from "node:path";
-import inventory from "./inventory-data.js";
+
+// Rollup only applies the CommonJS plugin to node_modules, so a static default import of
+// our own CJS helper fails the build. Load it through Node's interop instead.
+const require = createRequire(import.meta.url);
+const inventory = require("./inventory-data.js");
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 export function bundleInventory() {
   return {

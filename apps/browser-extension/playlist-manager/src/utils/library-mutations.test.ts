@@ -25,7 +25,7 @@ it("rejects a dirty editor's stale revision without overwriting a capture", asyn
   await expect(
     mutateLibrary({
       type: "put",
-      playlist: { id: "local-a", title: "Dirty", videos: [second] },
+      playlist: { id: "local-a", title: "Dirty", videos: [second], timestamp: 2 },
       expectedRevision: 1,
     })
   ).rejects.toThrow(/changed/);
@@ -96,7 +96,7 @@ it("rejects stale deletes and prevents a deleted legacy record from being resurr
   await expect(
     mutateLibrary({
       type: "put",
-      playlist: { id: "local-old", title: "Stale", videos: [] },
+      playlist: { id: "local-old", title: "Stale", videos: [], timestamp: 2 },
       expectedRevision: 0,
     })
   ).rejects.toThrow(/changed/);
