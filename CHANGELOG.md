@@ -26,8 +26,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Removed the unused `Card.svelte` component; the settings cards now render from the single
   global `.card` style, eliminating the global/scoped `.card` ambiguity.
-- Added Playwright visual-regression baselines for the Settings page (two widths × two
-  themes) and a `test:visual` gate in CI, so a layout regression is caught before it ships.
+- Added Playwright visual-regression baselines for the primary views (Settings, Saved,
+  Manage, History; two widths × two themes) and a `test:visual` gate in CI, so a layout
+  regression is caught before it ships.
 
 ### Fixed
 
