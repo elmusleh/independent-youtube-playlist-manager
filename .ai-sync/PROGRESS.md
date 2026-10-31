@@ -178,3 +178,42 @@ See `docs/testing/POST_HERMES_PLAN.md` for why, implementation approach and acce
 - [ ] Obtain current sequential Hermes evidence before native acceptance or an explicitly authorized draft-PR pilot. Merge mode remains manual.
 
 Review: sessions/2026-10-31-latest-hermes-review.md. No tests rerun by Codex.
+
+## Toolbar popup: mobile sizing + instant open — implemented (2026-10-31)
+
+Plan: `docs/POPUP_MOBILE_PLAN.md`. Owner resolved the open decisions: desktop popup
+420 px, Firefox Android full-screen, Font Awesome replaced with inline SVG.
+
+- [x] Reproduce and quantify (280–768 px, cold cache, 6× CPU throttle): 360 px popup,
+      15–22 px strip, height pinned to `100dvh`, 26–30 px primary button, 13 px inputs,
+      `env(safe-area-*)` always 0, theme after module graph, 189 ms dead-click window,
+      112 KB CSS + 146 KB JS + 147 KB font before first paint.
+- [x] P0 popup-mode harness: `packages/build-tools/verify-popup.js` (fixed 420 px width,
+      content height, full-bleed page mode, 44 px targets, 16 px inputs, no `vw` units,
+      no Font Awesome) wired into `npm run test:extension`.
+- [x] P1 explicit `ui-popup` / `ui-page` modes (`popup/mode.js` classifies via
+      `extension.getViews({ type: "popup" })` + `?mode=` override before CSS); no `vw`/`vh`
+      in popup mode; themed `html` background; single ordered stylesheet.
+- [x] P2 44 px (48 px page/touch) targets, 16 px inputs on full-screen pages,
+      `viewport-fit=cover`, sticky Import footer, `color-scheme` meta.
+- [x] P3 Font Awesome removed from the popup (inline SVG sprite, 9 glyphs); editor
+      modules (`youtube-auth/api`, `storage-service`, `utils`, `video-service`) lazy-loaded
+      after first paint via dynamic `import()`.
+- [x] P4 handlers wired at module evaluation before any `await`; theme applied before
+      first paint; `target.js` made null-safe so hydration never throws on a torn-down DOM.
+- [~] P5 gates green (`npm run check` exit 0: lint/format, 543 tests, file-size,
+  svelte-check, css/vercel/tooling/release-notes; `npm run test:extension` exit 0;
+  build in progress). Real-device matrix (Chrome desktop popup cold-open ×10,
+  Firefox Android) remains manual.
+
+Suggested next steps (new, not scheduled):
+
+- PS-1 (professionalism) — Move popup colour/radius/spacing definitions onto the shared
+  token source (`playlist-manager/src/css/design-tokens.css`) instead of the local `:root`
+  copy; the two drifted (360 vs 390 px hardcodes) because nothing binds them.
+- PS-2 (security) — Add an explicit `content_security_policy.extension_pages` to the
+  manifests; the theme pre-paint classifier is already an external script (no inline
+  script), so a strict CSP can be added without any `unsafe-inline` exception.
+- PS-3 (best practices) — Add Playwright visual snapshots of the popup at 4 widths ×
+  2 themes so icon and spacing changes cannot silently regress the way Font Awesome's
+  93 KB stylesheet hid the layout problem.

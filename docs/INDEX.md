@@ -27,12 +27,13 @@ What each document is for, and who it is for. If you are an agent starting a ses
 [CONTEXT_MENU_PLAN.md](CONTEXT_MENU_PLAN.md) — proposed OneTab-style page menu,
 shared capture design, permissions and browser tests; implementation pending.
 
-| Document                                | Purpose                                                               |
-| --------------------------------------- | --------------------------------------------------------------------- |
-| `PAGE_IMPORT_VERIFICATION.md`           | How the popup scans an arbitrary page, and how to verify it manually. |
-| `RESPONSIVE_UI_PLAN.md`                 | Phased responsive work; phases 1–3 shipped, verification outstanding. |
-| `architecture.dot` / `architecture.png` | Rendered architecture graph.                                          |
-| `../packages/build-tools/`              | The guards referenced by `npm run check` — read the file headers.     |
+| Document                                | Purpose                                                                           |
+| --------------------------------------- | --------------------------------------------------------------------------------- |
+| `PAGE_IMPORT_VERIFICATION.md`           | How the popup scans an arbitrary page, and how to verify it manually.             |
+| `RESPONSIVE_UI_PLAN.md`                 | Phased responsive work; phases 1–3 shipped, verification outstanding.             |
+| `POPUP_MOBILE_PLAN.md`                  | Popup sizing/instant-open diagnosis and fix; implemented (mode split, SVG icons). |
+| `architecture.dot` / `architecture.png` | Rendered architecture graph.                                                      |
+| `../packages/build-tools/`              | The guards referenced by `npm run check` — read the file headers.                 |
 
 ## Store submissions
 

@@ -211,3 +211,91 @@ with per-item gaps, steps and acceptance for the remaining verification work.
 
 Open next: CM-R7 receipts wired into CI, then CM-R8 contract drift discovery, then
 CM-R9 per-target bundle inventory. Merge mode remains manual and PR #52 stays draft.
+
+## Popup mobile sizing + instant-open diagnosis — 2026-10-31 (no code changed)
+
+Owner reported (a) the toolbar popup is too cramped on phones and (b) it does not open on
+the first attempt sometimes. Diagnosis only; planning artifacts and `.ai-sync` updated.
+
+Measured in the built `dist/chrome` package served over HTTP with Playwright Chromium
+(layout at 280/320/360/375/390/412/430/768 px; timings with cache disabled + 6× CPU
+throttle). Results and the full fix plan are in `docs/POPUP_MOBILE_PLAN.md`; the short
+version:
+
+- The popup is 360 px wide, not 380/400: `@media (max-width: 767px)` always matches inside
+  a popup, and a later "360–389 px" block overrides the width. Body is narrower than the
+  viewport at 375 (15 px) and 412 (22 px), leaving an uncovered strip that is white in dark
+  theme because `html` has no background.
+- `min-height: 100dvh` inside a content-sized popup window makes height self-referential:
+  measured 600 px body with content ending at 513 px. The `min-width: 768/1024` branches can
+  never match in a popup, so they are dead code.
+- `#open-playlists` is 26–30 px tall; inputs are 13 px at ≥390 px (autozoom); safe-area
+  padding is dead (`env()` = 0 without `viewport-fit=cover`); theme is applied after the
+  module graph + storage, so dark users get a white flash.
+- First click handler exists only 189 ms after load (6× throttle, warm disk) because
+  `setupUI()` runs after `waitForGlobal("videoService", 30)` and `getSettings()`; earlier
+  there are 112 KB CSS (93 KB Font Awesome), 146 KB JS and a 147 KB font on the critical
+  path. That is the "first attempt does nothing" report.
+- `verify-extension.js` only checks the popup as a regular tab and only for horizontal
+  overflow, so none of this can fail CI.
+
+Next steps (in order, per the plan): P0 add `packages/build-tools/verify-popup.js` (popup
+mode, width/height, 44 px targets, 16 px inputs, no `vw`/`vh`, paint/handler budgets) and
+confirm it fails on this tree; P1 explicit `ui-popup`/`ui-page` classifier via
+`extension.getViews({type:"popup"})` with a `?mode=` override and a single breakpoint set;
+P2 touch/safe-area/sticky footer; P3 icon sprite + lazy editor modules; P4 handlers before
+any `await`, theme before first paint; P5 gates plus real-device matrix.
+
+Files changed this pass: `docs/POPUP_MOBILE_PLAN.md` (new), `docs/INDEX.md`,
+`.ai-sync/PROGRESS.md`, `.ai-sync/HANDOFF.md`. Application code, CSS, manifests,
+dependencies and versions untouched. No `check`/`build`/tests run for this pass (no code
+changed); the pre-existing dirty tree (`vitest.config.mjs`, staged CI/docs work) was left
+as found. Editing lock taken and released around the writes.
+
+## Popup mobile + instant-open fix — implemented 2026-10-31
+
+Owner asked to fix the toolbar popup size (bigger) for phones and the "doesn't open on
+first attempt" bug, then authorized implementation with best-practice recommendations.
+Decisions: desktop popup 420 px, Firefox Android full-screen, Font Awesome → inline SVG.
+
+Changed files:
+
+- `apps/browser-extension/popup/mode.js` (new): classic pre-CSS script that classifies
+  `ui-popup` vs `ui-page` via `extension.getViews({ type: "popup" })` (+ `?mode=` override)
+  and applies the theme from `localStorage["yph-theme-choice"]` / device before first paint.
+- `apps/browser-extension/popup/popup.html`: removed Font Awesome links; inline SVG sprite
+  (9 glyphs, FA 6.4.2 solid paths); `viewport-fit=cover`, `color-scheme` meta; menu items
+  as a `<nav>` with `role=button`/chevron affordances; `menu-divider` got an id.
+- `apps/browser-extension/popup/popup.css`: rewritten around the two modes. Popup mode is
+  fixed 420 px, content height, no `vw`/`vh`; page mode is full-bleed, `min-height:100dvh`,
+  safe-area padding, 16 px inputs, 44/48 px targets. 11.6 KB (was 19 KB).
+- `apps/browser-extension/popup/popup.js`: click handlers wired synchronously at module
+  evaluation (no dead-click window); editor modules (`youtube-auth`, `youtube-api`,
+  `storage-service`, `utils`, `video-service`) lazy-loaded via dynamic `import()` after
+  first paint; theme corrected from storage after paint.
+- `apps/browser-extension/popup/target.js`: `updateTargetUI` / `initTargetData` /
+  `loadDefaultTabScope` made null-safe so hydration never throws on a torn-down DOM.
+- `packages/build-tools/verify-popup.js` (new): regression harness for the sizing contract,
+  wired into `test:extension`.
+- `package.json`: `test:extension` now runs `verify-extension.js && verify-popup.js`.
+- `docs/POPUP_MOBILE_PLAN.md`, `docs/INDEX.md`, `.ai-sync/PROGRESS.md`: updated.
+
+Verification (measured, all passing):
+
+- `npm run check` exit 0 — lint/format clean, 543 vitest tests pass, file-size,
+  svelte-check 0 errors, css-bundle/vercel/tooling/release-notes gates pass.
+- `npm run test:extension` exit 0 — 102 route/viewport checks + new popup sizing contract.
+- Popup probe: 420 px fixed width, content height 472 px (no 100dvh stretch), 0 missing
+  icons, 0 sub-44 px controls; page mode full-bleed at 320/360/390/412/430 (0 strip), dark
+  theme html/body backgrounds match, 16 px inputs.
+- Full `npm run build` (all three targets) was running at handoff; confirm it finished
+  clean before treating Firefox/Edge dist as current.
+
+Remaining (manual): real-device matrix — Chrome desktop popup cold-open ×10 (first click
+must always open at 420×content), Firefox Android full-screen + keyboard + rotation + safe
+area. Not required for the code gates; do not close #13 (dark flash) on source inspection
+alone — this pass should also be spot-checked against it on a real device.
+
+No commit, push, PR, version bump or release performed. Editing lock released after the
+writes. `.husky/pre-commit` was modified by a concurrent process (a commit attempt at
+22:37) and left untouched by this pass.
