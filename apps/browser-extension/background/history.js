@@ -1,3 +1,4 @@
+import { mutateLibrary } from "./library-mutations.js";
 /* eslint-disable no-console */
 import { HISTORY_KEY } from "./utils.js";
 
@@ -169,7 +170,7 @@ export async function handleCleanupWatchedVideo(videoId, playlistId) {
       playlist.videos = playlist.videos.filter((id) => id !== videoId);
 
       if (playlist.videos.length < initialLength) {
-        await browser.storage.local.set({ [LOCAL_PLAYLISTS_KEY]: playlists });
+        await mutateLibrary({ type: "remove-watched", id: playlistId, videoId });
         if (window.logSystemEvent)
           await window.logSystemEvent("INFO", `[CLEANUP] Video removed from local playlist`, {
             videoId,

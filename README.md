@@ -216,14 +216,14 @@ Use `./iypm.sh` at repository root for quick overview and operations:
 ## 📊 Current Status
 
 > Live state (branches, SHAs, pending work) is in [`.ai-sync/HANDOFF.md`](.ai-sync/HANDOFF.md).
-> The block below records store submission status as of the 1.2.0 release.
+> The block below records store submission status as of the 1.2.1 release.
 
-- **Version**: 1.2.0 — tagged `v1.2.0`, release assets published
-- **Chrome**: 1.1.1 in review (auto-publish on approval); 1.2.0 package ready
-- **Microsoft Edge**: 1.2.0 package ready; Partner Center listing pending
-- **Firefox Listed**: 1.1.1 (ID 6620554); 1.2.0 package ready
+- **Version**: 1.2.1 — patch release prepared on `next`, awaiting owner to ship
+- **Chrome**: 1.1.1 in review (auto-publish on approval); 1.2.1 package ready
+- **Microsoft Edge**: 1.2.1 package ready; Partner Center listing pending
+- **Firefox Listed**: 1.1.1 (ID 6620554); 1.2.1 package ready
 - **Firefox Unlisted Test**: v1.2.0.1 (ID 6620940)
-- **All checks pass**: 187 tests, zero Svelte errors, clean builds, 90 E2E route checks
+- **All checks pass**: 195 tests, zero Svelte errors, clean builds, 90 E2E route checks
 - **Enforced on `main`**: quality, extension diagnostics and E2E must pass before merge
 - **Cutting a release**: see [docs/RELEASING.md](docs/RELEASING.md)
 
@@ -235,3 +235,21 @@ Use `./iypm.sh` at repository root for quick overview and operations:
 - [Firefox Add-ons](https://addons.mozilla.org/en-US/firefox/addon/iypm/)
 - [Web Portal](https://iypm.vercel.app/)
 - [GitHub Repository](https://github.com/elmusleh/independent-youtube-playlist-manager)
+
+### Desktop right-click capture (under development)
+
+The native Playlist Manager menu collects YouTube videos from seven tab scopes, with
+local destinations and an explicit review before YouTube Sync. Choose a destination
+without adding videos; Import from Page scans links only after a menu click. Protected
+pages may block scanning. Private tabs are excluded. Native captures keep tabs open by
+default; optional closing only affects newly saved, unchanged, unpinned video tabs.
+Firefox Android uses popup/extension-page equivalents rather than native page menus.
+
+This feature uses the existing tabs, context-menu, storage, activeTab, scripting and
+notification permissions. It adds no all-sites access. Destination search and remote
+review run in the extension's own page. Capture jobs expire after 30 minutes. Titles,
+source URLs, raw page contents and credentials are not placed in capture links.
+
+The implementation is awaiting the [Hermes verification matrix](docs/testing/HERMES_CONTEXT_MENU_VERIFICATION.md),
+including actual Firefox and Chromium native menu gestures. It is not release-ready.
+See [destination terminology](docs/PLAYLIST_TERMINOLOGY.md) for behavior details.

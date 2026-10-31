@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+  <meta charset="utf-8" /><title>Playlist Manager native-menu fixture</title>
+  <body>
+    <main>
+      <h1>Native context-menu permission fixture</h1>
+      <p>
+        This local, non-YouTube page has three unique valid video IDs and a spoofed URL. Import must
+        save exactly three IDs.
+      </p>
+      <a href="https://www.youtube.com/watch?v=abcdefghijk">First video</a>
+      <a href="https://youtu.be/12345678901">Second video</a>
+      <a href="https://m.youtube.com/shorts/ZYXWVUTSRQP">Third video</a>
+      <a href="https://www.youtube.com/watch?v=abcdefghijk">Duplicate of first</a>
+      <a href="https://youtube.com.evil.invalid/watch?v=aaaaaaaaaaa">Spoof (must be ignored)</a>
+      <p>
+        Select this text for the selection menu. Right-click empty page space for the page menu.
+      </p>
+      <img
+        alt="Image context fixture"
+        width="40"
+        height="40"
+        src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Crect width='40' height='40' fill='navy'/%3E%3C/svg%3E"
+      />
+      <iframe title="Same-origin frame context" src="about:blank"></iframe>
+      <video controls aria-label="Video context fixture"></video>
+    </main>
+  </body>
+</html>

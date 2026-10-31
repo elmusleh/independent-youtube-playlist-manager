@@ -110,7 +110,7 @@
       gap: 2px;
     }
     button {
-      min-width: 32px;
+      min-width: 44px;
       padding-inline: 6px;
     }
   }

@@ -38,6 +38,7 @@
       onchange={() => save("defaultTabScope", settings?.defaultTabScope)}
     >
       <option value="current">Only this tab</option>
+      <option value="selected">Selected tabs in this window</option>
       <option value="left">Tabs to the left (this window)</option>
       <option value="right">Tabs to the right (this window)</option>
       <option value="all-this-window-include">All tabs in this window (include this)</option>
@@ -77,6 +78,35 @@
 
 <section class="card">
   <h3><Fa icon={faMousePointer} /> Context Menu</h3>
+  <div class="toggle-row">
+    <div class="toggle-info">
+      <span>Enable page context menu</span><span class="sub-text"
+        >Desktop browsers only. Android uses the popup.</span
+      >
+    </div>
+    <ToggleSwitch
+      checked={!settings?.disableContextMenu}
+      onchange={(val) => {
+        settings!.disableContextMenu = !val;
+        save("disableContextMenu", !val);
+      }}
+    />
+  </div>
+  <div class="toggle-row">
+    <div class="toggle-info">
+      <span>Close tabs saved by the context menu</span><span class="sub-text"
+        >Off by default. Only newly saved, unchanged and unpinned video tabs close after a
+        successful save.</span
+      >
+    </div>
+    <ToggleSwitch
+      checked={settings?.closeContextAddedTabs || false}
+      onchange={(val) => {
+        settings!.closeContextAddedTabs = val;
+        save("closeContextAddedTabs", val);
+      }}
+    />
+  </div>
   <div class="toggle-row">
     <div class="toggle-info">
       <span>Open saved playlist after add</span>

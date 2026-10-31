@@ -29,7 +29,10 @@ function setup() {
     },
     scripting: { executeScript: vi.fn().mockResolvedValue([{ result: null }]) },
     notifications: { create: vi.fn() },
-    runtime: { getURL: (path) => "chrome-extension://test" + path },
+    runtime: {
+      sendMessage: vi.fn().mockResolvedValue({ ok: true, result: { review: true } }),
+      getURL: (path) => "chrome-extension://test" + path,
+    },
   };
   vi.stubGlobal("browser", api);
   return api;
@@ -54,7 +57,12 @@ it("honors zero as unlimited rather than silently limiting the import to 25", as
   ]);
   const service = { generatePlaylist: vi.fn().mockResolvedValue({ id: "local-import" }) };
   await handleChannelImport(service);
-  expect(service.generatePlaylist).toHaveBeenCalledWith(ids);
+  expect(api.runtime.sendMessage).toHaveBeenCalledWith(
+    expect.objectContaining({
+      cmd: "capture",
+      args: expect.objectContaining({ ids, review: true }),
+    })
+  );
 });
 it("keeps the selected source when focus changes, but rejects navigation and closure", async () => {
   const api = setup();
@@ -112,9 +120,19 @@ it("retains the channel extractor and supports reversing a limited import", asyn
     .mockResolvedValueOnce([
       { result: [{ id: "abcdefghijk" }, { id: "dQw4w9WgXcQ" }, { id: "zyxwvutsrqp" }] },
     ]);
-  const service = { generatePlaylist: vi.fn().mockResolvedValue({ id: "local-import" }) };
-  await handleChannelImport(service);
-  expect(service.generatePlaylist).toHaveBeenCalledWith(["dQw4w9WgXcQ", "abcdefghijk"]);
+  await handleChannelImport({});
+  // Should send filtered and reversed IDs (oldest first, limited to 2)
+  expect(api.runtime.sendMessage).toHaveBeenCalledWith(
+    expect.objectContaining({
+      cmd: "capture",
+      action: "start",
+      args: expect.objectContaining({
+        ids: ["dQw4w9WgXcQ", "abcdefghijk"],
+        mode: "new",
+        review: true,
+      }),
+    })
+  );
   expect(api.scripting.executeScript.mock.calls[1][0].files).toEqual([
     "/content-scripts/injectors/get-channel-video-ids.js",
   ]);

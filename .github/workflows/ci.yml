@@ -102,7 +102,7 @@ jobs:
       - name: Run Playwright E2E Tests (Headed via Xvfb)
         env:
           HEADED: "true"
-        run: xvfb-run npm --prefix apps/web-portal run test:e2e
+        run: xvfb-run -a npm --prefix apps/web-portal run test:e2e:required
 
       - name: Upload Playwright Test Report (on failure)
         if: failure()

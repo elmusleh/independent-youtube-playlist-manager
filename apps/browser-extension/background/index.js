@@ -1,5 +1,6 @@
 import "./init.js";
 import "../assets/browser-polyfill.min.js";
+import "./library-mutations.js";
 import "../editor/youtube-auth.js";
 import "../editor/youtube-api.js";
 import "../editor/storage-service.js";

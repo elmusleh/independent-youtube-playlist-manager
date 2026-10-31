@@ -4,6 +4,12 @@ import os from "os";
 import fs from "fs";
 import { execFileSync } from "child_process";
 
+if (process.env.IYPM_REQUIRE_EXTENSION_E2E === "1" && process.env.HEADED !== "true") {
+  throw new Error(
+    "Mandatory extension E2E requires HEADED=true and a display (use xvfb-run on Linux)."
+  );
+}
+
 /**
  * The unpacked extension is built to <repo-root>/dist/<target> by
  * packages/build-tools/build-extension.js. Deriving the root from __dirname is
@@ -38,7 +44,7 @@ const test = base.extend<{
   context: BrowserContext;
   extensionId: string;
 }>({
-  context: async ({}, use) => {
+  context: async ({}, use, testInfo) => {
     const isHeadless = !process.env.HEADED;
 
     if (isHeadless) {
@@ -55,6 +61,7 @@ const test = base.extend<{
     // Use a real temp directory — Chrome crashes on Linux when given "" as profile dir
     const profileDir = fs.mkdtempSync(path.join(os.tmpdir(), "iypm-e2e-"));
     const context = await chromium.launchPersistentContext(profileDir, {
+      channel: "chromium",
       headless: false,
       args: [
         `--disable-extensions-except=${pathToExtension}`,
@@ -63,9 +70,16 @@ const test = base.extend<{
         "--disable-gpu",
       ],
     });
-    await use(context);
-    await context.close();
-    fs.rmSync(profileDir, { recursive: true, force: true });
+    try {
+      await testInfo.attach("extension-browser-version", {
+        body: Buffer.from(context.browser()?.version() || "unknown"),
+        contentType: "text/plain",
+      });
+      await use(context);
+    } finally {
+      await context.close();
+      fs.rmSync(profileDir, { recursive: true, force: true });
+    }
   },
   extensionId: async ({ context }, use) => {
     const isHeadless = !process.env.HEADED;
@@ -90,12 +104,9 @@ const test = base.extend<{
     await triggerPage.close().catch(() => {});
 
     if (!background) {
-      // SW didn't register — skip rather than fail with a misleading URL error.
-      test.skip(
-        true,
-        "Extension service worker did not register — check the extension for SW errors."
+      throw new Error(
+        "Extension service worker did not register; inspect runtime imports and browser errors."
       );
-      return;
     }
 
     const extensionId = background.url().split("/")[2];

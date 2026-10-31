@@ -3,6 +3,7 @@
   import Header from "./components/Header.svelte";
   import Sidebar from "./components/Sidebar.svelte";
   import PlaylistEditor from "./components/PlaylistEditor.svelte";
+  import { wrap } from "svelte-spa-router/wrap";
   import New from "./views/New.svelte";
   import Builder from "./views/Builder.svelte";
   import Saved from "./views/Saved.svelte";
@@ -98,6 +99,7 @@
   }
 
   const routes = {
+    "/capture": wrap({ asyncComponent: () => import("./views/Capture.svelte") }),
     "/new": New,
     "/playlist-builder": Builder,
     "/saved": Saved,

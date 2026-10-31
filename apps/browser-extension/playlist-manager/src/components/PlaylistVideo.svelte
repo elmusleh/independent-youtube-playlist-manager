@@ -349,6 +349,7 @@
 
   .thumbnail-wrapper {
     position: relative;
+    isolation: isolate;
     display: inline-block;
     width: var(--row-thumb-width);
     height: var(--row-thumb-height);
@@ -364,6 +365,7 @@
   }
 
   .duration-badge {
+    z-index: 1;
     position: absolute;
     bottom: var(--space-1);
     right: var(--space-1);
@@ -378,6 +380,7 @@
   }
 
   .status-badge {
+    z-index: 1;
     position: absolute;
     bottom: var(--space-1);
     right: var(--space-1);

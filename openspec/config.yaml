@@ -1,0 +1,35 @@
+schema: spec-driven
+
+context: |
+  Read AGENTS.md and .ai-sync/AGENT_WORKFLOW.md before work.
+  .ai-sync/HANDOFF.md and PROGRESS.md hold current state and evidence; PLAN.md sets approved priorities.
+  OpenSpec changes define requirements/design/tasks; do not duplicate or overwrite current-state records.
+  Preserve all existing local edits, including separate release preparation.
+  The owner delegates application tests, builds and audits to Hermes unless explicitly reassigned.
+  Mark delegated or skipped verification pending; reported successes require evidence and actual exit codes.
+  No merge, publication, deployment, issue closure or release/version changes without applicable owner authority.
+  Existing context-menu scope is docs/CONTEXT_MENU_PLAN.md; remaining review is docs/testing/POST_HERMES_PLAN.md.
+  Local playlist and builder writes must retain the single background authority and revision protection.
+  Keep native browser gestures, automated browser checks and real-device evidence distinct.
+
+rules:
+  proposal:
+    - State scope, exclusions and links to the existing plan; do not imply new release authorization.
+  specs:
+    - Use testable SHALL requirements and WHEN/THEN scenarios, including relevant failure paths.
+  design:
+    - Explain compatibility, privacy, persistence and recovery effects when applicable.
+  tasks:
+    - Separate implementation from verification, identify the verifier, and leave unexecuted acceptance tasks unchecked.
+    - Require exact evidence and exit codes; a report file, skipped suite or production-only audit is not a passed full gate.
+
+operations:
+  apply:
+    guidance:
+      - Recheck Git status and current handoff before each resumed task; another agent may have changed the tree.
+      - Preserve owner test delegation; prepare a concrete handoff instead of executing delegated commands.
+      - Update .ai-sync state and reference evidence; do not mark the change accepted from implementation alone.
+  archive:
+    guidance:
+      - Archive only after the change's acceptance tasks and required evidence are complete.
+      - Archiving records accepted requirements; it does not authorize a Git merge or public release.

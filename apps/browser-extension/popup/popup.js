@@ -176,20 +176,27 @@ function setupUI() {
         return alert("The current tab is not a YouTube playlist tab");
       }
 
-      await log("INFO", `Popup: Found ${videoIds.length} videos. Generating playlist object...`);
-      const playlist = await state.videoService.generatePlaylist(videoIds);
-      const signedIn = await window.isSignedIn();
-
-      await log("INFO", `Popup: Saving playlist (Sync: ${signedIn})`);
-      const id = await window.savePlaylist(playlist, {
-        syncToYoutube: signedIn,
+      const current = await browser.tabs.get(tabId);
+      if (
+        current.url !== activeTab.url ||
+        current.windowId !== activeTab.windowId ||
+        current.incognito
+      )
+        throw new Error("The playlist page changed or is private. Retry on the source page.");
+      const response = await browser.runtime.sendMessage({
+        cmd: "capture",
+        action: "start",
+        args: {
+          ids: videoIds,
+          mode: "new",
+          review: true,
+          title: activeTab.title || "Saved YouTube playlist",
+          sourceTabId: tabId,
+          sourceTabUrl: activeTab.url,
+        },
       });
+      if (!response?.ok) throw new Error(response?.error || "Could not open playlist review.");
 
-      await log("INFO", `Popup: Playlist saved with ID: ${id}. Opening editor...`);
-      const savedParam = id.startsWith("local-") ? "local=true" : "saved=true";
-      await browser.tabs.create({
-        url: browser.runtime.getURL(`/editor/index.html?id=${id}&${savedParam}#/editor`),
-      });
       window.close();
     } catch (e) {
       await log("ERROR", "Popup: Failed to save playlist", getErrorMessage(e));

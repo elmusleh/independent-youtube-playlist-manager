@@ -7,6 +7,30 @@ export type ReleaseNoteEntry = { version: string; date: string; sections: Releas
 
 export const releaseNotes: ReleaseNoteEntry[] = [
   {
+    version: "1.2.1",
+    date: "2026-10-27",
+    sections: [
+      {
+        heading: "Fixed",
+        items: [
+          'Import from Page works on any regular web page again, not only pages whose channel could be detected: the popup no longer requires a channel name to scan a tab. Quantity 0 now means "all videos" (the injector treats it as unlimited), scrolling stops after three _consecutive_ stalled attempts instead of three attempts in total, and failures are reported inline under the form instead of in an alert() that dismissed the popup.',
+          "Mobile UX improvements across the extension popup and SPA editor: touch targets now meet the 44px minimum on all interactive elements (ProfileDropdown avatar, dropdown menu items, modal actions, MultiSortModal controls, SearchInput clear button, ListRow drag handles, popup menu items, Header sign-in/create/menu-toggle buttons, Manage action buttons, PlaybackSettings info icon, checkboxes in ListRow/PlaylistVideo/BulkActionsBar); ConfirmationModal migrated to the shared Modal component with focus restoration and Escape handling; popup widths aligned to design tokens (--popup-max-width: calc(100vw - 32px)); sidebar drawer and header heights standardized via --header-height-mobile; tablet (768px) horizontal overflow fixed by correcting media query overlap in App.svelte. Phase 4 real-device verification (screenshots, manual Firefox Android test) remains pending.",
+        ],
+      },
+      {
+        heading: "Changed",
+        items: [
+          "Documentation restructured for handover: .ai-sync/HANDOFF.md is now a short, verified current-state file (branches, SHAs, pending work, known traps) instead of 650 lines of per-session narration; the old log is frozen in .ai-sync/HISTORY.md. PLAN.md and PROGRESS.md describe only scheduled and open work, docs/INDEX.md maps every document, and AGENTS.md opens with an explicit reading order. Removed docs/RELEASE_SPEC.md, which still instructed agents to release from main and contradicted docs/RELEASING.md, and moved three completed implementation plans out of the repository root into docs/archive/.",
+          "Git workflow: next is the integration branch and main holds releases only. Work branches from next and PRs into it, squash-merged; a release is one squash-merged PR from next to main, tagged vX.Y.Z, after which main is merged back into next.",
+          "CI and security workflows run on next as well as main.",
+          "The extension E2E suite no longer breaks when the root and portal trees resolve different Playwright versions: CI now installs browsers for both trees, and verify-tooling-versions.js (in npm run check) fails with the fix instead of leaving a missing-executable error that reads like a flake.",
+          "Dependabot now monitors all three npm trees: root, apps/web-portal and apps/browser-extension/playlist-manager. Previously only / was configured, so portal and extension dependencies received no update PRs at all. Each tree is grouped separately, and framework majors (next/react/react-dom, svelte) are ignored — they are migrations, not weekly chores.",
+          "Vercel deployment fixed: rootDirectory removed from vercel.json (it is a project setting, not a config key) and guarded by verify-vercel-config.js, so deployments no longer fail at config parse.",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.2.0",
     date: "2026-10-26",
     sections: [

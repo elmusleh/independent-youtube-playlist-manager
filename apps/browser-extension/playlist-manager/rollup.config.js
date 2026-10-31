@@ -1,3 +1,4 @@
+import { bundleInventory } from "../../../packages/build-tools/bundle-inventory.mjs";
 import commonjs from "@rollup/plugin-commonjs";
 import resolve from "@rollup/plugin-node-resolve";
 import replace from "@rollup/plugin-replace";
@@ -106,6 +107,7 @@ export default {
       inlineSources: !production,
     }),
     production && terser(),
+    production && bundleInventory(),
     production &&
       copy({
         targets: [

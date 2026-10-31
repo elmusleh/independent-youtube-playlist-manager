@@ -36,3 +36,16 @@ apps/browser-extension/editor/*
 .vercel/
 .vercel
 .worktrees/
+
+# Version only generated OpenSpec workflow instructions; keep other agent state ignored.
+!.agents/
+.agents/*
+!.agents/skills/
+.agents/skills/*
+!.agents/skills/openspec-*/
+!.agents/skills/openspec-*/SKILL.md
+.hermes/*
+!.hermes/skills/
+.hermes/skills/*
+!.hermes/skills/openspec-*/
+!.hermes/skills/openspec-*/SKILL.md

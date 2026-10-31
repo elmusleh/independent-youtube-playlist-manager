@@ -1,3 +1,4 @@
+import { mutateLibrary, librarySnapshot } from "../../../shared/storage-client.js";
 import { dbGetAllMetadata, dbPutMetadataBatch, dbClearMetadata } from "./db-service.js";
 import {
   archivedThumbnails,
@@ -21,7 +22,6 @@ import type {
 const BACKUP_FORMAT = "yph_full_backup";
 const CURRENT_SCHEMA_VERSION = 2;
 const HISTORY_KEY = "local_yt_history";
-const LOCAL_PLAYLISTS_KEY = "yph_local_playlists";
 
 /**
  * Dumps the entire database (playlists, IndexedDB metadata cache, watch history, settings) into a portable JSON backup
@@ -198,6 +198,7 @@ export async function importFullDatabaseBackup(
   const errors: string[] = [];
 
   try {
+    const initialSnapshot = await librarySnapshot();
     // -------------------------------------------------------------------------
     // 1. Process Video Metadata Cache (IndexedDB)
     // -------------------------------------------------------------------------
@@ -258,8 +259,7 @@ export async function importFullDatabaseBackup(
 
     let finalPlaylists: Playlist[] = [];
     if (mode === "merge") {
-      const existingPlaylists =
-        typeof window.getPlaylists === "function" ? await window.getPlaylists() : [];
+      const existingPlaylists = initialSnapshot.playlists;
       const playlistMap = new Map<string, Playlist>();
       existingPlaylists.forEach((p) => playlistMap.set(p.id, normalizePlaylist(p)));
 
@@ -289,7 +289,11 @@ export async function importFullDatabaseBackup(
     }
 
     if (typeof browser !== "undefined") {
-      await browser.storage.local.set({ [LOCAL_PLAYLISTS_KEY]: finalPlaylists });
+      await mutateLibrary({
+        type: "replace",
+        playlists: finalPlaylists,
+        expectedRevision: initialSnapshot.revision,
+      });
     }
 
     // -------------------------------------------------------------------------

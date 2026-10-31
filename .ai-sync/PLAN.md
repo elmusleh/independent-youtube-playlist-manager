@@ -1,47 +1,85 @@
-# Plan
+# Plan — context-menu completion
 
-Short by design. This is the sequence, not the history — see `.ai-sync/HANDOFF.md` for state
-and `.ai-sync/PROGRESS.md` for open tasks.
+Owner authorized implementation on 2026-10-31. Follow `docs/CONTEXT_MENU_PLAN.md` and
+its four delivery stages. Do not merge, publish, tag, deploy or change release versions.
+Existing 1.2.1 patch preparation remains separate; the context menu is a feature and
+needs the release decision/version under RELEASING.md after verification.
 
-## Current cycle: 1.2.1, awaiting the owner
+## Authorized delivery sequence
 
-`v1.2.0` shipped on 2026-10-26. Since then `next` has accumulated one user-visible fix — the
-popup's page import working on any regular page — alongside infrastructure changes. A bug
-fix is a **patch** release: 1.2.1. It needs no further work before shipping, only a decision
-to ship it.
+1. Shared capture foundation: pure scope/URL/destination rules; worker authority for
+   all local playlist-array/builder writers; atomic revision checks and visible conflicts.
+2. Bounded native menu and accessible chooser: settings/default/custom parity, cached
+   labels, lifecycle reconciliation, Android fallback and independent close setting.
+3. Import/playlist-save and remote parity: explicit source permissions, quantity/order,
+   bounded channel scanning, review/consent, persisted progress, safe retry/cancellation.
+4. Browser verification/docs: actual Firefox/Chromium gestures and activeTab on a
+   non-YouTube fixture, large destinations, narrow chooser, issue regressions and all gates.
 
-## What triggers the next release
+Implementation for stages 1–3 is written. Hermes reported automated check/build/unit/E2E
+successes, but audit status is disputed and headed/native/manual gates remain open. Owner explicitly delegated execution to Hermes; use
+`docs/testing/HERMES_CONTEXT_MENU_VERIFICATION.md` before claiming completion.
 
-A user-facing fix or feature landing on `next`. Then, and only then:
+## Recommendations accepted in this cycle
 
-1. Move `[Unreleased]` to `## [X.Y.Z] - YYYY-MM-DD` in `CHANGELOG.md`, open a fresh empty
-   `[Unreleased]` above it, run `npm run release-notes`.
-2. `node packages/build-tools/sync-version.mjs --set X.Y.Z` (never `npm version`).
-3. Release prep PR into `next`; then the release PR `next` → `main`, squash-merged.
-4. Tag `main`, push the tag, let `release.yml` publish.
-5. Merge `main` back into `next`.
+- CM-R1: consistent destination glossary and help copy.
+- CM-R2: audit all three lockfile trees, separate runtime/build advisories, triage and
+  apply compatible remediation based on actual findings. Reporter written; execution
+  and dependency fixes pending remediation. Do not force major upgrades.
+- CM-R3: prove safety assertions with selective mutations in disposable copies.
+  Hermes reports all four safety mutations caught.
 
-Full runbook: `docs/RELEASING.md`.
+## Additional verification scope
 
-## Sequencing rules
+Review open issues #10/#11/#13/#14 against existing fixes and this pass's improvements.
+Do not close issues based on source inspection alone. Mobile real-device verification
+remains open under RESPONSIVE_UI_PLAN.md; desktop emulation is not a substitute.
 
-1. **One logical change per branch.** If the name needs an "and", split it.
-2. **A PR is one squashed commit** on its target branch, and the branch is deleted on merge.
-3. **`main` only ever receives release PRs.** Nothing else, ever.
-4. **Guards over discipline.** When a class of failure repeats, add a check to `npm run
-check` rather than a reminder in a document. Existing guards: file size, CSS bundling,
-   Vercel config, tooling versions, release-notes freshness.
-5. **Verify, then claim.** `npm run check` and `npm run build` output in the PR body, not a
-   sentence saying tests pass.
+## Deferred
 
-## Deferred on purpose
+Svelte/Vite/Next/React major migrations, npm workspaces, broad sync conflict-policy
+redesign and OAuth refresh remain outside this cycle. CM-F1/F2/F3 remain later ideas.
 
-- Svelte 6, Vite 7+, Next 16, React 20 — migrations, ignored in `dependabot.yml`.
-- npm workspaces — would simplify the Playwright coupling but changes the build for no user
-  benefit.
-- Sync conflict policy and OAuth refresh — need a decision before code.
+## Post-Hermes priorities (2026-10-31)
 
-## Not planned
+Follow `docs/testing/POST_HERMES_PLAN.md`: repair declarations that disagree with JS,
+resolve the high dependency advisory and correct audit status, then headed E2E and actual
+native/issue acceptance. Owner continues to delegate test execution to Hermes. No release.
 
-Nothing else. If you are about to add a phase here, first check whether `PROGRESS.md`
-already lists it as open work.
+## OpenSpec tracking
+
+The existing remaining sequence is tracked in
+`openspec/changes/complete-context-menu-acceptance/tasks.md`; its proposal/spec/design
+formalize the already approved scope. Use that checklist for active change tasks, and
+keep .ai-sync summaries/evidence linked to it. Setup is not feature acceptance.
+
+## Worktree coordination standard — 2026-10-31
+
+Independent implementation changes use a suitable separate branch/worktree where
+needed; resumed work reuses that change's assigned checkout. Follow AGENT_WORKFLOW.md
+for prerequisites, one-writer ownership, exact-path review/verification and integration.
+Use START_HERE.md and the blank templates for handoff. This documentation task does
+not create worktrees, redistribute current edits, alter product scope or authorize a merge.
+
+## Parallel orchestration implementation plan: 2026-10-31
+
+The owner requested a documented semi-automatic feature workflow and an implementation
+plan. New change: `openspec/changes/orchestrate-parallel-implementations/`. It plans a
+private shared assignment registry, two-job scheduling, worktree/agent adapters,
+revision-bound verification, safe target updates, push-then-PR publication, recovery
+and a separately opted-in guarded merge mode. See `docs/AI_ORCHESTRATION.md`.
+
+This turn prepares planning/documentation only. All runtime tasks remain pending; no
+workers, worktrees, publication or merge are started. Default merge mode is manual.
+The existing context-menu acceptance change and its pending checks remain separate.
+Before live parallel work, prepare a reviewed committed prerequisite snapshot because
+the current checkout contains uncommitted/untracked implementation and instructions.
+
+## Active post-Hermes implementation — 2026-10-31
+
+Resume complete-context-menu-acceptance in the existing assigned checkout. Latest
+Hermes changes already include follow-redirects 1.16.2; preserve them. Implement
+CM-R7 evidence receipts, CM-R8 canonical/generated checked contracts and fail-on-skip
+headed acceptance, and CM-R9 actual bundle dependency inventory. Task/constraints:
+`.ai-sync/sessions/2026-10-31-evidence-contracts-task.md`. Tests/build/audits stay with
+Hermes; orchestration runtime, release preparation and remote publication stay separate.
