@@ -1,0 +1,80 @@
+{
+  "task": "3.1",
+  "change": "orchestrate-parallel-implementations",
+  "generatedAt": "2026-10-31T18:59:46.552Z",
+  "repository": {
+    "root": "/tmp/orch-evidence-HSJVOp",
+    "startingSha": "07f6d03daefcea60a9d814f9ca0c2ab52798ff80",
+    "head": "07f6d03daefcea60a9d814f9ca0c2ab52798ff80"
+  },
+  "cases": {
+    "committedPrerequisites": {
+      "required": [
+        "package.json",
+        "openspec/changes/demo/tasks.md"
+      ],
+      "satisfied": true,
+      "missing": []
+    },
+    "missingCommittedPrerequisite": {
+      "required": [
+        "package.json",
+        "openspec/changes/demo/missing.md"
+      ],
+      "satisfied": false,
+      "missing": [
+        "openspec/changes/demo/missing.md"
+      ]
+    },
+    "dirtySourcePreservation": {
+      "detected": true,
+      "files": [
+        "local-only-edit.txt"
+      ],
+      "stillPresentAfterAllocation": true,
+      "committedByHarness": false,
+      "warnings": [
+        "Source has 1 uncommitted changes - will be preserved"
+      ]
+    },
+    "protectedBranch": {
+      "branch": "main",
+      "valid": false,
+      "errors": [
+        "Branch 'main' is protected",
+        "Branch 'main' already exists (local)"
+      ]
+    },
+    "occupiedBranchReuse": {
+      "reuseExisting": true,
+      "existingJobId": "job-occupied",
+      "errors": [],
+      "inventory": [
+        {
+          "path": "/tmp/orch-evidence-HSJVOp",
+          "branch": "refs/heads/main"
+        },
+        {
+          "path": "/tmp/orch-evidence-HSJVOp/.worktrees/occupied",
+          "branch": "refs/heads/feat/occupied"
+        }
+      ]
+    },
+    "validAllocation": {
+      "dryRunValid": true,
+      "dryRunErrors": [],
+      "preflightPassed": true,
+      "preflightChecks": {
+        "jobExists": true,
+        "branchValid": true,
+        "worktreeAccessible": true,
+        "startingShaValid": true,
+        "dependenciesSatisfied": true,
+        "activeSlotAvailable": true
+      }
+    }
+  },
+  "summary": {
+    "allCasesPassed": true
+  }
+}

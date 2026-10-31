@@ -1,0 +1,190 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://independent-youtube-playlist-manager.dev/schemas/orchestration-policy.json",
+  "title": "Orchestration Policy",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "policyVersion",
+    "target",
+    "remote",
+    "maxActive",
+    "mergeMode",
+    "allowedAdapters",
+    "roles",
+    "jobAuthority"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "1.0.0",
+      "description": "Schema version for validation compatibility"
+    },
+    "policyVersion": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Semantic version of this policy document"
+    },
+    "target": {
+      "type": "string",
+      "const": "next",
+      "description": "Integration branch target (must be 'next')"
+    },
+    "remote": {
+      "type": "string",
+      "const": "origin",
+      "description": "Git remote name (must be 'origin')"
+    },
+    "maxActive": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 10,
+      "default": 2,
+      "description": "Maximum concurrent active implementation jobs"
+    },
+    "mergeMode": {
+      "type": "string",
+      "enum": ["manual", "guarded"],
+      "default": "manual",
+      "description": "Merge mode: manual (default) or guarded (requires explicit opt-in)"
+    },
+    "allowedAdapters": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "type", "capabilities"],
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Unique adapter identifier"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["hermes", "codex", "manual"],
+            "description": "Agent type this adapter supports"
+          },
+          "capabilities": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": ["dispatch", "status", "cancel", "verify", "review"]
+            },
+            "description": "Operations this adapter can perform"
+          },
+          "executable": {
+            "type": "string",
+            "description": "Command or script to invoke the adapter"
+          },
+          "args": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Default arguments for the adapter"
+          }
+        }
+      },
+      "minItems": 1,
+      "description": "Authorized agent launch adapters"
+    },
+    "roles": {
+      "type": "object",
+      "required": ["implementer", "reviewer", "verifier"],
+      "additionalProperties": false,
+      "properties": {
+        "implementer": {
+          "type": "object",
+          "required": ["name", "adapter"],
+          "additionalProperties": false,
+          "properties": {
+            "name": { "type": "string" },
+            "adapter": { "type": "string" },
+            "skills": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          }
+        },
+        "reviewer": {
+          "type": "object",
+          "required": ["name", "adapter"],
+          "additionalProperties": false,
+          "properties": {
+            "name": { "type": "string" },
+            "adapter": { "type": "string" },
+            "skills": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          }
+        },
+        "verifier": {
+          "type": "object",
+          "required": ["name", "adapter"],
+          "additionalProperties": false,
+          "properties": {
+            "name": { "type": "string" },
+            "adapter": { "type": "string" },
+            "skills": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          }
+        }
+      },
+      "description": "Named roles for each job assignment"
+    },
+    "jobAuthority": {
+      "type": "object",
+      "required": ["publication", "merge", "cleanup"],
+      "additionalProperties": false,
+      "properties": {
+        "publication": {
+          "type": "object",
+          "required": ["allowed", "requiresOwnerOptIn"],
+          "additionalProperties": false,
+          "properties": {
+            "allowed": { "type": "boolean" },
+            "requiresOwnerOptIn": { "type": "boolean" }
+          }
+        },
+        "merge": {
+          "type": "object",
+          "required": [
+            "mode",
+            "allowedTargets",
+            "requiresOwnerOptIn",
+            "requiresNonAuthorReview",
+            "requiresResolvedThreads",
+            "requiresCurrentChecks",
+            "requiresEffectiveProtections"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "mode": { "type": "string", "enum": ["manual", "guarded"] },
+            "allowedTargets": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "requiresOwnerOptIn": { "type": "boolean" },
+            "requiresNonAuthorReview": { "type": "boolean" },
+            "requiresResolvedThreads": { "type": "boolean" },
+            "requiresCurrentChecks": { "type": "boolean" },
+            "requiresEffectiveProtections": { "type": "boolean" }
+          }
+        },
+        "cleanup": {
+          "type": "object",
+          "required": ["preserveDirtyWork", "preserveEvidence", "requiresOwnerAuthority"],
+          "additionalProperties": false,
+          "properties": {
+            "preserveDirtyWork": { "type": "boolean" },
+            "preserveEvidence": { "type": "boolean" },
+            "requiresOwnerAuthority": { "type": "boolean" }
+          }
+        }
+      },
+      "description": "Per-job authority and permissions"
+    }
+  }
+}

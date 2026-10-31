@@ -7,7 +7,10 @@ export default defineConfig({
     globals: true,
     environment: "jsdom",
     setupFiles: ["./vitest.setup.mjs"],
-    include: ["apps/browser-extension/playlist-manager/src/**/*.{test,spec}.{js,ts}"],
+    include: [
+      "apps/browser-extension/playlist-manager/src/**/*.{test,spec}.{js,ts}",
+      "packages/build-tools/orchestration/**/*.{test,spec}.{js,ts}",
+    ],
     passWithNoTests: true,
     coverage: {
       provider: "istanbul",

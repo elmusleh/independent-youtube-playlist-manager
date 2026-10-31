@@ -1,0 +1,127 @@
+{
+  "task": "7.2",
+  "change": "orchestrate-parallel-implementations",
+  "generatedAt": "2026-10-31T18:59:46.865Z",
+  "repository": {
+    "root": "/tmp/orchestration-demo-ZOEJwJ/repo",
+    "origin": "/tmp/orchestration-demo-ZOEJwJ/origin.git",
+    "startingSha": "0c11b3bee77468fb1e6039effb2089508c633b76"
+  },
+  "steps": {
+    "activeJobs": {
+      "leases": [
+        {
+          "jobId": "job-a",
+          "role": "implementer",
+          "worktree": "/tmp/orchestration-demo-ZOEJwJ/wt-a"
+        },
+        {
+          "jobId": "job-b",
+          "role": "implementer",
+          "worktree": "/tmp/orchestration-demo-ZOEJwJ/wt-b"
+        }
+      ],
+      "resources": [
+        {
+          "jobId": "job-a",
+          "ports": [
+            4100
+          ],
+          "profile": "hermes-a"
+        },
+        {
+          "jobId": "job-b",
+          "ports": [
+            4101
+          ],
+          "profile": "hermes-b"
+        }
+      ],
+      "distinctWorktrees": true,
+      "distinctPorts": true,
+      "distinctProfiles": true,
+      "thirdJobDecision": {
+        "action": "waiting-slot",
+        "activeCount": 2
+      },
+      "thirdJobQueued": true
+    },
+    "manualDispatch": {
+      "status": "manual-handoff-required",
+      "instructions": [
+        "Open a session in /tmp/orchestration-demo-ZOEJwJ/wt-a on branch feat/job-a.",
+        "Load the OpenSpec apply skill and run: openspec instructions apply --change \"demo-change-a\" --json",
+        "Start with task: Implement demo change A",
+        "Relevant skills: openspec-apply-change",
+        "Implementer: manual",
+        "Verifier: manual",
+        "Resume: re-open this worktree and re-read the job before editing; do not create a second worktree."
+      ],
+      "spawned": false
+    },
+    "reviewHandoff": {
+      "pausedRole": "implementer",
+      "activeRoleDuringVerification": "verifier",
+      "singleWriterWhilePaused": true,
+      "verifierReleased": true,
+      "resumedRole": "implementer",
+      "roleHistory": [
+        "acquire",
+        "transfer",
+        "release",
+        "acquire"
+      ]
+    },
+    "conflict": {
+      "status": "conflict",
+      "files": [
+        "shared.txt"
+      ],
+      "headRestored": true,
+      "requiresIntervention": true
+    },
+    "statusTable": [
+      {
+        "jobId": "job-a",
+        "state": "implementing",
+        "worktree": "/tmp/orchestration-demo-ZOEJwJ/wt-a",
+        "writerRole": "implementer",
+        "ports": [
+          4100
+        ],
+        "profile": "hermes-a"
+      },
+      {
+        "jobId": "job-b",
+        "state": "implementing",
+        "worktree": "/tmp/orchestration-demo-ZOEJwJ/wt-b",
+        "writerRole": "implementer",
+        "ports": [
+          4101
+        ],
+        "profile": "hermes-b"
+      },
+      {
+        "jobId": "job-c",
+        "state": "queued",
+        "worktree": null,
+        "writerRole": "none",
+        "ports": [],
+        "profile": null
+      }
+    ],
+    "writerOverlap": {
+      "worktreesWithMultipleWriters": 0,
+      "overlaps": [],
+      "noSharedWriter": true
+    }
+  },
+  "summary": {
+    "twoActiveJobs": true,
+    "thirdJobQueued": true,
+    "manualFallbackUsed": true,
+    "pauseReviewResume": true,
+    "conflictRequiresIntervention": true,
+    "noSharedWriter": true
+  }
+}

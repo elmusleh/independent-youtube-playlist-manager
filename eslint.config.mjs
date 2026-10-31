@@ -50,7 +50,7 @@ export default [
     },
   },
   {
-    files: ["packages/build-tools/sync-version.mjs"],
+    files: ["packages/build-tools/sync-version.mjs", "packages/build-tools/orchestration/**/*.js"],
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: "module",

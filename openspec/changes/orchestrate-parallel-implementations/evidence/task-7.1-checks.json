@@ -1,0 +1,104 @@
+{
+  "task": "7.1",
+  "change": "orchestrate-parallel-implementations",
+  "generatedAt": "2026-10-31T18:59:27.804Z",
+  "repository": {
+    "root": "/home/steve/dev/independent-youtube-playlist-manager",
+    "branch": "codex/context-menu-plan",
+    "head": "c9200e86cc777fca561a0880e28e32fdaecb9db6",
+    "tree": "bd11bbd98d8b4e2f3f7761c2f736d7827b22dd13",
+    "workingTree": "d47dde499a762d2ded7b65cd3103455327956bd1eceb5bb5d73d958e0d20a7b0",
+    "after": {
+      "head": "c9200e86cc777fca561a0880e28e32fdaecb9db6",
+      "tree": "bd11bbd98d8b4e2f3f7761c2f736d7827b22dd13",
+      "workingTree": "d47dde499a762d2ded7b65cd3103455327956bd1eceb5bb5d73d958e0d20a7b0",
+      "unchanged": true
+    }
+  },
+  "toolchain": {
+    "node": "v22.23.1",
+    "platform": "linux",
+    "npm": "10.9.8"
+  },
+  "remoteMutation": "none",
+  "commands": [
+    {
+      "name": "unit-and-integration-tests",
+      "command": "npm test",
+      "exitCode": 0,
+      "durationMs": 7069,
+      "signal": null,
+      "stdoutTail": "\n\n Test Files  45 passed (45)\n      Tests  499 passed (499)\n   Start at  19:59:28\n   Duration  6.25s (transform 9.64s, setup 1.32s, import 9.95s, tests 23.99s, environment 61.82s)",
+      "stderrTail": ""
+    },
+    {
+      "name": "lint",
+      "command": "npx eslint apps/browser-extension/ packages/build-tools/ --ext .js",
+      "exitCode": 0,
+      "durationMs": 1789,
+      "signal": null,
+      "stdoutTail": "  295:9  warning  Unexpected console statement                        no-console\n  301:9  warning  Unexpected console statement                        no-console\n  305:9  warning  Unexpected console statement                        no-console\n  312:5  warning  Unexpected console statement                        no-console\n\n✖ 37 problems (0 errors, 37 warnings)",
+      "stderrTail": ""
+    },
+    {
+      "name": "format-check",
+      "command": "npx prettier --check .",
+      "exitCode": 0,
+      "durationMs": 7498,
+      "signal": null,
+      "stdoutTail": "Checking formatting...\nAll matched files use Prettier code style!",
+      "stderrTail": ""
+    },
+    {
+      "name": "file-size",
+      "command": "node packages/build-tools/verify-file-size.js",
+      "exitCode": 0,
+      "durationMs": 35,
+      "signal": null,
+      "stdoutTail": "\u001b[33m[ALLOWLISTED]\u001b[0m apps/browser-extension/playlist-manager/src/views/DeveloperSetup.svelte: 669 lines (existing debt)\n\u001b[33m[ALLOWLISTED]\u001b[0m apps/browser-extension/playlist-manager/src/views/History.svelte: 746 lines (existing debt)\n\u001b[33m[ALLOWLISTED]\u001b[0m apps/browser-extension/playlist-manager/src/views/Manage.svelte: 1997 lines (existing debt)\n\u001b[33m[ALLOWLISTED]\u001b[0m apps/browser-extension/playlist-manager/src/views/Shortcuts.svelte: 371 lines (existing debt)\n\n\u001b[32m✔ File-size verification passed (228 files scanned, 20 allowlisted legacy files).\u001b[0m",
+      "stderrTail": ""
+    },
+    {
+      "name": "css-bundle",
+      "command": "node packages/build-tools/verify-css-bundle.js",
+      "exitCode": 0,
+      "durationMs": 36,
+      "signal": null,
+      "stdoutTail": "\u001b[32m✔ CSS bundle & component style verification passed.\u001b[0m",
+      "stderrTail": ""
+    },
+    {
+      "name": "vercel-config",
+      "command": "node packages/build-tools/verify-vercel-config.js",
+      "exitCode": 0,
+      "durationMs": 33,
+      "signal": null,
+      "stdoutTail": "✔ Vercel config verification passed (2 config(s) checked).",
+      "stderrTail": ""
+    },
+    {
+      "name": "contracts-check",
+      "command": "node packages/build-tools/generate-protocol-declarations.js --check",
+      "exitCode": 0,
+      "durationMs": 1713,
+      "signal": null,
+      "stdoutTail": "Protocol checking completed; inspect exit status.",
+      "stderrTail": ""
+    },
+    {
+      "name": "release-notes-check",
+      "command": "node packages/build-tools/gen-release-notes.mjs --check",
+      "exitCode": 0,
+      "durationMs": 218,
+      "signal": null,
+      "stdoutTail": "Release notes in sync (5 versions).",
+      "stderrTail": ""
+    }
+  ],
+  "summary": {
+    "allPassed": true,
+    "failed": [],
+    "treeUnchanged": true,
+    "note": "Build gates requiring npm ci/network install were not run; checks above are local."
+  }
+}
