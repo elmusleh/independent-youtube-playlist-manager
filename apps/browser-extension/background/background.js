@@ -1,3 +1,6 @@
+import { mutateLibrary } from "./library-mutations.js";
+import { permittedUI } from "./message-access.js";
+import { parseYouTubeVideoId } from "../shared/tab-selection.js";
 /* eslint-disable no-console */
 import { isAndroid, playlistBuilderId, updateBadge } from "./utils.js";
 import { buildContextMenus } from "./context-menus.js";
@@ -25,7 +28,6 @@ async function init() {
     try {
       if (window.logSystemEvent) await window.logSystemEvent("INFO", "Background: Initializing...");
       if (!isAndroid()) {
-        await browser.contextMenus.removeAll();
         const settings = await window.getSettings();
         await buildContextMenus(settings);
       }
@@ -52,7 +54,7 @@ async function clearAddVideoToPlaylistItems() {
 }
 
 async function clearContextMenus() {
-  if (!isAndroid()) await browser.contextMenus.removeAll();
+  // Reconciliation updates existing entries without a remove/recreate gap.
 }
 
 // ---------------------------------------------------------------------------
@@ -65,15 +67,9 @@ if (browser.commands?.onCommand) {
       try {
         const tabs = await browser.tabs.query({ active: true, currentWindow: true });
         if (tabs.length > 0 && tabs[0].url) {
-          const videoId = window.videoService
-            ? window.videoService.parseYoutubeId(tabs[0].url)
-            : null;
+          const videoId = tabs[0].incognito ? null : parseYouTubeVideoId(tabs[0].url);
           if (videoId) {
-            const items = await browser.storage.local.get(playlistBuilderId);
-            const playlistBuilder = items[playlistBuilderId] || [];
-            playlistBuilder.push(videoId);
-            updateBadge("" + playlistBuilder.length);
-            await browser.storage.local.set({ [playlistBuilderId]: playlistBuilder });
+            await mutateLibrary({ type: "builder-append", ids: [videoId] });
             const { alert } = await import("./utils.js");
             await alert(`Added video (${videoId}) to Playlist Builder!`, true);
           }
@@ -90,6 +86,10 @@ if (browser.commands?.onCommand) {
 // ---------------------------------------------------------------------------
 
 browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (["create-playlist", "update-settings"].includes(request?.cmd) && !permittedUI(sender)) {
+    sendResponse({ error: "This page cannot change playlist settings or create playlists." });
+    return false;
+  }
   if (window.logSystemEvent)
     window.logSystemEvent("INFO", `Background: Received message: ${request.cmd}`);
 
@@ -99,18 +99,24 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
       sendResponse(items[playlistBuilderId] || []);
     })();
     return true;
-  } else if (request.cmd === "clear-playlist-builder") {
-    browser.storage.local.set({ [playlistBuilderId]: [] }).then(() => {
-      updateBadge("");
-      sendResponse(true);
-    });
-    return true;
-  } else if (request.cmd === "update-playlist-builder") {
-    const playlistBuilder = request.playlistBuilder;
-    browser.storage.local.set({ [playlistBuilderId]: playlistBuilder }).then(() => {
-      updateBadge("" + playlistBuilder.length);
-      sendResponse(true);
-    });
+  } else if (["clear-playlist-builder", "update-playlist-builder"].includes(request.cmd)) {
+    if (!permittedUI(sender)) {
+      sendResponse({ error: "Untrusted playlist page." });
+      return false;
+    }
+    // Consume only the IDs the editor saved. Concurrent additions remain in the builder.
+    const operation =
+      request.cmd === "clear-playlist-builder"
+        ? { type: "builder-consume", ids: request.savedIds || [] }
+        : {
+            type: "builder-replace",
+            ids: request.playlistBuilder,
+            expectedRevision: request.expectedRevision,
+          };
+    mutateLibrary(operation).then(
+      () => sendResponse(true),
+      (error) => sendResponse({ error: error.message })
+    );
     return true;
   } else if (request.cmd === "focus-playlist-builder") {
     (async () => {
@@ -267,8 +273,8 @@ async function createPlaylist(videoIds, title) {
         );
       const isLocal = playlistId.startsWith("local-");
       const url = isLocal
-        ? `/editor/index.html?id=${playlistId}&local=true#/editor`
-        : `/editor/index.html?id=${playlistId}#/editor`;
+        ? `/editor/index.html#/playlist?id=${encodeURIComponent(playlistId)}`
+        : `/editor/index.html#/playlist?id=${encodeURIComponent(playlistId)}`;
 
       await browser.tabs.create({
         url: browser.runtime.getURL(url),

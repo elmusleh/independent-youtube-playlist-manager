@@ -9,7 +9,7 @@
     let stalledAttempts = 0;
     const maxScrollAttempts = 100; // Prevent infinite loops
 
-    while (scrollAttempts < maxScrollAttempts) {
+    while (scrollAttempts < maxScrollAttempts && !window["YPH_CANCEL_IMPORT"]) {
       scrollAttempts++;
       const currentVideos = document.querySelectorAll(
         "ytd-rich-item-renderer, ytd-grid-video-renderer, ytd-video-renderer, ytd-compact-video-renderer"

@@ -3,7 +3,7 @@
   "short_name": "Playlist Manager",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAsfQwxiEAXZoqz1TqJf8mwY6pY9UGvYc/Xj8arRAOSlyVyDVF92LbMmfET1y+tbvsASJh/uqvVg04y+rBJJAIcLR2V98eO5uv/R5Ei4pBN/jFVc8nCxIOvuLlOMRpLnK1t2ZX/hw9M931LgM9Ml5uk3pXfllpSxgCz7GPD16u/VwZbHVjBIKgWUpk3bzOZFVMpGz81RofOYXluSjwnRW4BhSH5DVpCSvSYsBputnFZRBUXIyDobFoa29gkQZiwI3/rAjpQO7lG05noxidzFYMHLo3CHrAl/cFZcUa5g9UrsvaMG0YXY/5Nj906cZlCOepEmxc/Zer6+6MzxoXp0i6xwIDAQAB",
   "description": "Manage YouTube playlists locally: create, edit, sync, and track history. Save videos to watch later. No login required.",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "manifest_version": 3,
   "icons": {
     "16": "assets/icons/icon_16.png",

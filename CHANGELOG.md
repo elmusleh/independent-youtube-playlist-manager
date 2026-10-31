@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Unreleased desktop page context menu with seven capture scopes, bounded destination
+  selection, searchable local/YouTube chooser, page import options, explicit remote
+  Sync review, expiring capture jobs, progress and cancellation. Native captures keep
+  tabs open by default; optional closure checks newly saved IDs and unchanged source tabs.
+- Shared background authority for playlist and builder writes with atomic revisions,
+  conflict feedback and retry receipts. Add dependency-tree triage, runtime module packaging
+  verification and disposable safety mutation checks. Verification is pending Hermes.
+
+### Fixed
+
+- Harden the unreleased context-menu capture path: exclude private tabs, validate YouTube
+  URL schemes and video IDs, preserve clicked-tab selection and cross-window order,
+  fall back from media URLs to watch-page URLs, and create new local playlists offline.
+  Reject remote destinations until explicit review is available instead of silently
+  making local copies; do not recreate missing favorite destinations.
+
+## [1.2.1] - 2026-10-27
+
 ### Fixed
 
 - Import from Page works on any regular web page again, not only pages whose channel could

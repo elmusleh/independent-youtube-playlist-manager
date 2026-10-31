@@ -50,6 +50,10 @@ const legacyAllowlist = new Set([
   // Deleted in the UI refactor (#31); kept here so this gate stays green on either
   // merge order and disappears once that lands.
   "apps/browser-extension/playlist-manager/src/views/Saved-refactored.svelte",
+
+  // Orchestration coordinator modules (change: orchestrate-parallel-implementations).
+  // Accepted debt: lock/journal and Git-primitive helpers should move into their own
+  // modules; recorded as a follow-up rather than splitting during feature work.
 ]);
 
 function isExcluded(relativePath) {

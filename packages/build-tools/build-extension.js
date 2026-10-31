@@ -14,7 +14,7 @@ if (fs.existsSync(path.join(source, "manifest.json")))
 const destination = path.join(root, "dist", target);
 fs.rmSync(destination, { recursive: true, force: true });
 fs.mkdirSync(destination, { recursive: true });
-for (const directory of ["assets", "background", "content-scripts", "editor", "popup"]) {
+for (const directory of ["assets", "background", "content-scripts", "editor", "popup", "shared"]) {
   fs.cpSync(path.join(source, directory), path.join(destination, directory), {
     recursive: true,
     filter: (file) => !file.endsWith(".d.ts") && !file.endsWith(".map"),

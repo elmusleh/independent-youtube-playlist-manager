@@ -1,3 +1,4 @@
+import { mutateLibrary, librarySnapshot } from "../../../shared/storage-client.js";
 /// <reference path="../../node_modules/@types/firefox-webext-browser/index.d.ts" />
 
 import type { Playlist, PlaylistExport, Settings } from "../types/model.js";
@@ -136,40 +137,19 @@ const getLocalPlaylists = window.getLocalPlaylists;
  * DataCloneError. Persist a plain snapshot so a playlist with reactive
  * `sortRules` (or any nested reactive array) still saves.
  */
-function toPlainPlaylists(playlists: Playlist[]): Playlist[] {
-  return JSON.parse(JSON.stringify(playlists)) as Playlist[];
-}
-
 async function saveLocalPlaylist(playlist: Playlist): Promise<string> {
-  // Browser storage uses structured cloning, which rejects nested Svelte proxies.
-  // A shallow spread leaves reactive arrays/objects (notably sortRules) intact.
-  playlist = JSON.parse(JSON.stringify(playlist)) as Playlist;
-  if (typeof browser === "undefined") return playlist.id;
-  const playlists = await getLocalPlaylists();
-  let id = playlist.id;
-
-  if (!id || id.startsWith("local-") === false) {
-    id = "local-" + Date.now();
-  }
-
-  const newPlaylist = { ...playlist, id, saved: true, isLocal: true };
-  const index = playlists.findIndex((p) => p.id === id);
-
-  if (index >= 0) {
-    playlists[index] = newPlaylist;
-  } else {
-    playlists.push(newPlaylist);
-  }
-
-  await browser.storage.local.set({ [LOCAL_PLAYLISTS_KEY]: toPlainPlaylists(playlists) });
+  const id = playlist.id?.startsWith("local-") ? playlist.id : `local-${crypto.randomUUID()}`;
+  const result = await mutateLibrary({
+    type: "put",
+    playlist: { ...playlist, id },
+    expectedRevision: playlist.revision || 0,
+  });
+  playlist.revision = result.revision;
   return id;
 }
 
-async function removeLocalPlaylist(id: string): Promise<void> {
-  if (typeof browser === "undefined") return;
-  const playlists = await getLocalPlaylists();
-  const filtered = playlists.filter((p) => p.id !== id);
-  await browser.storage.local.set({ [LOCAL_PLAYLISTS_KEY]: toPlainPlaylists(filtered) });
+async function removeLocalPlaylist(id: string, expectedRevision: number): Promise<void> {
+  await mutateLibrary({ type: "delete", id, expectedRevision });
 }
 
 window.ensureWatchLaterPlaylist = async (
@@ -255,7 +235,7 @@ window.ensureWatchLaterPlaylist = async (
       if (existingIndex !== -1) {
         if (forceCreate && local[existingIndex].title !== "Watch Later ⭐️") {
           local[existingIndex].title = "Watch Later ⭐️";
-          await browser.storage.local.set({ [LOCAL_PLAYLISTS_KEY]: local });
+          await saveLocalPlaylist(local[existingIndex]);
           notifyPlaylistsChanged();
           return { id: currentId, recreated: true };
         }
@@ -272,18 +252,7 @@ const SYNC_SNAPSHOTS_KEY = "yph_sync_snapshots";
 
 window._saveToLocalStorage = async (playlist: Playlist): Promise<void> => {
   if (playlist.isLocal || playlist.id.startsWith("local-")) {
-    if (typeof browser !== "undefined") {
-      const key = LOCAL_PLAYLISTS_KEY;
-      const result = await browser.storage.local.get(key);
-      const playlists: Playlist[] = result[key] || [];
-      const index = playlists.findIndex((p) => p.id === playlist.id);
-      if (index >= 0) {
-        playlists[index] = playlist;
-      } else {
-        playlists.push(playlist);
-      }
-      await browser.storage.local.set({ [key]: playlists });
-    }
+    await saveLocalPlaylist(playlist);
   }
   _cache.single.set(playlist.id, { data: playlist, ts: Date.now() });
   _cache.list = null;
@@ -586,7 +555,7 @@ window.removePlaylist = async (playlist: Playlist): Promise<void> => {
     playlistId: playlist.id,
   });
   if (playlist.id.startsWith("local-") || playlist.isLocal) {
-    await removeLocalPlaylist(playlist.id);
+    await removeLocalPlaylist(playlist.id, playlist.revision || 0);
   } else if (playlist.saved) {
     await window.ytDeletePlaylist(playlist.id);
   }
@@ -602,7 +571,7 @@ window.removePlaylists = async (playlists: Playlist[]): Promise<void> => {
   });
   for (const playlist of playlists) {
     if (playlist.id.startsWith("local-") || playlist.isLocal) {
-      await removeLocalPlaylist(playlist.id);
+      await removeLocalPlaylist(playlist.id, playlist.revision || 0);
     } else if (playlist.saved) {
       await window.ytDeletePlaylist(playlist.id);
       // Small delay to prevent hitting rate limits during bulk deletions
@@ -618,7 +587,12 @@ window.removePlaylists = async (playlists: Playlist[]): Promise<void> => {
 window.removeSavedPlaylists = async (): Promise<void> => {
   // Remove local
   if (typeof browser !== "undefined") {
-    await browser.storage.local.remove(LOCAL_PLAYLISTS_KEY);
+    const snapshot = await librarySnapshot();
+    await mutateLibrary({
+      type: "replace",
+      playlists: [],
+      expectedRevision: snapshot.revision,
+    });
   }
 
   // Remove YT if signed in
@@ -1067,6 +1041,9 @@ window.getSettings = async (): Promise<Settings> => {
       openSavedPlaylistAfterAdd: true,
       defaultEditorPage: "/saved",
       saveCreatedPlaylists: false,
+      disableContextMenu: false,
+      closeContextAddedTabs: false,
+      contextMenuDestination: null,
       disableContextBuilder: false,
       disableContextSaved: false,
       themeChoice: "device",

@@ -22,6 +22,80 @@ Read in this order, and stop when you have what you need:
 **On stop, update `.ai-sync/HANDOFF.md`** — state, not narrative — and tick off
 `PROGRESS.md`. Append to `HISTORY.md` only when retiring detail from `HANDOFF.md`.
 
+## Shared workflow across agents
+
+OpenSpec is configured for Codex and Hermes. Read `openspec/README.md` and
+`openspec/config.yaml` for the workflow. Active change:
+`openspec/changes/complete-context-menu-acceptance/`. Planning artifacts do not prove
+acceptance; keep its tasks pending until their evidence exists.
+
+Read [`.ai-sync/AGENT_WORKFLOW.md`](.ai-sync/AGENT_WORKFLOW.md) for the shared task,
+review, evidence and handoff standard. Blank templates live in `.ai-sync/templates/`;
+copy them to session files, never overwrite current state with an empty template.
+Use `.ai-sync/START_HERE.md` when switching agents. The owner's current instructions,
+including delegation of test execution, take precedence over the default commands below.
+
+## Relevant skills
+
+Before starting a task, inspect the available skill catalog and load the skills directly
+relevant to the requested work. Reassess when the scope changes. For follow-up prompts
+in the same task, reuse loaded guidance unless it changed or a new skill becomes relevant.
+
+Use the smallest useful set. Do not load unrelated skills or several overlapping skills
+without a clear reason. Read each selected SKILL.md before applying it, then load only
+its supporting references needed for the task. Briefly name the skills used and their
+purpose; record the names and source paths in the session record.
+
+Follow the owner's instructions and project rules when applying skills. If a required
+skill is unavailable, report the limitation. Use an appropriate fallback when possible;
+ask for input only when the missing skill prevents authorized work. If none fits, proceed
+using project guidance and record that no relevant skill was available or needed.
+
+Skill instructions do not authorize additional scope, override delegated verification,
+or permit merging, publishing or destructive actions. Resolve conflicts using the
+applicable instruction hierarchy. A skill's presence does not prove it was loaded or
+followed, and it does not guarantee a correct result.
+
+## Parallel implementation orchestration
+
+Follow `docs/AI_ORCHESTRATION.md` for assigned feature worktrees, coordinator/worker
+roles and the push-then-PR lifecycle. Runtime orchestration is not implemented yet;
+its plan is `openspec/changes/orchestrate-parallel-implementations/`. Use manual
+handoffs when an agent cannot launch another agent. Start with two independent jobs.
+
+Merge mode is manual by default. Guarded automatic merging needs explicit per-job
+owner opt-in plus current required checks/review, resolved threads, manual acceptance
+and effective server protections. Conflict-free status is not merge authority. This
+policy qualifies the older Git workflow examples below; those are not instructions to
+switch another worker's checkout or merge the current unfinished feature.
+
+## Worktree coordination
+
+Follow `.ai-sync/AGENT_WORKFLOW.md` for independent implementation worktrees and
+cross-agent handoffs. Reuse a suitable worktree for the same change; keep one writer
+per worktree, and verify prerequisites exist in its starting commit. Uncommitted and
+untracked work does not transfer automatically. Record the absolute path/branch/base
+and owners in the templates; reviewers and Hermes must use that exact checkout.
+Use app-managed worktree creation/archive tools where available. Preserve existing
+edits, configure dependencies/skills/ports for each checkout, and do not force removal
+or interpret worktree isolation as permission to merge/release.
+
+### One editor per tree
+
+Two agents editing the same checkout produced a duplicated import and a duplicated
+object key that only surfaced later. Take the editing lock before writing:
+
+```bash
+node packages/build-tools/agent-lock.js status            # exit 3 means a live owner
+node packages/build-tools/agent-lock.js run -- npm test    # lock, run, always release
+node packages/build-tools/agent-lock.js acquire --agent hermes --branch <branch>
+node packages/build-tools/agent-lock.js release [--force]
+```
+
+The marker is `.agents/EDITING` (git-ignored) and records pid, agent, branch and start
+time. A marker whose owner process is gone is stale and may be taken over; a live owner
+is never overridden. Release refuses a foreign pid unless `--force` is explicit.
+
 ## ⚡ Quick Reference (first 30 seconds of any session)
 
 ```bash
@@ -329,8 +403,8 @@ git push -u origin fix/duration-zero-length
 gh pr create --base next --fill
 ```
 
-Merge with `gh pr merge --squash --delete-branch` once the required checks are green.
-Squash keeps `next` readable and makes reverting a change a single-commit operation.
+Apply the merge authority and gates in `docs/AI_ORCHESTRATION.md` before merging.
+Green checks alone do not enable default automatic merging. Squash keeps `next` readable and makes reverting a change a single-commit operation.
 
 ### Release loop
 
@@ -399,8 +473,8 @@ holds work that was never merged — investigate it, do not force.
 - push branches and open PRs against `next`
 - push follow-up commits to their own branch, and force-push **their own** branch before
   review starts when rebasing onto `next`
-- squash-merge their own PR into `next` once the required checks pass — the integration
-  branch is not the release gate
+- squash-merge an owned PR into `next` only with recorded owner merge authority and
+  the orchestration review/check/protection gates satisfied; default mode is manual
 
 ### Agents MUST NOT
 

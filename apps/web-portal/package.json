@@ -1,13 +1,14 @@
 {
   "name": "web",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:e2e:required": "IYPM_REQUIRE_EXTENSION_E2E=1 playwright test"
   },
   "dependencies": {
     "@radix-ui/react-avatar": "^1.2.6",

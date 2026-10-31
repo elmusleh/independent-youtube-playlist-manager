@@ -1,11 +1,11 @@
 {
   "name": "independent-youtube-playlist-manager",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Create and manage YouTube playlists from links and open tabs",
   "author": "Mohammad El-Musleh <elmusleh.mohammad@gmail.com>",
   "license": "MIT",
   "scripts": {
-    "build": "node packages/build-tools/gen-release-notes.mjs && cd apps/browser-extension/playlist-manager && npm ci && npm run build && cd ../../.. && node packages/build-tools/patch-innerhtml.js && npm run build-chrome && npm run build-firefox && npm run build-edge && node packages/build-tools/validate-manifests.js && node packages/build-tools/verify-css-bundle.js && node packages/build-tools/verify-budgets.js",
+    "build": "node packages/build-tools/gen-release-notes.mjs && cd apps/browser-extension/playlist-manager && npm ci && npm run build && cd ../../.. && node packages/build-tools/patch-innerhtml.js && npm run build-chrome && npm run build-firefox && npm run build-edge && node packages/build-tools/validate-manifests.js && node packages/build-tools/verify-extension-modules.js && node packages/build-tools/verify-css-bundle.js && node packages/build-tools/verify-budgets.js",
     "prod": "cd apps/browser-extension/playlist-manager && npm run prod",
     "watch": "cd apps/browser-extension/playlist-manager && npm run watch",
     "cors": "cd apps/browser-extension/playlist-manager && npm run cors",
@@ -22,7 +22,7 @@
     "web:build": "npm --prefix apps/web-portal run build",
     "web:test": "npm --prefix apps/web-portal run test:e2e",
     "sync-version": "node packages/build-tools/sync-version.mjs",
-    "check": "npm run lint && npm run format:check && npm run test && node packages/build-tools/verify-file-size.js && cd apps/browser-extension/playlist-manager && npx svelte-check && cd ../../.. && node packages/build-tools/verify-css-bundle.js && node packages/build-tools/verify-vercel-config.js && node packages/build-tools/verify-tooling-versions.js && node packages/build-tools/gen-release-notes.mjs --check",
+    "check": "npm run lint && npm run format:check && npm run test && npm run contracts:check && node packages/build-tools/verify-file-size.js && cd apps/browser-extension/playlist-manager && npx svelte-check && cd ../../.. && node packages/build-tools/verify-css-bundle.js && node packages/build-tools/verify-vercel-config.js && node packages/build-tools/verify-tooling-versions.js && node packages/build-tools/gen-release-notes.mjs --check",
     "lint": "eslint apps/browser-extension/ packages/build-tools/ --ext .js",
     "lint:fix": "eslint apps/browser-extension/ packages/build-tools/ --ext .js --fix",
     "format": "prettier --write .",
@@ -34,7 +34,14 @@
     "check:file-size": "node packages/build-tools/verify-file-size.js",
     "audit": "npm audit --audit-level=high",
     "prepare": "husky install",
-    "release-notes": "node packages/build-tools/gen-release-notes.mjs"
+    "release-notes": "node packages/build-tools/gen-release-notes.mjs",
+    "test:capture-mutations": "node packages/build-tools/verify-capture-mutations.js",
+    "audit:all": "node packages/build-tools/audit-dependency-trees.js",
+    "native:fixture": "node packages/build-tools/serve-native-menu-fixture.js",
+    "contracts:generate": "node packages/build-tools/generate-protocol-declarations.js",
+    "contracts:check": "node packages/build-tools/generate-protocol-declarations.js --check",
+    "verify:record": "node packages/build-tools/record-verification.js",
+    "audit:bundles": "node packages/build-tools/inventory-security.js"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

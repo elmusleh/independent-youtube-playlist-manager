@@ -1,4 +1,5 @@
-import { beforeEach, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { libraryFixture } from "../test-support/library-fixture";
 import type { Playlist } from "../types/model";
 
 vi.mock("./logger-service.js", () => ({
@@ -8,17 +9,8 @@ vi.mock("./logger-service.js", () => ({
 let stored: Record<string, any>;
 beforeEach(async () => {
   vi.resetModules();
-  stored = { yph_meta_cache_migrated_v2: true };
-  vi.stubGlobal("browser", {
-    storage: {
-      local: {
-        get: vi.fn(async (key: string) => structuredClone({ [key]: stored[key] })),
-        set: vi.fn(async (value: object) => Object.assign(stored, structuredClone(value))),
-      },
-      onChanged: { addListener: vi.fn() },
-    },
-    runtime: { sendMessage: vi.fn().mockResolvedValue(undefined) },
-  });
+  const fixture = await libraryFixture({ yph_meta_cache_migrated_v2: true });
+  stored = fixture.stored;
   window.isSignedIn = vi.fn().mockResolvedValue(false);
   await import("./storage-service");
 });
@@ -54,3 +46,5 @@ it("preserves the saved playlist when storage fails and allows retry", async () 
   await window.savePlaylist({ ...playlist, title: "Changed" });
   expect(stored.yph_local_playlists[0].title).toBe("Changed");
 });
+
+afterEach(() => vi.unstubAllGlobals());

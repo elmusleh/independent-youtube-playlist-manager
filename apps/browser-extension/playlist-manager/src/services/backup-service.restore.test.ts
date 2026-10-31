@@ -1,4 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { libraryFixture } from "../test-support/library-fixture";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const clearArchivedThumbnails = vi.fn(async () => {});
 const restoreThumbnails = vi.fn(async () => {});
@@ -21,18 +22,11 @@ function fullBackup(data: Record<string, unknown>) {
 }
 
 describe("importFullDatabaseBackup thumbnail archive", () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     clearArchivedThumbnails.mockClear();
     restoreThumbnails.mockClear();
-    const store: Record<string, unknown> = {};
-    (window as unknown as { browser: unknown }).browser = {
-      storage: {
-        local: {
-          get: async (key: string) => ({ [key]: store[key] }),
-          set: async (value: object) => Object.assign(store, value),
-        },
-      },
-    };
+    vi.resetModules();
+    await libraryFixture();
   });
 
   it("clears the archive when an older backup without thumbnails overwrites the database", async () => {
@@ -65,3 +59,5 @@ describe("importFullDatabaseBackup thumbnail archive", () => {
     expect(restoreThumbnails).not.toHaveBeenCalled();
   });
 });
+
+afterEach(() => vi.unstubAllGlobals());

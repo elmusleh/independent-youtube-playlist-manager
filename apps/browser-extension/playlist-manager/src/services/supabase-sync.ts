@@ -1,3 +1,4 @@
+import { mutateLibrary, librarySnapshot } from "../../../shared/storage-client.js";
 import { getSupabaseClient, getSession } from "./supabase-client";
 import { dbGetMetadataBatch, dbPutMetadataBatch } from "./db-service";
 import type { NormalizedVideoMeta, Playlist, SyncRecord, CatalogVideo } from "../types/model";
@@ -5,7 +6,23 @@ import type { NormalizedVideoMeta, Playlist, SyncRecord, CatalogVideo } from "..
 declare const chrome: any;
 declare const browser: any;
 
-const LOCAL_PLAYLISTS_KEY = "yph_local_playlists";
+// Adapt plain local playlists without changing their persisted representation.
+function syncRecords(playlists: Playlist[]): SyncRecord<Playlist>[] {
+  return playlists.map((playlist: any) => ({
+    id: playlist.id,
+    data: playlist.data || playlist,
+    syncStatus: playlist.syncStatus || "pending",
+    updatedAt: playlist.updatedAt || new Date(playlist.timestamp || 0).toISOString(),
+  }));
+}
+function plainRecords(records: SyncRecord<Playlist>[]): Playlist[] {
+  return records.map((record) => ({
+    ...record.data,
+    id: record.id,
+    syncStatus: record.syncStatus,
+    updatedAt: record.updatedAt,
+  }));
+}
 const LAST_SYNC_KEY = "yph:last_sync_timestamp";
 
 /**
@@ -68,7 +85,8 @@ export class BackgroundSyncEngine {
    * Push local pending and soft-deleted records to Supabase
    */
   private async pushLocalChanges(client: any, userId: string): Promise<number> {
-    const rawLocal = (await this.getStorageItem<SyncRecord<Playlist>[]>(LOCAL_PLAYLISTS_KEY)) || [];
+    const snapshot = await librarySnapshot();
+    const rawLocal = syncRecords(snapshot.playlists);
     const pending = rawLocal.filter((p) => p.syncStatus !== "synced");
     if (pending.length === 0) return 0;
 
@@ -79,11 +97,12 @@ export class BackgroundSyncEngine {
 
       if (record.syncStatus === "deleted") {
         // Soft delete (tombstone)
-        await client
+        const { error } = await client
           .from("playlists")
           .update({ deleted_at: record.updatedAt })
           .eq("id", record.id)
           .eq("user_id", userId);
+        if (error) throw error;
       } else {
         // Upsert playlist header
         const { error: plErr } = await client.from("playlists").upsert({
@@ -94,7 +113,8 @@ export class BackgroundSyncEngine {
           updated_at: record.updatedAt || new Date().toISOString(),
         });
 
-        if (!plErr && Array.isArray(playlist.videos)) {
+        if (plErr) throw plErr;
+        if (Array.isArray(playlist.videos)) {
           // Sync playlist items ordering
           const itemsToUpsert = playlist.videos.map((vid, pos) => ({
             playlist_id: record.id,
@@ -108,9 +128,10 @@ export class BackgroundSyncEngine {
             const videoMetas = await dbGetMetadataBatch(playlist.videos);
             await this.syncVideoMetadataToCatalog(Object.values(videoMetas));
 
-            await client.from("playlist_items").upsert(itemsToUpsert, {
+            const { error } = await client.from("playlist_items").upsert(itemsToUpsert, {
               onConflict: "playlist_id,video_id",
             });
+            if (error) throw error;
           }
         }
       }
@@ -119,7 +140,11 @@ export class BackgroundSyncEngine {
       count++;
     }
 
-    await this.setStorageItem(LOCAL_PLAYLISTS_KEY, rawLocal);
+    await mutateLibrary({
+      type: "replace",
+      playlists: plainRecords(rawLocal),
+      expectedRevision: snapshot.revision,
+    });
     return count;
   }
 
@@ -139,7 +164,8 @@ export class BackgroundSyncEngine {
 
     if (plErr || !remotePlaylists) return 0;
 
-    const rawLocal = (await this.getStorageItem<SyncRecord<Playlist>[]>(LOCAL_PLAYLISTS_KEY)) || [];
+    const snapshot = await librarySnapshot();
+    const rawLocal = syncRecords(snapshot.playlists);
     const localMap = new Map<string, SyncRecord<Playlist>>(rawLocal.map((p) => [p.id, p]));
     let pulledCount = 0;
 
@@ -179,7 +205,11 @@ export class BackgroundSyncEngine {
       }
     }
 
-    await this.setStorageItem(LOCAL_PLAYLISTS_KEY, Array.from(localMap.values()));
+    await mutateLibrary({
+      type: "replace",
+      playlists: plainRecords(Array.from(localMap.values())),
+      expectedRevision: snapshot.revision,
+    });
     await this.setStorageItem(LAST_SYNC_KEY, new Date().toISOString());
 
     return pulledCount;
@@ -344,7 +374,9 @@ export class BackgroundSyncEngine {
         return;
       }
       localStorage.setItem(key, JSON.stringify(value));
-    } catch {}
+    } catch (error) {
+      throw error;
+    }
   }
 }
 

@@ -13,44 +13,22 @@ function initialChoice(): ThemeChoice {
 
 export const theme = writable<ThemeChoice>(initialChoice());
 
-export const currentTheme: Readable<Theme> = derived(theme, ($theme) => {
-  if ($theme !== "device") return $theme;
-  if (typeof window === "undefined" || !window.matchMedia) return "light";
-  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-});
-
-// Listen for system theme changes when device theme is active
-let mediaQueryListener: ((e: MediaQueryListEvent) => void) | null = null;
-
-function setupDeviceThemeListener() {
-  if (typeof window === "undefined" || !window.matchMedia) return;
-
-  const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-
-  // Remove existing listener if any
-  if (mediaQueryListener) {
-    mediaQuery.removeEventListener("change", mediaQueryListener);
+const deviceTheme = readable<Theme>(
+  typeof window !== "undefined" && window.matchMedia?.("(prefers-color-scheme: dark)").matches
+    ? "dark"
+    : "light",
+  (set) => {
+    if (typeof window === "undefined" || !window.matchMedia) return;
+    const media = window.matchMedia("(prefers-color-scheme: dark)");
+    const update = () => set(media.matches ? "dark" : "light");
+    media.addEventListener("change", update);
+    update();
+    return () => media.removeEventListener("change", update);
   }
-
-  mediaQueryListener = () => {
-    // Trigger update by re-evaluating the derived store
-    // This works because currentTheme is derived from theme store
-    // We just need to ensure the derived store re-evaluates
-    // Svelte derived stores auto-update when dependencies change,
-    // but matchMedia change doesn't trigger it. We need to manually notify.
-    // The simplest approach: subscribe to currentTheme and update on media change
-  };
-
-  mediaQuery.addEventListener("change", mediaQueryListener);
-}
-
-function cleanupDeviceThemeListener() {
-  if (typeof window === "undefined" || !window.matchMedia || !mediaQueryListener) return;
-  window
-    .matchMedia("(prefers-color-scheme: dark)")
-    .removeEventListener("change", mediaQueryListener);
-  mediaQueryListener = null;
-}
+);
+export const currentTheme: Readable<Theme> = derived([theme, deviceTheme], ([$theme, $device]) =>
+  $theme === "device" ? $device : $theme
+);
 
 function updatePageTheme() {
   document.documentElement.dataset.theme = get(currentTheme);
@@ -60,11 +38,14 @@ function updatePageTheme() {
   } catch {}
 }
 
+let initialized = false;
 export function initTheme() {
-  setupDeviceThemeListener();
+  if (initialized) return;
+  initialized = true;
+  currentTheme.subscribe(() => updatePageTheme());
 
   window
-    .fetchObject(themeStorageKey, "device")
+    .fetchObject(themeStorageKey, get(theme))
     .then((themeChoice: any) => {
       const validChoice = ["dark", "light", "device"].includes(themeChoice)
         ? themeChoice
@@ -83,9 +64,4 @@ export function initTheme() {
         await window.logSystemEvent("ERROR", `[THEME-STORE] Failed to initialize theme: ${errMsg}`);
       updatePageTheme();
     });
-}
-
-// Cleanup on unload (for completeness)
-if (typeof window !== "undefined") {
-  window.addEventListener("beforeunload", cleanupDeviceThemeListener);
 }

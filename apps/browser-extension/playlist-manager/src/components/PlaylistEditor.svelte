@@ -48,6 +48,8 @@
   // Utils
   import * as utils from "../utils/playlist-utils";
   import { dbGetMetadataBatch, dbPutMetadataBatch } from "../services/db-service.js";
+  import { builderAdditions } from "../utils/builder-capture";
+  import { hasCompleteMetadata } from "../utils/metadata-completeness";
   import { enrichVideoMetadata } from "../services/enrichment-service.js";
   import { PAGE_SIZES } from "../services/settings-utils.js";
   import { clampPage } from "../utils/pagination";
@@ -200,6 +202,7 @@
   }
 
   let loadedPlaylistKey = $state<string>("");
+  let builderSeen = new Set<string>();
 
   $effect(() => {
     const currentKey = playlist
@@ -216,6 +219,7 @@
       dataLoaded = true;
       return;
     }
+    if (isPlaylistBuilder) builderSeen = new Set(playlist.videos);
     loadFavoriteStatus();
 
     const metaBatch = await dbGetMetadataBatch(playlist.videos);
@@ -356,6 +360,65 @@
   }
   browser.storage.onChanged.addListener(handlePageSizeStorageChange);
   onDestroy(() => browser.storage.onChanged.removeListener(handlePageSizeStorageChange));
+
+  function handleExternalPlaylistChange(changes: Record<string, { newValue?: any }>, area: string) {
+    if (
+      area !== "local" ||
+      !changes.yph_local_playlists ||
+      !playlist ||
+      status.saving ||
+      isPlaylistBuilder
+    )
+      return;
+    const current = (changes.yph_local_playlists.newValue || []).find(
+      (p: Playlist) => p.id === playlist!.id
+    );
+    if ((current?.revision || 0) === (playlist.revision || 0) && current) return;
+    if (isDirty || !current) {
+      window.info(
+        "This playlist changed elsewhere. Your edits are preserved. Compare the saved version before saving again."
+      );
+      return;
+    }
+    playlist = current;
+  }
+  browser.storage.onChanged.addListener(handleExternalPlaylistChange);
+  onDestroy(() => browser.storage.onChanged.removeListener(handleExternalPlaylistChange));
+
+  function handleBuilderCapture(changes: Record<string, { newValue?: unknown }>, area: string) {
+    if (
+      !isPlaylistBuilder ||
+      !dataLoaded ||
+      area !== "local" ||
+      !Array.isArray(changes.yphPlaylistBuilder?.newValue)
+    )
+      return;
+    const stored = changes.yphPlaylistBuilder.newValue.filter(
+      (id): id is string => typeof id === "string"
+    );
+    const added = builderAdditions(
+      stored,
+      builderSeen,
+      videos.map((video) => video.videoId)
+    );
+    builderSeen = new Set(stored);
+    if (!added.length) return;
+    const stubs: Video[] = added.map((videoId) => ({
+      id: window.videoIdCount++,
+      videoId,
+      url: `https://www.youtube.com/watch?v=${videoId}`,
+      title: "",
+      channel: "",
+      thumbnailUrl: `https://i.ytimg.com/vi/${videoId}/default.jpg`,
+      isEnriching: false,
+    }));
+    // Append directly to the working array. Changing the playlist prop reloads the editor
+    // and would discard dirty removals/reordering when another source captures videos.
+    videos = [...videos, ...stubs];
+    updateDirtyState();
+  }
+  browser.storage.onChanged.addListener(handleBuilderCapture);
+  onDestroy(() => browser.storage.onChanged.removeListener(handleBuilderCapture));
 
   // Intercept Navigation
   function handleBeforeUnload(e: any) {
@@ -665,7 +728,10 @@
           };
           loadedPlaylistKey = `${playlist.id}:${(playlist.videos || []).join(",")}`;
           if (isPlaylistBuilder)
-            await browser.runtime.sendMessage({ cmd: "clear-playlist-builder" });
+            await browser.runtime.sendMessage({
+              cmd: "clear-playlist-builder",
+              savedIds: data.videos,
+            });
           initialHash = calculateStateHash();
           isDirty = false;
           if (!silent) {
@@ -835,7 +901,7 @@
     const channel = (v.channel || "").trim();
     const hasTitle = title && title !== "undefined";
     const hasChannel = channel && channel !== "undefined";
-    const hasDuration = v.durationISO || v.isLive || v.isPrivate || v.isDeleted || v.isBroken;
+    const hasDuration = hasCompleteMetadata({ title: "Known", channel: "Known", ...v });
     return !hasTitle || !hasChannel || !hasDuration;
   }
 
@@ -974,7 +1040,7 @@
 
         const hasTitle = title && title !== "undefined";
         const hasChannel = channel && channel !== "undefined";
-        const hasDuration = v.durationISO || v.isLive || v.isPrivate || v.isDeleted || v.isBroken;
+        const hasDuration = hasCompleteMetadata({ ...v, title: "Known", channel: "Known" });
 
         return !hasTitle || !hasChannel || !hasDuration;
       });
@@ -1015,7 +1081,7 @@
 
         const hasTitle = title && title !== "undefined";
         const hasChannel = channel && channel !== "undefined";
-        const hasDuration = v.durationISO || v.isLive || v.isPrivate || v.isDeleted || v.isBroken;
+        const hasDuration = hasCompleteMetadata({ ...v, title: "Known", channel: "Known" });
 
         return !hasTitle || !hasChannel || !hasDuration;
       });

@@ -173,3 +173,44 @@ missing en masse, check that those three tiers are enabled in
 - You changed metadata settings and want to re-check the cache.
 
 The badge on the sidebar entry disappears once every cached entry is resolved.
+
+## Page right-click capture (unreleased)
+
+On desktop, open the browser's page context menu and choose **Playlist Manager**.
+Choose **Destination** to set the next action, then collect YouTube tabs from the
+current, selected, left, right, window, other-tabs or all-normal-windows scope.
+Non-YouTube tabs are ignored. Private windows are excluded.
+
+**Choose saved playlist** opens searchable destination selection. The chooser shows
+full playlist titles and whether each destination is Local or YouTube. Missing
+favorites/custom targets open review instead of creating or choosing another playlist.
+Remote playlist lists are loaded only when you explicitly request them in the chooser.
+YouTube additions require sign-in, applicable account-data consent and **Sync**.
+Cancel sends no new requests; an already completed request cannot be undone by Cancel.
+
+**Import YouTube links from this page** scans the clicked source document, without
+reading cross-origin frame contents. Quantity `0` means all discovered videos; choose
+page order or reverse order. On YouTube channel pages, use **Scan channel (load more
+videos)** to collect additional cards with bounded scrolling. Cancellation stops
+remaining scanning; a navigated/closed source requires a fresh menu invocation.
+Browser-protected pages may deny scanning even though tab collection still works.
+No all-sites permission or content script on every page is added.
+
+Native captures keep source tabs open by default. The independent context-menu close
+setting closes only newly saved, unchanged and unpinned tabs after complete success.
+Duplicates, failures, moved/navigated tabs and partial remote sync do not close tabs.
+Popup close behavior remains controlled by its existing setting.
+
+If metadata providers are unavailable, video IDs still save. Open the saved playlist
+and use its metadata tools, or **Fetch missing titles and durations** in capture review.
+Saving thumbnails locally is an optional existing setting; enable it before a video
+is deleted if you want preserved image bytes in backups.
+
+A conflicting save means another page changed the saved playlist. Your editor changes
+remain in place. Open the saved version in another tab to compare and reconcile; do
+not repeatedly overwrite it. Capture review links contain an opaque job ID and expire
+after 30 minutes. Firefox Android uses popup/extension-page equivalents; it does not
+support the desktop native menu flow.
+
+This feature is under verification. See the Hermes checklist before treating it as
+release-ready.

@@ -108,6 +108,11 @@ export interface ImportResult {
 }
 
 export interface Playlist {
+  /** Storage revision for atomic conflict detection. */
+  revision?: number;
+  /** Local cloud-sync bookkeeping; timestamps are ISO strings. */
+  syncStatus?: "pending" | "synced" | "deleted";
+  updatedAt?: string;
   id: string;
   title: string;
   loadedVideos?: Video[];
@@ -134,6 +139,9 @@ export interface Settings {
   openSavedPlaylistAfterAdd: boolean;
   defaultEditorPage: "/new" | "/saved";
   saveCreatedPlaylists: boolean;
+  disableContextMenu: boolean;
+  closeContextAddedTabs: boolean;
+  contextMenuDestination: string | null;
   disableContextBuilder: boolean;
   disableContextSaved: boolean;
   themeChoice: ThemeChoice;
@@ -147,6 +155,7 @@ export interface Settings {
   addToLatestPosition: "top" | "bottom";
   defaultQuickAddTarget: "favorite" | "latest" | "create";
   defaultTabScope:
+    | "selected"
     | "current"
     | "left"
     | "right"

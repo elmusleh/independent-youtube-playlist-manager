@@ -24,6 +24,9 @@ What each document is for, and who it is for. If you are an agent starting a ses
 
 ## Technical reference
 
+[CONTEXT_MENU_PLAN.md](CONTEXT_MENU_PLAN.md) — proposed OneTab-style page menu,
+shared capture design, permissions and browser tests; implementation pending.
+
 | Document                                | Purpose                                                               |
 | --------------------------------------- | --------------------------------------------------------------------- |
 | `PAGE_IMPORT_VERIFICATION.md`           | How the popup scans an arbitrary page, and how to verify it manually. |
@@ -71,3 +74,21 @@ provenance, not as instructions.
    "worked on infrastructure" does not.
 4. **Cite commands, not confidence.** If the doc claims something is green, it should name the
    command that proves it.
+
+## Context-menu implementation references
+
+- [Playlist destination terminology](PLAYLIST_TERMINOLOGY.md).
+- [Hermes verification handoff](testing/HERMES_CONTEXT_MENU_VERIFICATION.md).
+- [Dependency advisory triage](DEPENDENCY_TRIAGE.md).
+
+## Shared AI workflow and worktrees
+
+- [Agent workflow](../.ai-sync/AGENT_WORKFLOW.md): worktree selection, safe snapshots, ownership and evidence.
+- [Starting prompts](../.ai-sync/START_HERE.md): implementation/resume and read-only review.
+- Blank session templates: [task](../.ai-sync/templates/TASK.md), [review](../.ai-sync/templates/REVIEW.md), [verification](../.ai-sync/templates/VERIFICATION.md), [handoff](../.ai-sync/templates/HANDOFF.md).
+- [OpenSpec usage](../openspec/README.md): project/change tracking and checkout-specific setup.
+
+## Parallel implementation coordination
+
+- [Agent orchestration policy](AI_ORCHESTRATION.md): assignments, two-job concurrency, target updates, PR publication and merge gates.
+- [Orchestration proposal](../openspec/changes/orchestrate-parallel-implementations/proposal.md): scope and runtime implementation plan.

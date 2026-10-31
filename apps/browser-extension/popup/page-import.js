@@ -16,11 +16,12 @@ export async function preparePageImport() {
   showPageImportError();
   const tab = await getActiveTab();
   if (!tab?.id || !tab.url) throw new Error("No webpage selected. Open a webpage and try again.");
+  if (tab.incognito) throw new Error("Import from private windows is disabled.");
   const url = new URL(tab.url);
   if (!["http:", "https:"].includes(url.protocol)) {
     throw new Error("This browser page cannot be scanned. Open a regular HTTP or HTTPS webpage.");
   }
-  sourceTab = { id: tab.id, url: tab.url, title: tab.title };
+  sourceTab = { id: tab.id, url: tab.url, title: tab.title, windowId: tab.windowId };
   return sourceTab;
 }
 
@@ -32,7 +33,7 @@ export async function getPageImportTab() {
   } catch {
     throw new Error("The selected page was closed. Reopen the extension on another page.");
   }
-  if (tab.url !== sourceTab.url) {
+  if (tab.incognito || tab.url !== sourceTab.url || tab.windowId !== sourceTab.windowId) {
     throw new Error("The selected page changed. Reopen the extension to scan the new page.");
   }
   return tab;
