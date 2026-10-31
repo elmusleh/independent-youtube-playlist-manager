@@ -144,14 +144,6 @@
 </Modal>
 
 <style>
-  .card {
-    background: var(--background-color);
-    border: 1px solid var(--border-color);
-    border-radius: 12px;
-    padding: 16px;
-    margin-bottom: 16px;
-  }
-
   .info-card {
     background: rgba(62, 166, 255, 0.08);
     border-color: var(--primary-color);
