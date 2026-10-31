@@ -17,8 +17,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   conflict feedback and retry receipts. Add dependency-tree triage, runtime module packaging
   verification and disposable safety mutation checks. Verification is pending Hermes.
 
+### Changed
+
+- Removed the unused `Card.svelte` component; the settings cards now render from the single
+  global `.card` style, eliminating the global/scoped `.card` ambiguity.
+- Added Playwright visual-regression baselines for the primary views (Settings, Saved,
+  Manage, History; two widths × two themes) and a `test:visual` gate in CI, so a layout
+  regression is caught before it ships.
+
 ### Fixed
 
+- Settings page layout: the card grid used CSS multi-column layout, which filled the left
+  column top-to-bottom before the right column and left a large empty void under the shorter
+  column on wide screens. Replaced it with a responsive CSS grid so cards read left-to-right,
+  top-to-bottom, and standardized card padding and corner radius across all settings sections.
 - Harden the unreleased context-menu capture path: exclude private tabs, validate YouTube
   URL schemes and video IDs, preserve clicked-tab selection and cross-window order,
   fall back from media URLs to watch-page URLs, and create new local playlists offline.
