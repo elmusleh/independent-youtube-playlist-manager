@@ -183,6 +183,8 @@ async function savePlaylist() {
   }
 }
 
+let initPromise = null;
+
 function wireUI() {
   bind("open-playlists", openPlaylists);
   bind("open-settings", openSettings);
@@ -228,6 +230,15 @@ function wireUI() {
   const execute = getById("btn-execute-add");
   if (execute) {
     execute.onclick = async () => {
+      // Wait for preference hydration so the capture uses the user's saved
+      // target mode and tab scope, not the pre-hydration defaults.
+      if (initPromise) {
+        try {
+          await initPromise;
+        } catch {
+          /* fall through to defaults if hydration failed */
+        }
+      }
       const scope = getById("select-tab-scope").value;
       await executeQuickAddByScope(scope);
     };
@@ -274,4 +285,6 @@ async function init() {
 }
 
 wireUI();
-init();
+initPromise = init().catch((e) => {
+  log("ERROR", "Popup: initialization failed", getErrorMessage(e));
+});
