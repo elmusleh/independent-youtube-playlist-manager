@@ -88,7 +88,14 @@ jobs:
         run: npm run check
 
       - name: Package Chrome, Firefox and Edge Extensions
-        run: npm run pack
+        run: |
+          npm run build
+          npm run pack:firefox
+          # Beta ZIPs are for load-unpacked testing, so keep the manifest `key`
+          # (the store packers strip it, which would change the extension ID and
+          # break the OAuth redirect URL). Zip the built dirs directly.
+          (cd dist/chrome && zip -r -FS ../independent-youtube-playlist-manager-chrome.zip .)
+          (cd dist/edge && zip -r -FS ../independent-youtube-playlist-manager-edge.zip .)
 
       - name: Verify Loaded Extension
         run: |
@@ -114,13 +121,20 @@ jobs:
           SHA="$(git rev-parse HEAD)"
           SHORT="$(git rev-parse --short HEAD)"
           LAST_TAG="$(git describe --tags --match 'v*' --exclude '*-beta.*' --abbrev=0 2>/dev/null || echo 'none')"
+          if [ "$LAST_TAG" != "none" ]; then
+            CHANGE_RANGE="${LAST_TAG}..HEAD"
+            SINCE_LABEL="${LAST_TAG}"
+          else
+            CHANGE_RANGE="HEAD"
+            SINCE_LABEL="the first commit"
+          fi
           {
             echo "**Automated beta build — not an official release.**"
             echo ""
             echo "- Version (manifest build): \`${NUMERIC_VERSION}\`"
             echo "- Prerelease tag: \`${BETA_TAG}\`"
             echo "- Source: [\`${SHORT}\`](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${SHA})"
-            echo "- Base version: \`${BASE_VERSION}\` · commits since \`${LAST_TAG}\`: ${BETA_N}"
+            echo "- Base version: \`${BASE_VERSION}\` · commits since \`${SINCE_LABEL}\`: ${BETA_N}"
             echo "- Generated: $(date -u '+%Y-%m-%d %H:%M UTC')"
             echo ""
             echo "## Install"
@@ -130,10 +144,10 @@ jobs:
             echo ""
             echo "> Beta builds are for testing only. They may be unstable and are separate from the official release on \`main\`."
             echo ""
-            echo "## Changes since \`${LAST_TAG}\`"
+            echo "## Changes since \`${SINCE_LABEL}\`"
             echo ""
             echo '```'
-            git log --no-merges --pretty='- %h %s' "${LAST_TAG}..HEAD" | head -100
+            git log --no-merges --max-count=100 --pretty='- %h %s' "$CHANGE_RANGE"
             echo '```'
           } > beta-notes.md
           echo "Wrote beta-notes.md"
