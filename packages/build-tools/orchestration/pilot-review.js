@@ -8,12 +8,15 @@
  *
  * Usage:
  *   node pilot-review.js --pr 52 [--required-checks "ci,test-web"] [--out <file>]
+ *
+ * Branch protection for the PR's base branch is read from GitHub and fed into the readiness
+ * gates; `--no-protection` opts out explicitly for an unprotected branch.
  */
 
 import { execFileSync } from "child_process";
 import fs from "fs";
 import { dirname } from "path";
-import { evaluateReviewState } from "./review.js";
+import { evaluateReviewState, protectionFromGitHub } from "./review.js";
 
 const GH_FIELDS = [
   "number",
@@ -134,6 +137,29 @@ function unresolvedThreadCount(repo, number) {
   return threads.filter((thread) => thread.isResolved !== true).length;
 }
 
+/**
+ * Read the effective rule set for the base branch. Anything unreadable is reported as
+ * incomplete so readiness fails closed instead of assuming a permissive branch.
+ */
+export function readBranchProtection(repo, base, run = gh) {
+  try {
+    const raw = JSON.parse(
+      run(["api", `repos/${repo}/branches/${encodeURIComponent(base)}/protection`])
+    );
+    return protectionFromGitHub(raw, { base });
+  } catch (error) {
+    const stderr = String(error?.stderr || error?.message || "")
+      .trim()
+      .split("\n")[0];
+    return {
+      complete: false,
+      base,
+      missing: ["branch protection endpoint"],
+      error: stderr || "unreadable",
+    };
+  }
+}
+
 function main() {
   const args = process.argv.slice(2);
   const value = (flag) => {
@@ -151,13 +177,19 @@ function main() {
   const prView = JSON.parse(gh(["pr", "view", prNumber, "--repo", repo, "--json", GH_FIELDS]));
   const requiredChecks = parseRequiredChecks(value("--required-checks"));
   const unresolvedThreads = unresolvedThreadCount(repo, Number(prNumber));
+  const skipProtection = args.includes("--no-protection");
+  const protection = skipProtection ? null : readBranchProtection(repo, prView.baseRefName);
 
   const input = mapGhPr(prView, {
     requiredChecks,
     unresolvedThreads,
     author: prView.author?.login,
   });
-  const readiness = evaluateReviewState(input);
+  const readiness = evaluateReviewState({
+    ...input,
+    protection,
+    requireProtection: !skipProtection,
+  });
 
   const report = {
     task: "7.4",
@@ -180,7 +212,8 @@ function main() {
       checks: input.checks,
       approvals: input.reviews.filter((review) => review.state === "APPROVED").length,
       unresolvedThreads,
-      requiredChecks,
+      requiredChecks: readiness.requiredChecks || requiredChecks,
+      protection,
     },
     readiness,
     mergePerformed: false,

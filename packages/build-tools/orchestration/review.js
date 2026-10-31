@@ -33,7 +33,47 @@ export const Blocker = {
   MERGE_QUEUE_UNSUPPORTED: "MERGE_QUEUE_UNSUPPORTED",
   DRAFT_PR: "DRAFT_PR",
   MERGE_NOT_AUTHORIZED: "MERGE_NOT_AUTHORIZED",
+  PROTECTIONS_UNKNOWN: "PROTECTIONS_UNKNOWN",
 };
+
+/**
+ * Normalise the GitHub branch-protection response into the fields readiness depends on.
+ * A missing field is reported as incomplete rather than defaulted: an unreadable rule must
+ * never look like an absent rule.
+ */
+export function protectionFromGitHub(raw, { base = "next" } = {}) {
+  const status = raw?.required_status_checks;
+  const reviews = raw?.required_pull_request_reviews;
+  const conversation = raw?.required_conversation_resolution;
+  const admins = raw?.enforce_admins;
+  const missing = [];
+
+  if (!Array.isArray(status?.contexts)) missing.push("required_status_checks.contexts");
+  if (typeof status?.strict !== "boolean") missing.push("required_status_checks.strict");
+  if (typeof conversation?.enabled !== "boolean")
+    missing.push("required_conversation_resolution.enabled");
+  if (typeof admins?.enabled !== "boolean") missing.push("enforce_admins.enabled");
+  if (
+    reviews !== null &&
+    reviews !== undefined &&
+    !Number.isInteger(reviews.required_approving_review_count)
+  ) {
+    missing.push("required_pull_request_reviews.required_approving_review_count");
+  }
+
+  if (missing.length > 0) return { complete: false, base, missing };
+
+  return {
+    complete: true,
+    base,
+    requiredChecks: status.contexts,
+    requiresUpToDate: status.strict,
+    requireConversationResolution: conversation.enabled,
+    enforceAdmins: admins.enabled,
+    allowsAdminBypass: admins.enabled === false,
+    requiredApprovals: reviews?.required_approving_review_count ?? 0,
+  };
+}
 
 function normalizeChecks(checks) {
   return (checks || []).map((check) => ({
@@ -86,6 +126,8 @@ export function evaluateReviewState({
   mergeQueueSupported = false,
   policy = {},
   author,
+  protection,
+  requireProtection = false,
 }) {
   if (!pr) throw new ReviewStateError("pr is required", "MISSING_PR");
   if (!head) throw new ReviewStateError("head is required", "MISSING_HEAD");
@@ -136,7 +178,39 @@ export function evaluateReviewState({
     blockers.push({ code: Blocker.UNRESOLVED_THREADS, detail: unresolvedThreads });
   }
 
-  blockers.push(...checkBlockers(checks, requiredChecks));
+  let effectiveRequiredChecks = requiredChecks;
+  let protectionSummary = null;
+  if (!protection && requireProtection) {
+    blockers.push({ code: Blocker.PROTECTIONS_UNKNOWN, detail: "no protection data supplied" });
+  } else if (protection) {
+    protectionSummary = { ...protection };
+    if (protection.complete === false) {
+      blockers.push({
+        code: Blocker.PROTECTIONS_UNKNOWN,
+        detail: (protection.missing || []).join(", ") || "incomplete protection data",
+      });
+    } else {
+      effectiveRequiredChecks = [
+        ...new Set([...(protection.requiredChecks || []), ...requiredChecks]),
+      ];
+      protectionSummary.requiredChecks = effectiveRequiredChecks;
+      const required = Number(protection.requiredApprovals) || 0;
+      if (required > 0 && nonAuthorApprovals.length < required) {
+        blockers.push({
+          code: Blocker.NON_AUTHOR_REVIEW_REQUIRED,
+          detail: `${nonAuthorApprovals.length}/${required} approvals`,
+        });
+      }
+      if (protection.enforceAdmins === false && policy.requireAdminEnforcement === true) {
+        blockers.push({
+          code: Blocker.PROTECTIONS_UNKNOWN,
+          detail: "enforce_admins disabled: gates can be bypassed",
+        });
+      }
+    }
+  }
+
+  blockers.push(...checkBlockers(checks, effectiveRequiredChecks));
 
   if (requiredQueue && !mergeQueueSupported) {
     blockers.push({ code: Blocker.MERGE_QUEUE_UNSUPPORTED, detail: requiredQueue });
@@ -169,6 +243,8 @@ export function evaluateReviewState({
     blockers,
     approvals: approvals.length,
     nonAuthorApprovals: nonAuthorApprovals.length,
+    requiredChecks: effectiveRequiredChecks,
+    protection: protectionSummary,
   };
 }
 

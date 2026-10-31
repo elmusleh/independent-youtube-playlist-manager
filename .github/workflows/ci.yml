@@ -50,6 +50,51 @@ jobs:
       - name: Audit Dependencies
         run: npm audit --audit-level=high
 
+  build-inventory:
+    name: Build & Bundle Inventory
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "npm"
+          cache-dependency-path: |
+            package-lock.json
+            apps/browser-extension/playlist-manager/package-lock.json
+
+      - name: Install Root Dependencies
+        run: npm ci
+
+      - name: Install Playlist Editor Dependencies
+        run: cd apps/browser-extension/playlist-manager && npm ci
+
+      # Build failures belong on their own check: a Rollup/CJS break used to surface only
+      # inside the heaviest E2E job, minutes later.
+      - name: Build All Targets
+        run: npm run build
+
+      - name: Generate Dependency Trees
+        run: npm run audit:all
+
+      - name: Verify Bundle Inventory
+        run: npm run audit:bundles
+
+      - name: Upload Build Evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-inventory
+          path: |
+            dist/verification/bundle-audit.json
+            dist/verification/dependency-audit.json
+            dist/chrome/editor/bundle-dependencies.json
+          retention-days: 7
+          if-no-files-found: warn
+
   test-web:
     name: Web & Extension E2E Integration (Typecheck, Build, E2E)
     runs-on: ubuntu-latest

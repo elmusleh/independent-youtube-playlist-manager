@@ -141,8 +141,15 @@ head/base and reports `blocked` or `ready-for-manual-merge`:
 - `UNKNOWN_MERGEABILITY` and `MERGE_CONFLICT` block; `UNRESOLVED_THREADS` blocks.
 - Required checks must be `completed/success`: failed, pending, skipped or missing all
   block (`CHECKS_FAILED`, `CHECKS_PENDING`, `CHECKS_SKIPPED`).
-- A required merge queue that this workflow cannot use is
-  `MERGE_QUEUE_UNSUPPORTED`.
+- Server branch protection is read, not supplied: `pilot-review.js` calls
+  `repos/{owner}/{repo}/branches/{base}/protection` and `protectionFromGitHub` maps
+  `required_status_checks.contexts`, `required_status_checks.strict`,
+  `required_conversation_resolution.enabled`, `enforce_admins.enabled` and
+  `required_pull_request_reviews.required_approving_review_count` into readiness.
+  Any missing field is `PROTECTIONS_UNKNOWN`; an unreadable branch is never treated as an
+  unprotected one. `--no-protection` is the explicit opt-out.
+- The server rule set decides which checks are required, so a rule that only exists on
+  GitHub (conversation resolution, for example) blocks here too.
 - `evaluateGuardedMerge` returns readiness only. In manual mode (the default) it refuses
   with `GUARDED_MERGE_DISABLED`; no merge is ever performed by the coordinator.
 
@@ -294,11 +301,17 @@ a worktree-writing prompt.
 
 ## Pilot status and owner decisions
 
-- **No live pilot has run.** Task 7.3 (push a real feature branch and open one draft PR)
-  requires explicit owner authorization for remote mutation; it remains pending.
-- Consequently no GitHub-side checks, reviews, merge-queue behaviour or protection state
-  has been observed. The readiness gates in `review.js` are therefore verified only
-  against fake services and local remotes.
+- **The live pilot ran and both PRs are merged.** Draft PR #52 (coordinator) and PR #51
+  (capture + context menu) were evaluated against real GitHub state and squash-merged into
+  `next`. The pilot surfaced rules the local gates did not model: `next` requires three
+  status checks _and_ resolution of all review conversations, which is why protection is
+  now read from the API instead of supplied by the caller.
+- Observed protection on `next` at pilot time: three required checks, conversation
+  resolution required, zero required approvals, `enforce_admins` disabled — so an admin
+  bypass exists and is reported as `allowsAdminBypass` rather than silently ignored.
+- **Build failures have their own gate.** `Build & Bundle Inventory` runs `npm run build`,
+  `npm run audit:all` and `npm run audit:bundles`, so a Rollup/CJS or inventory break fails
+  in about a minute instead of inside the E2E job.
 - **Guarded merge is off and requires an owner decision.** Enabling it means setting
   `mergeMode: guarded`, recording `mergeOptIn: true` per job and confirming that branch
   protection requires the checks/review and forbids admin bypass. Until then the
