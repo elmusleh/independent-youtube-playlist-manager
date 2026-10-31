@@ -31,22 +31,9 @@ const { createFixture, seedExtension } = require(
   path.join(ROOT, "packages/build-tools/extension-fixture.js")
 );
 
-const THEMES = ["light", "dark"];
-const SIZES = [
-  { id: "mobile", width: 390, height: 844 },
-  { id: "desktop", width: 1440, height: 900 },
-];
-
-// One content container per view. Each is a non-scroll block whose height equals its
-// content, so the element screenshot captures the full layout (unlike the scrollable
-// `.view-body` wrapper). `ready` is the first element that appears once the view is done
-// loading (the skeleton placeholders are gone).
-const ROUTES = [
-  { id: "settings", hash: "/settings", ready: ".settings-grid > .card", shot: ".settings-grid" },
-  { id: "saved", hash: "/saved", ready: ".playlist-card", shot: ".playlist-grid" },
-  { id: "manage", hash: "/manage", ready: ".row-content", shot: ".list-container" },
-  { id: "history", hash: "/history", ready: ".history-item", shot: ".history-container" },
-];
+// The view/width/theme matrix is the single source of truth, shared with
+// packages/build-tools/verify-visual-baselines.js so the guard can never drift from the spec.
+const { ROUTES, THEMES, SIZES } = require("./views-matrix.js");
 
 // A fixed epoch so date grouping/labels are stable no matter when the suite runs.
 // 2023-11-14T22:13:20Z is comfortably older than any plausible "now".
