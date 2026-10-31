@@ -132,6 +132,19 @@ jobs:
       # suite, the root runs the extension regression suite. When the versions agree the
       # second call is a cache hit; when they drift, both builds exist and neither suite
       # breaks. `verify-tooling-versions.js` is what stops the drift in the first place.
+      #
+      # Playwright is pinned (root + portal both resolve to 1.62.1), so the Chromium
+      # revision is fixed and the visual-regression baselines stay byte-for-byte stable
+      # across runs. Cache the browsers (keyed on the root lockfile) so a sub-point
+      # browser re-download can't silently shift pixel rendering between CI runs.
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ms-playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ms-playwright-${{ runner.os }}-
+
       - name: Install Playwright Browsers (Portal)
         run: npx --prefix apps/web-portal playwright install --with-deps chromium
 
@@ -140,6 +153,9 @@ jobs:
 
       - name: Run Extension Regression Suite
         run: npm run test:extension
+
+      - name: Run Extension Visual Regression (primary views)
+        run: npm run test:visual
 
       - name: Build Web Production Bundle
         run: npm --prefix apps/web-portal run build
