@@ -23,13 +23,21 @@ let editorModulesPromise = null;
 
 function loadEditorModules() {
   if (!editorModulesPromise) {
-    editorModulesPromise = Promise.all([
-      import("../editor/youtube-auth.js"),
-      import("../editor/youtube-api.js"),
-      import("../editor/storage-service.js"),
-      import("../editor/utils.js"),
-      import("../editor/video-service.js"),
-    ]).catch((e) => {
+    // These files live in apps/browser-extension/editor/, a gitignored build
+    // artifact of the Svelte app. They are absent when vitest transforms this
+    // module, so a statically-analyzable `import("…")` fails to resolve there.
+    // Resolve the URLs at runtime (@vite-ignore) so Vite leaves the import to
+    // the browser; the catch below already tolerates a module missing in tests.
+    const editorModuleUrls = [
+      "../editor/youtube-auth.js",
+      "../editor/youtube-api.js",
+      "../editor/storage-service.js",
+      "../editor/utils.js",
+      "../editor/video-service.js",
+    ];
+    editorModulesPromise = Promise.all(
+      editorModuleUrls.map((src) => import(/* @vite-ignore */ src))
+    ).catch((e) => {
       log("WARN", "Popup: could not load editor modules", getErrorMessage(e));
     });
   }
