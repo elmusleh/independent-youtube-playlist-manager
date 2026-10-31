@@ -66,6 +66,17 @@ export async function enrichVideoMetadata(
         metaMap.set(key, val);
       });
 
+      // Persist each batch as soon as it resolves so an interruption (navigating
+      // away or closing the tab mid-fetch) can't lose the metadata already
+      // fetched. On resume, the persistent cache short-circuits these IDs.
+      if (batchResults.size > 0) {
+        const batchObj: Record<string, NormalizedVideoMeta> = {};
+        batchResults.forEach((val, key) => {
+          batchObj[key] = val;
+        });
+        await dbPutMetadataBatch(batchObj);
+      }
+
       onProgress?.(Math.min(i + BATCH_SIZE, videoIds.length), videoIds.length);
     }
   } finally {
@@ -76,15 +87,6 @@ export async function enrichVideoMetadata(
   // are NOT persisted: a transient failure shouldn't permanently tag a valid
   // video. The caller tags them in-memory for display.
   const unavailableIds = videoIds.filter((id) => !metaMap.has(id));
-
-  // Persist genuinely resolved metadata to IndexedDB (silent save).
-  if (metaMap.size > 0) {
-    const metaObj: Record<string, NormalizedVideoMeta> = {};
-    metaMap.forEach((val, key) => {
-      metaObj[key] = val;
-    });
-    await dbPutMetadataBatch(metaObj);
-  }
 
   return { metaMap, unavailableIds };
 }
