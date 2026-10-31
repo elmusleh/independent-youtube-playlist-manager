@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Automated beta releases: every merge to `next` now builds the extension and cuts a
+  public GitHub Prerelease (`vX.Y.Z-beta.N`, manifest build `X.Y.Z.N`) with the Chrome,
+  Edge and Firefox ZIPs attached, so builds can be tested before an official release.
+  The version is derived per merge and never committed; the `main` official-release
+  flow is unchanged.
 - Unreleased desktop page context menu with seven capture scopes, bounded destination
   selection, searchable local/YouTube chooser, page import options, explicit remote
   Sync review, expiring capture jobs, progress and cancellation. Native captures keep
