@@ -80,6 +80,36 @@ export function mapGhPr(prView, { author, requiredChecks = [], unresolvedThreads
   };
 }
 
+/** Split a checklist on commas or semicolons, ignoring separators inside parentheses. */
+export function parseRequiredChecks(value = "") {
+  const text = String(value || "").trim();
+  if (!text) return [];
+  if (text.startsWith("[")) {
+    try {
+      return JSON.parse(text)
+        .map((name) => String(name).trim())
+        .filter(Boolean);
+    } catch {
+      return [];
+    }
+  }
+  const names = [];
+  let depth = 0;
+  let current = "";
+  for (const char of text) {
+    if (char === "(") depth += 1;
+    if (char === ")") depth = Math.max(0, depth - 1);
+    if ((char === "," || char === ";") && depth === 0) {
+      names.push(current.trim());
+      current = "";
+      continue;
+    }
+    current += char;
+  }
+  names.push(current.trim());
+  return names.filter(Boolean);
+}
+
 function gh(args) {
   return execFileSync("gh", args, { encoding: "utf-8", stdio: "pipe" }).trim();
 }
@@ -119,10 +149,7 @@ function main() {
 
   const repo = gh(["repo", "view", "--json", "nameWithOwner", "-q", ".nameWithOwner"]);
   const prView = JSON.parse(gh(["pr", "view", prNumber, "--repo", repo, "--json", GH_FIELDS]));
-  const requiredChecks = (value("--required-checks") || "")
-    .split(",")
-    .map((name) => name.trim())
-    .filter(Boolean);
+  const requiredChecks = parseRequiredChecks(value("--required-checks"));
   const unresolvedThreads = unresolvedThreadCount(repo, Number(prNumber));
 
   const input = mapGhPr(prView, {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { mapGhPr } from "./pilot-review.js";
+import { mapGhPr, parseRequiredChecks } from "./pilot-review.js";
 import { evaluateReviewState } from "./review.js";
 
 const prView = {
@@ -89,5 +89,24 @@ describe("Pilot review mapping", () => {
     const readiness = evaluateReviewState(mapGhPr(unknown));
 
     expect(readiness.blockers.map((blocker) => blocker.code)).toContain("UNKNOWN_MERGEABILITY");
+  });
+});
+
+describe("Required check parsing", () => {
+  it("keeps parenthesised names intact when splitting on commas", () => {
+    expect(
+      parseRequiredChecks("Quality & Security (Lint, Format, Audit, Unit Tests),Extension CI")
+    ).toEqual(["Quality & Security (Lint, Format, Audit, Unit Tests)", "Extension CI"]);
+  });
+
+  it("accepts a semicolon or JSON list", () => {
+    expect(parseRequiredChecks("a;b")).toEqual(["a", "b"]);
+    expect(parseRequiredChecks('["a","b"]')).toEqual(["a", "b"]);
+  });
+
+  it("returns an empty list for blank input", () => {
+    expect(parseRequiredChecks("")).toEqual([]);
+    expect(parseRequiredChecks(undefined)).toEqual([]);
+    expect(parseRequiredChecks("[not json")).toEqual([]);
   });
 });
