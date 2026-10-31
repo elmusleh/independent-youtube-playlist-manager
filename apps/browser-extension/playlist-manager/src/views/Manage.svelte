@@ -1590,7 +1590,7 @@
     justify-content: space-between;
     gap: 16px;
     padding: 12px 16px;
-    background: var(--hover-color);
+    background: var(--background-color);
     border-bottom: 1px solid var(--border-color);
     transition: background 0.2s;
   }
