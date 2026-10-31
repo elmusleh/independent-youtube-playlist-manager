@@ -3,7 +3,25 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const root = path.resolve(__dirname, "../..");
-for (const target of ["chrome", "firefox", "edge"]) {
+
+/** JSDoc type imports are erased at runtime, so they must not count as module edges. */
+function withoutComments(source) {
+  return source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/[^\n]*/g, "$1");
+}
+
+/** Relative import specifiers that actually execute. */
+function relativeImports(source) {
+  const code = withoutComments(source);
+  const found = [];
+  for (const match of code.matchAll(
+    /(?:\bfrom\s*|\bimport\s*(?:\(\s*)?)(['"])(\.{1,2}\/[^"']+)\1/g
+  )) {
+    if (!match[2].endsWith(".css")) found.push(match[2]);
+  }
+  return found;
+}
+
+function verifyTarget(target) {
   const base = path.join(root, "dist", target);
   const visited = new Set();
   function visit(relative) {
@@ -13,15 +31,20 @@ for (const target of ["chrome", "firefox", "edge"]) {
     if (!fs.existsSync(filename)) throw new Error(`${target}: missing module ${relative}`);
     if (visited.has(filename)) return;
     visited.add(filename);
-    const source = fs.readFileSync(filename, "utf8");
-    for (const match of source.matchAll(
-      /(?:\bfrom\s*|\bimport\s*(?:\(\s*)?)(['"])(\.{1,2}\/[^"']+)\1/g
-    )) {
-      const imported = match[2];
-      if (imported.endsWith(".css")) continue;
+    for (const imported of relativeImports(fs.readFileSync(filename, "utf8"))) {
       visit(path.relative(base, path.resolve(path.dirname(filename), imported)));
     }
   }
   for (const entry of ["background/index.js", "popup/popup.js", "editor/main.js"]) visit(entry);
-  console.log(`${target}: ${visited.size} reachable runtime modules exist.`);
+  return visited.size;
 }
+
+function main() {
+  for (const target of ["chrome", "firefox", "edge"]) {
+    console.log(`${target}: ${verifyTarget(target)} reachable runtime modules exist.`);
+  }
+}
+
+module.exports = { relativeImports, verifyTarget, withoutComments };
+
+if (require.main === module) main();
