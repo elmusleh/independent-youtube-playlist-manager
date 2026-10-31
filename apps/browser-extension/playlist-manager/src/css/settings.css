@@ -44,24 +44,17 @@
 }
 
 .settings-grid {
-  display: block;
-  column-width: 400px;
-  column-gap: 24px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(400px, 100%), 1fr));
+  gap: 24px;
+  align-items: start;
   width: 100%;
-}
-
-@media (max-width: 500px) {
-  .settings-grid {
-    column-count: 1;
-  }
 }
 
 .card {
-  display: inline-flex; /* inline for columns, flex for internal layout */
+  display: flex;
   flex-direction: column;
   width: 100%;
-  break-inside: avoid;
-  margin-bottom: 24px;
   background: var(--background-color);
   border: 1px solid var(--border-color);
   border-radius: 16px;
