@@ -55,7 +55,8 @@ The suite pins every input that would otherwise vary between runs or hosts:
   (`-apple-system, "Segoe UI", Roboto, Ubuntu, Cantarell, …`) resolves to _different_
   faces on a desktop vs the CI runner (Ubuntu/Cantarell present or not). DejaVu Sans is
   the Ubuntu default and is present on both. Icons are inline SVG (`svelte-fa`), so they
-  are unaffected.
+  are unaffected. DejaVu Sans ships in the `fonts-dejavu-core` package — the CI job is
+  pinned to `ubuntu-24.04` so that font dependency cannot drift on a runner-image update.
 - **Theme** — the browser `colorScheme` is set and a fresh profile means `data-theme`
   follows it (light/dark).
 - **Locale & timezone** — pinned to `en-US` / `UTC` so date labels are stable.
@@ -70,4 +71,5 @@ Baselines are captured with DejaVu Sans and are therefore **Linux-specific**. On
 Windows the default `sans-serif` metrics differ enough that a freshly-cloned repo will show
 "pixels are different" failures that are _not_ regressions. In that case regenerate the
 baselines locally (above) and keep them out of the commit, or run the suite in the Linux CI
-environment. CI (GitHub Actions, `ubuntu-latest`) is the source of truth.
+environment. CI (GitHub Actions, the `test-web` job pinned to `ubuntu-24.04`) is the source
+of truth — the pin keeps `fonts-dejavu-core` present and stable across runs.

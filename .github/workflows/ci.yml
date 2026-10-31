@@ -97,7 +97,10 @@ jobs:
 
   test-web:
     name: Web & Extension E2E Integration (Typecheck, Build, E2E)
-    runs-on: ubuntu-latest
+    # Pinned (not ubuntu-latest): the visual-regression baselines are captured with
+    # DejaVu Sans, and the runner's default font set (fonts-dejavu-core) is part of the
+    # determinism contract. A future ubuntu-latest bump could swap fonts and flip baselines.
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       actions: write
@@ -156,6 +159,15 @@ jobs:
 
       - name: Run Extension Visual Regression (primary views)
         run: npm run test:visual
+
+      - name: Upload Visual Regression Diffs (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-regression-diffs
+          path: test-results/
+          retention-days: 7
+          if-no-files-found: ignore
 
       - name: Build Web Production Bundle
         run: npm --prefix apps/web-portal run build
