@@ -140,6 +140,9 @@ jobs:
 
       - name: Push the prerelease tag
         run: |
+          # Annotated tags require an author identity; a fresh runner has none set.
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
           if ! git tag -l "$BETA_TAG" | grep -q .; then
             git tag -a "$BETA_TAG" -m "Beta ${NUMERIC_VERSION} ($(git rev-parse --short HEAD))"
             git push origin "refs/tags/$BETA_TAG"
