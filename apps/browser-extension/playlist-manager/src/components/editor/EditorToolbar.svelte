@@ -86,7 +86,12 @@
       <span>Add Video(s)</span>
     </SimpleButton>
     {#if onScrapeHtml}
-      <SimpleButton onclick={onScrapeHtml} title="Scrape YouTube links from pasted HTML" secondary>
+      <SimpleButton
+        onclick={onScrapeHtml}
+        title="Scrape YouTube links from pasted HTML"
+        secondary
+        className="scrape-btn"
+      >
         <Fa icon={faCode} fw />
         <span>Scrape HTML</span>
       </SimpleButton>
@@ -114,7 +119,7 @@
         >
           <Fa icon={faWrench} fw />
           <span>Clean</span>
-          <Fa icon={faChevronDown} fw />
+          <Fa icon={faChevronDown} fw class="chevron" />
         </SimpleButton>
         {#if showCleanMenu}
           <div class="dropdown-menu">
@@ -169,7 +174,7 @@
           {#if hasActiveSort}
             <span class="sort-badge" title={describeSortRules(activeSortRules)}></span>
           {/if}
-          <Fa icon={faChevronDown} fw />
+          <Fa icon={faChevronDown} fw class="chevron" />
         </SimpleButton>
         {#if showSortMenu}
           <div class="dropdown-menu dropdown-menu--sort">
@@ -349,15 +354,44 @@
 
   @media (max-width: 900px) {
     .playlist-btns {
-      flex-direction: column;
-      align-items: flex-start;
+      flex-direction: row;
+      flex-wrap: nowrap;
+      align-items: center;
+      gap: 4px;
+      padding: 6px 8px;
     }
+
     .btn-group {
-      width: 100%;
-      flex-wrap: wrap;
+      width: auto;
+      flex-wrap: nowrap;
+      flex-shrink: 0;
+      gap: 4px;
     }
+
     .right-align {
       margin-left: 0;
+    }
+
+    .btn-group :global(.btn) {
+      width: var(--header-control-size);
+      min-width: var(--header-control-size);
+      height: var(--header-control-size);
+      padding: 0;
+      border-radius: 50%;
+    }
+
+    .btn-group :global(.btn .content span:not(.sort-badge)) {
+      display: none;
+    }
+
+    .btn-group :global(.btn .content .chevron) {
+      display: none;
+    }
+  }
+
+  @media (max-width: 360px) {
+    .btn-group :global(.scrape-btn) {
+      display: none;
     }
   }
 </style>

@@ -90,7 +90,6 @@ const routes = [
   "/settings",
   "/search",
   "/subscriptions",
-  "/share",
   "/shortcuts",
   "/api-setup",
   "/logs",

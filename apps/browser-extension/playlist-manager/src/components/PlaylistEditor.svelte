@@ -30,7 +30,7 @@
   import { faYoutube } from "@fortawesome/free-brands-svg-icons";
   import type { IconDefinition } from "@fortawesome/free-solid-svg-icons";
   import type { Playlist, SortField, SortRule, Video } from "../types/model.js";
-  import PaginationNav from "./PaginationNav.svelte";
+  import PaginationBar from "./PaginationBar.svelte";
   import AuthPlaceholder from "./AuthPlaceholder.svelte";
   import { requestConfirm } from "../stores/confirmation.js";
   import { editorSearch } from "../stores/playlists-filters";
@@ -51,7 +51,6 @@
   import { builderAdditions } from "../utils/builder-capture";
   import { hasCompleteMetadata } from "../utils/metadata-completeness";
   import { enrichVideoMetadata } from "../services/enrichment-service.js";
-  import { PAGE_SIZES } from "../services/settings-utils.js";
   import { clampPage } from "../utils/pagination";
   import { reorderItems } from "../utils/reorder";
 
@@ -341,8 +340,7 @@
     loadPageVideos(currentPage);
   }
 
-  function onPageSizeChange(e: Event) {
-    const size = Number((e.target as HTMLSelectElement).value);
+  function onPageSizeChange(size: number) {
     if (!Number.isFinite(size)) return;
     applyPageSize(size);
     // Persist globally so all playlists (and the Settings page) inherit this value.
@@ -1656,27 +1654,15 @@
       </div>
 
       {#if videos.length > 0}
-        <div class="pagination-bar">
-          <div class="page-size-control">
-            <label class="page-size-label" for="editor-page-size">Per page</label>
-            <select id="editor-page-size" value={pageSize} onchange={onPageSizeChange}>
-              {#if !PAGE_SIZES.includes(pageSize)}
-                <option value={pageSize}>{pageSize}</option>
-              {/if}
-              {#each PAGE_SIZES as size}
-                <option value={size}>{size}</option>
-              {/each}
-            </select>
-          </div>
-          {#if filteredVideos.length > pageSize}
-            <PaginationNav
-              totalItems={filteredVideos.length}
-              {pageSize}
-              {currentPage}
-              onsetpage={updatePaginationPage}
-            />
-          {/if}
-        </div>
+        <PaginationBar
+          totalItems={filteredVideos.length}
+          {pageSize}
+          {currentPage}
+          onPageChange={updatePaginationPage}
+          {onPageSizeChange}
+          pageSizeId="editor-page-size"
+          pageSizeLabel="Videos per page"
+        />
       {/if}
     {/if}
   {/if}
@@ -1771,52 +1757,6 @@
     text-align: center;
     padding: 40px;
     color: var(--text-muted);
-  }
-
-  .pagination-bar {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    margin-top: 24px;
-    flex-wrap: wrap;
-  }
-
-  .page-size-control {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .page-size-label {
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--text-muted);
-    white-space: nowrap;
-  }
-
-  .page-size-control select {
-    height: 36px;
-    padding: 0 12px;
-    border-radius: 10px;
-    border: 1px solid var(--border-color);
-    background-color: var(--bg-secondary);
-    color: var(--text-color);
-    font-size: 13px;
-    font-weight: 500;
-    outline: none;
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-
-  .page-size-control select:hover {
-    background-color: var(--hover-color);
-    border-color: var(--primary-color);
-  }
-
-  .page-size-control select:focus {
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(62, 166, 255, 0.1);
   }
 
   /* Premium Branded Buttons */

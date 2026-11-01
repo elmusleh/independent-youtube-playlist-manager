@@ -285,6 +285,10 @@
           onOpen={() => openInEditor(p)}
           actions={getCardActions(p)}
           category={p.category}
+          onCategoryClick={(cat) => {
+            if (cat === "local") activeChip = "Local";
+            else if (cat === "youtube" || cat === "account") activeChip = "YouTube";
+          }}
         />
       {/each}
     </PlaylistGrid>

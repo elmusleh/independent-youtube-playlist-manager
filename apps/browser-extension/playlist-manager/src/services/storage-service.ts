@@ -1048,6 +1048,7 @@ window.getSettings = async (): Promise<Settings> => {
       disableContextSaved: false,
       themeChoice: "device",
       defaultPageSize: 100,
+      playlistsPerPage: 20,
       cacheDuration: -1, // -1 = no expiration
       watchLaterPlaylistId: null, // null = use YouTube's Watch Later
       maxLogLines: 500,

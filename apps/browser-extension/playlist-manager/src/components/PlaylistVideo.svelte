@@ -137,6 +137,7 @@
   class="playlist-video"
   class:is-active={active}
   class:is-selected={selected}
+  class:selectable
   onclick={videoClicked}
   onkeydown={handleKeydown}
   role="button"
@@ -303,7 +304,7 @@
 
   .playlist-video.is-active {
     background-color: var(--color-brand-primary);
-    color: var(--color-text-inverse);
+    color: #ffffff;
   }
 
   .drag-handle {
@@ -558,6 +559,22 @@
         );
       padding: var(--space-2);
       gap: var(--space-3);
+    }
+
+    .drag-handle {
+      display: none;
+    }
+
+    .playlist-video:not(.selectable) {
+      grid-template-columns: minmax(0, var(--row-thumb-width-mobile)) minmax(0, 1fr);
+    }
+
+    .playlist-video:not(.selectable) .thumbnail-wrapper {
+      grid-column: 1;
+    }
+
+    .playlist-video:not(.selectable) .video-details {
+      grid-column: 2;
     }
 
     .thumbnail-wrapper {

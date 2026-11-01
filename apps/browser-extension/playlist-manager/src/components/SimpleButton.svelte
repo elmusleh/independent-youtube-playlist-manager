@@ -80,7 +80,7 @@
 
   .btn.primary {
     background-color: var(--color-brand-primary);
-    color: var(--color-text-inverse);
+    color: #ffffff;
     border-color: var(--color-brand-primary);
   }
 
