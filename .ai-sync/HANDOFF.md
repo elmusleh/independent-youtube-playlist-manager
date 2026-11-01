@@ -1,5 +1,40 @@
 # Handoff — 2026-10-31, verification complete with all automated gates passing
 
+## 2026-11-01 — shipped clean items; feat/ui-polish is dead; context-menu deferred
+
+- Opened three PRs against `next` (669049d), none merged (owner merges):
+  - **#67** `fix(ui): dismiss dialogs on backdrop click` — modal backdrop dismissal for all
+    sizes. Worktree `~/dev/iypm-worktrees/modal-fix` (branch `fix/dialog-backdrop-dismiss`).
+    Verified: `npm run check` exit 0 (573 tests, 0 errors), `npm run build` exit 0,
+    `npm run test:extension` exit 0 (102 checks + 9 interaction groups).
+  - **#68** `fix(portal): serve a 5 KB logo…` — rebased `fix/portal-logo-weight` onto next;
+    resolved a CHANGELOG.md `[Unreleased]` conflict (kept theme + portal-logo bullets).
+    CI-gated (not re-verified locally by this pass).
+  - **#69** `docs: add the improvement and issue-closure plan` — rebased, docs-only.
+- **`feat/ui-polish` is dead.** Its 16 unmerged commits net out to state/docs noise plus
+  OLDER versions of context-menu and theme code already superseded by #64/#65 (e.g. its
+  `theme.store.ts` is the pre-#65 single-read version; next has the retry fix). Shipping
+  it would regress `next`. Do not cherry-pick it.
+- **Context-menu feature deferred** to a separate careful session: consolidate
+  `codex/context-menu-plan` (42 commits), `codex/context-menu-implementation` (+ uncommitted
+  worktree), `feat/context-menu-capture` (3), `test/native-menu-acceptance` (1) into one
+  branch off `next`, then finish CM-R7/R8/R9 + native/device evidence before a PR.
+- Cleanup (not done; recommend owner): delete `[gone]`/superseded branches
+  (`feat/orchestration-coordinator`, `ci/beta-release*`, `chore/real-protections-build-gate`,
+  `docs/build-gate-note`, `backup/codex-context-menu-plan-pre-split` after context-menu
+  ships); drop 3 lint-staged stashes; inspect `stash@{0}` (vercel rootDirectory) first.
+
+## 2026-11-01 — shipping plan updated; proper base branch confirmed
+
+- Base branch for all remaining work: `next` @ `669049d` (local and `origin/next` are
+  in sync; already includes #63 ui-polish, #64 context-menu-gates, #65 theme-choice).
+- Recorded the "ship remaining unshipped work" plan in `.ai-sync/PLAN.md`: ready items
+  (`fix/portal-logo-weight`, `docs/improvement-plan`, modal backdrop-dismiss fix), the
+  `feat/ui-polish` leftover (net 18 files / 518 insertions — extract genuinely-new bits,
+  don't blanket-cherry-pick), and the large acceptance-pending context-menu feature
+  (consolidate into one branch + finish CM-R7/R8/R9 before PR).
+- No commits/pushes/PRs made this pass. Plan only.
+
 ## 2026-11-01 — context-menu + theme fixes merged to `next` (1.2.1, unreleased)
 
 - `next` head `669049d`. Merged: #63 (`c1a9849`, editor UX polish — by a concurrent

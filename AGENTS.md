@@ -22,6 +22,10 @@ Read in this order, and stop when you have what you need:
 **On stop, update `.ai-sync/HANDOFF.md`** — state, not narrative — and tick off
 `PROGRESS.md`. Append to `HISTORY.md` only when retiring detail from `HANDOFF.md`.
 
+## UI consistency
+
+- Reuse existing UI patterns and shared components across views for visual and behavioral consistency; prefer extending shared components over bespoke markup.
+
 ## Shared workflow across agents
 
 OpenSpec is configured for Codex and Hermes. Read `openspec/README.md` and
@@ -519,7 +523,7 @@ All project releases follow [docs/RELEASING.md](docs/RELEASING.md). A release is
 ### Current Release & Testing State:
 
 - **Chrome Web Store**: Version 1.1.1 pending review.
-- **Microsoft Edge Add-ons**: Version 1.1.1 package builds and validates locally; submission is pending a Microsoft Partner Center listing and Product ID. See `docs/EDGE_STORE_SUBMISSION.md`.
+- **Microsoft Edge Add-ons**: 1.2.1 package builds and validates locally. A Partner Center draft exists (Store ID `0RDCKFZCVDRK`, Product ID `20f9b17d-73e7-45f8-8692-796867b7ec80`) holding the older 1.1.1 package; it was never submitted for certification. Upload the 1.2.1 ZIP and submit — see `docs/EDGE_STORE_SUBMISSION.md`.
 - **Firefox AMO (Listed)**: Version 1.1.1 (ID 6620554) pending review.
 - **Firefox Unlisted Test Release**:
   - Version `1.2.0.1` (AMO ID `6620940`) signed under unlisted channel for external tester distribution.
