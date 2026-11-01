@@ -33,10 +33,12 @@ export function Navbar() {
         >
           <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl overflow-hidden shadow-sm flex items-center justify-center flex-shrink-0 bg-white border border-zinc-200/80 group-hover:scale-105 transition-transform duration-200">
             <Image
-              src="/icon.png"
+              src="/logo.webp"
               alt="Independent YouTube Playlist Manager logo"
               width={28}
               height={28}
+              priority
+              unoptimized
               className="object-contain"
             />
           </div>

@@ -33,10 +33,12 @@ export default function Home() {
           {/* Official Logo */}
           <div className="h-14 w-14 sm:h-20 sm:w-20 rounded-2xl overflow-hidden shadow-md flex items-center justify-center border border-zinc-200 bg-white group hover:scale-105 transition-transform duration-300">
             <Image
-              src="/icon.png"
+              src="/logo.webp"
               alt="Independent YouTube Playlist Manager logo"
               width={56}
               height={56}
+              priority
+              unoptimized
               className="object-contain"
             />
           </div>
