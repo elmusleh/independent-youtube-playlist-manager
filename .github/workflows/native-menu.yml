@@ -1,0 +1,67 @@
+name: Native menu verification
+
+# Native context menus live in the browser's own UI layer, so this cannot run as part of
+# the ordinary gate: it needs an X server, a headed browser and OCR. It is scheduled and
+# manual rather than per-PR so a Chrome version bump cannot block unrelated work.
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 4 * * 1" # Mondays, 04:00 UTC
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  native-menu:
+    name: Native context menu (Chromium)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "npm"
+          cache-dependency-path: |
+            package-lock.json
+            apps/browser-extension/playlist-manager/package-lock.json
+
+      - name: Install system packages (X server, input, capture, OCR)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends xvfb xdotool ffmpeg tesseract-ocr x11-utils
+
+      - name: Install Root Dependencies
+        run: npm ci
+
+      - name: Install Playlist Editor Dependencies
+        run: cd apps/browser-extension/playlist-manager && npm ci
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Build extension
+        run: npm run build
+
+      - name: Verify the native context menu
+        # IYPM_REQUIRE_NATIVE_MENU=1: a missing display must fail, never silently skip.
+        run: npm run test:native-menu
+        env:
+          IYPM_REQUIRE_NATIVE_MENU: "1"
+
+      - name: Upload menu screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-menu-screenshots
+          path: dist/verification/native-menu/
+          if-no-files-found: ignore
+          retention-days: 14
