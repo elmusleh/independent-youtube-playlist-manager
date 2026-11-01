@@ -25,7 +25,7 @@
   },
   "content_scripts": [
     {
-      "matches": ["*://www.youtube.com/watch*", "*://m.youtube.com/watch*"],
+      "matches": ["*://*.youtube.com/watch*", "*://youtube.com/watch*"],
       "js": ["assets/browser-polyfill.min.js", "content-scripts/watch-tracker.js"],
       "run_at": "document_idle"
     }

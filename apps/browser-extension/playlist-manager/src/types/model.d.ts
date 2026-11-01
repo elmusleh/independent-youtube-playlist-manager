@@ -146,6 +146,7 @@ export interface Settings {
   disableContextSaved: boolean;
   themeChoice: ThemeChoice;
   defaultPageSize: number;
+  playlistsPerPage: number;
   cacheDuration: number; // in minutes, -1 for no expiration
   watchLaterPlaylistId: string | null; // custom playlist ID to use instead of YouTube's Watch Later
   maxLogLines: number;

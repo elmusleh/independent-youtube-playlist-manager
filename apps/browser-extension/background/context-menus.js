@@ -3,6 +3,7 @@ import { menuModel, ROOT, SCOPES } from "./context-menu-model.js";
 import { cachedDestinations, requireDestinationEnabled } from "../shared/quick-add.js";
 import { startCapture, scanPage, openCapture } from "./capture-controller.js";
 import { createJob } from "./capture-jobs.js";
+import { cacheScrapedMetadata } from "./capture-import.js";
 import { parseYouTubeVideoId } from "../shared/tab-selection.js";
 let reconciliation = Promise.resolve();
 let generation = 0;
@@ -144,7 +145,9 @@ async function dispatch(info, tab) {
       const current = await browser.tabs.get(tab.id);
       if (current.url !== tab.url || current.windowId !== tab.windowId)
         throw new Error("The playlist page changed. Open the menu again.");
-      const ids = result[0]?.result?.map((item) => (typeof item === "string" ? item : item.id));
+      const items = result[0]?.result || [];
+      await cacheScrapedMetadata(items);
+      const ids = items.map((item) => (typeof item === "string" ? item : item.id));
       if (!Array.isArray(ids) || !ids.length)
         throw new Error("No videos found. Open the playlist page and try again.");
       await openCapture(

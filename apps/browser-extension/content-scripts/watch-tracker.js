@@ -161,7 +161,9 @@
     startProgressTracking();
   }
 
-  function waitForVideoElement(maxRetries = 20, intervalMs = 200) {
+  // Poll longer on mobile (Fenix) where the player can take well over 4s to
+  // materialize on a slow connection — 150 × 200ms ≈ 30s before giving up.
+  function waitForVideoElement(maxRetries = 150, intervalMs = 200) {
     return new Promise((resolve) => {
       let retries = 0;
       const check = () => {
