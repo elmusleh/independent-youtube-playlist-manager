@@ -31,6 +31,9 @@ const legacyAllowlist = new Set([
   "apps/browser-extension/playlist-manager/src/services/storage-service.ts",
   "apps/browser-extension/playlist-manager/src/views/History.svelte",
   "apps/browser-extension/playlist-manager/src/views/DeveloperSetup.svelte",
+  // Data Manager view: async scan/refresh/retry coordination plus the embedded
+  // repair queue. Split the action layer before it grows further.
+  "apps/browser-extension/playlist-manager/src/views/MetadataManager.svelte",
   "apps/browser-extension/playlist-manager/src/components/ReleaseNotesModal.svelte",
   "apps/browser-extension/playlist-manager/src/components/PlaylistVideo.svelte",
   "apps/browser-extension/playlist-manager/src/components/Header.svelte",
