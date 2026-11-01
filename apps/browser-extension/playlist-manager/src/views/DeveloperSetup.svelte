@@ -15,6 +15,11 @@
   import SimpleButton from "../components/SimpleButton.svelte";
   import SaveStatus from "../components/SaveStatus.svelte";
   import { StatusManager } from "../services/status-manager.svelte";
+  import {
+    markDataApiFailure,
+    markDataApiSuccess,
+    resetDataApiHealth,
+  } from "../services/data-api-health";
   import { onDestroy, tick } from "svelte";
 
   const browser = (window as any).browser || (window as any).chrome;
@@ -121,12 +126,14 @@
         await browser.storage.local.remove("yt_auth_token_cache");
       }
 
+      const nextApiKey = apiKey.trim();
       await browser.storage.local.set({
         custom_yt_credentials: {
           clientId: clientId.trim(),
-          apiKey: apiKey.trim(),
+          apiKey: nextApiKey,
         },
       });
+      if (oldCreds.apiKey !== nextApiKey) await resetDataApiHealth();
       if (window.logSystemEvent)
         await window.logSystemEvent("INFO", "[DEV-SETUP] Credentials saved successfully");
 
@@ -135,6 +142,58 @@
         window.invalidateCacheAndNotify();
       }, 100);
     });
+  }
+
+  async function testApiKey() {
+    const key = apiKey.trim();
+    if (!key) {
+      testStatus = "error";
+      testMessage = "Add an API key first, then test it.";
+      return;
+    }
+
+    testStatus = "testing";
+    testMessage = "Testing API key with one videos.list request...";
+    try {
+      const url = new URL("https://www.googleapis.com/youtube/v3/videos");
+      url.searchParams.set("part", "id");
+      url.searchParams.set("id", "dQw4w9WgXcQ");
+      url.searchParams.set("key", key);
+      const response = await fetch(url.toString(), { cache: "no-store" });
+      const data: any = await response.json().catch(() => null);
+
+      if (response.ok) {
+        await markDataApiSuccess();
+        testStatus = "success";
+        testMessage = "API key works. The test cost 1 quota unit.";
+        return;
+      }
+
+      const reason = data?.error?.errors?.[0]?.reason;
+      const detail = data?.error?.message || `HTTP ${response.status}`;
+      await markDataApiFailure(reason, response.status, detail);
+      testStatus = "error";
+      if (reason === "quotaExceeded") {
+        testMessage = "The key is valid, but the daily YouTube Data API quota is exhausted.";
+      } else if (reason === "keyInvalid" || reason === "API_KEY_INVALID") {
+        testMessage = "That API key is not valid. Check it in Google Cloud Console.";
+      } else if (reason === "accessNotConfigured") {
+        testMessage = "The YouTube Data API v3 is not enabled for this key's project.";
+      } else {
+        testMessage = `API key test failed: ${detail}`;
+      }
+      if (window.logSystemEvent) {
+        await window.logSystemEvent(
+          "WARN",
+          `[DEV-SETUP] API key test failed (${reason || response.status})`
+        );
+      }
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "API key test failed.";
+      await markDataApiFailure(undefined, undefined, message);
+      testStatus = "error";
+      testMessage = `API key test failed: ${message}`;
+    }
   }
 
   async function testConnection() {
@@ -367,9 +426,18 @@
           </div>
 
           <div class="test-connection-box">
-            <SimpleButton onclick={testConnection} primary disabled={testStatus === "testing"}>
-              Test Connection
-            </SimpleButton>
+            <div class="test-actions">
+              <SimpleButton onclick={testConnection} primary disabled={testStatus === "testing"}>
+                Test Connection
+              </SimpleButton>
+              <SimpleButton
+                onclick={testApiKey}
+                disabled={testStatus === "testing" || !apiKey.trim()}
+                title="Send one videos.list request to validate the API key"
+              >
+                Test API Key
+              </SimpleButton>
+            </div>
 
             {#if testStatus !== "idle"}
               <div class="test-result {testStatus}">
@@ -623,6 +691,12 @@
     display: flex;
     flex-direction: column;
     gap: 16px;
+  }
+
+  .test-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
   }
 
   .test-result {

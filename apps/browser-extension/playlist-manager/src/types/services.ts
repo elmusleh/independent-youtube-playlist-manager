@@ -266,6 +266,7 @@ declare global {
     clearAllMetadataCache: () => Promise<void>;
     getMetadataGapSummary: () => Promise<MetadataGapSummary>;
     getMetadataGaps: () => Promise<NormalizedVideoMeta[]>;
+    getUnavailableMetadata: () => Promise<NormalizedVideoMeta[]>;
     refreshMetadataGaps: (force?: boolean) => Promise<number>;
     clearIncompleteMetadata: () => Promise<number>;
   }
