@@ -540,4 +540,4 @@ the GitHub Release with the changelog section as its body.
 
 ## Post-Implementation Suggestions
 
-After each implementation, give the user exactly 3 NEW potential improvements or next-step suggestions for this project (professionalism, security, best practices). Must not repeat already-done/suggested items; mention each for reference. See `~/dev/AGENTS.md` § Post-Implementation Suggestions.
+After each implementation, give the user up to 9 NEW potential improvements or next-step suggestions for this project, each with a priority percentage (how critical it is) and a plain-English what/why/how so a non-expert can judge them. Must not repeat already-done/suggested items; mention each for reference. See `~/dev/AGENTS.md` § Post-Implementation Suggestions.
