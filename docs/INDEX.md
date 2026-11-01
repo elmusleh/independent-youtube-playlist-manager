@@ -81,6 +81,8 @@ provenance, not as instructions.
 
 - [Playlist destination terminology](PLAYLIST_TERMINOLOGY.md).
 - [Hermes verification handoff](testing/HERMES_CONTEXT_MENU_VERIFICATION.md).
+- [Native menu gate](testing/NATIVE_MENU_GATE.md) — `npm run test:native-menu`, what it
+  asserts against the real browser menu, and what it deliberately does not cover.
 - [Dependency advisory triage](DEPENDENCY_TRIAGE.md).
 
 ## Shared AI workflow and worktrees
