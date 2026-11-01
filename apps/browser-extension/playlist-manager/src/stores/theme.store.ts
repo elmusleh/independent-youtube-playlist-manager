@@ -1,6 +1,9 @@
 import { derived, get, readable, writable, type Readable } from "svelte/store";
 import type { Theme, ThemeChoice } from "../types/model.js";
 
+// The synchronous pre-paint cache uses `yph-theme-choice` in localStorage, but
+// the persistent setting must stay `themeChoice` so getSettings() and the popup
+// read the same value. Changing this to the localStorage key disconnects them.
 const themeStorageKey = "themeChoice";
 
 function initialChoice(): ThemeChoice {

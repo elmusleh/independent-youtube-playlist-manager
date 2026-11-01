@@ -439,9 +439,6 @@
 
 /* Short screens (landscape phone, split view) */
 @media (max-height: 480px) and (max-width: 1024px) {
-  .sticky-header-container {
-    position: static;
-  }
   dialog {
     max-height: calc(100dvh - 16px);
   }
@@ -491,10 +488,14 @@ html {
   scrollbar-gutter: stable;
 }
 
-/* Text wrapping safety */
+/* Text wrapping safety + the box-sizing reset that the whole token system
+   (--icon-btn-size, --input-height, …) assumes. Without border-box, any element
+   that combines padding/border with a fixed width/height renders larger than the
+   token intends, which is what misaligns row icons (drag handle, sync badge). */
 *,
 *::before,
 *::after {
+  box-sizing: border-box;
   overflow-wrap: anywhere;
   word-break: break-word;
 }

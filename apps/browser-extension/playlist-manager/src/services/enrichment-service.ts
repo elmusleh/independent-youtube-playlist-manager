@@ -47,26 +47,55 @@ export async function enrichVideoMetadata(
     return { metaMap, unavailableIds: [] };
   }
 
+  let fetchIds = videoIds;
+
+  // Respect already-resolved rows (including terminal tombstones) unless the
+  // caller explicitly asked for a forced refresh. This is what stops deleted
+  // videos from being re-fetched by silent background enrichment.
+  if (!force && typeof window.videoService?.getVideoMetadataBatch === "function") {
+    try {
+      const cached = await window.videoService.getVideoMetadataBatch(videoIds);
+      for (const [id, meta] of Object.entries(cached)) {
+        if (meta) metaMap.set(id, meta as unknown as NormalizedVideoMeta);
+      }
+      fetchIds = videoIds.filter((id) => !cached[id]);
+      if (fetchIds.length === 0) return { metaMap, unavailableIds: [] };
+    } catch {
+      /* Cache read is best-effort; fall through to the network path. */
+    }
+  }
+
   // Always clear session cache for these IDs so prior individual fetch
   // failures (which may have set null entries) don't block the batch retry.
   if (typeof window.clearMetadataSessionCache === "function") {
-    window.clearMetadataSessionCache(videoIds);
+    window.clearMetadataSessionCache(fetchIds);
   }
 
   // A forced refetch bypasses the cache without deleting it.
   if (force) markForcedRefetch(videoIds);
 
   try {
-    for (let i = 0; i < videoIds.length; i += BATCH_SIZE) {
+    for (let i = 0; i < fetchIds.length; i += BATCH_SIZE) {
       if (shouldCancel?.()) break;
 
-      const batch = videoIds.slice(i, i + BATCH_SIZE);
+      const batch = fetchIds.slice(i, i + BATCH_SIZE);
       const batchResults = await window.ytFetchVideoDurations(batch);
       batchResults.forEach((val, key) => {
         metaMap.set(key, val);
       });
 
-      onProgress?.(Math.min(i + BATCH_SIZE, videoIds.length), videoIds.length);
+      // Persist each batch as soon as it resolves so an interruption (navigating
+      // away or closing the tab mid-fetch) can't lose the metadata already
+      // fetched. On resume, the persistent cache short-circuits these IDs.
+      if (batchResults.size > 0) {
+        const batchObj: Record<string, NormalizedVideoMeta> = {};
+        batchResults.forEach((val, key) => {
+          batchObj[key] = val;
+        });
+        await dbPutMetadataBatch(batchObj);
+      }
+
+      onProgress?.(Math.min(i + BATCH_SIZE, fetchIds.length), fetchIds.length);
     }
   } finally {
     if (force) clearForcedRefetch(videoIds);
@@ -75,16 +104,7 @@ export async function enrichVideoMetadata(
   // IDs not resolved by any tier are flagged as unavailable. These placeholders
   // are NOT persisted: a transient failure shouldn't permanently tag a valid
   // video. The caller tags them in-memory for display.
-  const unavailableIds = videoIds.filter((id) => !metaMap.has(id));
-
-  // Persist genuinely resolved metadata to IndexedDB (silent save).
-  if (metaMap.size > 0) {
-    const metaObj: Record<string, NormalizedVideoMeta> = {};
-    metaMap.forEach((val, key) => {
-      metaObj[key] = val;
-    });
-    await dbPutMetadataBatch(metaObj);
-  }
+  const unavailableIds = fetchIds.filter((id) => !metaMap.has(id));
 
   return { metaMap, unavailableIds };
 }

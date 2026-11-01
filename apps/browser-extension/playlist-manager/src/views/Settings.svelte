@@ -107,12 +107,12 @@
         <PlaybackSettings {settings} {save} bind:showPlayAllInfo />
         <HistorySettings {settings} {save} {status} />
         <FavoriteSettings {settings} {save} {status} {signedIn} />
+        <YouTubeAdvancedSettings {settings} {save} />
         <EditorSettings {settings} {save} />
         <MetadataSettings {settings} {save} />
         <IntegrationSettings {settings} {save} />
         <StorageSettings />
         <BackupSettings />
-        <YouTubeAdvancedSettings {settings} {save} />
       </div>
     {:else}
       <div class="loading-state">

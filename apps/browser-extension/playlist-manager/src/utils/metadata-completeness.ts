@@ -15,7 +15,8 @@
  *
  * ## Terminal entries
  *
- * A private, deleted or broken video can never gain more data. Such an entry is
+ * A private, deleted, broken or confirmed-unavailable video can never gain more
+ * data without external change. Such an entry is
  * considered *resolved* even though it is not complete field-by-field. Keep the
  * two ideas apart:
  *
@@ -38,7 +39,7 @@ export interface MetadataGap {
   missingDuration: boolean;
   /** No usable data at all (nothing worth persisting) */
   empty: boolean;
-  /** The entry can never gain more data (private/deleted/broken) */
+  /** The entry can never gain more data (private/deleted/broken/unavailable) */
   terminal: boolean;
   /** Nothing is missing at field level (title + channel + duration) */
   complete: boolean;
@@ -109,7 +110,7 @@ export function isLiveStream(meta: any): boolean {
 
 /** True when no further tier could ever add data for this entry. */
 export function isTerminalEntry(meta: any): boolean {
-  return Boolean(meta && (meta.isPrivate || meta.isDeleted || meta.isBroken));
+  return Boolean(meta && (meta.isUnavailable || meta.isPrivate || meta.isDeleted || meta.isBroken));
 }
 
 /** True when the entry carries a usable (non-zero) duration. */

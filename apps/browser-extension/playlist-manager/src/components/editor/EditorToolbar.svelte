@@ -237,11 +237,12 @@
 <style>
   .playlist-btns {
     display: flex;
-    padding: 12px 24px;
+    padding: 10px 16px;
     flex-wrap: wrap;
     gap: 12px;
     align-items: center;
-    border-top: 1px solid var(--border-color);
+    background: var(--background-color);
+    border-bottom: 1px solid var(--border-color);
   }
 
   .btn-group {
@@ -350,6 +351,10 @@
     .playlist-btns {
       flex-direction: column;
       align-items: flex-start;
+    }
+    .btn-group {
+      width: 100%;
+      flex-wrap: wrap;
     }
     .right-align {
       margin-left: 0;

@@ -56,7 +56,7 @@
       key: "terminal",
       icon: faLock,
       value: summary.terminal,
-      label: "Private / deleted",
+      label: "Unavailable / terminal",
       ok: false,
       warn: false,
     },

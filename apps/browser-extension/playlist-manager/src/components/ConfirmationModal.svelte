@@ -9,7 +9,7 @@
   size="small"
   title={$activeConfirmation.title}
 >
-  <p style="white-space: pre-line">{$activeConfirmation.message}</p>
+  <p class="message">{$activeConfirmation.message}</p>
   {#snippet footer()}
     <div class="actions modal-footer">
       <button
@@ -32,44 +32,62 @@
 </Modal>
 
 <style>
+  .message {
+    margin: 0;
+    white-space: pre-line;
+    line-height: 1.6;
+    color: var(--text-color);
+  }
+
   .actions {
     display: flex;
     flex-wrap: wrap;
-    justify-content: center;
-    gap: 1rem;
+    justify-content: flex-end;
+    gap: 0.75rem;
   }
 
   button {
-    min-height: 44px;
-    padding: 0.5rem 1.5rem;
-    border-radius: 4px;
+    min-height: 40px;
+    padding: 0 20px;
+    border-radius: 8px;
     cursor: pointer;
-    border: none;
+    border: 1px solid transparent;
     font-weight: 600;
+    font-size: 14px;
+    transition:
+      background-color 0.15s ease,
+      border-color 0.15s ease,
+      opacity 0.15s ease;
+  }
+
+  button:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
   }
 
   .cancel {
-    background: #ccc;
-    color: #333;
+    background: var(--bg-secondary, #eee);
+    color: var(--text-color);
+    border-color: var(--border-color);
   }
 
   .cancel:hover {
-    background: #bbb;
+    background: var(--hover-color);
   }
 
   .confirm.default {
-    background: #444;
-    color: white;
+    background: var(--text-color);
+    color: var(--background-color);
   }
 
   .confirm.primary {
-    background: #007bff;
-    color: white;
+    background: var(--primary-color);
+    color: #fff;
   }
 
   .confirm.danger {
-    background: #dc3545;
-    color: white;
+    background: var(--color-brand-danger, #dc3545);
+    color: #fff;
   }
 
   .confirm:hover {

@@ -89,6 +89,7 @@
     <Modal bind:display title="Import Videos" size="wide" onclose={() => (display = false)}>
       <textarea
         bind:value={importText}
+        class="input-textarea"
         placeholder="Paste one or more YouTube URLs or Video IDs here (one per line)…"></textarea>
 
       <div class="import-options">
@@ -247,6 +248,7 @@
     >
       <textarea
         bind:value={htmlText}
+        class="input-textarea"
         placeholder="Paste the HTML content of a webpage here. The tool will extract all YouTube video links and add them to your playlist."
       ></textarea>
 
@@ -277,6 +279,34 @@
     line-height: 1.5;
     resize: vertical;
     box-sizing: border-box;
+  }
+
+  .input-textarea {
+    width: 100%;
+    min-height: min(200px, 35dvh);
+    padding: 14px 16px;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    background: var(--hover-color);
+    color: var(--text-color);
+    font-family: inherit;
+    font-size: 14px;
+    line-height: 1.5;
+    resize: vertical;
+    box-sizing: border-box;
+    transition:
+      border-color 0.15s ease,
+      box-shadow 0.15s ease;
+  }
+
+  .input-textarea:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(62, 166, 255, 0.12);
+  }
+
+  .input-textarea::placeholder {
+    color: var(--text-muted);
   }
 
   .notification {

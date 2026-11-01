@@ -178,18 +178,25 @@
   }
 
   .drag-handle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     width: 24px;
     height: 24px;
     min-width: var(--icon-btn-size-touch);
     min-height: var(--icon-btn-size-touch);
     color: var(--text-muted);
     cursor: grab;
-    opacity: 0;
+    opacity: 0.4;
     transition: opacity 0.2s;
   }
 
   .list-row:hover .drag-handle {
     opacity: 1;
+  }
+
+  .drag-handle:active {
+    cursor: grabbing;
   }
 
   .checkbox-cell {

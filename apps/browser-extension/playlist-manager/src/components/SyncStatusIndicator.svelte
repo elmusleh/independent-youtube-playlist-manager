@@ -1,6 +1,6 @@
 <script lang="ts">
   import Fa from "svelte-fa";
-  import { faCloud, faArrowsRotate, faFile } from "@fortawesome/free-solid-svg-icons";
+  import { faCloud, faArrowsRotate, faHardDrive } from "@fortawesome/free-solid-svg-icons";
   import { faYoutube } from "@fortawesome/free-brands-svg-icons";
 
   let {
@@ -15,7 +15,7 @@
 
   const statusMap = {
     local: {
-      icon: faFile,
+      icon: faHardDrive,
       text: "Local (Offline)",
       color: "var(--color-brand-warning)",
       spin: false,
@@ -64,6 +64,7 @@
   .sync-indicator {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: var(--space-2);
     background: rgba(0, 0, 0, 0.75);
     padding: var(--space-1);

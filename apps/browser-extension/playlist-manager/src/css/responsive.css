@@ -144,11 +144,6 @@ img {
     opacity: 1;
   }
 }
-@media (max-height: 480px) and (max-width: 1024px) {
-  .router-outlet .sticky-header-container {
-    position: static;
-  }
-}
 @supports (padding: env(safe-area-inset-bottom)) {
   .router-outlet {
     padding-bottom: env(safe-area-inset-bottom);

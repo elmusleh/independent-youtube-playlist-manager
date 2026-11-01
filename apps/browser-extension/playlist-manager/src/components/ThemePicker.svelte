@@ -1,6 +1,13 @@
 <script lang="ts">
   import Fa from "svelte-fa";
-  import { faPalette, faChevronRight } from "@fortawesome/free-solid-svg-icons";
+  import {
+    faPalette,
+    faChevronRight,
+    faMoon,
+    faSun,
+    faLaptop,
+    faCheck,
+  } from "@fortawesome/free-solid-svg-icons";
   import { theme } from "../stores/theme.store.js";
   import type { ThemeChoice } from "../types/model.js";
 
@@ -74,7 +81,9 @@
         aria-checked={$theme === "dark"}
         onclick={(e) => selectTheme("dark", e)}
       >
+        <span class="opt-icon"><Fa icon={faMoon} fw /></span>
         <span>Dark</span>
+        {#if $theme === "dark"}<span class="opt-check"><Fa icon={faCheck} /></span>{/if}
       </button>
       <button
         class="theme-option"
@@ -83,7 +92,9 @@
         aria-checked={$theme === "light"}
         onclick={(e) => selectTheme("light", e)}
       >
+        <span class="opt-icon"><Fa icon={faSun} fw /></span>
         <span>Light</span>
+        {#if $theme === "light"}<span class="opt-check"><Fa icon={faCheck} /></span>{/if}
       </button>
       <button
         class="theme-option"
@@ -92,7 +103,9 @@
         aria-checked={$theme === "device"}
         onclick={(e) => selectTheme("device", e)}
       >
+        <span class="opt-icon"><Fa icon={faLaptop} fw /></span>
         <span>Device default</span>
+        {#if $theme === "device"}<span class="opt-check"><Fa icon={faCheck} /></span>{/if}
       </button>
     </div>
   </div>
@@ -101,6 +114,34 @@
 <style>
   .appearance-trigger {
     position: relative;
+  }
+
+  /* Match the host dropdown's menu-item so the Appearance row reads the same
+     as sibling entries (e.g. Keyboard shortcuts). */
+  .menu-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 0 16px;
+    height: var(--touch-target-min);
+    min-height: var(--touch-target-min);
+    background: none;
+    border: none;
+    color: var(--text-color);
+    font-size: 14px;
+    cursor: pointer;
+    text-align: left;
+    width: 100%;
+  }
+
+  .icon-box {
+    position: relative;
+    width: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
   }
 
   .chevron-right {
@@ -166,6 +207,7 @@
   .theme-option {
     display: flex;
     align-items: center;
+    gap: 10px;
     padding: 10px 14px;
     background: none;
     border: none;
@@ -175,6 +217,22 @@
     text-align: left;
     width: 100%;
     transition: background-color 0.1s ease;
+  }
+
+  .theme-option .opt-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    color: var(--text-muted);
+  }
+
+  .theme-option .opt-check {
+    display: inline-flex;
+    align-items: center;
+    margin-left: auto;
+    color: var(--primary-color);
+    font-size: 12px;
   }
 
   .theme-option:hover {
