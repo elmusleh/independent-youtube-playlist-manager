@@ -12,15 +12,15 @@ channel without explicit confirmation.
 
 Verified on 2026-11-01 with `git`, `gh`, `npm run check` and `openspec list`:
 
-| Thing | State |
-| --- | --- |
-| `next` | `2835752`, clean, CI green |
-| `feat/ui-polish` | `6c03f67`, **ahead 1**, PR **#63** open, all checks green, `MERGEABLE`, no review decision |
-| Working tree in `/home/steve/dev/independent-youtube-playlist-manager` | **dirty**: 55 files, +1939/−835 — UI polish, Data Manager explainability, metadata tombstones, pagination, duration labels |
-| `npm run check` on that dirty tree | **fails at `contracts:check`** (see 1.1). Lint/format/tests/svelte-check pass (558 tests, 0 Svelte errors) |
-| `fix/portal-logo-weight` (`e2223fc`, worktree `/home/steve/dev/iypm-worktrees/portal-logo`) | complete, `npm run check` exit 0, not pushed |
-| Open issues | **#10** pagination, **#11** thumbnails on deleted videos, **#13** dark-mode flash, **#14** durations missing after import |
-| OpenSpec | `add-encrypted-cross-device-sync` 0/28, `complete-context-menu-acceptance` 0/14 |
+| Thing                                                                                       | State                                                                                                                      |
+| ------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `next`                                                                                      | `2835752`, clean, CI green                                                                                                 |
+| `feat/ui-polish`                                                                            | `6c03f67`, **ahead 1**, PR **#63** open, all checks green, `MERGEABLE`, no review decision                                 |
+| Working tree in `/home/steve/dev/independent-youtube-playlist-manager`                      | **dirty**: 55 files, +1939/−835 — UI polish, Data Manager explainability, metadata tombstones, pagination, duration labels |
+| `npm run check` on that dirty tree                                                          | **fails at `contracts:check`** (see 1.1). Lint/format/tests/svelte-check pass (558 tests, 0 Svelte errors)                 |
+| `fix/portal-logo-weight` (`e2223fc`, worktree `/home/steve/dev/iypm-worktrees/portal-logo`) | complete, `npm run check` exit 0, not pushed                                                                               |
+| Open issues                                                                                 | **#10** pagination, **#11** thumbnails on deleted videos, **#13** dark-mode flash, **#14** durations missing after import  |
+| OpenSpec                                                                                    | `add-encrypted-cross-device-sync` 0/28, `complete-context-menu-acceptance` 0/14                                            |
 
 Two consequences worth stating plainly:
 
@@ -44,6 +44,7 @@ generated declaration as stale.
 This is **type-contract drift, not a runtime bug**. Do not "fix" it by deleting the call.
 
 **Do:**
+
 - Add one typed bridge helper (for example `shared/page-service.js` exporting
   `getPageService(name)` with a single `@type {any}` cast and a comment explaining the
   `init.js` shim), and use it from `capture-import.js` and `background.js`.
@@ -85,12 +86,12 @@ file remains that only exists on this machine.
 Each issue needs a reproducible check, not source inspection. A closed issue without a
 recorded command or screenshot is not closed.
 
-| Issue | Root cause | Work | Evidence to attach |
-| --- | --- | --- | --- |
-| **#10** can't reach first/last page | Pagination control hides edge pages and has no Previous/Next buttons | Confirm `PaginationNav` renders first/last/prev/next and stays usable at 320–430 px; add unit tests for 1 page, 2 pages, last page, filtered results | Unit test output + screenshots at 320/390/430 px |
-| **#14** no duration badge after import | Import never populated durations; scrape path caches only title/channel | Ensure the scrape cache writes `durationISO`, and that import triggers bounded enrichment (`metadata-completeness`); show the badge from `durationISO` | Before/after screenshot of an imported playlist + the unit test that fails without the write |
-| **#13** white flash on dark refresh | Theme applied after the module graph paints | Verify the pre-paint classifier covers the SPA (the popup already has `mode.js`); assert `html` carries the theme class before first paint | Playwright trace showing first paint, plus a real-device spot check. Do not close on code reading |
-| **#11** thumbnails vanish when a video is deleted | Only the remote thumbnail URL is stored; archived bytes are opt-in and hard to find | Verify archive-on-save covers deleted videos, surface the opt-in setting in Settings, document the backup round-trip | Settings screenshot, archive record for a known-deleted ID, backup export/import round-trip log |
+| Issue                                             | Root cause                                                                          | Work                                                                                                                                                   | Evidence to attach                                                                                |
+| ------------------------------------------------- | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------- |
+| **#10** can't reach first/last page               | Pagination control hides edge pages and has no Previous/Next buttons                | Confirm `PaginationNav` renders first/last/prev/next and stays usable at 320–430 px; add unit tests for 1 page, 2 pages, last page, filtered results   | Unit test output + screenshots at 320/390/430 px                                                  |
+| **#14** no duration badge after import            | Import never populated durations; scrape path caches only title/channel             | Ensure the scrape cache writes `durationISO`, and that import triggers bounded enrichment (`metadata-completeness`); show the badge from `durationISO` | Before/after screenshot of an imported playlist + the unit test that fails without the write      |
+| **#13** white flash on dark refresh               | Theme applied after the module graph paints                                         | Verify the pre-paint classifier covers the SPA (the popup already has `mode.js`); assert `html` carries the theme class before first paint             | Playwright trace showing first paint, plus a real-device spot check. Do not close on code reading |
+| **#11** thumbnails vanish when a video is deleted | Only the remote thumbnail URL is stored; archived bytes are opt-in and hard to find | Verify archive-on-save covers deleted videos, surface the opt-in setting in Settings, document the backup round-trip                                   | Settings screenshot, archive record for a known-deleted ID, backup export/import round-trip log   |
 
 Order: #14 and #10 first (they are already 80 % built in Phase 1), then #13, then #11
 (largest, because it touches storage and the user guide).
