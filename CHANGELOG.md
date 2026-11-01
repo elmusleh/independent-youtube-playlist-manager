@@ -42,6 +42,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Harden the unreleased context-menu capture path: exclude private tabs, validate YouTube
   URL schemes and video IDs, preserve clicked-tab selection and cross-window order,
   fall back from media URLs to watch-page URLs, and create new local playlists offline.
+- Modal dialogs now dismiss when clicking or tapping the backdrop (the dimmed area outside
+  the dialog) for every dialog size and pointer type, not just the navigation drawer. A
+  press that starts inside the dialog and ends on the backdrop does not dismiss it, and
+  non-dismissible dialogs (loading/progress) remain unaffected.
   Reject remote destinations until explicit review is available instead of silently
   making local copies; do not recreate missing favorite destinations.
 - Context-menu settings are now honoured by removal instead of greying: disabling saved

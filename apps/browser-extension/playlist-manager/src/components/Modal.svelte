@@ -29,6 +29,16 @@
 
   let dialog: HTMLDialogElement;
   const headingId = $props.id();
+  let pointerDownOnBackdrop = false;
+
+  function handlePointerDown(event: PointerEvent) {
+    pointerDownOnBackdrop = event.target === dialog;
+  }
+
+  function handleBackdropClick(event: MouseEvent) {
+    if (pointerDownOnBackdrop && event.target === dialog) close();
+    pointerDownOnBackdrop = false;
+  }
 
   function close() {
     if (!dismissible) return;
@@ -93,6 +103,8 @@
   class:wide={size === "wide"}
   aria-label={title}
   onkeydown={containFocus}
+  onpointerdown={handlePointerDown}
+  onclick={handleBackdropClick}
   oncancel={(event) => {
     event.preventDefault();
     close();
