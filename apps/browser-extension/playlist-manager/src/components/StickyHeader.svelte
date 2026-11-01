@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import { getHeaderHeight, resetHeaderHeight } from "../utils/header-height.js";
 
   let {
     children,
@@ -20,22 +21,22 @@
       // Stuck when the bar's top edge has reached the sticky offset (the fixed
       // header height). getBoundingClientRect().top sits exactly at that offset
       // once the element is pinned, and above it while it still scrolls.
-      const headerHeight =
-        parseFloat(
-          getComputedStyle(document.documentElement).getPropertyValue("--app-header-height")
-        ) || 56;
-      isStuck = el.getBoundingClientRect().top <= headerHeight + 1;
+      isStuck = el.getBoundingClientRect().top <= getHeaderHeight() + 1;
     };
     const schedule = () => {
       cancelAnimationFrame(raf);
       raf = requestAnimationFrame(update);
     };
     update();
+    const onResize = () => {
+      resetHeaderHeight();
+      schedule();
+    };
     window.addEventListener("scroll", schedule, { passive: true });
-    window.addEventListener("resize", schedule, { passive: true });
+    window.addEventListener("resize", onResize, { passive: true });
     return () => {
       window.removeEventListener("scroll", schedule);
-      window.removeEventListener("resize", schedule);
+      window.removeEventListener("resize", onResize);
       cancelAnimationFrame(raf);
     };
   });

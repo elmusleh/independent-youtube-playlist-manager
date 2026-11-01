@@ -41,7 +41,6 @@ body {
   max-width: 100%;
   margin: 0;
   padding: 0;
-  overflow-x: hidden;
   background-color: var(--background-color);
 }
 
@@ -66,18 +65,8 @@ main {
   flex-grow: 1;
   display: flex;
   flex-direction: column;
-  padding: 24px;
   width: 100%;
-  max-width: 1400px;
-  margin: 0 auto;
   box-sizing: border-box;
-  min-height: 100%;
-}
-
-@media (max-width: 768px) {
-  main {
-    padding: 16px;
-  }
 }
 
 h1 {
@@ -159,13 +148,6 @@ textarea {
 
 .btn-group.right-align {
   margin-left: auto;
-}
-
-.view-body {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
 }
 
 @media (max-width: 900px) {
