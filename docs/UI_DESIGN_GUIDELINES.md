@@ -7,23 +7,24 @@ hardcode colors, sizes, or radii.
 
 ## 1. Scroll model (the most common source of bugs)
 
-Every view is `<main class="view-scroll-container"><div class="view-body">…`.
-The **window never scrolls** — `.view-body` is the scroller (`overflow-y: auto`).
+The app uses the **window** as its scroller. `#app` is `min-height: 100vh` and
+grows with content, so `<body>` scrolls. `.view-scroll-container` and `.view-body`
+are plain flow containers — they must NOT set `overflow: hidden` or
+`overflow-y: auto`, or they trap `position: sticky` and break it.
 
-- For anything scroll-aware (sticky headers, back-to-top, progress), find the
-  real scroller with `getScrollParent(el)` from `src/utils/scroll-parent.ts` and
-  read `scrollTop` / call `scrollTo` on it — NOT `window`.
-- `position: sticky` works only inside `.view-body`. A sticky element sticks at
-  `top: 0` _within `.view-body`_ (the fixed app header is already outside it), so
-  never use `top: var(--app-header-height)` for an in-view sticky element.
+- Sticky elements stick relative to the window: use `top: var(--app-header-height)`
+  (they pin just below the fixed header).
+- Scroll-aware code reads `window.scrollY` and calls `window.scrollTo` — not an
+  inner container.
 
 ## 2. Sticky sub-bars
 
-Selection/toolbars (`list-header`, `playlist-btns`) live in `StickyHeader`'s
-`subBar` and stick while the title scrolls away. They use:
-`background: var(--color-bg-secondary)`, a top-only rounded corner
-(`border-radius: 12px 12px 0 0`), and `border: 1px solid var(--border-color)`
-with `border-bottom: none` so they visually attach to the list below.
+Selection/toolbars (`list-header`, `playlist-btns`, `chip-bar`) live in
+`StickyHeader`'s `subBar` and stick while the title scrolls away. They keep the
+**same width as the content column** (no negative margin) and use a plain
+`background: var(--color-bg-primary)` with a `border-bottom: 1px solid
+var(--color-border-primary)` separator. Elevation (a shadow) is added only once
+the bar is pinned (`.is-stuck`).
 
 ## 3. Icons
 
@@ -39,8 +40,9 @@ justify-content: center` inside a fixed-width wrapper (e.g. `.icon-box`,
 
 - Use semantic tokens (`--color-bg-secondary`, `--color-border-primary`,
   `--color-text-primary`, `--color-brand-*`) — not raw hex.
-- Secondary surfaces (toolbars, headers, inputs) use `--color-bg-secondary`; the
-  page background is `--color-bg-primary` (`--background-color`).
+- Secondary surfaces (inputs, dropdowns, hover states) use `--color-bg-secondary`;
+  the page background and selection toolbars are `--color-bg-primary`
+  (`--background-color`).
 - Keep dark mode working: any `[data-theme="dark"]` override must have a
   matching light default, and `color-scheme` must be set alongside `data-theme`.
 

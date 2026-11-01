@@ -72,10 +72,8 @@
     gap: var(--space-2);
     flex-wrap: wrap;
     padding: var(--space-3) var(--space-6);
-    background: var(--color-bg-secondary);
-    border: 1px solid var(--color-border-primary);
-    border-bottom: none;
-    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    background: var(--color-bg-primary);
+    border-bottom: 1px solid var(--color-border-primary);
   }
 
   .chip {

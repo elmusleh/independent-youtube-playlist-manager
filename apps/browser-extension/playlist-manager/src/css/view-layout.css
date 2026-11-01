@@ -14,8 +14,6 @@
 .view-scroll-container {
   display: flex;
   flex-direction: column;
-  height: 100%;
-  overflow: hidden;
 }
 
 .view-header {
@@ -54,10 +52,7 @@
 }
 
 .view-body {
-  flex: 1;
-  overflow-y: auto;
   padding: 0 24px 24px 24px;
-  scrollbar-gutter: stable;
 }
 
 /* Standard List Styles */

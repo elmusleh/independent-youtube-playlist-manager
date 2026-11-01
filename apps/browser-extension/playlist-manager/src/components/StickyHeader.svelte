@@ -1,6 +1,5 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { getScrollParent } from "../utils/scroll-parent.js";
 
   let {
     children,
@@ -15,20 +14,27 @@
 
   onMount(() => {
     if (!subEl) return;
-    const scroller = getScrollParent(subEl);
+    const el = subEl;
     let raf = 0;
     const update = () => {
-      isStuck = scroller.scrollTop > 4;
+      // Stuck when the bar's top edge has reached the sticky offset (the fixed
+      // header height). getBoundingClientRect().top sits exactly at that offset
+      // once the element is pinned, and above it while it still scrolls.
+      const headerHeight =
+        parseFloat(
+          getComputedStyle(document.documentElement).getPropertyValue("--app-header-height")
+        ) || 56;
+      isStuck = el.getBoundingClientRect().top <= headerHeight + 1;
     };
     const schedule = () => {
       cancelAnimationFrame(raf);
       raf = requestAnimationFrame(update);
     };
     update();
-    scroller.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("scroll", schedule, { passive: true });
     window.addEventListener("resize", schedule, { passive: true });
     return () => {
-      scroller.removeEventListener("scroll", schedule);
+      window.removeEventListener("scroll", schedule);
       window.removeEventListener("resize", schedule);
       cancelAnimationFrame(raf);
     };
@@ -45,19 +51,20 @@
 {/if}
 
 <style>
-  .sticky-header-primary,
-  .sticky-header-sub {
+  /* The title stays in normal flow and spans the full view width (its own
+     24px padding re-aligns the text with the content column). */
+  .sticky-header-primary {
     background-color: var(--background-color);
-    /* Break out of the .view-body horizontal padding so the header spans the
-       full width of the view. */
     margin: 0 -24px;
   }
 
-  /* Only the sub-bar (selection toolbar) sticks; the title scrolls away. */
+  /* The selection toolbar sticks below the fixed app header and keeps the same
+     width as the content column below it (no negative margin). */
   .sticky-header-sub {
     position: sticky;
-    top: 0;
+    top: var(--app-header-height);
     z-index: 10;
+    background-color: var(--background-color);
     border-bottom: 1px solid transparent;
     transition:
       box-shadow var(--transition-smooth),
@@ -66,16 +73,15 @@
 
   .sticky-header-sub.is-stuck {
     border-bottom-color: var(--border-color);
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
   }
 
   :global([data-theme="dark"]) .sticky-header-sub.is-stuck {
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
   }
 
   @media (max-width: 768px) {
-    .sticky-header-primary,
-    .sticky-header-sub {
+    .sticky-header-primary {
       margin: 0 -16px;
     }
   }
