@@ -1,6 +1,9 @@
 # Right-click playlist actions — implementation plan
 
-Status: implementation in progress, 2026-10-31. Verification delegated to Hermes; no merge or release authorized.
+Status: **implementation complete and merged to `next`** (`669049d`, 2026-11-01); release
+still unauthorized and the version stays 1.2.1. Automated gates are green and headed
+acceptance evidence is recorded, but the native-menu runs (OpenSpec 3.2/3.3) and the
+remaining issue evidence (3.5) are outstanding, so this is not release-ready.
 
 See `testing/HERMES_CONTEXT_MENU_VERIFICATION.md` for the current verification matrix
 and `PLAYLIST_TERMINOLOGY.md` for destination terminology. Implementation is not verified

@@ -1,5 +1,208 @@
 # Handoff — 2026-10-31, verification complete with all automated gates passing
 
+## 2026-11-01 — context-menu + theme fixes merged to `next` (1.2.1, unreleased)
+
+- `next` head `669049d`. Merged: #63 (`c1a9849`, editor UX polish — by a concurrent
+  session), #65 (`d74e0ad`, persisted theme applied at startup), #64 (`669049d`,
+  context-menu gating / link resolution / reconciliation / advertised destination).
+- **Version deliberately unchanged at 1.2.1.** No tag, release, store upload or `main`
+  merge. Owner will release after the next batch of changes.
+- Fixed in #64: `disableContextSaved` ignored; a non-video YouTube link captured the open
+  video; reconciliation could not remove `yph:saved`/`yph:scopes`/`yph:link`/
+  `yph:destination`/`yph:settings` and forgot ids across worker restarts;
+  `contextMenus.update` was passed `type`; and (Codex P2) the menu advertised a
+  destination that `startCapture()` then rejected. Guarded by 9 tests, 3 new mutations
+  (7/7 caught) and `shared/link-capture.js`.
+- Fixed in #65: the #63 theme key fix was incomplete — the first extension-storage read at
+  startup can answer `{}`, so a persisted/synced `themeChoice` was dropped and the page
+  painted the device theme. `readStoredChoice()` now retries; a new E2E guard forces a real
+  reload and asserts `data-theme` + the pre-paint cache, and fails on the pre-#63 key.
+- Verified on `669049d`: `check` 0 (573 tests), `build` 0 (all budgets), `test:extension` 0
+  (102 checks, 8 interaction groups), mutations 7/7. Headed acceptance evidence:
+  `HEADED=true IYPM_REQUIRE_EXTENSION_E2E=1 xvfb-run -a npx playwright test
+e2e/extension.spec.ts` → 2 passed, exit 0, zero skipped.
+- Open: OpenSpec 3.2/3.3/3.4 native menu runs (human only — Playwright cannot open a
+  native menu), 3.5 issue evidence (#10/#11/#14; #13 first paint is covered), CM-R7/R8/R9,
+  popup theme assertion, Dependabot #60–#62 triage.
+- Only Markdown touched in this checkout (this entry, `PROGRESS.md`,
+  `docs/CONTEXT_MENU_PLAN.md`, `openspec/.../tasks.md`, new session record).
+  Full detail: `.ai-sync/sessions/2026-11-01-context-menu-theme-merge.md`.
+
+## 2026-11-01 — pinned favorites plan formalized (planning only, no code)
+
+- Owner request: replace the single `#/favorite` page with multiple favorites, pinned
+  in the sidebar between Manage Playlists and Subscriptions (or after Manage
+  Playlists when signed out), with horizontal rules around the group.
+- Decisions (owner-confirmed): (1) separate the new `favoritePlaylistIds: string[]`
+  list from `watchLaterPlaylistId` (which stays the quick-add / Watch-Later keep-alive
+  target and is never deleted; `migrateSettings()` seeds the list from it when empty);
+  (2) each pin opens its playlist directly, show ~6 then an "All favorites (N)" link
+  to a `#/favorites` card-grid page.
+- Backward compatibility: additive settings key (default `[]`), idempotent migration
+  seed, backup `schemaVersion` stays 2 (import already merges arbitrary settings keys).
+  "Many favorites" handled via visible-pin cap + overflow page + sanitize-on-load
+  (dedupe / drop missing playlists).
+- Full detail: `.ai-sync/sessions/2026-11-01-pinned-favorites-planning.md`.
+  PLAN.md and PROGRESS.md updated. Planning only — no application code, manifest,
+  dependency or version changed; the already-dirty `feat/ui-polish` tree was left as
+  found. Next: implementation awaits owner go (start at the data-model + migration
+  task group).
+
+## 2026-11-01 — Firefox mobile (m.youtube.com) watch-history detection hardened
+
+Owner asked to fix watch history not recording / not resuming on mobile, suspected
+`m.youtube.com` was not detected. Investigation found the domain detection was already
+present in the source (content-script `matches` included `m.youtube.com` since v1.1.1;
+all host checks use `endsWith(".youtube.com")`), so the literal hypothesis did not match
+the code. Confirmed with `curl` + a Firefox Android UA that YouTube **redirects
+`www.youtube.com/watch` → `m.youtube.com/watch`** on Fenix, and that the local-playlist
+`watch_videos?...&t=<n>s` generator URL **drops the `t=` param** on its redirect to
+`/watch?v=…&list=TL…` (the content-script `get-yph-history` resume path is what actually
+resumes, so that fallback is the linchpin).
+
+Changes (uncommitted, on the already-dirty `feat/ui-polish` tree):
+
+- `manifest.chrome.json` + `manifest.firefox.json`: broadened content-script `matches`
+  from the fragile `["*://www.youtube.com/watch*", "*://m.youtube.com/watch*"]` whitelist
+  to `["*://*.youtube.com/watch*", "*://youtube.com/watch*"]` — now every YouTube
+  subdomain (`m.`, `www.`, `music.`, …) and the bare domain are matched, so any redirect
+  target or localized host is covered.
+- `content-scripts/watch-tracker.js`: `waitForVideoElement` default raised from
+  20×200ms (≈4s) to 150×200ms (≈30s) so a slow Fenix page load (video element
+  materialising late) no longer silently skips tracking.
+- `README.md` + `docs/PRIVACY_POLICY.md`: updated the watch-script match description.
+
+Verification (real exit codes): `npm run build` exit 0 (chrome/firefox/edge; `dist/*/manifest.json`
+now carry the new matches; CSS/manifest/bundle budgets pass); `npm run test` 570/570 in 56
+files; `npm run lint` 0 errors (46 pre-existing `no-console`/`no-unused-vars` warnings only).
+
+Not changed / deferred: the `t=` param on the `watch_videos` generator is dead for local
+playlists because YouTube's redirect drops it; resume relies on the content script. That
+playback/resume model is out of scope for this pass and should get a dedicated look if
+resume still misbehaves. No commit/push/PR/version bump/release performed. Editing lock
+released.
+
+## 2026-11-01 — modal dismissal on outside click implemented (open, uncommitted)
+
+- Implemented the planned fix in `Modal.svelte`: backdrop click/tap now dismisses any
+  dismissible dialog (small/standard/wide/drawer), not just the drawer. Added
+  `pointerdown` + `click` backdrop tracking so a press that begins inside and ends on the
+  backdrop does not dismiss; the `dismissible` guard and cancel routing are unchanged.
+- Added interaction coverage in `packages/build-tools/verify-extension.js`: backdrop
+  click dismisses the wide import dialog + restores focus; inside-press drag does not
+  dismiss; backdrop click on the small delete-confirm cancels (count stays 10).
+- Verification (all real exit codes): `npm run lint` 0 (0 errors); `npx svelte-check`
+  0 errors; `npm run test` 570/570; `npm run build` exit 0 (chrome/firefox/edge,
+  budgets pass); `npm run test:extension` exit 0 — 96 route/viewport checks + **8**
+  interaction groups, no runtime errors.
+- Known failures, NOT from this change: (1) `npm run check` stops at `format:check`
+  because the owner's concurrent session keeps writing `.ai-sync/PROGRESS.md` without
+  Prettier (re-run `npx prettier --write .ai-sync/PROGRESS.md`); (2) `contracts:check`
+  still fails with `Stale declaration: background/capture-import.d.ts` — fix with
+  `npm run contracts:generate` (unrelated background-script issue).
+- Files changed: `Modal.svelte`, `packages/build-tools/verify-extension.js`.
+  Editing lock released. OpenSpec change `dismiss-dialogs-on-outside-click` remains in
+  planning state; mark its tasks 1.x/2.x done on the next pass or when committing.
+
+## 2026-11-01 — modal dismissal plan formalized (planning only, no code)
+
+- Owner request: dialogs should dismiss on backdrop click (currently only `X`/`Cancel`).
+- Root cause: `Modal.svelte` `onclick` only closes when `size === "drawer"`.
+- Created OpenSpec change `openspec/changes/dismiss-dialogs-on-outside-click/`
+  (proposal, `modal-dismissal` spec, design, tasks); `openspec validate --all --strict
+--no-interactive` → 4/4 pass, exit 0.
+- Scope: single component (`Modal.svelte`); dismiss any dismissible dialog on backdrop
+  click/tap (all sizes), preserve the `dismissible` guard + cancel routing, ignore
+  drag-out interactions.
+- Dirty tree (`feat/ui-polish`) preserved exactly as found; the owner's concurrent session
+  was actively editing. Skills used: `repo-planning-pass`
+  (`~/.hermes/skills/software-development/repo-planning-pass`) and `openspec-propose`
+  (project skill). Session record: `.ai-sync/sessions/2026-11-01-modal-dismissal-planning.md`.
+- Next: implementation awaits owner go (tasks.md group 1). Editing lock released.
+
+## 2026-11-01 — API Setup moved from sidebar footer back into the profile dropdown
+
+- Owner request: move `API Setup` from the sidebar footer into the main-menu
+  `profile-container` (ProfileDropdown), where it lived before the UI-polish rework.
+- `ProfileDropdown.svelte`: added an "API Setup" menu item after "Keyboard shortcuts"
+  (faKey, navigates via `navigateTo("/api-setup")`, closes the dropdown) and a
+  `.icon-box .warning-badge` style; `missingCredentials` was already passed from Header.
+- `Sidebar.svelte`: removed the API Setup links from both the desktop footer and the
+  mobile drawer; removed now-dead `faKey`/`hasYoutubeClientId` imports, the
+  `missingCredentials` state, `checkCredentials()` (+ its call) and the orphaned
+  `.sidebar-footer .warning-badge` / `.sidebar-footer .icon-box` CSS.
+- Verification: `npm run check` matches baseline — lint 0 errors, format clean, 570/570
+  tests, and the SAME pre-existing `contracts:check` failure (stale
+  `background/capture-import.d.ts`, `window.videoService` missing from declarations;
+  run `npm run contracts:generate` to fix — unrelated to this edit). `npm run build`
+  exit 0 (chrome/firefox/edge, budgets pass); built chunks contain the new dropdown
+  item. The owner's own `npm run build` processes ran concurrently during the pass
+  (an `npm ci` mid-run caused one transient vitest failure on a missing
+  `@supabase/supabase-js`; re-ran clean after their build finished).
+- Files changed by this pass: `ProfileDropdown.svelte`, `Sidebar.svelte` only.
+  Editing lock released.
+
+## 2026-11-01 — Data Manager sources/usage, repair queue, API health (uncommitted)
+
+- Branch `feat/ui-polish`; working tree intentionally still dirty from the UI-polish pass.
+- Replaced the separate Source Guide and Scalability panels with one expandable
+  **Extraction Engines** list. Each row expands to cost, request volume, duration
+  support, best-for and caveat. Rows include Page cache, Innertube, Data API, Embed,
+  oEmbed, Piped/Invidious, and an unconnected **Apify / hosted actors** `FUTURE · PAID`
+  option. No roadmap section remains.
+- Usage Estimate now owns the quota explanation in a **How this estimate works**
+  expander; the source list no longer repeats the 50-ID / 10,000-unit math.
+- Repair Metadata remains one panel with Incomplete/Unavailable tabs, reason/origin
+  filters, checked age, origin playlist links, selection-based bulk retry, and shared
+  pagination (10 rows default, `metadataPageSize` persisted).
+- Added **Refresh Durations**, **Test API Key**, persisted last tab/filter, and a
+  quota-aware API health guard: quota/rate/invalid failures pause the Data API and
+  show an `API quota paused` / `API key invalid` badge in Usage Estimate.
+- Data API health is reset when the API key changes; `lastFetchAttempt` is recorded
+  for real tombstones so `Checked …` is accurate.
+- Tests: `npm test` **56 files / 570 tests**; `svelte-check` **0 errors** (4 pre-existing
+  warnings); `npm run test:extension` **96 route/viewport checks + 7 interaction groups**;
+  budgets pass with CSS **200819 bytes / 198 KiB** ceiling. Chrome/Firefox/Edge ZIPs
+  rebuilt at 523K.
+- Shipped in **PR #63** (squash merge `c1a9849`) into the `next` integration branch.
+  All required checks passed. The theme review thread was fixed and resolved; mobile
+  visual snapshots are pinned against scrollbar-width drift. The local checkout was
+  left on the now-deleted `feat/ui-polish` branch with unrelated dirty work preserved.
+- Session record: `.ai-sync/sessions/2026-11-01-data-manager-repair-queue.md`.
+- Next: owner review of the merged source/usage layout; commit with the UI-polish
+  branch. No remote actions.
+
+## 2026-11-01 — encrypted sync plan formalized (planning only, no code)
+
+- Checkout: branch `feat/ui-polish` (ahead 1 of origin), dirty tree with uncommitted
+  UI-polish work (modified Svelte components, deleted `Share.svelte`, new
+  `playlist-category.*`, `.coderabbit.yaml`). Preserved exactly as found; no application
+  code, manifest, dependency or version changed by this pass.
+- Owner approved the zero-knowledge cross-device sync direction and asked to formalize
+  it first. Created OpenSpec change `openspec/changes/add-encrypted-cross-device-sync/`
+  with proposal.md, three capability specs (`encrypted-device-sync`, `sync-backends`,
+  `feature-modules`), a SOLID design.md and tasks.md.
+  `openspec validate --all --strict --no-interactive` → 3/3 pass, exit 0.
+- New docs: `docs/ENCRYPTED_SYNC_PLAN.md`; linked from `docs/INDEX.md`;
+  `openspec/README.md` current-change line updated. `.ai-sync/PLAN.md`,
+  `PROGRESS.md` (SY-1…SY-9 suggestions recorded) and this file updated.
+  Session record: `.ai-sync/sessions/2026-11-01-encrypted-sync-planning.md`.
+- Locked decisions: sync key is the only credential (no email/recovery); AES-256-GCM
+  snapshots (PBKDF2 + SHA-256 address); automatic triggers; LWW + pre-import backup;
+  backends File + Supabase BYO + Google Drive behind one interface; selectable sync
+  contents; Plugins screen with API Setup as toggleable module; mp3/mp4 excluded.
+- Skills used: openspec-propose (project skill at `.hermes/skills/openspec-propose`).
+- Next: implementation awaits a new owner request (start at the change's tasks.md group
+  1; Hermes executes tests per owner delegation). Editing lock released at end of pass.
+
+## 2026-11-01 — deployment/CI notification noise (investigation, uncommitted)
+
+- Investigated the "too many emails per PR" complaint. Sources identified: Vercel PR-comment bot, Vercel deployment-failure mailer, CodeRabbit skip-status comment, Codex auto-review, and this repo's own CI Autofix `bail` comment (3 per failing PR).
+- Verified Vercel is **not** deploying PRs to production: `rootDirectory=apps/web-portal`, `ignoreCommand` (`git diff --quiet HEAD^ HEAD -- .`) works — commit status for PR #63 head is `Vercel success "Canceled by Ignored Build Step"`.
+- Added `.coderabbit.yaml` (`reviews.review_status: false`) so skipped reviews stop producing comments. Uncommitted.
+- Pending user action (dashboard): Vercel project → Settings → Git → disable Pull Request Comments; team → Settings → My Notifications → Deployment Failures → email off.
+- Pending decision: patch `~/dev/ci-autofix` template so a `bail` result writes to the step summary only instead of `gh pr comment`.
+
 ## Current state
 
 - Repository: `/home/steve/dev/independent-youtube-playlist-manager`.
