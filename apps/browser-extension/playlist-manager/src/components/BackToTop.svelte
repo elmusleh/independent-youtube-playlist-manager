@@ -2,34 +2,40 @@
   import { onMount } from "svelte";
   import Fa from "svelte-fa";
   import { faArrowUp } from "@fortawesome/free-solid-svg-icons";
+  import { getScrollParent } from "../utils/scroll-parent.js";
 
+  let btnEl: HTMLButtonElement | undefined;
   let visible = $state(false);
 
   onMount(() => {
+    if (!btnEl) return;
+    const scroller = getScrollParent(btnEl);
     let raf = 0;
     const update = () => {
-      visible = window.scrollY > 400;
+      visible = scroller.scrollTop > 400;
     };
     const schedule = () => {
       cancelAnimationFrame(raf);
       raf = requestAnimationFrame(update);
     };
     update();
-    window.addEventListener("scroll", schedule, { passive: true });
+    scroller.addEventListener("scroll", schedule, { passive: true });
     return () => {
-      window.removeEventListener("scroll", schedule);
+      scroller.removeEventListener("scroll", schedule);
       cancelAnimationFrame(raf);
     };
   });
 
   function scrollToTop() {
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    if (!btnEl) return;
+    getScrollParent(btnEl).scrollTo({ top: 0, behavior: "smooth" });
   }
 </script>
 
 <button
   class="back-to-top"
   class:visible
+  bind:this={btnEl}
   onclick={scrollToTop}
   aria-label="Scroll to top"
   title="Scroll to top"

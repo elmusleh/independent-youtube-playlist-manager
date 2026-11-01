@@ -116,6 +116,34 @@
     position: relative;
   }
 
+  /* Match the host dropdown's menu-item so the Appearance row reads the same
+     as sibling entries (e.g. Keyboard shortcuts). */
+  .menu-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 0 16px;
+    height: var(--touch-target-min);
+    min-height: var(--touch-target-min);
+    background: none;
+    border: none;
+    color: var(--text-color);
+    font-size: 14px;
+    cursor: pointer;
+    text-align: left;
+    width: 100%;
+  }
+
+  .icon-box {
+    position: relative;
+    width: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+
   .chevron-right {
     margin-left: auto;
     color: var(--text-muted);

@@ -145,7 +145,7 @@ img {
   }
 }
 @media (max-height: 480px) and (max-width: 1024px) {
-  .router-outlet .sticky-header-container {
+  .router-outlet .sticky-header-sub {
     position: static;
   }
 }

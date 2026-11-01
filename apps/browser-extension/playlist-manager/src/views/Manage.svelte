@@ -1589,9 +1589,11 @@
     align-items: center;
     justify-content: space-between;
     gap: 16px;
-    padding: 12px 16px;
-    background: var(--background-color);
-    border-bottom: 1px solid var(--border-color);
+    padding: 10px 16px;
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--border-color);
+    border-bottom: none;
+    border-radius: 12px 12px 0 0;
     transition: background 0.2s;
   }
 
