@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Zero-knowledge sync core (first slice of `add-encrypted-cross-device-sync`): a
+  Crockford-base32 sync key that is the only credential, PBKDF2-SHA256 key derivation with
+  a domain-separated storage address, a validated snapshot envelope with monotonic
+  revisions, AES-256-GCM packing that fails closed on any tampering, and category-based
+  content selection (thumbnails off by default). No UI, no network and no engine yet —
+  45 unit tests cover round-trips, wrong keys, flipped bytes and truncated payloads.
 - Automated beta releases: every merge to `next` now builds the extension and cuts a
   public GitHub Prerelease (`vX.Y.Z-beta.N`, manifest build `X.Y.Z.N`) with the Chrome,
   Edge and Firefox ZIPs attached, so builds can be tested before an official release.
