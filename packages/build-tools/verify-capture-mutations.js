@@ -11,6 +11,7 @@ const files = [
   "library-mutations.test.ts",
   "context-menu-model.test.js",
   "context-menu-actions.test.js",
+  "link-capture.test.js",
   "capture-retry.test.ts",
 ];
 try {
@@ -67,6 +68,24 @@ try {
       "background/library-mutations.js",
       "await browser.storage.local.set({",
       "await Promise.resolve({",
+    ],
+    [
+      "saved-menu switch",
+      "background/context-menu-model.js",
+      'if (savedAllowed) item("saved", "My Playlists");',
+      'item("saved", "My Playlists");',
+    ],
+    [
+      "effective destination on capture",
+      "background/capture-controller.js",
+      '(source === "menu" ? effectiveDestinationMode(settings) : destinationMode(settings, false))',
+      'destinationMode(settings, source === "menu")',
+    ],
+    [
+      "link context isolation",
+      "shared/link-capture.js",
+      'if (context === "link") return parseYouTubeVideoId(info?.linkUrl);',
+      'if (context === "link") return parseYouTubeVideoId(info?.linkUrl) || parseYouTubeVideoId(info?.pageUrl);',
     ],
   ];
   let survivors = 0;

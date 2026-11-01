@@ -55,6 +55,34 @@ it("does not silently replace a deleted favorite", async () => {
   expect(result.review).toBe(true);
   expect(stored.yph_local_playlists).toBeUndefined();
 });
+it("captures to the destination the menu advertised when saved targets are disabled", async () => {
+  const { startCapture, stored } = await setup();
+  window.getSettings.mockResolvedValue({
+    disableContextSaved: true,
+    defaultQuickAddTarget: "latest",
+  });
+  // No mode: the menu action relies on the effective destination, which must match
+  // the label ("Playlist Builder") instead of throwing "destination is disabled".
+  const result = await startCapture({ scope: "current", anchor });
+  expect(result.review).toBeUndefined();
+  expect(result.added).toBe(1);
+  expect(stored.yphPlaylistBuilder).toEqual(["abcdefghijk"]);
+  expect(stored.yph_local_playlists).toBeUndefined();
+});
+it("falls back to a saved destination when the builder is disabled", async () => {
+  const { startCapture, stored } = await setup();
+  window.getSettings.mockResolvedValue({
+    disableContextBuilder: true,
+    defaultQuickAddTarget: "builder",
+  });
+  stored.yph_local_playlists = [
+    { id: "local-a", title: "Local list", videos: [], timestamp: 3, revision: 1 },
+  ];
+  const result = await startCapture({ scope: "current", anchor });
+  expect(result.added).toBe(1);
+  expect(stored.yphPlaylistBuilder).toBeUndefined();
+  expect(stored.yph_local_playlists[0].videos).toEqual(["abcdefghijk"]);
+});
 it("closes only newly saved, unchanged, unpinned tabs", async () => {
   const { closeSavedTabs, api } = await setup();
   api.tabs.get.mockResolvedValue({ ...anchor, windowId: 8 });

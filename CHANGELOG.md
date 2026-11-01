@@ -44,6 +44,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   fall back from media URLs to watch-page URLs, and create new local playlists offline.
   Reject remote destinations until explicit review is available instead of silently
   making local copies; do not recreate missing favorite destinations.
+- Context-menu settings are now honoured by removal instead of greying: disabling saved
+  destinations or the playlist builder removes that branch, and the "Add YouTube tabs to …"
+  label always names a destination that can actually be used.
+- Right-clicking a YouTube link that is not a video (channel, playlist, search) no longer
+  captures the video that happens to be open. A link click resolves only the clicked link;
+  the watch-page fallback still applies to page, video and image contexts.
+- Menu reconciliation removes every entry the current settings no longer want, including
+  after a service-worker restart, instead of only a hard-coded subset.
+- A context-menu capture now saves to the destination its label names. When the configured
+  destination belongs to a disabled family (saved vs. builder), the action falls back to an
+  allowed one instead of offering an entry that fails on click.
 
 ## [1.2.1] - 2026-10-27
 
