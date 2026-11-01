@@ -118,6 +118,43 @@ async function main() {
     );
     report.interactions.push("Native dialog bounds, Tab containment, Escape, focus restoration");
 
+    // Backdrop click dismisses a dismissible dialog and restores focus.
+    await opener.click();
+    await dialog.waitFor();
+    await page.mouse.click(5, 5);
+    await page.waitForFunction(() => !document.querySelector("dialog[open]"));
+    assert(
+      await opener.evaluate((element) => element === document.activeElement),
+      "Backdrop click did not restore focus"
+    );
+
+    // A press that begins inside and ends on the backdrop must not dismiss.
+    await opener.click();
+    await dialog.waitFor();
+    const dragBox = await dialog.boundingBox();
+    await page.mouse.move(dragBox.x + dragBox.width / 2, dragBox.y + dragBox.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(5, 5);
+    await page.mouse.up();
+    assert.equal(
+      await page.locator("dialog[open]").count(),
+      1,
+      "Inside-press drag dismissed the dialog"
+    );
+    // A press that begins on the backdrop and ends inside must not dismiss either.
+    await page.mouse.move(5, 5);
+    await page.mouse.down();
+    await page.mouse.move(dragBox.x + dragBox.width / 2, dragBox.y + dragBox.height / 2);
+    await page.mouse.up();
+    assert.equal(
+      await page.locator("dialog[open]").count(),
+      1,
+      "Backdrop-press drag-into dismissed the dialog"
+    );
+    await page.keyboard.press("Escape");
+    await page.waitForFunction(() => !document.querySelector("dialog[open]"));
+    report.interactions.push("Backdrop click dismisses; inside-press drag does not");
+
     await page.getByRole("button", { name: "Delete video", exact: true }).first().click();
     await page.getByRole("button", { name: "Cancel", exact: true }).waitFor();
     assert(
@@ -126,6 +163,16 @@ async function main() {
         .evaluate((element) => element === document.activeElement),
       "Destructive dialog did not focus Cancel"
     );
+    // Backdrop click on a small confirmation dialog cancels (does not confirm).
+    await page.mouse.click(5, 5);
+    await page.waitForFunction(() => !document.querySelector("dialog[open]"));
+    assert.equal(
+      await page.locator(".playlist-video").count(),
+      10,
+      "Backdrop click confirmed the deletion instead of cancelling"
+    );
+    await page.getByRole("button", { name: "Delete video", exact: true }).first().click();
+    await page.getByRole("button", { name: "Cancel", exact: true }).waitFor();
     const pageCount = context.pages().length;
     await page.keyboard.press("Enter");
     await page.waitForFunction(() => !document.querySelector("dialog[open]"));

@@ -29,6 +29,22 @@
 
   let dialog: HTMLDialogElement;
   const headingId = $props.id();
+  let pointerDownOnBackdrop = false;
+  let pointerUpOnBackdrop = false;
+
+  function handlePointerDown(event: PointerEvent) {
+    pointerDownOnBackdrop = event.target === dialog;
+  }
+
+  function handlePointerUp(event: PointerEvent) {
+    pointerUpOnBackdrop = event.target === dialog;
+  }
+
+  function handleBackdropClick() {
+    if (pointerDownOnBackdrop && pointerUpOnBackdrop) close();
+    pointerDownOnBackdrop = false;
+    pointerUpOnBackdrop = false;
+  }
 
   function close() {
     if (!dismissible) return;
@@ -93,6 +109,9 @@
   class:wide={size === "wide"}
   aria-label={title}
   onkeydown={containFocus}
+  onpointerdown={handlePointerDown}
+  onpointerup={handlePointerUp}
+  onclick={handleBackdropClick}
   oncancel={(event) => {
     event.preventDefault();
     close();
