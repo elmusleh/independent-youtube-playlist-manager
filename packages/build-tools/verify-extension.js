@@ -141,6 +141,16 @@ async function main() {
       1,
       "Inside-press drag dismissed the dialog"
     );
+    // A press that begins on the backdrop and ends inside must not dismiss either.
+    await page.mouse.move(5, 5);
+    await page.mouse.down();
+    await page.mouse.move(dragBox.x + dragBox.width / 2, dragBox.y + dragBox.height / 2);
+    await page.mouse.up();
+    assert.equal(
+      await page.locator("dialog[open]").count(),
+      1,
+      "Backdrop-press drag-into dismissed the dialog"
+    );
     await page.keyboard.press("Escape");
     await page.waitForFunction(() => !document.querySelector("dialog[open]"));
     report.interactions.push("Backdrop click dismisses; inside-press drag does not");

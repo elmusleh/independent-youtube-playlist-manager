@@ -30,14 +30,20 @@
   let dialog: HTMLDialogElement;
   const headingId = $props.id();
   let pointerDownOnBackdrop = false;
+  let pointerUpOnBackdrop = false;
 
   function handlePointerDown(event: PointerEvent) {
     pointerDownOnBackdrop = event.target === dialog;
   }
 
-  function handleBackdropClick(event: MouseEvent) {
-    if (pointerDownOnBackdrop && event.target === dialog) close();
+  function handlePointerUp(event: PointerEvent) {
+    pointerUpOnBackdrop = event.target === dialog;
+  }
+
+  function handleBackdropClick() {
+    if (pointerDownOnBackdrop && pointerUpOnBackdrop) close();
     pointerDownOnBackdrop = false;
+    pointerUpOnBackdrop = false;
   }
 
   function close() {
@@ -104,6 +110,7 @@
   aria-label={title}
   onkeydown={containFocus}
   onpointerdown={handlePointerDown}
+  onpointerup={handlePointerUp}
   onclick={handleBackdropClick}
   oncancel={(event) => {
     event.preventDefault();
