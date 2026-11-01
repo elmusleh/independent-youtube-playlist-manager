@@ -112,6 +112,15 @@ async function openView(context, width, height, hash, ready) {
     content: 'body, body * { font-family: "DejaVu Sans", sans-serif !important; }',
   });
 
+  // Mobile Chromium can paint a classic 15px scrollbar, shrinking the element
+  // screenshot width even though the app layout is unchanged. Hide it for a
+  // deterministic mobile baseline; desktop keeps its normal scrollbar.
+  if (width <= 500) {
+    await page.addStyleTag({
+      content: "html, body { scrollbar-width: none; } ::-webkit-scrollbar { width: 0; height: 0; }",
+    });
+  }
+
   // Let async card content (account playlists, metadata) settle, then confirm the theme.
   await page.evaluate(async () => {
     await document.fonts.ready;
