@@ -32,6 +32,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- A theme chosen in Settings is applied on the next start even when the browser's local
+  cache is empty (fresh install, cleared storage, another synced device): the persisted
+  value is retried after startup instead of silently falling back to the device theme.
 - Settings page layout: the card grid used CSS multi-column layout, which filled the left
   column top-to-bottom before the right column and left a large empty void under the shorter
   column on wide screens. Replaced it with a responsive CSS grid so cards read left-to-right,
