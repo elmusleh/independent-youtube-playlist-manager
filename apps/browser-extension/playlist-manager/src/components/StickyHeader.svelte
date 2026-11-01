@@ -86,4 +86,13 @@
       margin: 0 -16px;
     }
   }
+
+  /* Disable pinning on short/landscape screens so the toolbar does not eat the
+     limited vertical space. This lives here (scoped) so it wins over the base
+     .sticky-header-sub { position: sticky } rule above. */
+  @media (max-height: 480px) and (max-width: 1024px) {
+    .sticky-header-sub {
+      position: static;
+    }
+  }
 </style>

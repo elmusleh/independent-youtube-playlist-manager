@@ -164,3 +164,23 @@ test("back-to-top jumps instantly when prefers-reduced-motion is set", async () 
     fs.rmSync(profileDir, { recursive: true, force: true });
   }
 });
+
+test("selection bar does NOT pin on short screens (landscape phone)", async () => {
+  const { context, profileDir } = await launchExtension();
+  try {
+    const { page } = await openManage(context, 844, 390);
+
+    const bar = page.locator(".sticky-header-sub");
+    await bar.waitFor();
+
+    await page.evaluate(() => window.scrollTo(0, 800));
+
+    // responsive.css sets position:static for short/landscape screens, so the
+    // bar scrolls away with the content (its top goes negative) instead of
+    // pinning under the header.
+    await expect.poll(() => bar.evaluate((el) => el.getBoundingClientRect().top)).toBeLessThan(0);
+  } finally {
+    await context.close();
+    fs.rmSync(profileDir, { recursive: true, force: true });
+  }
+});

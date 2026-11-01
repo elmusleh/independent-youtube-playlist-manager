@@ -439,9 +439,6 @@
 
 /* Short screens (landscape phone, split view) */
 @media (max-height: 480px) and (max-width: 1024px) {
-  .sticky-header-sub {
-    position: static;
-  }
   dialog {
     max-height: calc(100dvh - 16px);
   }
