@@ -4,6 +4,11 @@ Status: **proposed, awaiting owner approval.** This document sequences the work 
 already in flight plus the four open issues. It does not authorize a release, a merge, a
 store submission or a deploy.
 
+> **Snapshot note (2026-11-01):** Phases 0–1 have since landed — `next` is `669049d` with
+> PRs #63 (UI polish), #64 (context-menu gates) and #65 (theme) merged, and the
+> `contracts:check` failure described in §1.1 is fixed. Treat §0 and Phase 1 as historical;
+> the remaining phases (§2 issues, §3 debt, §4 sync) still apply.
+
 Owner constraints that stay in force: merge mode is manual, `main` only receives release
 PRs, tests/builds may be executed by the agent, and nothing is published to a public
 channel without explicit confirmation.
@@ -74,12 +79,12 @@ commit, so a revert is one commit:
 3. `feat(ui): pagination and editor polish` — `PaginationBar`, `CategoryBadge`, category
    utils, remaining Svelte edits, `Share.svelte` deletion.
 
-Rules: stage explicitly, run `npm run check && npm run build` before each commit, push to
-the existing branch so PR #63 carries them, and add the corresponding `[Unreleased]`
-bullets (some are already written).
+Rules: stage explicitly, run `npm run check && npm run build` before each commit, and add
+the corresponding `[Unreleased]` bullets.
 
-**Done when:** the working tree is clean, PR #63 is updated and green, and no untracked
-file remains that only exists on this machine.
+> **Superseded (2026-11-01):** this dirty-tree work has already shipped — PR #63 was
+> squash-merged and #64/#65 followed, and `contracts:check` is green on `next`. Ship any
+> remaining machine-local files as their own follow-up PRs off `next`; do not reopen #63.
 
 ## 3. Phase 2 — Close the four open issues with evidence (M)
 
@@ -121,8 +126,10 @@ create new files under `src/services/sync/` and every later task builds on them.
 4. **Groups 4–5:** Supabase BYO and Drive, each behind its own consent gate.
 5. **Group 6:** module registry + Plugins screen; API Setup becomes toggleable.
 
-Acceptance for the change stays as written in `openspec/changes/add-encrypted-cross-device-sync/tasks.md`,
-including the two manual device passes (7.4, 7.5) that cannot be automated here.
+Acceptance for the change stays as written in the OpenSpec change
+`add-encrypted-cross-device-sync` (its proposal/spec/design/tasks exist as planning
+artifacts in the working tree — commit them together with the implementation), including
+the two manual device passes (7.4, 7.5) that cannot be automated here.
 
 ## 6. Phase 5 — Release (owner-gated)
 
