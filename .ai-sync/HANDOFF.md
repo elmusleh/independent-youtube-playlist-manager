@@ -1,5 +1,31 @@
 # Handoff — 2026-10-31, verification complete with all automated gates passing
 
+## 2026-11-01 (late) — dirty tree committed, contracts repaired, sync core started
+
+Executed the approved `docs/IMPROVEMENT_PLAN.md` phases 0–2/4 as far as automation allows.
+Two PRs are open and green, nothing merged, no release.
+
+- **PR #70** `feat/editor-followups` — the 61 uncommitted files are now four scoped commits
+  plus a merge of `origin/next`:
+  - `fix(metadata)`: scraped duration caching (`shared/duration-label.*`), widened
+    content-script match (`*.youtube.com/watch*`), and `shared/page-service.js` — the typed
+    accessor that repairs the stale `capture-import.d.ts`. `contracts:check` now exits 0.
+  - `refactor(editor)`: `BulkActionsBar` 410 → 250 lines via `SelectionMenu.svelte`.
+  - `feat(ui)`: pagination, category badges, header search, sidebar/editor polish.
+  - `docs`: sync plan, Edge status, ai-sync state, `.coderabbit.yaml`.
+  - Merge conflicts resolved per-file in favour of the newer side; `Modal.svelte` landed at
+    352 lines, so its focus trap moved to `utils/modal-focus.ts` (+6 tests).
+  - Evidence: `npm run check` exit 0 (56 files / 578 tests, svelte-check 0 errors),
+    `npm run build` exit 0 (48 runtime modules per target, budgets pass),
+    `npm run test:extension` exit 0 (96 route/viewport checks, 9 interaction groups).
+- **PR #71** `feat/encrypted-sync-core` — OpenSpec tasks 1.1–1.6: `sync-key`,
+  `key-derivation`, `snapshot-codec`, `encryption-service`, `content-selector`; 45 unit
+  tests; `npm run check` exit 0 (57 files / 623 tests). No engine, no backends, not wired.
+- `playlist-manager/node_modules` had been emptied at some point; `npm ci` restored it.
+  That, not a code fault, is why `contracts:generate` failed with MODULE_NOT_FOUND.
+- Trap for the next session: `openspec/changes/add-encrypted-cross-device-sync/` currently
+  ships in **PR #70**, so task ticks for it belong there or after #70 merges.
+
 ## 2026-11-01 — shipped clean items; feat/ui-polish is dead; context-menu deferred
 
 - Opened three PRs against `next` (669049d), none merged (owner merges):

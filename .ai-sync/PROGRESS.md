@@ -1,5 +1,27 @@
 # Progress — open work only (Mobile UX Improvements)
 
+## Improvement plan execution — 2026-11-01 (late)
+
+Plan: `docs/IMPROVEMENT_PLAN.md` (merged with #69).
+
+- [x] Phase 0.1 — `contracts:check` repaired: `shared/page-service.js` typed accessor;
+      `npm run check` exit 0. `capture-import.d.ts` regenerated (no hand edits).
+- [x] Phase 0.2 — portal logo fix merged (#68, previously opened as PR).
+- [x] Phase 1 — 61 uncommitted files landed as 4 scoped commits + merge of `next`
+      (PR #70). Working tree clean.
+- [x] Phase 3 (partial) — `BulkActionsBar` split to 250 lines, `Modal` focus trap extracted
+      with 6 tests, background bridge covered by 2 tests.
+- [x] Phase 4 group 1 — sync core (`sync-key`, `key-derivation`, `snapshot-codec`,
+      `encryption-service`, `content-selector`), 45 tests (PR #71).
+- [ ] Phase 2 — issue closure still needs evidence that automation cannot produce: - #10 pagination: unit tests pass (4) and 96 route/viewport checks pass; a
+      `dist/verification` screenshot at 390 px with first/last page visible is still
+      needed before closing. - #14 durations: covered by 2 new unit tests plus the scrape path; a real imported
+      playlist with badges visible is still needed. - #13 dark-mode flash: #65 shipped the startup-theme fix; needs a first-paint trace
+      on a real device, not a code read. - #11 thumbnails: the archive option exists only in the editor's settings panel, not
+      in the global Settings view — surfacing it is still open.
+- [ ] Phase 4 groups 2–6 — engine, File/Supabase/Drive backends, Plugins screen.
+- [ ] Phase 5 — release decision; owner-gated, nothing tagged or published.
+
 ## Context menu + theme — merged to `next`, acceptance incomplete (2026-11-01)
 
 Shipped in `next` at `669049d` (#64, #65); version stays **1.2.1** — no release.
