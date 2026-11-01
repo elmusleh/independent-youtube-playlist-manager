@@ -1,4 +1,4 @@
-import { resolveDestination, destinationMode } from "../shared/quick-add.js";
+import { effectiveDestinationMode, resolveDestination } from "../shared/quick-add.js";
 export const ROOT = "yphContextRoot";
 export const SCOPES = [
   ["current", "Only this video tab"],
@@ -37,11 +37,8 @@ export function menuModel(settings, destinations) {
   const savedAllowed = !settings.disableContextSaved;
   const builderAllowed = !settings.disableContextBuilder;
   const anyAllowed = savedAllowed || builderAllowed;
-  const mode = destinationMode(settings);
   // Label the menu with the destination the next action will really use.
-  const effectiveMode =
-    mode === "builder" && !builderAllowed ? "latest" : savedAllowed ? mode : "builder";
-  const selected = resolveDestination(effectiveMode, settings, destinations);
+  const selected = resolveDestination(effectiveDestinationMode(settings), settings, destinations);
   const label = (selected?.title || "Choose playlist").slice(0, 60);
   const items = [{ id: ROOT, title: "Playlist Manager", contexts }];
   const item = (id, title, extra = {}) =>

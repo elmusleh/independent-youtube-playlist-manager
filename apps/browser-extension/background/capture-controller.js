@@ -8,6 +8,7 @@ import { tabsForScope, youtubeTabs, parseYouTubeVideoId } from "../shared/tab-se
 import {
   cachedDestinations,
   destinationMode,
+  effectiveDestinationMode,
   resolveDestination,
   requireDestinationEnabled,
 } from "../shared/quick-add.js";
@@ -90,7 +91,11 @@ export async function startCapture({
     : await collectTabs(scope || "", requireAnchor(anchor));
   const videoIds = validIds(ids || selected.map((item) => item.id));
   if (!videoIds.length) throw new Error("No YouTube videos were found in these tabs.");
-  const target = mode || destinationMode(settings, source === "menu");
+  // Menu actions must use the same destination the label advertised, including
+  // when the configured family is disabled.
+  const target =
+    mode ||
+    (source === "menu" ? effectiveDestinationMode(settings) : destinationMode(settings, false));
   requireDestinationEnabled(target, settings, source);
   const job = await createJob({
     operation,

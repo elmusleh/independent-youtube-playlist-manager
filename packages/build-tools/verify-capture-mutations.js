@@ -76,6 +76,12 @@ try {
       'item("saved", "My Playlists");',
     ],
     [
+      "effective destination on capture",
+      "background/capture-controller.js",
+      '(source === "menu" ? effectiveDestinationMode(settings) : destinationMode(settings, false))',
+      'destinationMode(settings, source === "menu")',
+    ],
+    [
       "link context isolation",
       "shared/link-capture.js",
       'if (context === "link") return parseYouTubeVideoId(info?.linkUrl);',
