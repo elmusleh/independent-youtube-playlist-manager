@@ -1,7 +1,7 @@
 /* Compatibility exports; capture and persistence belong to the controller. */
 import { startCapture } from "./capture-controller.js";
 import { SCOPES } from "./context-menu-model.js";
-import { parseYouTubeVideoId } from "../shared/tab-selection.js";
+import { clickContext, linkCaptureVideoId } from "../shared/link-capture.js";
 export const scopes = SCOPES;
 export const targets = [
   ["builder", "Playlist Builder"],
@@ -12,9 +12,7 @@ export const targets = [
 export function runTabCapture(scope, target, anchor) {
   return startCapture({ scope, mode: target, anchor });
 }
+/** Single resolution path for both the dispatcher and the compatibility surface. */
 export function videoIdFromMenu(info, tab) {
-  return (
-    [info.linkUrl, info.srcUrl, info.pageUrl, tab?.url].map(parseYouTubeVideoId).find(Boolean) ||
-    null
-  );
+  return linkCaptureVideoId(clickContext(info), info, tab?.url);
 }

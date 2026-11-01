@@ -2,6 +2,7 @@
   import { untrack } from "svelte";
   import type { Snippet } from "svelte";
   import { lockPageScroll } from "../utils/modal-scroll";
+  import { trapTabKey } from "../utils/modal-focus";
   import Fa from "svelte-fa";
   import { faXmark } from "@fortawesome/free-solid-svg-icons";
 
@@ -32,14 +33,20 @@
   let dialog: HTMLDialogElement;
   const headingId = $props.id();
   let pointerDownOnBackdrop = false;
+  let pointerUpOnBackdrop = false;
 
   function handlePointerDown(event: PointerEvent) {
     pointerDownOnBackdrop = event.target === dialog;
   }
 
-  function handleBackdropClick(event: MouseEvent) {
-    if (pointerDownOnBackdrop && event.target === dialog) close();
+  function handlePointerUp(event: PointerEvent) {
+    pointerUpOnBackdrop = event.target === dialog;
+  }
+
+  function handleBackdropClick() {
+    if (pointerDownOnBackdrop && pointerUpOnBackdrop) close();
     pointerDownOnBackdrop = false;
+    pointerUpOnBackdrop = false;
   }
 
   function close() {
@@ -73,28 +80,7 @@
   });
 
   function containFocus(event: KeyboardEvent) {
-    if (event.key !== "Tab") return;
-    const controls = Array.from(
-      dialog.querySelectorAll<HTMLElement>(
-        'button:not(:disabled), a[href], input:not(:disabled):not([type="hidden"]), textarea:not(:disabled), select:not(:disabled), [tabindex]:not([tabindex="-1"])'
-      )
-    ).filter(
-      (element) =>
-        element.getClientRects().length > 0 && getComputedStyle(element).visibility !== "hidden"
-    );
-    const first = controls[0];
-    const last = controls[controls.length - 1];
-    if (!first) {
-      event.preventDefault();
-      return;
-    }
-    if (event.shiftKey && document.activeElement === first) {
-      event.preventDefault();
-      last.focus();
-    } else if (!event.shiftKey && document.activeElement === last) {
-      event.preventDefault();
-      first.focus();
-    }
+    if (trapTabKey(dialog, event)) event.preventDefault();
   }
 </script>
 
@@ -107,6 +93,7 @@
   aria-label={title}
   onkeydown={containFocus}
   onpointerdown={handlePointerDown}
+  onpointerup={handlePointerUp}
   onclick={handleBackdropClick}
   oncancel={(event) => {
     event.preventDefault();

@@ -32,6 +32,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- A theme chosen in Settings is applied on the next start even when the browser's local
+  cache is empty (fresh install, cleared storage, another synced device): the persisted
+  value is retried after startup instead of silently falling back to the device theme.
+- Web portal logo loaded slowly: `public/icon.png` and `src/app/icon.png` were both the
+  2.0 MB, 1437×1082 design original, so a 28 px logo and the favicon each downloaded two
+  megabytes (and `/_next/image?url=%2Ficon.png&w=128` returned the source unchanged —
+  2,018,306 bytes, 4.7 s on a cold cache). The original now lives outside `public/` in
+  `apps/web-portal/assets/icon-master.png`, and `npm run assets:portal` derives a 4.9 KiB
+  WebP logo, a 41 KiB README icon, a 13 KiB favicon and a 106 KiB 1200×630 social card.
+  The portal serves the logo directly (no image-optimizer hop) with a one-week
+  `stale-while-revalidate` cache header, and `verify-portal-assets.js` fails `npm run check`
+  if a print-resolution image is ever served again.
 - Settings page layout: the card grid used CSS multi-column layout, which filled the left
   column top-to-bottom before the right column and left a large empty void under the shorter
   column on wide screens. Replaced it with a responsive CSS grid so cards read left-to-right,
@@ -39,8 +51,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Harden the unreleased context-menu capture path: exclude private tabs, validate YouTube
   URL schemes and video IDs, preserve clicked-tab selection and cross-window order,
   fall back from media URLs to watch-page URLs, and create new local playlists offline.
+- Modal dialogs now dismiss when clicking or tapping the backdrop (the dimmed area outside
+  the dialog) for every dialog size and pointer type, not just the navigation drawer. A
+  press that starts inside the dialog and ends on the backdrop does not dismiss it, and
+  non-dismissible dialogs (loading/progress) remain unaffected.
   Reject remote destinations until explicit review is available instead of silently
   making local copies; do not recreate missing favorite destinations.
+- Context-menu settings are now honoured by removal instead of greying: disabling saved
+  destinations or the playlist builder removes that branch, and the "Add YouTube tabs to …"
+  label always names a destination that can actually be used.
+- Right-clicking a YouTube link that is not a video (channel, playlist, search) no longer
+  captures the video that happens to be open. A link click resolves only the clicked link;
+  the watch-page fallback still applies to page, video and image contexts.
+- Menu reconciliation removes every entry the current settings no longer want, including
+  after a service-worker restart, instead of only a hard-coded subset.
+- A context-menu capture now saves to the destination its label names. When the configured
+  destination belongs to a disabled family (saved vs. builder), the action falls back to an
+  allowed one instead of offering an entry that fails on click.
 
 ## [1.2.1] - 2026-10-27
 

@@ -10,6 +10,18 @@ export function destinationMode(settings, remembered = true) {
     "latest"
   );
 }
+/**
+ * The configured destination, adjusted to a destination family the settings
+ * allow. The menu label and the capture that follows it must agree, otherwise
+ * the menu offers an action that fails on click.
+ */
+export function effectiveDestinationMode(settings) {
+  const mode = destinationMode(settings);
+  const builderAllowed = !settings.disableContextBuilder;
+  const savedAllowed = !settings.disableContextSaved;
+  if (mode === "builder") return builderAllowed ? mode : savedAllowed ? "latest" : mode;
+  return savedAllowed ? mode : builderAllowed ? "builder" : mode;
+}
 /** Local cache only: menu availability never depends on network or sign-in. */
 export async function cachedDestinations() {
   const stored = await browser.storage.local.get(["yph_local_playlists", "yt_playlist_cache_v1"]);

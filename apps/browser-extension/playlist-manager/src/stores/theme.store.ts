@@ -41,19 +41,32 @@ function updatePageTheme() {
   } catch {}
 }
 
+const VALID_CHOICES: ThemeChoice[] = ["dark", "light", "device"];
+// Chromium can answer the first extension-storage read of a fresh page with an
+// empty object, which silently dropped a persisted (or synced) choice. Retry a
+// few times before falling back to the synchronous pre-paint cache.
+const READ_ATTEMPTS = 4;
+const READ_DELAY_MS = 120;
+
+async function readStoredChoice(): Promise<ThemeChoice | null> {
+  for (let attempt = 0; attempt < READ_ATTEMPTS; attempt += 1) {
+    const stored: string = await window.fetchObject(themeStorageKey, "");
+    if (VALID_CHOICES.includes(stored as ThemeChoice)) return stored as ThemeChoice;
+    if (attempt < READ_ATTEMPTS - 1)
+      await new Promise((resolve) => setTimeout(resolve, READ_DELAY_MS));
+  }
+  return null;
+}
+
 let initialized = false;
 export function initTheme() {
   if (initialized) return;
   initialized = true;
   currentTheme.subscribe(() => updatePageTheme());
 
-  window
-    .fetchObject(themeStorageKey, get(theme))
-    .then((themeChoice: any) => {
-      const validChoice = ["dark", "light", "device"].includes(themeChoice)
-        ? themeChoice
-        : "device";
-      theme.set(validChoice);
+  readStoredChoice()
+    .then((stored) => {
+      if (stored) theme.set(stored);
       theme.subscribe((themeChoice) => {
         window.storeObject(themeStorageKey, themeChoice);
         updatePageTheme();

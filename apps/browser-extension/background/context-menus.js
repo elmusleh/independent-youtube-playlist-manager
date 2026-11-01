@@ -1,10 +1,10 @@
 import { isAndroid, alert } from "./utils.js";
-import { menuModel, ROOT, SCOPES } from "./context-menu-model.js";
+import { menuModel, staleMenuIds, ROOT, SCOPES } from "./context-menu-model.js";
 import { cachedDestinations, requireDestinationEnabled } from "../shared/quick-add.js";
 import { startCapture, scanPage, openCapture } from "./capture-controller.js";
 import { createJob } from "./capture-jobs.js";
 import { cacheScrapedMetadata } from "./capture-import.js";
-import { parseYouTubeVideoId } from "../shared/tab-selection.js";
+import { clickContext, linkCaptureVideoId } from "../shared/link-capture.js";
 let reconciliation = Promise.resolve();
 let generation = 0;
 const lastModel = new Map();
@@ -45,11 +45,14 @@ async function reconcile(settings) {
       /* Already absent. */
     }
     lastModel.clear();
+    if ((await rememberedMenuIds()).length) await rememberMenuIds([]);
     return;
   }
   for (const item of desired) {
     const { id, ...properties } = item;
-    const signature = JSON.stringify(properties);
+    // `type` is fixed at creation; update() rejects it.
+    delete properties.type;
+    const signature = JSON.stringify(item);
     if (lastModel.get(id) === signature) continue;
     try {
       await browser.contextMenus.update(id, properties);
@@ -58,25 +61,39 @@ async function reconcile(settings) {
     }
     lastModel.set(id, signature);
   }
-  // Remove disabled destinations/actions without removing and recreating the tree.
-  const possible = [
-    "yph:destination:builder",
-    "yph:destination:favorite",
-    "yph:destination:latest",
-    "yph:destination:new",
-    "yph:destination:choose",
-    "yph:save-playlist",
-    "yph:import",
-  ];
-  for (const id of possible)
-    if (!desired.some((item) => item.id === id)) {
-      try {
-        await browser.contextMenus.remove(id);
-      } catch {
-        /* Already absent. */
-      }
-      lastModel.delete(id);
+  // Anything the current model no longer contains (disabled group, stale scope)
+  // is removed instead of being rebuilt wholesale. Menus survive service-worker
+  // restarts, so the owned ids are persisted and not just kept in memory.
+  const remembered = await rememberedMenuIds();
+  const previous = new Set([...lastModel.keys(), ...remembered]);
+  for (const id of staleMenuIds(desired, [...previous])) {
+    try {
+      await browser.contextMenus.remove(id);
+    } catch {
+      /* Already absent. */
     }
+    lastModel.delete(id);
+  }
+  // Only persist on real change: Firefox refreshes on every menu open.
+  const owned = desired.map((item) => item.id);
+  if (remembered.length !== owned.length || remembered.some((id, index) => id !== owned[index]))
+    await rememberMenuIds(owned);
+}
+const MENU_IDS_KEY = "yph_context_menu_ids";
+async function rememberedMenuIds() {
+  try {
+    return (await browser.storage.local.get(MENU_IDS_KEY))[MENU_IDS_KEY] || [];
+  } catch {
+    return [];
+  }
+}
+/** @param {string[]} ids */
+async function rememberMenuIds(ids) {
+  try {
+    await browser.storage.local.set({ [MENU_IDS_KEY]: ids });
+  } catch {
+    /* Menu removal falls back to the in-memory model. */
+  }
 }
 export function buildContextMenus(settings) {
   const next = reconciliation.then(async () => reconcile((await window.getSettings()) || settings));
@@ -120,9 +137,7 @@ async function dispatch(info, tab) {
       await buildContextMenus(await window.getSettings());
     }
   } else if (id === "yph:link") {
-    const videoId = [info.linkUrl, info.srcUrl, info.pageUrl, tab?.url]
-      .map(parseYouTubeVideoId)
-      .find(Boolean);
+    const videoId = linkCaptureVideoId(clickContext(info), info, tab?.url);
     if (!videoId) throw new Error("This is not a YouTube video link.");
     await startCapture({ ids: [videoId], anchor: tab });
   } else if (id === "yph:import" || id === "yph:save-playlist") {
