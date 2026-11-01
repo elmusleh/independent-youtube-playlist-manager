@@ -14,7 +14,10 @@ const root = path.resolve(__dirname, "../..");
 
 const budgets = [
   { artifact: "dist/chrome/editor/main.js", maxBytes: 380 * 1024 },
-  { artifact: "dist/chrome/editor/bundle.css", maxBytes: 175 * 1024 },
+  // 175 KiB → 180 KiB (UI polish pass): the confirmation-dialog theming, import
+  // textarea, back-to-top FAB and theme-picker icons added ~2.4 KiB of legitimate
+  // component CSS. Raised deliberately rather than trimming real UI styles.
+  { artifact: "dist/chrome/editor/bundle.css", maxBytes: 180 * 1024 },
   { artifact: "dist/chrome/popup/popup.css", maxBytes: 22 * 1024 },
   { artifact: "dist/chrome/background/background.js", maxBytes: 16 * 1024 },
 ];
