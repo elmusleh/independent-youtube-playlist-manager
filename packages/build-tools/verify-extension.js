@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-/* global document, innerWidth, window */
+/* global chrome, document, innerWidth, window */
 const { chromium } = require("playwright");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
@@ -169,6 +169,39 @@ async function main() {
       "Manage bulk selection bar is not rendered (subBar snippet missing from StickyHeader)"
     );
     report.interactions.push("Manage bulk selection bar renders");
+
+    // Regression guard for the theme desync that shipped in 1.2.1: the persisted
+    // setting, the pre-paint local cache and the rendered attribute must agree.
+    for (const choice of ["dark", "light"]) {
+      await page.evaluate(
+        (value) =>
+          new Promise((resolve) => {
+            chrome.storage.sync.set({ themeChoice: value }, () => resolve(value));
+          }),
+        choice
+      );
+      // A hash-only goto is a same-document navigation: force a real reload so
+      // the startup theme path runs again.
+      await page.goto(`${base}/editor/index.html#/saved`);
+      await page.reload();
+      await page.locator("#app").waitFor();
+      await page
+        .waitForFunction((value) => document.documentElement.dataset.theme === value, choice, {
+          timeout: 5000,
+        })
+        .catch(async () => {
+          throw new Error(
+            `Persisted theme "${choice}" did not reach the page; rendered ` +
+              `"${await page.evaluate(() => document.documentElement.dataset.theme)}"`
+          );
+        });
+      assert.equal(
+        await page.evaluate(() => localStorage.getItem("yph-theme-choice")),
+        choice,
+        `Pre-paint theme cache did not follow the persisted ${choice} choice`
+      );
+    }
+    report.interactions.push("Persisted theme reaches first paint and the local cache");
 
     for (const width of [320, 390, 768]) {
       await page.setViewportSize({ width, height: 600 });
