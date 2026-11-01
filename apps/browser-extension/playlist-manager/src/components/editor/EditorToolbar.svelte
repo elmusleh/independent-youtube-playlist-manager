@@ -352,6 +352,10 @@
       flex-direction: column;
       align-items: flex-start;
     }
+    .btn-group {
+      width: 100%;
+      flex-wrap: wrap;
+    }
     .right-align {
       margin-left: 0;
     }
