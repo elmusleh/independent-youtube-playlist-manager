@@ -1,6 +1,7 @@
 <script lang="ts">
   import Fa from "svelte-fa";
-  import { faSearch } from "@fortawesome/free-solid-svg-icons";
+  import { faSearch, faXmark } from "@fortawesome/free-solid-svg-icons";
+  import { tick } from "svelte";
   import { router } from "svelte-spa-router";
   import {
     playlistsSearch,
@@ -28,6 +29,37 @@
   );
 
   let searchValue = $state("");
+  let mobileSearchOpen = $state(false);
+  let mobileSearchInput: HTMLInputElement;
+  let mobileSearchPanel: HTMLDivElement;
+  let mobileSearchTrigger: HTMLButtonElement;
+
+  $effect(() => {
+    if (mobileSearchOpen) {
+      tick().then(() => mobileSearchInput?.focus());
+    }
+  });
+
+  $effect(() => {
+    if (!mobileSearchOpen) return;
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target as Node;
+      if (mobileSearchPanel?.contains(target) || mobileSearchTrigger?.contains(target)) return;
+      mobileSearchOpen = false;
+    };
+    document.addEventListener("pointerdown", handlePointerDown, true);
+    return () => document.removeEventListener("pointerdown", handlePointerDown, true);
+  });
+
+  $effect(() => {
+    // Close the mobile search panel whenever the route changes.
+    router.location;
+    mobileSearchOpen = false;
+  });
+
+  function closeMobileSearch() {
+    mobileSearchOpen = false;
+  }
 
   $effect(() => {
     if (isSavedView) {
@@ -56,7 +88,7 @@
 
 {#if showSearchBar}
   <div class="center">
-    <div class="search-container">
+    <div class="search-container desktop-search">
       <input
         aria-label="Search"
         type="text"
@@ -68,15 +100,56 @@
         <Fa icon={faSearch} />
       </button>
     </div>
+    <button
+      bind:this={mobileSearchTrigger}
+      class="mobile-search-trigger"
+      aria-label="Search"
+      aria-expanded={mobileSearchOpen}
+      aria-controls="mobile-search-panel"
+      onclick={() => {
+        mobileSearchOpen = true;
+        tick().then(() => mobileSearchInput?.focus());
+      }}
+    >
+      <Fa icon={faSearch} />
+    </button>
   </div>
+
+  {#if mobileSearchOpen}
+    <div
+      class="mobile-search-panel"
+      id="mobile-search-panel"
+      role="search"
+      bind:this={mobileSearchPanel}
+    >
+      <div class="search-container mobile-search-container">
+        <input
+          bind:this={mobileSearchInput}
+          aria-label="Search"
+          type="text"
+          placeholder={searchPlaceholder}
+          bind:value={searchValue}
+          oninput={handleSearchInput}
+          onkeydown={(event) => {
+            if (event.key === "Escape") closeMobileSearch();
+          }}
+        />
+      </div>
+      <button class="mobile-search-close" onclick={closeMobileSearch} aria-label="Close search">
+        <Fa icon={faXmark} />
+      </button>
+    </div>
+  {/if}
 {/if}
 
 <style>
   .center {
     flex: 1;
     display: flex;
+    align-items: center;
     justify-content: center;
     max-width: 720px;
+    min-width: 0;
     padding: 0 40px;
     transition: opacity 0.2s ease;
   }
@@ -135,12 +208,100 @@
     background: var(--bg-secondary);
   }
 
+  .mobile-search-trigger {
+    display: none;
+    width: var(--header-control-size);
+    height: var(--header-control-size);
+    padding: 0;
+    margin: 0;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--text-color);
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: background-color 0.15s ease;
+  }
+
+  .mobile-search-trigger :global(svg) {
+    width: var(--header-icon-size) !important;
+    height: var(--header-icon-size) !important;
+    flex-shrink: 0;
+  }
+
+  .mobile-search-trigger:hover {
+    background: var(--hover-color);
+  }
+
+  .mobile-search-trigger:focus-visible,
+  .mobile-search-close:focus-visible {
+    outline: 2px solid var(--color-brand-primary);
+    outline-offset: 2px;
+  }
+
+  .mobile-search-panel {
+    position: fixed;
+    top: var(--app-header-height);
+    left: 0;
+    right: 0;
+    z-index: 1002;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: var(--background-color);
+    border-bottom: 1px solid var(--border-color);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  }
+
+  .mobile-search-container {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .mobile-search-close {
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--text-color);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: background-color 0.15s ease;
+  }
+
+  .mobile-search-close:hover {
+    background: var(--hover-color);
+  }
+
+  @media (min-width: 769px) and (max-width: 1023px) {
+    .center {
+      padding: 0 16px;
+    }
+  }
+
   @media (max-width: 768px) {
     .center {
       padding: 0;
-      order: 3;
-      flex: 1 0 100%;
-      max-width: 100%;
+      order: 0;
+      flex: 0 0 auto;
+      max-width: none;
+      margin-left: auto;
+    }
+
+    .desktop-search {
+      display: none;
+    }
+
+    .mobile-search-trigger {
+      display: flex;
     }
 
     .search-container {
@@ -160,8 +321,12 @@
   @media (max-width: 480px) {
     .center {
       padding: 0;
-      flex: 1 0 100%;
+      flex: 0 0 auto;
       min-width: 0;
+    }
+
+    .mobile-search-panel {
+      padding: 8px;
     }
 
     .search-container {

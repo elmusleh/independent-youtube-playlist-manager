@@ -7,7 +7,6 @@
   import New from "./views/New.svelte";
   import Builder from "./views/Builder.svelte";
   import Saved from "./views/Saved.svelte";
-  import Share from "./views/Share.svelte";
   import Settings from "./views/Settings.svelte";
   import DeveloperSetup from "./views/DeveloperSetup.svelte";
   import Logs from "./views/Logs.svelte";
@@ -107,7 +106,6 @@
     "/favorite": FavoritePlaylist,
     "/playlist": PlaylistView,
     "/editor": PlaylistView,
-    "/share": Share,
     "/settings": Settings,
     "/shortcuts": Shortcuts,
     "/api-setup": DeveloperSetup,

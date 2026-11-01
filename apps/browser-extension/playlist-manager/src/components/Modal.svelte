@@ -2,6 +2,7 @@
   import { untrack } from "svelte";
   import type { Snippet } from "svelte";
   import { lockPageScroll } from "../utils/modal-scroll";
+  import { trapTabKey } from "../utils/modal-focus";
   import Fa from "svelte-fa";
   import { faXmark } from "@fortawesome/free-solid-svg-icons";
 
@@ -15,6 +16,7 @@
     onclose,
     showHeader = true,
     headerAction,
+    footerBorder = true,
   }: {
     display?: boolean;
     children?: Snippet;
@@ -25,6 +27,7 @@
     onclose?: () => void;
     showHeader?: boolean;
     headerAction?: Snippet;
+    footerBorder?: boolean;
   } = $props();
 
   let dialog: HTMLDialogElement;
@@ -77,28 +80,7 @@
   });
 
   function containFocus(event: KeyboardEvent) {
-    if (event.key !== "Tab") return;
-    const controls = Array.from(
-      dialog.querySelectorAll<HTMLElement>(
-        'button:not(:disabled), a[href], input:not(:disabled):not([type="hidden"]), textarea:not(:disabled), select:not(:disabled), [tabindex]:not([tabindex="-1"])'
-      )
-    ).filter(
-      (element) =>
-        element.getClientRects().length > 0 && getComputedStyle(element).visibility !== "hidden"
-    );
-    const first = controls[0];
-    const last = controls[controls.length - 1];
-    if (!first) {
-      event.preventDefault();
-      return;
-    }
-    if (event.shiftKey && document.activeElement === first) {
-      event.preventDefault();
-      last.focus();
-    } else if (!event.shiftKey && document.activeElement === last) {
-      event.preventDefault();
-      first.focus();
-    }
+    if (trapTabKey(dialog, event)) event.preventDefault();
   }
 </script>
 
@@ -107,6 +89,7 @@
   class:drawer={size === "drawer"}
   class:small={size === "small"}
   class:wide={size === "wide"}
+  class:no-footer-border={!footerBorder}
   aria-label={title}
   onkeydown={containFocus}
   onpointerdown={handlePointerDown}
@@ -132,7 +115,7 @@
         {@render headerAction?.()}
       </div>
     {/if}
-    <div class="modal-body" tabindex="-1">
+    <div class="modal-body" class:has-footer={!!footer} tabindex="-1">
       {#if children}{@render children()}{/if}
       {@render footer?.()}
     </div>
@@ -178,6 +161,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 12px;
+    margin: 0;
     padding: 16px 20px;
     border-bottom: 1px solid var(--border-color);
     flex-shrink: 0;
@@ -228,12 +212,16 @@
     flex: 1;
   }
 
+  .modal-body.has-footer {
+    padding-bottom: 0;
+  }
+
   /* Sticky footer support for slotted footers */
   .modal-body :global(.modal-footer),
   .modal-body :global(.dialog-actions),
   .modal-body :global(.multisort-footer) {
     position: sticky;
-    bottom: -20px;
+    bottom: 0;
     margin: 0 -24px;
     padding: 16px 24px;
     background: var(--background-color);
@@ -242,13 +230,19 @@
     z-index: 1;
   }
 
+  dialog.no-footer-border .modal-body :global(.modal-footer),
+  dialog.no-footer-border .modal-body :global(.dialog-actions),
+  dialog.no-footer-border .modal-body :global(.multisort-footer) {
+    border-top: 0;
+  }
+
   dialog.drawer {
     margin: 0 auto 0 0;
     width: min(320px, calc(100% - 44px));
     height: 100vh;
     height: 100dvh;
     max-height: 100dvh;
-    border-radius: 0 16px 16px 0;
+    border-radius: 0;
     /* Slide-in animation */
     transform: translateX(-100%);
     transition:
@@ -294,6 +288,9 @@
   }
   .drawer .modal-body {
     padding: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
   }
   .drawer .modal-body :global(.modal-footer),
   .drawer .modal-body :global(.dialog-actions),
@@ -316,7 +313,7 @@
     .modal-body :global(.modal-footer),
     .modal-body :global(.dialog-actions),
     .modal-body :global(.multisort-footer) {
-      bottom: -16px;
+      bottom: 0;
       margin: 0 -16px;
       padding: 12px 16px;
     }

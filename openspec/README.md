@@ -13,8 +13,9 @@ was changed by setup. The official setup reference is https://openspec.dev/docs/
 - `.ai-sync/HANDOFF.md` and `PROGRESS.md`: current state/evidence, linking the active change.
 - Existing detailed plans/browser checklists remain referenced; do not duplicate or silently replace them.
 
-Current change: `complete-context-menu-acceptance`. Its planning artifacts are written;
-its acceptance tasks remain open. This imports existing scope, not release authorization.
+Current changes: `add-encrypted-cross-device-sync` and `dismiss-dialogs-on-outside-click`
+(both planning artifacts complete, no code yet). `complete-context-menu-acceptance` remains
+open for its acceptance evidence.
 
 ## Using it
 

@@ -32,7 +32,7 @@ The extension manifest requests the following permissions:
 - `alarms` — Schedule periodic background housekeeping (e.g., cache cleanup, optional background sync).
 - `identity` — Used **only** if you choose to sign in with Google OAuth for YouTube account sync. No sign-in is required to use the extension.
 
-A content script runs on `www.youtube.com/watch*` and `m.youtube.com/watch*` pages to support watch-progress tracking. Required host access is limited to `https://*.youtube.com/*`; user-invoked page import can temporarily access the selected page through `activeTab`. Thumbnail preservation separately requests optional `https://i.ytimg.com/*` access when enabled.
+A content script runs on YouTube watch pages (`*.youtube.com/watch*` and bare `youtube.com/watch*`, including `www.` and `m.` subdomains) to support watch-progress tracking. Required host access is limited to `https://*.youtube.com/*`; user-invoked page import can temporarily access the selected page through `activeTab`. Thumbnail preservation separately requests optional `https://i.ytimg.com/*` access when enabled.
 
 ---
 

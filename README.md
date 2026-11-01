@@ -103,7 +103,7 @@ in is not required for local playlist creation or watch-progress storage.
 | `contextMenus`                                | Add right-click playlist actions where supported.                                                                                                                                                                                                                                                             |
 | `identity`                                    | Run optional Google/Supabase OAuth flows on supported desktop browsers. Local features do not require an account; Firefox Android uses its supported tab/email alternatives.                                                                                                                                  |
 | `alarms`                                      | Schedule sync retries and background housekeeping.                                                                                                                                                                                                                                                            |
-| Host access: `https://*.youtube.com/*`        | Fetch metadata and run extractors on YouTube pages. The watch-tracking content script matches `www.youtube.com/watch*` and `m.youtube.com/watch*`.                                                                                                                                                            |
+| Host access: `https://*.youtube.com/*`        | Fetch metadata and run extractors on YouTube pages. The watch-tracking content script matches every YouTube watch page (`*.youtube.com/watch*` and bare `youtube.com/watch*`), including `www.` and `m.` subdomains.                                                                                          |
 | Optional host access: `https://i.ytimg.com/*` | Only requested when you enable saving thumbnail image bytes on this device. The current source includes this unreleased feature; the pending 1.1.1 store packages do not include it.                                                                                                                          |
 
 **Playback timestamps:** the YouTube watch-page content script reads playback
@@ -220,7 +220,7 @@ Use `./iypm.sh` at repository root for quick overview and operations:
 
 - **Version**: 1.2.1 — patch release prepared on `next`, awaiting owner to ship
 - **Chrome**: 1.1.1 in review (auto-publish on approval); 1.2.1 package ready
-- **Microsoft Edge**: 1.2.1 package ready; Partner Center listing pending
+- **Microsoft Edge**: 1.1.1 draft in Partner Center (never submitted); 1.2.1 package ready to upload
 - **Firefox Listed**: 1.1.1 (ID 6620554); 1.2.1 package ready
 - **Firefox Unlisted Test**: v1.2.0.1 (ID 6620940)
 - **All checks pass**: 195 tests, zero Svelte errors, clean builds, 90 E2E route checks

@@ -16,6 +16,8 @@
   --color-brand-danger-hover: #cc0000;
   --color-brand-success: #2ba640;
   --color-brand-warning: #f57c00;
+  --color-brand-pink: #e91e63;
+  --color-brand-purple: #9c27b0;
 
   /* Light Theme (Default) */
   --color-bg-primary: #ffffff;
@@ -228,6 +230,10 @@
   --touch-target-min: 44px;
   --touch-target-comfortable: 48px;
   --touch-target-large: 56px;
+
+  /* Shared header action sizing: one control size, one icon size. */
+  --header-control-size: var(--touch-target-min);
+  --header-icon-size: 18px;
 
   /* Icon button sizing */
   --icon-btn-size: 36px;

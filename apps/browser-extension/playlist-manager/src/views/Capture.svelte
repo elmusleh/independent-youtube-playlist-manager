@@ -259,21 +259,29 @@
         </p>{/if}
     {:else}<p role="status">Loading capture…</p>{/if}
     {#snippet footer()}
-      <button type="button" onclick={cancel}>Cancel</button>
-      {#if !result}<button type="button" onclick={submit} disabled={busy || !job || !destination}
-          >{job?.operation === "destination"
-            ? "Use destination"
-            : remote
-              ? "Sync"
-              : error
-                ? "Retry save"
-                : "Save locally"}</button
-        >{/if}
+      <div class="modal-footer capture-footer">
+        <button type="button" onclick={cancel}>Cancel</button>
+        {#if !result}<button type="button" onclick={submit} disabled={busy || !job || !destination}
+            >{job?.operation === "destination"
+              ? "Use destination"
+              : remote
+                ? "Sync"
+                : error
+                  ? "Retry save"
+                  : "Save locally"}</button
+          >{/if}
+      </div>
     {/snippet}
   </Modal>
 </main>
 
 <style>
+  .capture-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+  }
+
   label {
     display: block;
     margin-top: 1rem;

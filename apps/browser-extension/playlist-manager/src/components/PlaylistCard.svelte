@@ -3,7 +3,7 @@
   import { faListUl, faStar } from "@fortawesome/free-solid-svg-icons";
   import SimpleButton from "./SimpleButton.svelte";
   import ArchivedThumbnail from "./ArchivedThumbnail.svelte";
-  import SyncStatusIndicator from "./SyncStatusIndicator.svelte";
+  import CategoryBadge from "./CategoryBadge.svelte";
   import type { Playlist } from "../types/model";
 
   interface Action {
@@ -26,6 +26,7 @@
     onOpen: () => void;
     actions?: Action[];
     category?: string;
+    onCategoryClick?: (category?: string) => void;
   }
 
   const {
@@ -40,26 +41,8 @@
     onOpen,
     actions = [],
     category,
+    onCategoryClick,
   }: Props = $props();
-
-  function getCategoryBadge(category?: string) {
-    switch (category) {
-      case "local":
-        return { label: "Local", color: "var(--color-brand-primary)" };
-      case "youtube":
-        return { label: "YouTube", color: "var(--color-brand-danger)" };
-      case "liked":
-        return { label: "Liked", color: "var(--color-brand-pink)" };
-      case "uploaded":
-        return { label: "Uploaded", color: "var(--color-brand-purple)" };
-      case "account":
-        return { label: "Account", color: "var(--color-brand-warning)" };
-      default:
-        return null;
-    }
-  }
-
-  const badge = $derived(getCategoryBadge(category));
 </script>
 
 <div class="playlist-card">
@@ -78,19 +61,18 @@
       <Fa icon={faListUl} fw />
       {videoCount}
     </div>
-    <div class="status-overlay">
-      <SyncStatusIndicator {status} size="sm" />
-    </div>
     {#if showFavoriteBadge}
       <div class="favorite-overlay">
         <div class="favorite-badge"><Fa icon={faStar} fw /></div>
       </div>
     {/if}
-    {#if badge}
-      <div class="category-badge" style="background-color: {badge.color}">
-        {badge.label}
-      </div>
-    {/if}
+    <CategoryBadge
+      {category}
+      {status}
+      overlay={true}
+      clickable={!!onCategoryClick}
+      onclick={onCategoryClick ? () => onCategoryClick(category) : undefined}
+    />
   </button>
   <div class="playlist-details">
     <div class="playlist-title-row">
@@ -123,8 +105,8 @@
 
 <style>
   .playlist-card {
-    flex: 0 1 var(--card-min-width);
-    max-width: var(--card-min-width);
+    width: 100%;
+    max-width: 100%;
     border-radius: var(--radius-card);
     overflow: hidden;
     background: var(--color-bg-primary);
@@ -181,7 +163,7 @@
   }
 
   .view-overlay-text {
-    color: var(--color-text-inverse);
+    color: #ffffff;
     font-size: var(--font-size-sm);
     font-weight: var(--font-weight-semibold);
     background: rgba(0, 0, 0, 0.45);
@@ -195,7 +177,7 @@
     bottom: var(--space-2);
     right: var(--space-2);
     background: rgba(0, 0, 0, 0.85);
-    color: var(--color-text-inverse);
+    color: #ffffff;
     padding: var(--space-1) var(--space-2);
     border-radius: var(--radius-sm);
     font-size: var(--font-size-xs);
@@ -238,13 +220,6 @@
     text-align: left;
   }
 
-  .status-overlay {
-    position: absolute;
-    top: var(--space-2);
-    left: var(--space-2);
-    z-index: 2;
-  }
-
   .favorite-overlay {
     position: absolute;
     bottom: var(--space-2);
@@ -271,20 +246,6 @@
     flex-shrink: 0;
     padding-top: 3px;
     pointer-events: none;
-  }
-
-  .category-badge {
-    position: absolute;
-    top: var(--space-2);
-    right: var(--space-2);
-    color: var(--color-text-inverse);
-    font-size: var(--font-size-xs);
-    font-weight: var(--font-weight-bold);
-    padding: var(--space-1) var(--space-2);
-    border-radius: var(--radius-pill);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    z-index: 2;
   }
 
   .playlist-actions {

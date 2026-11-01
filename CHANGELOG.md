@@ -21,6 +21,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Shared background authority for playlist and builder writes with atomic revisions,
   conflict feedback and retry receipts. Add dependency-tree triage, runtime module packaging
   verification and disposable safety mutation checks. Verification is pending Hermes.
+- Imported videos keep their duration badge: the label already rendered in the page DOM is
+  converted to ISO-8601 and cached, instead of waiting for a per-video fetch. The watch
+  tracker also matches every `*.youtube.com/watch*` page. `shared/page-service.js` is the
+  single typed accessor for worker-published services, which repairs the stale
+  `capture-import.d.ts` declaration that made `npm run check` fail.
 
 ### Changed
 

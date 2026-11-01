@@ -7,14 +7,13 @@
     faAnglesDown,
     faListCheck,
     faCheckDouble,
-    faChevronDown,
     faLayerGroup,
     faArrowsUpDown,
     faTrash,
     faXmark,
   } from "@fortawesome/free-solid-svg-icons";
   import SimpleButton from "../SimpleButton.svelte";
-  import { onDestroy } from "svelte";
+  import SelectionMenu, { type SelectionMenuItem } from "./SelectionMenu.svelte";
 
   let {
     selectedCount = 0,
@@ -46,25 +45,64 @@
     onCancel: () => void;
   } = $props();
 
-  let showMarkMenu = $state(false);
-  let showMoveMenu = $state(false);
+  let nothingSelected = $derived(selectedCount === 0);
 
-  function closeAll() {
-    showMarkMenu = false;
-    showMoveMenu = false;
-  }
+  let selectItems: SelectionMenuItem[] = $derived([
+    {
+      id: "all",
+      icon: faCheckDouble,
+      label: isAllSelected ? "Deselect all" : "Select all",
+      onSelect: onToggleSelectAll,
+    },
+    {
+      id: "first-50",
+      icon: faListCheck,
+      label: "First 50 videos",
+      onSelect: onSelectFirst50,
+    },
+    {
+      id: "above",
+      icon: faArrowUp,
+      label: "All videos above",
+      disabled: nothingSelected,
+      onSelect: onSelectAbove,
+    },
+    {
+      id: "below",
+      icon: faArrowDown,
+      label: "All videos below",
+      disabled: nothingSelected,
+      onSelect: onSelectBelow,
+    },
+    {
+      id: "range-above",
+      icon: faAnglesUp,
+      label: "Select N videos above…",
+      disabled: nothingSelected,
+      dividerBefore: true,
+      onSelect: onOpenRangeSelectAbove,
+    },
+    {
+      id: "range-below",
+      icon: faAnglesDown,
+      label: "Select N videos below…",
+      disabled: nothingSelected,
+      onSelect: onOpenRangeSelectBelow,
+    },
+  ]);
 
-  function handleClickOutside(e: MouseEvent) {
-    const target = e.target as HTMLElement;
-    if (!target.closest(".dropdown-container")) {
-      closeAll();
-    }
-  }
-
-  window.addEventListener("click", handleClickOutside);
-  onDestroy(() => {
-    window.removeEventListener("click", handleClickOutside);
-  });
+  let moveItems: SelectionMenuItem[] = $derived([
+    { id: "top", icon: faArrowUp, label: "Move to Top", onSelect: onMoveToTop },
+    { id: "bottom", icon: faArrowDown, label: "Move to Bottom", onSelect: onMoveToBottom },
+    {
+      id: "copy-move",
+      icon: faLayerGroup,
+      label: "Copy / Move to playlist…",
+      dividerBefore: true,
+      mobileOnly: true,
+      onSelect: onOpenCopyMove,
+    },
+  ]);
 </script>
 
 <div class="selection-bar">
@@ -77,136 +115,34 @@
         onchange={onToggleSelectAll}
       />
     </label>
-    <span>{selectedCount} selected</span>
+    <span
+      ><span class="selection-count">{selectedCount}</span><span class="selection-word">
+        selected</span
+      ></span
+    >
   </div>
 
   <div class="selection-actions">
-    <div class="dropdown-container">
-      <SimpleButton
-        onclick={() => {
-          const next = !showMarkMenu;
-          closeAll();
-          showMarkMenu = next;
-        }}
-        secondary
-      >
-        <Fa icon={faListCheck} fw />
-        <span>Select</span>
-        <Fa icon={faChevronDown} fw />
-      </SimpleButton>
-      {#if showMarkMenu}
-        <div class="dropdown-menu">
-          <button
-            onclick={() => {
-              onToggleSelectAll();
-              closeAll();
-            }}
-          >
-            <Fa icon={faCheckDouble} fw />
-            <span>{isAllSelected ? "Deselect all" : "Select all"}</span>
-          </button>
-          <button
-            onclick={() => {
-              onSelectFirst50();
-              closeAll();
-            }}
-          >
-            <Fa icon={faListCheck} fw />
-            <span>First 50 videos</span>
-          </button>
-          <button
-            onclick={() => {
-              onSelectAbove();
-              closeAll();
-            }}
-            disabled={selectedCount === 0}
-            class={selectedCount === 0 ? "disabled-option" : ""}
-          >
-            <Fa icon={faArrowUp} fw />
-            <span>All videos above</span>
-          </button>
-          <button
-            onclick={() => {
-              onSelectBelow();
-              closeAll();
-            }}
-            disabled={selectedCount === 0}
-            class={selectedCount === 0 ? "disabled-option" : ""}
-          >
-            <Fa icon={faArrowDown} fw />
-            <span>All videos below</span>
-          </button>
-          <div class="dropdown-divider"></div>
-          <button
-            onclick={() => {
-              onOpenRangeSelectAbove();
-              closeAll();
-            }}
-            disabled={selectedCount === 0}
-            class={selectedCount === 0 ? "disabled-option" : ""}
-          >
-            <Fa icon={faAnglesUp} fw />
-            <span>Select N videos above...</span>
-          </button>
-          <button
-            onclick={() => {
-              onOpenRangeSelectBelow();
-              closeAll();
-            }}
-            disabled={selectedCount === 0}
-            class={selectedCount === 0 ? "disabled-option" : ""}
-          >
-            <Fa icon={faAnglesDown} fw />
-            <span>Select N videos below...</span>
-          </button>
-        </div>
-      {/if}
-    </div>
+    <SelectionMenu label="Select" icon={faListCheck} items={selectItems} />
 
-    <SimpleButton onclick={onOpenCopyMove} secondary disabled={selectedCount === 0}>
+    <SimpleButton
+      onclick={onOpenCopyMove}
+      secondary
+      disabled={nothingSelected}
+      className="playlist-action"
+    >
       <Fa icon={faLayerGroup} fw />
       <span>Playlist</span>
     </SimpleButton>
 
-    <div class="dropdown-container">
-      <SimpleButton
-        onclick={() => {
-          const next = !showMoveMenu;
-          closeAll();
-          showMoveMenu = next;
-        }}
-        secondary
-        disabled={selectedCount === 0}
-      >
-        <Fa icon={faArrowsUpDown} fw />
-        <span>Move</span>
-        <Fa icon={faChevronDown} fw />
-      </SimpleButton>
-      {#if showMoveMenu}
-        <div class="dropdown-menu">
-          <button
-            onclick={() => {
-              onMoveToTop();
-              closeAll();
-            }}
-          >
-            <Fa icon={faArrowUp} fw />
-            <span>Move to Top</span>
-          </button>
-          <button
-            onclick={() => {
-              onMoveToBottom();
-              closeAll();
-            }}
-          >
-            <Fa icon={faArrowDown} fw />
-            <span>Move to Bottom</span>
-          </button>
-        </div>
-      {/if}
-    </div>
+    <SelectionMenu
+      label="Move"
+      icon={faArrowsUpDown}
+      items={moveItems}
+      disabled={nothingSelected}
+    />
 
-    <SimpleButton onclick={onDelete} danger disabled={selectedCount === 0}>
+    <SimpleButton onclick={onDelete} danger disabled={nothingSelected}>
       <Fa icon={faTrash} fw />
       <span>Delete</span>
     </SimpleButton>
@@ -262,79 +198,53 @@
     justify-content: flex-end;
   }
 
-  .dropdown-container {
-    position: relative;
-    display: inline-block;
-  }
-
-  .dropdown-menu {
-    position: absolute;
-    top: 100%;
-    right: 0;
-    margin-top: 8px;
-    background: var(--background-color);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
-    z-index: 2000;
-    min-width: 190px;
-    overflow: hidden;
-    animation: fadeInScale 0.15s ease-out;
-    transform-origin: top right;
-  }
-
-  @keyframes fadeInScale {
-    from {
-      opacity: 0;
-      transform: scale(0.95) translateY(-10px);
-    }
-    to {
-      opacity: 1;
-      transform: scale(1) translateY(0);
-    }
-  }
-
-  .dropdown-menu button {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    width: 100%;
-    padding: 12px 16px;
-    border: none;
-    background: none;
-    color: var(--text-color);
-    font-size: 14px;
-    cursor: pointer;
-    text-align: left;
-    transition: background 0.2s;
-  }
-
-  .dropdown-menu button:hover {
-    background: var(--hover-color);
-  }
-
-  .dropdown-menu button.disabled-option {
-    opacity: 0.5;
-    pointer-events: none;
-    cursor: not-allowed;
-  }
-
-  .dropdown-divider {
-    height: 1px;
-    background: var(--border-color);
-    margin: 4px 0;
-  }
-
   @media (max-width: 900px) {
     .selection-bar {
-      flex-direction: column;
-      gap: 12px;
-      align-items: flex-start;
-      padding: 12px;
+      flex-direction: row;
+      flex-wrap: nowrap;
+      gap: 8px;
+      align-items: center;
+      padding: 6px 8px;
     }
+
+    .selection-info {
+      flex-shrink: 0;
+      gap: 4px;
+      font-size: 13px;
+    }
+
     .selection-actions {
-      width: 100%;
+      width: auto;
+      flex-wrap: nowrap;
       justify-content: flex-start;
+      flex-shrink: 0;
+      gap: 4px;
+    }
+
+    .selection-actions :global(.btn) {
+      width: var(--header-control-size);
+      min-width: var(--header-control-size);
+      height: var(--header-control-size);
+      padding: 0;
+      border-radius: 50%;
+    }
+
+    .selection-actions :global(.btn .content span:not(.sort-badge)) {
+      display: none;
+    }
+
+    .selection-actions :global(.btn .content .chevron) {
+      display: none;
+    }
+
+    .selection-actions :global(.playlist-action) {
+      display: none;
+    }
+  }
+
+  @media (max-width: 360px) {
+    .selection-word {
+      display: none;
     }
   }
 </style>

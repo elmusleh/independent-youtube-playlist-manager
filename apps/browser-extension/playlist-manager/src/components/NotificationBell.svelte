@@ -170,8 +170,18 @@
     position: relative;
   }
 
-  :global(.notification-bell) {
+  .notification-container :global(.notification-bell) {
     position: relative;
+    width: var(--header-control-size);
+    min-width: var(--header-control-size);
+    height: var(--header-control-size);
+    padding: 0;
+  }
+
+  .notification-container :global(.notification-bell svg) {
+    width: var(--header-icon-size);
+    height: var(--header-icon-size);
+    flex-shrink: 0;
   }
 
   .notification-dropdown {

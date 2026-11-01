@@ -4,7 +4,6 @@
   import { push } from "svelte-spa-router";
   import { onDestroy } from "svelte";
   import { requestConfirm } from "../stores/confirmation";
-  import ReleaseNotesModal from "./ReleaseNotesModal.svelte";
   import NotificationBell from "./NotificationBell.svelte";
   import HeaderSearchBar from "./HeaderSearchBar.svelte";
   import ProfileDropdown from "./ProfileDropdown.svelte";
@@ -27,8 +26,8 @@
   let loadingAuth = $state(false);
   let channelInfo = $state({ title: "User", thumbnail: "", handle: "" });
   let missingCredentials = $state(false);
-  let showReleaseNotes = $state(false);
   let githubStars: string | null = $state(sessionStorage.getItem("yph_github_stars"));
+  const version = (window as any).browser?.runtime?.getManifest?.().version || "";
 
   async function fetchGithubStars() {
     try {
@@ -193,7 +192,7 @@
   }
 </script>
 
-<header>
+<header class:signed-out={!signedIn}>
   <div class="container">
     <div class="left">
       <button
@@ -221,7 +220,7 @@
         />
         <div class="brand-info">
           <span class="brand-name">Playlist Manager</span>
-          <span class="version">v{browser.runtime.getManifest().version}</span>
+          <span class="version">v{version}</span>
         </div>
       </div>
     </div>
@@ -248,7 +247,6 @@
         {githubStars}
         onSignOut={handleDropdownSignOut}
         onSignIn={handleDropdownSignIn}
-        onToggleReleaseNotes={() => (showReleaseNotes = true)}
       />
 
       {#if !signedIn}
@@ -260,8 +258,6 @@
     </div>
   </div>
 </header>
-
-<ReleaseNotesModal bind:display={showReleaseNotes} />
 
 <style>
   header {
@@ -299,8 +295,8 @@
     background: none;
     border: none;
     cursor: pointer;
-    width: 44px;
-    height: 44px;
+    width: var(--header-control-size);
+    height: var(--header-control-size);
     border-radius: 50%;
     align-items: center;
     justify-content: center;
@@ -355,6 +351,14 @@
     font-weight: 400;
   }
 
+  .menu-toggle :global(svg),
+  .create-btn :global(svg),
+  .sign-in-btn :global(svg) {
+    width: var(--header-icon-size) !important;
+    height: var(--header-icon-size) !important;
+    flex-shrink: 0;
+  }
+
   .right {
     display: flex;
     align-items: center;
@@ -363,7 +367,7 @@
   }
 
   .sign-in-btn {
-    height: 44px;
+    height: var(--header-control-size);
     padding: 0 16px;
     margin: 0;
     display: flex;
@@ -397,7 +401,7 @@
   }
 
   .create-btn {
-    height: 44px;
+    height: var(--header-control-size);
     padding: 0 16px;
     margin: 0;
     display: flex;
@@ -430,6 +434,39 @@
     outline-offset: 2px;
   }
 
+  @media (max-width: 1023px) {
+    .brand-info {
+      display: none;
+    }
+
+    .create-btn {
+      width: var(--header-control-size);
+      height: var(--header-control-size);
+      padding: 0;
+      justify-content: center;
+    }
+
+    .create-btn span {
+      display: none;
+    }
+
+    .sign-in-btn {
+      width: var(--header-control-size);
+      height: var(--header-control-size);
+      padding: 0;
+      justify-content: center;
+      display: none;
+    }
+
+    .sign-in-btn span {
+      display: none;
+    }
+
+    header.signed-out :global(.notification-container) {
+      display: none;
+    }
+  }
+
   @media (max-width: 768px) {
     header {
       height: var(--app-header-height);
@@ -437,16 +474,15 @@
 
     .container {
       padding: 0 12px;
-      flex-wrap: wrap;
-      row-gap: 4px;
+      flex-wrap: nowrap;
+    }
+
+    .right {
+      margin-left: 8px;
     }
 
     .menu-toggle {
       display: flex;
-    }
-
-    .brand-info {
-      display: none;
     }
 
     .logo {
@@ -456,27 +492,6 @@
     .brand-logo {
       width: 28px;
       height: 28px;
-    }
-
-    .create-btn span {
-      display: none;
-    }
-
-    .create-btn {
-      width: 44px;
-      height: 44px;
-      padding: 0;
-      justify-content: center;
-    }
-
-    .sign-in-btn {
-      width: 44px;
-      height: 44px;
-      padding: 0;
-      justify-content: center;
-    }
-    .sign-in-btn span {
-      display: none;
     }
   }
 
@@ -488,31 +503,6 @@
     .brand-logo {
       width: 24px;
       height: 24px;
-    }
-    .create-btn {
-      width: 44px;
-      height: 44px;
-    }
-    .sign-in-btn {
-      width: 44px;
-      height: 44px;
-    }
-    .menu-toggle {
-      width: 44px;
-      height: 44px;
-    }
-  }
-
-  /* Large phones (390px+) - show brand name if space permits */
-  @media (min-width: 390px) and (max-width: 768px) {
-    .brand-info {
-      display: flex;
-    }
-    .brand-name {
-      font-size: 16px;
-    }
-    .version {
-      display: none;
     }
   }
 </style>
