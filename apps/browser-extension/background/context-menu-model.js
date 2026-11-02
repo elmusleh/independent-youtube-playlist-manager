@@ -1,4 +1,3 @@
-import { effectiveDestinationMode, resolveDestination } from "../shared/quick-add.js";
 export const ROOT = "yphContextRoot";
 export const SCOPES = [
   ["current", "Only this video tab"],
@@ -33,10 +32,6 @@ export function staleMenuIds(desired, previousIds) {
 export function menuModel(settings, destinations) {
   if (settings.disableContextMenu) return [];
   const savedAllowed = !settings.disableContextSaved;
-  // Label the menu with the destination the next action will really use.
-  const selected = resolveDestination(effectiveDestinationMode(settings), settings, destinations);
-  const selectedDestId = selected?.id ?? null;
-  const label = (selected?.title || "Choose playlist").slice(0, 60);
   const items = [{ id: ROOT, title: "IYPM", contexts }];
   const item = (id, title, extra = {}) =>
     items.push({ id: `yph:${id}`, parentId: ROOT, title, contexts, ...extra });
