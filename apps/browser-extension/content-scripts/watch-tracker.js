@@ -13,6 +13,7 @@
   let lastTimeUpdateTick = 0;
   let debounceTimer = null;
   let isSaving = false;
+  let resumeTimer = null;
 
   async function log(level, message, /** @type {any} */ details = null) {
     try {
@@ -70,6 +71,11 @@
     if (debounceTimer) {
       clearTimeout(debounceTimer);
       debounceTimer = null;
+    }
+
+    if (resumeTimer) {
+      clearInterval(resumeTimer);
+      resumeTimer = null;
     }
 
     document.getElementById("yph-native-panel")?.remove();
@@ -142,15 +148,31 @@
           videoId: currentVideoId,
         });
         if (history?.t && !history.isCompleted) {
-          const doResume = () => {
+          const resumeTarget = history.t;
+          let resumeDone = false;
+          const tryResume = () => {
+            if (resumeDone) return;
             const video = getVideo();
-            if (!video) return;
-            log("INFO", `Auto-resuming video to ${history.t}s`);
-            video.currentTime = history.t;
+            // Wait for the real video to be ready and for any pre-roll ad to finish —
+            // both the element and the ad state change during mobile load.
+            if (!video || video.readyState < 1 || isAdShowing()) return;
+            resumeDone = true;
+            if (resumeTimer) clearInterval(resumeTimer);
+            resumeTimer = null;
+            log("INFO", `Auto-resuming video to ${resumeTarget}s`);
+            video.currentTime = resumeTarget;
           };
-          const video = getVideo();
-          if (video && video.readyState >= 1) doResume();
-          else if (video) video.addEventListener("loadedmetadata", doResume, { once: true });
+          // Poll every 500ms instead of a one-shot loadedmetadata listener: YouTube
+          // replaces the <video> element around pre-roll ads, so a listener attached to
+          // the first element never fires on its replacement.
+          tryResume();
+          resumeTimer = setInterval(tryResume, 500);
+          setTimeout(() => {
+            if (resumeTimer) {
+              clearInterval(resumeTimer);
+              resumeTimer = null;
+            }
+          }, 60000);
         }
       } catch {
         /* ignore */
@@ -292,16 +314,18 @@
       lastSaveTimestamp = now;
       lastSavedTimeValue = t;
 
-      // Get video title and channel from page
+      // Get video title and channel from page. The selectors cover desktop YouTube
+      // (ytd-*), the Chrome mobile site (slim-*) and the Firefox mobile site
+      // (ytVideoMetadataViewModel* / yt-formatted-string), which all use different markup.
       let videoTitle = "";
       let channelName = "";
       try {
         const titleEl = document.querySelector(
-          "h1.ytd-watch-metadata, .title.ytd-video-primary-info-renderer, .slim-video-metadata-title, .slim-video-information-title"
+          "h1.ytd-watch-metadata, .title.ytd-video-primary-info-renderer, .slim-video-metadata-title, .slim-video-information-title, .ytVideoMetadataViewModelTitle"
         );
         videoTitle = titleEl?.textContent?.trim() || "";
         const channelEl = document.querySelector(
-          "#text.ytd-channel-name, ytd-video-owner-renderer #channel-name #text, .slim-owner-channel-name, .slim-video-information-channel"
+          "#text.ytd-channel-name, ytd-video-owner-renderer #channel-name #text, .slim-owner-channel-name, .slim-video-information-channel, a.yt-formatted-string[href*='/channel/']"
         );
         channelName = channelEl?.textContent?.trim() || "";
       } catch {
