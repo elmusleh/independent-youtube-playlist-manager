@@ -227,9 +227,9 @@ async function main() {
     const syncBody = await page.locator("body").innerText();
     for (const label of [
       "IYPM hosted (Beta)",
+      "Beta · coming soon",
       "Your own Supabase project",
       "File / Syncthing",
-      "Works everywhere",
     ]) {
       assert(syncBody.includes(label), `Sync view is missing "${label}"`);
     }

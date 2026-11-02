@@ -3,11 +3,8 @@
   import Fa from "svelte-fa";
   import {
     faArrowsRotate,
-    faKey,
-    faShieldHalved,
-    faCopy,
-    faCheck,
     faLink,
+    faCheck,
     faCircleCheck,
     faCircleExclamation,
   } from "@fortawesome/free-solid-svg-icons";
@@ -16,21 +13,19 @@
   import StickyHeader from "../components/StickyHeader.svelte";
   import SaveStatus from "../components/SaveStatus.svelte";
   import { StatusManager } from "../services/status-manager.svelte";
-  import BackendSection from "../components/sync/BackendSection.svelte";
+  import SyncKeyCard from "../components/sync/SyncKeyCard.svelte";
+  import SupabaseCard from "../components/sync/SupabaseCard.svelte";
+  import RelayCard from "../components/sync/RelayCard.svelte";
+  import FileSyncCard from "../components/sync/FileSyncCard.svelte";
   import {
     loadSyncConfig,
     saveSyncConfig,
     DEFAULT_SYNC_CONFIG,
+    isRelayConfigured,
     type SyncConfig,
     type SyncBackend,
   } from "../services/sync/sync-config.js";
   import { detectCapabilities } from "../services/sync/capabilities.js";
-  import {
-    generateSyncKey,
-    formatSyncKey,
-    isValidSyncKey,
-    normalizeSyncKey,
-  } from "../services/sync/sync-key.js";
   import { storeFolderHandle } from "../services/sync/file-sync-service.js";
   import { getSyncStatus, triggerSyncNow, startPolling } from "../services/sync-manager.js";
 
@@ -41,9 +36,6 @@
     ...DEFAULT_SYNC_CONFIG,
     content: { ...DEFAULT_SYNC_CONFIG.content },
   });
-  let inputKey = $state("");
-  let copied = $state(false);
-  let error = $state("");
   let lastSyncedAt = $state<number | null>(null);
   let lastError = $state<string | null>(null);
   let lastSyncSummary = $state<string | null>(null);
@@ -58,12 +50,11 @@
     return () => clearInterval(timer);
   });
 
-  const syncIsOn = $derived(!!(config.syncKey && config.backend));
+  const syncIsOn = $derived(!!(config.syncKey && config.backends.length > 0));
 
   function hintFor(c: SyncConfig): string | null {
     if (!c.syncKey) return "Generate or paste a sync key to begin.";
-    if (!c.backend) return "Choose how your data travels to start syncing.";
-    if (c.backend === "relay") return "Relay not configured — use BYO or File.";
+    if (c.backends.length === 0) return "Turn on a sync option below to start syncing.";
     return null;
   }
   const setupHint = $derived(hintFor(config));
@@ -88,46 +79,11 @@
     isSyncing = s.isSyncing;
   }
 
-  function generate() {
-    config.syncKey = generateSyncKey();
-    inputKey = "";
-    copied = false;
-    error = "";
-    persist();
-  }
-
-  function saveEntered() {
-    const normalized = normalizeSyncKey(inputKey);
-    if (!isValidSyncKey(normalized)) {
-      error = "That is not a valid sync key. A key looks like ABCDE-FGHJK-MNPQR-STVWX.";
-      return;
-    }
-    config.syncKey = formatSyncKey(normalized);
-    inputKey = "";
-    error = "";
-    copied = false;
-    persist();
-  }
-
-  async function copyKey() {
-    try {
-      await navigator.clipboard.writeText(config.syncKey ?? "");
-      copied = true;
-      setTimeout(() => (copied = false), 2000);
-    } catch {
-      error = "Could not copy. Select and copy the key manually.";
-    }
-  }
-
-  function clearKey() {
-    config.syncKey = null;
-    error = "";
-    persist();
-  }
-
-  function setBackend(backend: SyncBackend) {
-    config.backend = backend;
-    error = "";
+  function toggleBackend(backend: SyncBackend, enabled: boolean) {
+    const set = new Set(config.backends);
+    if (enabled) set.add(backend);
+    else set.delete(backend);
+    config.backends = [...set];
     persist();
   }
 
@@ -217,71 +173,30 @@
     </section>
 
     <div class="settings-grid">
-      <BackendSection
-        {config}
-        {caps}
-        onSetBackend={setBackend}
-        onChooseFolder={chooseFolder}
+      <RelayCard
+        enabled={config.backends.includes("relay")}
+        ready={isRelayConfigured()}
+        onToggle={(v) => toggleBackend("relay", v)}
+      />
+
+      <SupabaseCard
+        enabled={config.backends.includes("supabase-byo")}
+        url={config.supabaseUrl}
+        key={config.supabaseKey}
+        onToggle={(v) => toggleBackend("supabase-byo", v)}
         onSetUrl={setUrl}
         onSetKey={setKey}
       />
 
+      <FileSyncCard
+        enabled={config.backends.includes("file")}
+        {caps}
+        onToggle={(v) => toggleBackend("file", v)}
+        onChooseFolder={chooseFolder}
+      />
+
       <!-- Your sync key -->
-      <section class="card">
-        <h3><Fa icon={faShieldHalved} /> Your sync key</h3>
-        <p class="sub-text">
-          Pairing = using the <strong>same key</strong> on every device. Generate one here, or paste
-          the key from another device — including your phone. No account, no separate code. Keep it
-          secret: <strong>lose the key and your data cannot be recovered.</strong>
-        </p>
-        {#if config.syncKey}
-          <div class="key-display">
-            <code class="key-value">{config.syncKey}</code>
-            <div class="key-actions">
-              <SimpleButton secondary onclick={copyKey}>
-                <Fa icon={copied ? faCheck : faCopy} />
-                {copied ? "Copied" : "Copy"}
-              </SimpleButton>
-              <SimpleButton secondary onclick={generate}>
-                <Fa icon={faArrowsRotate} /> New key
-              </SimpleButton>
-            </div>
-          </div>
-          <div class="field">
-            <input
-              type="text"
-              bind:value={inputKey}
-              placeholder="Paste a key from another device…"
-              aria-label="Sync key"
-            />
-            <SimpleButton primary onclick={saveEntered}>
-              <Fa icon={faCheck} /> Use this key
-            </SimpleButton>
-          </div>
-          <button type="button" class="link-btn" onclick={clearKey}>Remove key</button>
-        {:else}
-          <div class="key-actions">
-            <SimpleButton primary onclick={generate}>
-              <Fa icon={faKey} /> Generate a key
-            </SimpleButton>
-          </div>
-          <div class="field">
-            <label for="enter-key">…or paste a key from another device</label>
-            <input
-              id="enter-key"
-              type="text"
-              bind:value={inputKey}
-              placeholder="ABCDE-FGHJK-MNPQR-STVWX"
-            />
-            <SimpleButton secondary onclick={saveEntered}>
-              <Fa icon={faCheck} /> Pair with this key
-            </SimpleButton>
-          </div>
-        {/if}
-        {#if error}
-          <p class="sync-error"><Fa icon={faCircleExclamation} /> {error}</p>
-        {/if}
-      </section>
+      <SyncKeyCard {config} onPersist={persist} />
 
       <!-- What to sync -->
       <section class="card">

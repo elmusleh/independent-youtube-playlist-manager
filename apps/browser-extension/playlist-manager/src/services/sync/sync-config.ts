@@ -20,8 +20,9 @@ export type SyncContentSelection = {
 
 export type SyncConfig = {
   syncKey: string | null;
-  backend: SyncBackend | null;
-  /** User-supplied endpoint; empty means "use the built-in relay". */
+  /** Enabled sync backends (more than one = mirror to each). */
+  backends: SyncBackend[];
+  /** User-supplied Supabase endpoint for the "supabase-byo" backend. */
   supabaseUrl: string;
   supabaseKey: string;
   content: SyncContentSelection;
@@ -44,7 +45,7 @@ const DEVICE_ID_KEY = "yph_sync_device_id";
 
 export const DEFAULT_SYNC_CONFIG: SyncConfig = {
   syncKey: null,
-  backend: null,
+  backends: [],
   supabaseUrl: "",
   supabaseKey: "",
   content: { playlists: true, settings: false, history: false },
@@ -119,14 +120,25 @@ export async function getOrCreateDeviceId(): Promise<string> {
 
 export async function loadSyncConfig(): Promise<SyncConfig> {
   try {
-    const stored = (await storageArea().get(KEY)) as Partial<SyncConfig> | null;
+    const stored = (await storageArea().get(KEY)) as
+      | (Partial<SyncConfig> & {
+          backend?: SyncBackend | null;
+        })
+      | null;
     if (!stored) return structuredClone(DEFAULT_SYNC_CONFIG);
     // Deep-merge the nested `content` object so a config saved by an older build
     // (missing settings/history) never loses the user's new toggles.
     const content = { ...DEFAULT_SYNC_CONFIG.content, ...(stored.content ?? {}) };
+    // Migrate the old single `backend` field to the new `backends` array.
+    const backends = Array.isArray(stored.backends)
+      ? stored.backends
+      : stored.backend
+        ? [stored.backend]
+        : [];
     return {
       ...DEFAULT_SYNC_CONFIG,
       ...stored,
+      backends,
       content,
       knownDevices: Array.isArray(stored.knownDevices) ? stored.knownDevices : [],
       syncRevision: typeof stored.syncRevision === "number" ? stored.syncRevision : 0,

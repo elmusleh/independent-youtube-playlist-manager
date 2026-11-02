@@ -169,6 +169,43 @@
   border: 1px solid var(--color-brand-warning);
 }
 
+.card.enabled {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 1px var(--primary-color) inset;
+}
+
+.backend-card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.backend-card-header > :global(svg) {
+  color: var(--primary-color);
+  font-size: 18px;
+}
+
+.backend-card-title {
+  flex: 1;
+  min-width: 0;
+}
+
+.backend-card-title h3 {
+  margin: 0;
+}
+
+.backend-card-title .sub-text {
+  display: block;
+  margin-top: 2px;
+}
+
+.backend-card-header input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--primary-color);
+  cursor: pointer;
+}
+
 .sync-error {
   color: var(--color-brand-danger);
   font-size: var(--font-size-sm, 13px);
