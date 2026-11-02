@@ -297,11 +297,11 @@
       let channelName = "";
       try {
         const titleEl = document.querySelector(
-          "h1.ytd-watch-metadata, .title.ytd-video-primary-info-renderer, .slim-video-metadata-title"
+          "h1.ytd-watch-metadata, .title.ytd-video-primary-info-renderer, .slim-video-metadata-title, .slim-video-information-title"
         );
         videoTitle = titleEl?.textContent?.trim() || "";
         const channelEl = document.querySelector(
-          "#text.ytd-channel-name, ytd-video-owner-renderer #channel-name #text, .slim-owner-channel-name"
+          "#text.ytd-channel-name, ytd-video-owner-renderer #channel-name #text, .slim-owner-channel-name, .slim-video-information-channel"
         );
         channelName = channelEl?.textContent?.trim() || "";
       } catch {
