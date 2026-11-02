@@ -16,11 +16,29 @@ Read in this order, and stop when you have what you need:
 | 4   | `docs/INDEX.md`        | Map of every other document.                                                                                         |
 | 5   | `.ai-sync/HISTORY.md`  | Only when you need the reasoning behind an old decision. Frozen.                                                     |
 
+**On start, pin the session identity and take the editing lock — before touching anything:**
+
+```bash
+git fetch --prune --all                                          # ALWAYS first
+node packages/build-tools/agent-lock.js acquire --agent hermes --branch "$(git branch --show-current)"
+git branch --show-current && git rev-parse --short HEAD          # record both — the session's identity
+gh pr list --state open                                          # note any PR already touching your planned files
+```
+
+Re-check `git branch --show-current` + `git rev-parse HEAD` before **every** commit. If
+either moved (a concurrent session switched the checkout), stop, re-read `HANDOFF.md`,
+and tell the owner before continuing. If an open PR already owns files you plan to edit,
+coordinate first (declare files + branch in `PLAN.md`) — do not discover the overlap at
+merge time.
+
 **The repo is the truth, not these files.** If a document disagrees with code, tests or
 `git log`, the document is stale: fix it in the same PR rather than working around it.
 
 **On stop, update `.ai-sync/HANDOFF.md`** — state, not narrative — and tick off
 `PROGRESS.md`. Append to `HISTORY.md` only when retiring detail from `HANDOFF.md`.
+Update these shared files **once, at stop, under the editing lock** — they are
+single-writer. Mid-session detail belongs in `.ai-sync/sessions/<date>-<slug>.md`; two
+sessions editing `HANDOFF`/`PROGRESS` concurrently is what produces their merge conflicts.
 
 **Every session MUST end with a commit — never leave implementation work uncommitted.**
 After implementing: (1) run `npm run check` and `npm run build` (evidence, not
@@ -30,6 +48,10 @@ the commit SHA; and (4) explicitly warn the owner of any branch change you obser
 (e.g. a concurrent session moved the checkout) and of the current PR status. Leaving
 edits in the working tree across sessions risks losing them to — or clobbering — a
 parallel agent.
+
+`AGENTS.md` is owner-approval-gated: writing it may require explicit consent. If a merge
+conflict involves `AGENTS.md`, resolve it **before** the merge and flag it to the owner —
+never leave it to mid-merge.
 
 ## UI consistency
 
@@ -85,7 +107,9 @@ switch another worker's checkout or merge the current unfinished feature.
 ## Worktree coordination
 
 Follow `.ai-sync/AGENT_WORKFLOW.md` for independent implementation worktrees and
-cross-agent handoffs. Reuse a suitable worktree for the same change; keep one writer
+cross-agent handoffs. **Concurrent agents work in separate worktrees, never a shared
+checkout — that is the default.** The editing lock below is the fallback when a shared
+checkout is unavoidable. Reuse a suitable worktree for the same change; keep one writer
 per worktree, and verify prerequisites exist in its starting commit. Uncommitted and
 untracked work does not transfer automatically. Record the absolute path/branch/base
 and owners in the templates; reviewers and Hermes must use that exact checkout.
@@ -113,6 +137,8 @@ is never overridden. Release refuses a foreign pid unless `--force` is explicit.
 
 ```bash
 git fetch --prune --all   # ALWAYS first. Drops refs to branches deleted on the remote.
+node packages/build-tools/agent-lock.js acquire --agent hermes --branch "$(git branch --show-current)"
+git branch --show-current && git rev-parse --short HEAD   # pin identity; re-check before every commit
 npm run check          # ALWAYS run this first. Lint → format:check → test → file-size → svelte-check. All clear? Proceed.
 npm run format         # Auto-format everything before committing.
 npm run lint:fix       # ESLint auto-fix (handles unused-var prefix, console cleanup).
@@ -508,6 +534,18 @@ npm run test:extension # when the change touches a view, route or shared compone
 
 The PR body must state: what changed, why, the exact commands run and their real result,
 and anything that was **not** verified. "Tests pass" without output is not evidence.
+
+### Before merging a PR
+
+`next` has required status checks **and** required conversation resolution, so a PR can
+be `BLOCKED` while still `MERGEABLE`. Check the gate before attempting a merge:
+
+```bash
+gh pr view <n> --json mergeStateStatus   # must be CLEAN; BLOCKED = resolve below first
+gh pr checks <n>                          # every required check green
+# required_conversation_resolution is on → resolve every review thread (fix the
+# finding, push, then resolve via UI/API). Never admin-bypass a failing check.
+```
 
 ### Review loop
 
