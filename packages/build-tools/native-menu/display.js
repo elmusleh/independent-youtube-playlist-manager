@@ -89,12 +89,12 @@ function xdo(display, ...args) {
 }
 
 /** Move onto a menu row in two steps: a single jump does not always fire the hover. */
-function hoverRow(display, row) {
+function hoverRow(display, row, settle = 900) {
   xdo(display, "mousemove", String(Math.round(row.x) - 2), String(Math.round(row.y) - 2));
   return new Promise((resolve) => {
     setTimeout(() => {
       xdo(display, "mousemove", String(Math.round(row.x)), String(Math.round(row.y)));
-      setTimeout(resolve, 700);
+      setTimeout(resolve, settle);
     }, 120);
   });
 }

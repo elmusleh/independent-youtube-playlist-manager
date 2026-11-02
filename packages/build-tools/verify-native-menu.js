@@ -26,6 +26,7 @@ const path = require("node:path");
 
 const { acquireDisplay, have, xdo, hoverRow } = require("./native-menu/display.js");
 const { findRow, brandedRow, readPanel } = require("./native-menu/ocr.js");
+const { shows } = require("./native-menu/match.js");
 const {
   FIXTURE,
   SCOPES,
@@ -93,16 +94,16 @@ function skip(reason) {
   say(`SKIP: native menu requires X11 - ${reason}`);
 }
 
-function expectText(name, text, variant) {
-  const lower = text.toLowerCase();
+function expectText(name, rows, variant) {
+  const text = rows.map((row) => row.text).join(" | ");
   for (const wanted of variant.present) {
-    if (!lower.includes(wanted.toLowerCase())) {
-      failures.push(`${name}: menu is missing "${wanted}" | OCR: ${text.slice(0, 200)}`);
+    if (!shows(rows, wanted)) {
+      failures.push(`${name}: menu is missing "${wanted}" | OCR: ${text.slice(0, 220)}`);
     }
   }
   for (const unwanted of variant.absent) {
-    if (lower.includes(unwanted.toLowerCase())) {
-      failures.push(`${name}: menu still shows "${unwanted}" | OCR: ${text.slice(0, 200)}`);
+    if (shows(rows, unwanted)) {
+      failures.push(`${name}: menu still shows "${unwanted}" | OCR: ${text.slice(0, 220)}`);
     }
   }
 }
@@ -148,25 +149,36 @@ async function readSubmenus(display, variant, parent) {
   const row = brandedRow(parent.rows);
   if (!row) {
     failures.push(`${variant.name}: no "Playlist Manager" row | OCR: ${parent.text.slice(0, 160)}`);
-    return parent.text;
+    return parent.rows;
   }
   await hoverRow(display, row);
   const sub = readPanel(display, path.join(output, `${variant.name}.png`), SUBMENU_PROBES);
-  if (variant.name !== "default") return sub.text;
+  if (variant.name !== "default") return sub.rows;
 
   const scopeRow = findRow(sub.rows, ["Add YouTube tabs to"]);
   if (!scopeRow) {
     failures.push(`default: no "Add YouTube tabs to" row | OCR: ${sub.text.slice(0, 160)}`);
-    return sub.text;
+    return sub.rows;
   }
-  await hoverRow(display, scopeRow);
-  const scopes = readPanel(display, path.join(output, "default-scopes.png"), SCOPES);
+  // A submenu needs the pointer to rest on the row: one hover is not reliably enough, and
+  // a capture without the submenu must never be read as "the scopes are missing".
+  let scopes;
+  for (const settle of [900, 1500, 1500]) {
+    await hoverRow(display, scopeRow, settle);
+    scopes = readPanel(display, path.join(output, "default-scopes.png"), SCOPES);
+    if (scopes.box) break;
+  }
+  if (!scopes.box) {
+    failures.push(
+      `default: scope submenu was not recognised on screen | OCR: ${scopes.text.slice(0, 160)}`
+    );
+  }
   for (const label of SCOPES) {
-    if (!scopes.text.toLowerCase().includes(label.toLowerCase())) {
+    if (!shows(scopes.rows, label)) {
       failures.push(`default: scope submenu is missing "${label}"`);
     }
   }
-  return sub.text;
+  return sub.rows;
 }
 
 async function runVariant(display, page, admin, variant) {
@@ -190,10 +202,23 @@ async function runVariant(display, page, admin, variant) {
 
   const probes = variant.parentProbes || PARENT_PROBES;
   const parent = readPanel(display, path.join(output, `${variant.name}-parent.png`), probes);
-  const menuText = variant.topLevelOnly
-    ? parent.text
-    : await readSubmenus(display, variant, parent);
-  expectText(variant.name, menuText, variant);
+  if (!parent.box) {
+    failures.push(
+      `${variant.name}: native menu was not recognised on screen | OCR: ${parent.text.slice(0, 160)}`
+    );
+  }
+  // Absence of our entry only means something once the browser's own menu is on screen:
+  // an unopened or unreadable menu would otherwise satisfy every "must not appear" rule.
+  if (variant.requireParent) {
+    const recognised = variant.requireParent.filter((entry) => shows(parent.rows, entry));
+    if (recognised.length < 2) {
+      failures.push(
+        `${variant.name}: only ${recognised.length} standard browser entry recognised - cannot confirm a menu was open`
+      );
+    }
+  }
+  const rows = variant.topLevelOnly ? parent.rows : await readSubmenus(display, variant, parent);
+  expectText(variant.name, rows, variant);
 
   for (let level = 0; level < 2; level += 1) xdo(display, "key", "Escape");
   await new Promise((r) => setTimeout(r, 250));

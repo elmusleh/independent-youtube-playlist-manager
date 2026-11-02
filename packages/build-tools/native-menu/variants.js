@@ -64,6 +64,9 @@ const VARIANTS = [
     target: "#p",
     topLevelOnly: true,
     parentProbes: ["Back", "Reload", "Inspect"],
+    // Absence is only meaningful once the browser menu is proven to be on screen: an
+    // unopened or unreadable menu must not satisfy "our entry is not there".
+    requireParent: ["Reload", "Inspect", "View page source", "Save as", "Print", "Translate"],
   },
   {
     name: "link-context",

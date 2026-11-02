@@ -63,11 +63,21 @@ them the gate prints `SKIP:` and exits 0 unless `IYPM_REQUIRE_NATIVE_MENU=1`.
 
 A verification gate that cannot fail is decoration. Both layers were mutation-tested:
 
-| Mutation                                                                | Result                                                                          |
-| ----------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
-| drop the `savedAllowed` guard in `context-menu-model.js`                | `FAIL saved-off: registered ids differ - missing [yph:saved]`                   |
-| rename the scope label to `Add tabs to …` (ids unchanged), then rebuild | `FAIL default: menu is missing "Add YouTube tabs to"` — OCR shows `Add tabs to` |
-| make the tree newer than `dist/`                                        | `FAIL: … is newer than dist/chrome - run \`npm run build\` first.`              |
+| Mutation                                                                | Result                                                                                                 |
+| ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| drop the `savedAllowed` guard in `context-menu-model.js`                | `FAIL saved-off: registered ids differ - missing [yph:saved]`                                          |
+| rename the scope label to `Add tabs to …` (ids unchanged), then rebuild | `FAIL default: menu is missing "Add YouTube tabs to"` — OCR shows `Add tabs to`                        |
+| make the tree newer than `dist/`                                        | `FAIL: … is newer than dist/chrome - run \`npm run build\` first.`                                     |
+| rename the `current` scope label, rebuild                               | `FAIL default: scope submenu is missing "Only this video tab"`                                         |
+| never open the menu (harness right-click removed)                       | `FAIL menu-off: native menu was not recognised on screen` + `only 0 standard browser entry recognised` |
+
+The last two exist because an earlier revision of this gate could pass in both cases: it
+matched probes against single OCR _words_ (so the scope panel was never located and the
+full-screen text was asserted instead), and its `menu-off` check only looked for an absent
+label, which an unopened menu satisfies. Both are fixed structurally, not by loosening
+the assertions: rows are rebuilt from OCR words split at column gutters, a crop must be
+located before anything is asserted about it, and "must not appear" additionally requires
+two recognised standard browser entries.
 
 ## Limits — do not over-read a pass
 

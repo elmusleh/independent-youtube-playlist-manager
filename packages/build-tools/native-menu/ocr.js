@@ -7,6 +7,10 @@
 const path = require("node:path");
 const { SCREEN, capture, run } = require("./display.js");
 
+/** Horizontal gap that separates two menu columns sharing a baseline (px). Word spacing is
+ * a few pixels; the gutter between a menu and its submenu is tens. */
+const COLUMN_GAP = 34;
+
 /** OCR a frame. `invert` is required for the dark menu panels. */
 function ocr(file, { offset = { x: 0, y: 0 }, invert = false, psm = "6" } = {}) {
   let source = file;
@@ -16,49 +20,109 @@ function ocr(file, { offset = { x: 0, y: 0 }, invert = false, psm = "6" } = {}) 
   }
   const text = run("tesseract", [source, "stdout", "--psm", psm]).replace(/\s+/g, " ");
   const tsv = run("tesseract", [source, "stdout", "--psm", psm, "tsv"]);
-  const rows = [];
-  for (const line of tsv.split("\n").slice(1)) {
-    const c = line.split("\t");
+  // Group words into rows. tesseract emits one level-5 entry per word, and it groups a
+  // whole visual line into one entry: a menu row and the submenu row beside it share a
+  // baseline, so both arrive as ONE line ("View page source Add YouTube tabs to ...").
+  // Split each line again wherever the horizontal gap is too wide to be word spacing.
+  const lines = new Map();
+  for (const entry of tsv.split("\n").slice(1)) {
+    const c = entry.split("\t");
     if (Number(c[0]) !== 5 || !c[11] || !c[11].trim()) continue;
+    const key = `${c[2]}-${c[3]}-${c[4]}`;
     const left = Number(c[6]);
-    const top = Number(c[7]);
-    const width = Number(c[8]);
-    const height = Number(c[9]);
-    rows.push({
-      text: c[11].trim(),
-      x: offset.x + left + width / 2,
-      y: offset.y + top + height / 2,
-      left: offset.x + left,
-      top: offset.y + top,
-    });
+    const word = { text: c[11].trim(), left, right: left + Number(c[8]) };
+    if (!lines.has(key))
+      lines.set(key, { words: [], top: Number(c[7]), bottom: Number(c[7]) + Number(c[9]) });
+    const line = lines.get(key);
+    line.words.push(word);
+    line.top = Math.min(line.top, Number(c[7]));
+    line.bottom = Math.max(line.bottom, Number(c[7]) + Number(c[9]));
   }
+  const rows = [];
+  for (const line of lines.values()) {
+    const words = line.words.slice().sort((a, b) => a.left - b.left);
+    let segment = [];
+    const flush = () => {
+      if (!segment.length) return;
+      const left = Math.min(...segment.map((w) => w.left));
+      const right = Math.max(...segment.map((w) => w.right));
+      rows.push({
+        text: segment.map((w) => w.text).join(" "),
+        x: offset.x + (left + right) / 2,
+        y: offset.y + (line.top + line.bottom) / 2,
+        left: offset.x + left,
+        top: offset.y + line.top,
+      });
+      segment = [];
+    };
+    for (const word of words) {
+      const previous = segment[segment.length - 1];
+      if (previous && word.left - previous.right > COLUMN_GAP) flush();
+      segment.push(word);
+    }
+    flush();
+  }
+  rows.sort((a, b) => a.y - b.y);
   return { text, rows };
 }
 
-/** Bounding box of the OCR rows that match a probe, using the *largest column-aligned
- * cluster*: browser chrome (tab titles) can contain the same words as a menu row, but it
- * never shares the menu's left edge. */
+/** Rows inside the menu: browser chrome (the tab strip, at the very top) never belongs
+ * to a page context menu, and its tab titles can contain the same words as a menu label. */
+const CHROME_BOTTOM = 120;
+/** Menu rows drift horizontally (icons of different widths) and groups are separated by a
+ * blank line rather than a rule, so both tolerances have to be generous. Page text is
+ * left-aligned far from the menu column, so widening them cannot drag the page in. */
+const LEFT_TOL = 40;
+const ROW_GAP = 90;
+
+/** Bounding box of the panel that contains `probes`.
+ *
+ * Menus are a single left-aligned column of contiguous rows, so: pick the left edge the
+ * probe hits agree on, then grow the *vertical run* of rows sharing that edge around them.
+ * Growing by run (not by hit) is what keeps the crop on the whole panel: the probes may
+ * only match its lower half, and clipping there silently drops the labels above.
+ */
 function locatePanel(rows, probes, pad = 12) {
-  const hits = rows.filter((row) =>
+  const usable = rows.filter((row) => row.top >= CHROME_BOTTOM);
+  const hits = usable.filter((row) =>
     probes.some((probe) => row.text.toLowerCase().includes(probe.toLowerCase()))
   );
   if (hits.length < 2) return null;
-  const clusters = [];
+
+  const edges = [];
   for (const hit of hits) {
-    const cluster = clusters.find((group) => Math.abs(group.left - hit.left) <= 24);
-    if (cluster) cluster.rows.push(hit);
-    else clusters.push({ left: hit.left, rows: [hit] });
+    const edge = edges.find((group) => Math.abs(group.left - hit.left) <= LEFT_TOL);
+    if (edge) edge.rows.push(hit);
+    else edges.push({ left: hit.left, rows: [hit] });
   }
-  clusters.sort((a, b) => b.rows.length - a.rows.length || b.rows[0].y - a.rows[0].y);
-  const chosen = clusters[0].rows;
-  if (chosen.length < 2) return null;
-  const left = Math.min(...chosen.map((r) => r.left)) - pad;
-  const top = Math.min(...chosen.map((r) => r.top)) - pad;
+  edges.sort((a, b) => b.rows.length - a.rows.length);
+  const anchor = edges[0];
+  if (anchor.rows.length < 2) return null;
+  const anchorLeft = anchor.rows[0].left;
+
+  const column = usable
+    .filter((row) => Math.abs(row.left - anchorLeft) <= LEFT_TOL)
+    .sort((a, b) => a.y - b.y);
+  const seedIndex = column.findIndex((row) => anchor.rows.includes(row));
+  if (seedIndex < 0) return null;
+
+  let first = seedIndex;
+  let last = seedIndex;
+  while (first > 0 && column[first].y - column[first - 1].y <= ROW_GAP) first -= 1;
+  while (last < column.length - 1 && column[last + 1].y - column[last].y <= ROW_GAP) last += 1;
+  const run = column.slice(first, last + 1);
+  if (run.length < 2) return null;
+
+  // Generous top/bottom margin: the row above the first located one is often a label the
+  // coarse pass missed (the first row of a submenu), and clipping it reads as "missing".
+  const left = Math.min(...run.map((r) => r.left)) - pad;
+  const top = Math.min(...run.map((r) => r.top)) - pad - 44;
+  const bottom = Math.max(...run.map((r) => r.top)) + pad + 20;
   return {
     x: Math.max(0, Math.round(left)),
     y: Math.max(0, Math.round(top)),
-    w: Math.min(SCREEN.width - Math.max(0, left), 520),
-    h: Math.min(SCREEN.height - Math.max(0, top), 560),
+    w: Math.min(SCREEN.width - Math.max(0, left), 560),
+    h: Math.min(SCREEN.height - Math.max(0, top), Math.max(60, Math.round(bottom - top))),
   };
 }
 
