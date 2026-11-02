@@ -47,6 +47,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Watch history now records on the mobile YouTube site (`m.youtube.com`) in Firefox for
+  Android: YouTube swaps the `<video>` element around pre-roll ads, which left the tracker
+  holding a stale reference whose `timeupdate` never fired. The tracker now re-queries the
+  live element on every save and listens for media events at the document level, so playback
+  progress is captured reliably on mobile.
 - A theme chosen in Settings is applied on the next start even when the browser's local
   cache is empty (fresh install, cleared storage, another synced device): the persisted
   value is retried after startup instead of silently falling back to the device theme.
