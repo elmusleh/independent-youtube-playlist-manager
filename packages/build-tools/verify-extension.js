@@ -86,10 +86,15 @@ async function main() {
     await page.waitForFunction(
       () => document.querySelector('[aria-current="page"]')?.textContent === "2"
     );
-    await page.getByRole("textbox", { name: "Search", exact: true }).fill("vid00000000");
+    // Mobile header exposes a search trigger; desktop has the input directly.
+    const searchBox = page.getByRole("textbox", { name: "Search", exact: true });
+    if (!(await searchBox.isVisible())) {
+      await page.getByRole("button", { name: "Search", exact: true }).first().click();
+    }
+    await searchBox.fill("vid00000000");
     await page.waitForFunction(() => document.querySelectorAll(".playlist-video").length === 1);
     assert.equal(await page.getByRole("navigation", { name: "Pagination" }).count(), 0);
-    await page.getByRole("textbox", { name: "Search", exact: true }).fill("");
+    await searchBox.fill("");
     await page.waitForFunction(() => document.querySelectorAll(".playlist-video").length === 10);
     report.interactions.push("Pagination and filtered page clamping");
 

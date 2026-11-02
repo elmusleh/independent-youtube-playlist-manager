@@ -18,7 +18,8 @@ Implementation/review: assigned agent. Application verification: Hermes unless r
 
 ## 3. Browser and issue acceptance
 
-- [ ] 3.1 Have Hermes run the headed portal/extension E2E suite with HEADED=true and Xvfb or a suitable display; record executed/skipped counts and require the mandatory extension cases to execute.
+- [x] 3.1 Have Hermes run the headed portal/extension E2E suite with HEADED=true and Xvfb or a suitable display; record executed/skipped counts and require the mandatory extension cases to execute.
+      Evidence (`669049d`, 2026-11-01): `cd apps/web-portal && HEADED=true IYPM_REQUIRE_EXTENSION_E2E=1 xvfb-run -a npx playwright test e2e/extension.spec.ts` → `2 passed (7.4s)`, exit 0, **0 skipped**; both mandatory extension cases executed (popup renders + matches extensionId, editor SPA loads). Record: `.ai-sync/sessions/2026-11-01-context-menu-theme-merge.md`.
 - [ ] 3.2 Complete the real Chrome native-menu fixture flow and activeTab import using a disposable profile; record browser/artifact identity, steps and expected three unique IDs.
       Partial evidence (2026-11-01, `669049d`, Chrome 156, disposable `Xvfb` + temp profile): the native submenu was captured for four settings variants (default / saved disabled / builder disabled / menu disabled) and matches `menuModel` — see `docs/testing/NATIVE_MENU_CHROMIUM_2026-11-01.md` + `docs/testing/native-menu-chromium-2026-11-01/`. Still missing: link-context capture, action execution, and the activeTab import "three unique IDs" flow, so the task stays open.
 - [ ] 3.3 Complete the corresponding real Firefox native-menu flow using a disposable profile; record separate evidence rather than inferring it from Chromium or handler tests.

@@ -8,6 +8,7 @@
   onclose={executeCancel}
   size="small"
   title={$activeConfirmation.title}
+  footerBorder={false}
 >
   <p class="message">{$activeConfirmation.message}</p>
   {#snippet footer()}
@@ -39,7 +40,7 @@
     color: var(--text-color);
   }
 
-  .actions {
+  .actions.modal-footer {
     display: flex;
     flex-wrap: wrap;
     justify-content: flex-end;

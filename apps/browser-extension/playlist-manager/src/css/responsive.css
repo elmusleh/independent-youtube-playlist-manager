@@ -65,9 +65,6 @@ img {
     --app-header-height: 52px;
     --page-gutter: 16px;
   }
-  :root:has(header .search-container) {
-    --app-header-height: 104px;
-  }
   html {
     scrollbar-gutter: auto;
   }

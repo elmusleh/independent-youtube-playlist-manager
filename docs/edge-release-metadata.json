@@ -1,6 +1,6 @@
 {
   "productName": "Independent YouTube Playlist Manager",
-  "version": "1.1.1",
+  "version": "1.2.1",
   "category": "Productivity",
   "language": "en-US",
   "shortDescription": "Manage YouTube playlists locally: create, edit, sync, and track history. Save videos to watch later. No login required.",
@@ -38,8 +38,8 @@
   "storeId": "0RDCKFZCVDRK",
   "crxId": "ncmipojoamaoacinccopmdkflgocghno",
   "publicKey": "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA+niPZKflMsMNjpY9Em9D\nAlD7HSBnTFaUZiYUvljoaCcVtPKs9QkRNyPVwVGWoMoeMFnm9awxAVVxmaIAyOUO\nsv6Hj9B5cUpkudhsExuT9gXNLXxCkviXZ9A3Q5fdtbhnQ+pHYikRYkqHWxpd1AVx\nGSw3Uqq06q8l8G3W1VsOQKwKG24NVcXDPWMkNg6n91O2xYoITEwTKKvVk3534RxW\nghcWURAqsyhHeSQR3F5e4BUn4DM1Y7n69x5WVis7tAoUBE6g1YAeY/2qfxFlnKl3\nhIvrPnCED8bQZ2cTOTtraYKG7ccwPiNBaznS9PfPL0CzSPsG48J6lpodX8KdM7fB\nxQIDAQAB\n-----END PUBLIC KEY-----\n",
-  "packageSha256": "4696ecfad281a050ad292b53ee9441c67ec23293b992712f4e7b1254274ca377",
-  "packageVersion": "1.1.1",
+  "packageSha256": "5bf1c87c173c5a81d41fce05fada4afa56e67c86b74098b80677a815cf133e46",
+  "packageVersion": "1.2.1",
   "redirectUris": [
     "https://ncmipojoamaoacinccopmdkflgocghno.chromiumapp.org/",
     "https://ncmipojoamaoacinccopmdkflgocghno.chromiumapp.org/supabase"

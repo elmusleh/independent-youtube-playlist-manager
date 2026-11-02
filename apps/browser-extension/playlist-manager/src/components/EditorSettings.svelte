@@ -120,6 +120,19 @@
     </select>
   </div>
 
+  <div class="field">
+    <label for="playlistsPerPage">Playlists per page</label>
+    <select
+      id="playlistsPerPage"
+      bind:value={settings!.playlistsPerPage}
+      onchange={() => save("playlistsPerPage", settings?.playlistsPerPage)}
+    >
+      {#each PAGE_SIZES as size}
+        <option value={size}>{size}</option>
+      {/each}
+    </select>
+  </div>
+
   <div class="toggle-row">
     <div class="toggle-info">
       <span>Disable thumbnails</span>

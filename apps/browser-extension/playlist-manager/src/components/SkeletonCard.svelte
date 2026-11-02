@@ -11,8 +11,8 @@
 
 <style>
   .skeleton-card {
-    flex: 1 1 250px;
-    max-width: 320px;
+    width: 100%;
+    max-width: 100%;
     border-radius: 12px;
     overflow: hidden;
     background: var(--background-color);
