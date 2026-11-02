@@ -9,6 +9,7 @@
   import PlaylistVideo from "./PlaylistVideo.svelte";
   import SaveStatus from "./SaveStatus.svelte";
   import { StatusManager } from "../services/status-manager.svelte";
+  import { toggleFavorite as togglePinFav, persistFavoriteIds, isFavorite as isPinnedFav } from "../services/favorites";
   import { paginate } from "svelte-paginate";
   import Fa from "svelte-fa";
   import {
@@ -16,6 +17,7 @@
     faPencil,
     faXmark,
     faUndo,
+    faThumbTack,
     faCloudArrowUp,
     faLink,
     faLock,
@@ -555,11 +557,13 @@
 
   // Favorite state
   let isFavoritePlaylist = $state(false);
+  let isPinnedPlaylist = $state(false);
 
   async function loadFavoriteStatus() {
     if (!playlist || !playlist.id || playlist.id === "new") return;
     const settings = await window.getSettings();
     isFavoritePlaylist = settings.watchLaterPlaylistId === playlist.id;
+    isPinnedPlaylist = isPinnedFav(settings.favoritePlaylistIds, playlist.id);
   }
 
   async function toggleFavorite() {
@@ -582,6 +586,23 @@
     isFavoritePlaylist = true;
     window.success("Set playlist as favorite ⭐️");
     window.invalidateCacheAndNotify();
+  }
+
+  async function togglePin() {
+    if (!playlist) return;
+    const isValidId =
+      playlist.id &&
+      playlist.id !== "new" &&
+      (playlist.id.startsWith("local-") || playlist.id.length > 10);
+    if (!isValidId) {
+      window.info("Please save this playlist first before pinning.");
+      return;
+    }
+    const settings = await window.getSettings();
+    const next = togglePinFav(settings.favoritePlaylistIds ?? [], playlist.id);
+    await persistFavoriteIds(next);
+    isPinnedPlaylist = isPinnedFav(next, playlist.id);
+    window.success(isPinnedPlaylist ? "Pinned to sidebar 📌" : "Unpinned from sidebar");
   }
 
   // Keep isFavoritePlaylist in sync if watchLaterPlaylistId is changed from another page (e.g. Settings)
@@ -1524,6 +1545,14 @@
         onSave={handleManualSave}
       >
         {#snippet rightActions()}
+          <SimpleButton
+            secondary
+            iconOnly
+            onclick={togglePin}
+            title={isPinnedPlaylist ? "Unpin from sidebar" : "Pin to sidebar"}
+          >
+            <Fa icon={faThumbTack} fw />
+          </SimpleButton>
           {#if showUndoToast}
             <SimpleButton
               secondary
