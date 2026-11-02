@@ -38,6 +38,7 @@
   import { manageSearch } from "../stores/playlists-filters";
   import { paginate } from "svelte-paginate";
   import { clampPage } from "../utils/pagination";
+  import { toggleFavorite, persistFavoriteIds } from "../services/favorites";
 
   const browser = (window as any).browser || (window as any).chrome;
 
@@ -51,6 +52,9 @@
   let sortBy = $state("newest"); // newest, oldest, title_asc, title_desc, count_desc
   let deleteAfterMerge = $state(true);
   let favoritePlaylistId = $state<string | null>(null);
+  import type { Settings } from "../types/model";
+  let settings: Settings | null = $state(null);
+  let favoritePlaylistIds = $derived((settings as any)?.favoritePlaylistIds ?? []);
   let playlistsPerPage = $state(20);
   let currentPage = $state(1);
   const status = new StatusManager();
@@ -90,10 +94,11 @@
   (async () => {
     try {
       signedIn = await window.isSignedIn();
-      const settings = await window.getSettings();
-      sortBy = settings.manageSortBy || "newest";
-      deleteAfterMerge = settings.deleteAfterMerge !== undefined ? settings.deleteAfterMerge : true;
-      favoritePlaylistId = settings.watchLaterPlaylistId ?? null;
+      settings = await window.getSettings();
+      sortBy = settings?.manageSortBy || "newest";
+      deleteAfterMerge =
+        settings?.deleteAfterMerge !== undefined ? settings.deleteAfterMerge : true;
+      favoritePlaylistId = settings?.watchLaterPlaylistId ?? null;
       playlistsPerPage = settings.playlistsPerPage || 20;
       if (window.logSystemEvent)
         await window.logSystemEvent("INFO", `[MANAGE-VIEW] Initialized: signedIn=${signedIn}`);
@@ -1456,6 +1461,23 @@
             {/snippet}
 
             {#snippet actionsSnippet()}
+              <button
+                class="action-btn"
+                title={favoritePlaylistIds.includes(p.id)
+                  ? "Remove from favorites"
+                  : "Add to favorites"}
+                aria-label={favoritePlaylistIds.includes(p.id)
+                  ? "Remove from favorites"
+                  : "Add to favorites"}
+                onclick={(e) => {
+                  e.stopPropagation();
+                  persistFavoriteIds(toggleFavorite(favoritePlaylistIds, p.id));
+                }}
+              >
+                <span class:filled={favoritePlaylistIds.includes(p.id)}>
+                  <Fa icon={faStar} />
+                </span>
+              </button>
               <a
                 href="#/playlist?id={p.id}"
                 class="action-btn"
@@ -1787,6 +1809,10 @@
   .action-btn:hover {
     background: var(--border-color);
     color: var(--text-color);
+  }
+
+  .action-btn :global(svg.filled) {
+    color: var(--color-brand-warning);
   }
 
   .action-btn.delete:hover {

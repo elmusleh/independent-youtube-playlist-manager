@@ -149,6 +149,7 @@ export interface Settings {
   playlistsPerPage: number;
   cacheDuration: number; // in minutes, -1 for no expiration
   watchLaterPlaylistId: string | null; // custom playlist ID to use instead of YouTube's Watch Later
+  favoritePlaylistIds: string[]; // ordered list of pinned favorites shown in the sidebar
   maxLogLines: number;
   defaultPrivacy: "private" | "unlisted" | "public";
   autoRemoveDuplicates: boolean;

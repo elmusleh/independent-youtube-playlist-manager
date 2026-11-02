@@ -148,14 +148,14 @@
   }
 </script>
 
-<!-- Favorite Playlist -->
+<!-- Quick-add Target (Watch Later) -->
 <section class="card">
-  <h3><Fa icon={faStar} /> Favorite Playlist</h3>
+  <h3><Fa icon={faStar} /> Quick-add Target (Watch Later)</h3>
   <div class="field">
     <label for="watchLaterPlaylist">Target Playlist</label>
     <p class="sub-text">
-      Pick a managed playlist to be your favorite. It will always be kept alive (recreated if
-      deleted) and is used for quick-add shortcuts.
+      Pick a managed playlist to be your quick-add target. It will always be kept alive (recreated
+      if deleted) and is used for quick-add shortcuts and keyboard shortcuts.
     </p>
     {#if settings!.watchLaterPlaylistId === null && !signedIn}
       <div class="status-warning">

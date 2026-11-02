@@ -82,7 +82,7 @@ const routes = [
   "/capture?job=22222222-2222-4222-8222-222222222222",
   "/saved",
   "/playlist?id=local-release",
-  "/favorite",
+  "/favorites",
   "/new",
   "/playlist-builder",
   "/manage",

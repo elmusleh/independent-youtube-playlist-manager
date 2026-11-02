@@ -19,6 +19,7 @@
   import { onDestroy } from "svelte";
   import type { Settings } from "../types/model";
   import Modal from "./Modal.svelte";
+  import { resolveFavoritePlaylists, MAX_VISIBLE_FAVORITES } from "../services/favorites";
 
   const browser = (window as any).browser || (window as any).chrome;
 
@@ -26,6 +27,8 @@
   let signedIn = $state(false);
   let gapCount = $state(0);
   let githubStars: string | null = $state(sessionStorage.getItem("yph_github_stars"));
+
+  let favorites: import("../services/favorites").FavoritePlaylistInfo[] = $state([]);
 
   let { drawerOpen = false, onClose = () => {} }: { drawerOpen?: boolean; onClose?: () => void } =
     $props();
@@ -53,6 +56,12 @@
 
   async function loadSettings() {
     settings = await window.getSettings();
+    await loadFavorites();
+  }
+
+  async function loadFavorites() {
+    if (!settings) return;
+    favorites = await resolveFavoritePlaylists(settings.favoritePlaylistIds);
   }
 
   async function checkAuth() {
@@ -125,6 +134,10 @@
     return loc === path || loc === path + "/";
   }
 
+  function isActivePlaylist(id: string) {
+    return router.location === "/playlist" && (router.querystring || "").includes(`id=${id}`);
+  }
+
   function handleStorageChange(
     changes: Record<string, { oldValue?: any; newValue?: any }>,
     area: string
@@ -158,13 +171,6 @@
         <span>All Playlists</span>
       </a>
       <a
-        href="#/favorite"
-        class:active={isActive("/favorite", router.location, router.querystring || "")}
-      >
-        <Fa icon={faStar} fw />
-        <span>Favorite Playlist</span>
-      </a>
-      <a
         href="#/history"
         class:active={isActive("/history", router.location, router.querystring || "")}
       >
@@ -180,6 +186,26 @@
       </a>
 
       <hr class="nav-divider" />
+
+      {#if favorites.length > 0}
+        <hr class="nav-divider" />
+        {#each favorites.slice(0, MAX_VISIBLE_FAVORITES) as fav (fav.id)}
+          <a href="#/playlist?id={fav.id}" class:active={isActivePlaylist(fav.id)}>
+            <Fa icon={faStar} fw />
+            <span>{fav.title}</span>
+          </a>
+        {/each}
+        {#if favorites.length > MAX_VISIBLE_FAVORITES}
+          <a
+            href="#/favorites"
+            class:active={isActive("/favorites", router.location, router.querystring || "")}
+          >
+            <Fa icon={faStar} fw />
+            <span>All favorites ({favorites.length})</span>
+          </a>
+        {/if}
+        <hr class="nav-divider" />
+      {/if}
 
       {#if signedIn && settings && (settings.enableSubscriptions || settings.enableSearch || settings.enableWatchLater || settings.enableOpenById)}
         {#if settings.enableSubscriptions}
@@ -301,14 +327,6 @@
             <span>All Playlists</span>
           </a>
           <a
-            href="#/favorite"
-            onclick={handleNavClick}
-            class:active={isActive("/favorite", router.location, router.querystring || "")}
-          >
-            <Fa icon={faStar} fw />
-            <span>Favorite Playlist</span>
-          </a>
-          <a
             href="#/history"
             onclick={handleNavClick}
             class:active={isActive("/history", router.location, router.querystring || "")}
@@ -326,6 +344,31 @@
           </a>
 
           <hr class="nav-divider" />
+
+          {#if favorites.length > 0}
+            <hr class="nav-divider" />
+            {#each favorites.slice(0, MAX_VISIBLE_FAVORITES) as fav (fav.id)}
+              <a
+                href="#/playlist?id={fav.id}"
+                onclick={handleNavClick}
+                class:active={isActivePlaylist(fav.id)}
+              >
+                <Fa icon={faStar} fw />
+                <span>{fav.title}</span>
+              </a>
+            {/each}
+            {#if favorites.length > MAX_VISIBLE_FAVORITES}
+              <a
+                href="#/favorites"
+                onclick={handleNavClick}
+                class:active={isActive("/favorites", router.location, router.querystring || "")}
+              >
+                <Fa icon={faStar} fw />
+                <span>All favorites ({favorites.length})</span>
+              </a>
+            {/if}
+            <hr class="nav-divider" />
+          {/if}
 
           {#if signedIn && settings && (settings.enableSubscriptions || settings.enableSearch || settings.enableWatchLater || settings.enableOpenById)}
             {#if settings.enableSubscriptions}

@@ -50,7 +50,7 @@ async function main() {
       await page.waitForFunction(
         () => !document.querySelector(".skeleton-grid, .skeleton-shimmer")
       );
-      if (["/playlist?id=local-release", "/favorite", "/playlist-builder"].includes(route)) {
+      if (["/playlist?id=local-release", "/playlist-builder"].includes(route)) {
         try {
           await page.locator(".playlist-video").first().waitFor();
         } catch (error) {
