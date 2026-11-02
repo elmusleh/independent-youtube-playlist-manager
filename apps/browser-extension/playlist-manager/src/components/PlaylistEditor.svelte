@@ -21,7 +21,6 @@
     faPencil,
     faXmark,
     faUndo,
-    faThumbTack,
     faCloudArrowUp,
     faLink,
     faLock,

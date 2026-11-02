@@ -188,7 +188,7 @@
             title={isPinned ? "Unpin playlist from sidebar" : "Pin playlist to sidebar"}
             aria-label={isPinned ? "Unpin playlist from sidebar" : "Pin playlist to sidebar"}
           >
-            <Fa icon={faThumbTack} fw />
+            <Fa icon={faThumbTack} />
           </button>
         {/if}
         {@render children?.()}
@@ -372,77 +372,75 @@
     margin-right: 4px;
   }
 
-  .pin-playlist-btn {
+  .pin-playlist-btn,
+  .favorite-star-btn,
+  .edit-title-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: var(--touch-target-min, 44px);
-    height: var(--touch-target-min, 44px);
+    width: 24px;
+    height: 24px;
     padding: 0;
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    background: var(--background-color);
-    color: var(--text-muted, #888);
+    margin-left: 8px;
+    border: 0;
+    background: none;
+    font-size: 20px;
     cursor: pointer;
     flex: 0 0 auto;
     transition:
-      color 0.15s ease,
-      background-color 0.15s ease,
-      border-color 0.15s ease;
+      color 0.2s,
+      transform 0.2s;
+  }
+
+  .pin-playlist-btn,
+  .edit-title-btn {
+    color: var(--text-muted, #888);
   }
 
   .pin-playlist-btn:hover,
-  .pin-playlist-btn.active {
-    color: var(--primary-color);
-    border-color: var(--primary-color);
-    background: var(--active-bg-color);
+  .favorite-star-btn:hover,
+  .edit-title-btn:hover {
+    transform: scale(1.2);
   }
 
-  .pin-playlist-btn:focus-visible {
-    outline: 2px solid var(--primary-color);
-    outline-offset: 2px;
+  .pin-playlist-btn:hover,
+  .pin-playlist-btn.active,
+  .edit-title-btn:hover {
+    color: var(--primary-color);
   }
 
   .favorite-star-btn {
-    background: none;
-    border: none;
-    padding: 0;
-    margin-left: 8px;
-    cursor: pointer;
-    font-size: 20px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
     color: var(--text-muted, #888);
-    transition:
-      transform 0.2s,
-      color 0.2s;
   }
 
   .favorite-star-btn:hover {
-    transform: scale(1.2);
     color: #ffc107;
   }
 
-  .edit-title-btn {
-    background: none;
-    border: none;
-    padding: 0;
-    margin-left: 8px;
-    cursor: pointer;
-    font-size: 18px;
+  .favorite-star-indicator {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    color: var(--text-muted, #888);
-    transition:
-      transform 0.2s,
-      color 0.2s;
+    width: 24px;
+    height: 24px;
+    margin-left: 8px;
+    color: #ffc107;
+    font-size: 20px;
+    flex: 0 0 auto;
+    pointer-events: none;
+    user-select: none;
   }
 
-  .edit-title-btn:hover {
-    transform: scale(1.2);
-    color: var(--primary-color);
+  .pin-playlist-btn:focus-visible,
+  .favorite-star-btn:focus-visible,
+  .edit-title-btn:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
+
+  .edit-title-btn {
+    font-size: 18px;
   }
 
   .favorite-star-btn.active {
@@ -451,12 +449,6 @@
 
   /* Read-only star shown on the Favorite Playlist page — not a button */
   .favorite-star-indicator {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    margin-left: 8px;
-    font-size: 20px;
-    color: #ffc107;
     pointer-events: none;
     user-select: none;
   }

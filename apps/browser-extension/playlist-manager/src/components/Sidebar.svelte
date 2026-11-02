@@ -190,9 +190,13 @@
       {#if favorites.length > 0}
         <hr class="nav-divider" />
         {#each favorites.slice(0, MAX_VISIBLE_FAVORITES) as fav (fav.id)}
-          <a href="#/playlist?id={fav.id}" class:active={isActivePlaylist(fav.id)}>
+          <a
+            href="#/playlist?id={fav.id}"
+            class="favorite-nav-link"
+            class:active={isActivePlaylist(fav.id)}
+          >
             <Fa icon={faStar} fw />
-            <span>{fav.title}</span>
+            <span class="favorite-nav-title" title={fav.title}>{fav.title}</span>
           </a>
         {/each}
         {#if favorites.length > MAX_VISIBLE_FAVORITES}
@@ -350,11 +354,12 @@
             {#each favorites.slice(0, MAX_VISIBLE_FAVORITES) as fav (fav.id)}
               <a
                 href="#/playlist?id={fav.id}"
+                class="favorite-nav-link"
                 onclick={handleNavClick}
                 class:active={isActivePlaylist(fav.id)}
               >
                 <Fa icon={faStar} fw />
-                <span>{fav.title}</span>
+                <span class="favorite-nav-title" title={fav.title}>{fav.title}</span>
               </a>
             {/each}
             {#if favorites.length > MAX_VISIBLE_FAVORITES}
@@ -564,8 +569,16 @@
 
   .sidenav a,
   .drawer-nav a {
-    padding: 0 16px;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .favorite-nav-link {
+    box-sizing: border-box;
+    width: 100%;
     height: 44px;
+    min-width: 0;
+    padding: 0 16px;
     text-decoration: none;
     font-size: 14px;
     font-weight: 500;
@@ -575,6 +588,16 @@
     gap: 16px;
     transition: all 0.15s ease;
     border-radius: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+
+  .favorite-nav-title {
+    display: block;
+    min-width: 0;
+    flex: 1 1 0%;
+    overflow: hidden;
+    text-overflow: ellipsis;
     white-space: nowrap;
   }
 
