@@ -4,6 +4,7 @@
     faBoxArchive,
     faClockRotateLeft,
     faStar,
+    faThumbTack,
     faUsers,
     faClock,
     faLink,
@@ -188,14 +189,13 @@
       <hr class="nav-divider" />
 
       {#if favorites.length > 0}
-        <hr class="nav-divider" />
         {#each favorites.slice(0, MAX_VISIBLE_FAVORITES) as fav (fav.id)}
           <a
             href="#/playlist?id={fav.id}"
             class="favorite-nav-link"
             class:active={isActivePlaylist(fav.id)}
           >
-            <Fa icon={faStar} fw />
+            <Fa icon={faThumbTack} fw />
             <span class="favorite-nav-title" title={fav.title}>{fav.title}</span>
           </a>
         {/each}
@@ -204,7 +204,7 @@
             href="#/favorites"
             class:active={isActive("/favorites", router.location, router.querystring || "")}
           >
-            <Fa icon={faStar} fw />
+            <Fa icon={faThumbTack} fw />
             <span>All favorites ({favorites.length})</span>
           </a>
         {/if}
@@ -350,7 +350,6 @@
           <hr class="nav-divider" />
 
           {#if favorites.length > 0}
-            <hr class="nav-divider" />
             {#each favorites.slice(0, MAX_VISIBLE_FAVORITES) as fav (fav.id)}
               <a
                 href="#/playlist?id={fav.id}"
@@ -358,7 +357,7 @@
                 onclick={handleNavClick}
                 class:active={isActivePlaylist(fav.id)}
               >
-                <Fa icon={faStar} fw />
+                <Fa icon={faThumbTack} fw />
                 <span class="favorite-nav-title" title={fav.title}>{fav.title}</span>
               </a>
             {/each}
@@ -368,7 +367,7 @@
                 onclick={handleNavClick}
                 class:active={isActive("/favorites", router.location, router.querystring || "")}
               >
-                <Fa icon={faStar} fw />
+                <Fa icon={faThumbTack} fw />
                 <span>All favorites ({favorites.length})</span>
               </a>
             {/if}

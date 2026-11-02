@@ -1,6 +1,6 @@
 <script lang="ts">
   import Fa from "svelte-fa";
-  import { faListUl, faStar } from "@fortawesome/free-solid-svg-icons";
+  import { faListUl, faThumbTack } from "@fortawesome/free-solid-svg-icons";
   import SimpleButton from "./SimpleButton.svelte";
   import ArchivedThumbnail from "./ArchivedThumbnail.svelte";
   import CategoryBadge from "./CategoryBadge.svelte";
@@ -67,7 +67,7 @@
     </div>
     {#if showFavoriteBadge}
       <div class="favorite-overlay">
-        <div class="favorite-badge"><Fa icon={faStar} fw /></div>
+        <div class="favorite-badge"><Fa icon={faThumbTack} fw /></div>
       </div>
     {/if}
     <CategoryBadge
@@ -94,12 +94,12 @@
           title={isFavorite ? "Remove from favorites" : "Add to favorites"}
         >
           <span class:filled={isFavorite}>
-            <Fa icon={faStar} fw />
+            <Fa icon={faThumbTack} fw />
           </span>
         </button>
       {:else if showFavoriteBadge}
-        <span class="fav-star-inline" title="Favorite Playlist" aria-label="Favorite Playlist">
-          <Fa icon={faStar} fw />
+        <span class="fav-star-inline" title="Pinned Playlist" aria-label="Pinned Playlist">
+          <Fa icon={faThumbTack} fw />
         </span>
       {/if}
     </div>
