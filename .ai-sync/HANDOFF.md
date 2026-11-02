@@ -1,4 +1,28 @@
-# Handoff — 2026-10-31, verification complete with all automated gates passing
+# Handoff — 2026-11-02, m.youtube.com watch-history fixed (PR #83)
+
+## 2026-11-02 — m.youtube.com watch-history fully fixed (`fix/watch-history-mobile` → PR #83)
+
+Watch history now works completely on the mobile YouTube site (`m.youtube.com`) in Firefox for
+Android. The root cause was several ways the Gecko mobile site differs from desktop Chrome, each
+fixed on `fix/watch-history-mobile` (off `next`):
+
+- `b2d8368` — save position periodically during playback (mobile `pause`/`ended`/unload don't fire).
+- `1e924b4` — re-query the live `<video>` element on every access (YouTube swaps it around pre-roll ads).
+- `da731c4` + `d1e9baf` — title/channel extraction for Firefox's DOM; resume now polls until the real
+  video is ready and the pre-roll ad has finished.
+- `82b2566` — channel selector corrected to `.ytVideoMetadataViewModelSubtitleContainer span.ytAttributedStringHost`.
+- `b664845` — SPA navigation: clicking a related video changes the URL without a reload, so a video-id
+  poller re-initializes tracking.
+- `26ce3c3` — CHANGELOG consolidated under `### Fixed`.
+
+Verification: `npm run check` exit 0, `npm run build` exit 0 (chrome/firefox/edge, budgets pass).
+Real-device (Fenix) confirmed record, resume, title, channel and SPA navigation. Owner asked to merge PR #83.
+
+Key trap: `browser_exec` with a Firefox UA string is **not** a faithful proxy for real Firefox — Gecko is
+served different HTML than Chromium even with an identical UA. Use the on-device `CHANNEL-DIAG`/logcat
+or Firefox USB remote-debugging (RDP over `adb forward tcp:6000 localabstract:org.mozilla.fenix/firefox-debugger-socket`)
+for DOM ground truth. Debugging used `web-ext run --target=firefox-android` (temporary add-on) — keep a
+single `web-ext` process per device, or two will fight over the install and cause intermittent re-installs.
 
 ## 2026-11-01 (later) — PRs #70 and #71 merged; `next` is green
 

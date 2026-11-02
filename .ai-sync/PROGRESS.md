@@ -1,5 +1,19 @@
 # Progress — open work only (Mobile UX Improvements)
 
+## m.youtube.com watch-history — fully fixed and merged (2026-11-02)
+
+Watch history (record + resume + title + channel + SPA navigation) now works on `m.youtube.com`
+in Firefox Android. All fixes committed on `fix/watch-history-mobile` → PR #83 (owner-requested merge).
+
+- [x] Periodic save during playback (`b2d8368`); live `<video>` re-query on every access (`1e924b4`).
+- [x] Firefox title/channel selectors (`da731c4`, `d1e9baf`, `82b2566`).
+- [x] Resume polls until the video is ready and the pre-roll ad ends (`d1e9baf`).
+- [x] SPA navigation via a video-id poller (`b664845`).
+- [x] Real-device (Fenix) confirmation: record, resume, title, channel, related-video click.
+- [x] `npm run check` + `npm run build` exit 0; CHANGELOG consolidated under `### Fixed`.
+
+Closes the earlier "manual real-device confirmation" items in the two hardening sections below.
+
 ## Watch-history mobile hardening — committed (`fix/watch-history-mobile-hardening`)
 
 - [x] Track Shorts, MutationObserver video detection, immediate unload flush, drop dead
