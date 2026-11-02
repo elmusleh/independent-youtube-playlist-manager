@@ -21,6 +21,7 @@
   import Search from "./views/Search.svelte";
   import OpenById from "./views/OpenById.svelte";
   import MetadataManager from "./views/MetadataManager.svelte";
+  import ChooseDestination from "./views/ChooseDestination.svelte";
   import ConfirmationModal from "./components/ConfirmationModal.svelte";
   import BackToTop from "./components/BackToTop.svelte";
   import ToastContainer from "./components/ToastContainer.svelte";
@@ -120,6 +121,7 @@
     "/search": Search,
     "/open-by-id": OpenById,
     "/metadata": MetadataManager,
+    "/choose-destination": ChooseDestination,
     "/*": Saved,
   };
 
