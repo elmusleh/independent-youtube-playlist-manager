@@ -17,7 +17,6 @@
   import SaveStatus from "../components/SaveStatus.svelte";
   import { StatusManager } from "../services/status-manager.svelte";
   import BackendSection from "../components/sync/BackendSection.svelte";
-  import CompatibilitySection from "../components/sync/CompatibilitySection.svelte";
   import {
     loadSyncConfig,
     saveSyncConfig,
@@ -205,6 +204,11 @@
             {#if lastError}<br /><span class="sync-error">⚠ {lastError}</span>{/if}
           {/if}
         </p>
+        {#if syncIsOn}
+          <p class="sub-text">
+            Changes sync automatically — they appear on your other devices within a minute.
+          </p>
+        {/if}
       </div>
       <SimpleButton secondary onclick={syncNow} disabled={isSyncing}>
         <Fa icon={faArrowsRotate} />
@@ -213,26 +217,6 @@
     </section>
 
     <div class="settings-grid">
-      <!-- How pairing works -->
-      <section class="card">
-        <h3><Fa icon={faKey} /> How pairing works</h3>
-        <p class="sub-text">
-          Pairing means using the <strong>same sync key</strong> on every device. There are no
-          accounts and no separate pairing code — the key is the only credential. Keep it secret:
-          <strong>lose the key and your data cannot be recovered.</strong>
-        </p>
-        <ol class="pairing-steps">
-          <li>
-            On <strong>device A</strong>, tap <em>Generate a key</em> (or copy the key you already have).
-          </li>
-          <li>
-            Open Sync on <strong>device B</strong> — your phone, another computer — and paste that same
-            key. Yes, this works on your phone too.
-          </li>
-          <li>Done. Both devices now read and write the same encrypted data automatically.</li>
-        </ol>
-      </section>
-
       <BackendSection
         {config}
         {caps}
@@ -245,6 +229,11 @@
       <!-- Your sync key -->
       <section class="card">
         <h3><Fa icon={faShieldHalved} /> Your sync key</h3>
+        <p class="sub-text">
+          Pairing = using the <strong>same key</strong> on every device. Generate one here, or paste
+          the key from another device — including your phone. No account, no separate code. Keep it
+          secret: <strong>lose the key and your data cannot be recovered.</strong>
+        </p>
         {#if config.syncKey}
           <div class="key-display">
             <code class="key-value">{config.syncKey}</code>
@@ -342,9 +331,6 @@
           <Fa icon={faLink} /> Open API setup
         </a>
       </section>
-
-      <!-- Compatibility -->
-      <CompatibilitySection {caps} />
     </div>
   </div>
 </main>

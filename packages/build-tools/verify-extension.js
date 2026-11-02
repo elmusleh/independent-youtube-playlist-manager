@@ -226,10 +226,10 @@ async function main() {
     await visit("/sync");
     const syncBody = await page.locator("body").innerText();
     for (const label of [
-      "Recommended (IYPM hosted)",
+      "IYPM hosted (Beta)",
       "Your own Supabase project",
       "File / Syncthing",
-      "Works here",
+      "Works everywhere",
     ]) {
       assert(syncBody.includes(label), `Sync view is missing "${label}"`);
     }

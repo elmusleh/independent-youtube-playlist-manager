@@ -9,7 +9,11 @@
   } from "@fortawesome/free-solid-svg-icons";
   import SimpleButton from "../SimpleButton.svelte";
   import { supportsFileTransport } from "../../services/sync/file-sync-service.js";
-  import type { SyncConfig, SyncBackend } from "../../services/sync/sync-config.js";
+  import {
+    isRelayConfigured,
+    type SyncConfig,
+    type SyncBackend,
+  } from "../../services/sync/sync-config.js";
   import type { DeviceCapabilities } from "../../services/sync/capabilities.js";
 
   let {
@@ -29,6 +33,7 @@
   } = $props();
 
   const fileSupported = supportsFileTransport();
+  const relayReady = isRelayConfigured();
 
   let expanded = $state<string | null>(null);
   function toggle(id: string) {
@@ -39,7 +44,8 @@
 <section class="card">
   <h3><Fa icon={faCloud} /> How your data travels</h3>
   <p class="sub-text">
-    Pick where your encrypted data lives. Every option is end-to-end encrypted.
+    Pick where your encrypted data lives, then set the same key on every device. You're on{" "}
+    <strong>{caps.platformLabel}</strong>.
   </p>
 
   <div class="backend-option" class:selected={config.backend === "relay"}>
@@ -50,13 +56,20 @@
         value="relay"
         checked={config.backend === "relay"}
         onchange={() => onSetBackend("relay")}
+        disabled={!relayReady}
       />
       <Fa icon={faCloud} />
-      <span class="backend-name">Recommended (IYPM hosted)</span>
-      <span class="sync-badge sync-badge-yes">✅ Works here</span>
+      <span class="backend-name">IYPM hosted (Beta)</span>
+      {#if relayReady}
+        <span class="sync-badge sync-badge-yes">✅ Works here</span>
+      {:else}
+        <span class="sync-badge sync-badge-beta">Beta · coming soon</span>
+      {/if}
     </label>
     <p class="sub-text">
-      Easiest. Uses IYPM's hosted sync service. Nothing but encrypted data is stored.
+      {relayReady
+        ? "Zero setup — uses IYPM's hosted service. Nothing but encrypted data is stored."
+        : "Not live yet. Use your own Supabase project below for now."}
     </p>
     <button type="button" class="learn-more" onclick={() => toggle("relay")}>
       <Fa icon={expanded === "relay" ? faChevronUp : faChevronDown} />
@@ -88,10 +101,11 @@
       />
       <Fa icon={faServer} />
       <span class="backend-name">Your own Supabase project</span>
-      <span class="sync-badge sync-badge-yes">✅ Works here</span>
+      <span class="sync-badge sync-badge-yes">✅ Works everywhere</span>
     </label>
     <p class="sub-text">
-      Free tier. You supply the project; the extension stores only encrypted data.
+      Free tier, works on every browser and phone. You supply the project; only encrypted data is
+      stored.
     </p>
     <button type="button" class="learn-more" onclick={() => toggle("supabase-byo")}>
       <Fa icon={expanded === "supabase-byo" ? faChevronUp : faChevronDown} />
@@ -100,8 +114,8 @@
     {#if expanded === "supabase-byo"}
       <div class="backend-detail">
         <p>
-          <strong>Where your data goes:</strong> same encryption. The encrypted blob is uploaded to your
-          own Supabase project (a free-tier database you control).
+          <strong>Setup:</strong> 1) create a free project at supabase.com, 2) run the one-time SQL
+          from <em>docs/sync-relay.sql</em>, 3) paste the Project URL and anon key below.
         </p>
         <p>
           <strong>Privacy:</strong> you own the server, but it still stores ciphertext only — even you
@@ -144,12 +158,12 @@
       <Fa icon={faFolderOpen} />
       <span class="backend-name">File / Syncthing</span>
       <span class={caps.file === "yes" ? "sync-badge sync-badge-yes" : "sync-badge sync-badge-no"}>
-        {caps.file === "yes" ? "✅ Works" : "❌ Not available"}
+        {caps.file === "yes" ? "✅ Chrome/Edge" : "❌ Not here"}
       </span>
     </label>
     <p class="sub-text">
-      Your own files, no account. A tool like Syncthing moves the file between devices.
-      {!fileSupported ? ` ${caps.fileNote}` : ""}
+      No cloud — a file in a folder you control.
+      {!fileSupported ? ` ${caps.fileNote}` : " Needs Chrome or Edge on a desktop."}
     </p>
     <button type="button" class="learn-more" onclick={() => toggle("file")}>
       <Fa icon={expanded === "file" ? faChevronUp : faChevronDown} />
@@ -158,13 +172,13 @@
     {#if expanded === "file"}
       <div class="backend-detail">
         <p>
-          <strong>Where your data goes:</strong> the encrypted blob is written as a single file in a folder
-          you choose on this device.
+          <strong>How it works:</strong> 1) click "Choose folder" and pick any folder (e.g. a "Sync" folder),
+          2) install Syncthing and share that folder between your computers, 3) each device reads and
+          writes the same encrypted file.
         </p>
         <p>
-          <strong>Privacy:</strong> nothing touches a server you don't control. Use Syncthing (or Dropbox
-          / Google Drive) to move that file between your devices — each device reads and writes the same
-          file.
+          <strong>Privacy:</strong> nothing touches a server you don't control. The file is encrypted,
+          so the folder is safe to sync through Dropbox / Google Drive too.
         </p>
       </div>
     {/if}

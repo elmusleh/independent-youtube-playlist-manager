@@ -67,6 +67,14 @@ export const DEFAULT_SYNC_CONFIG: SyncConfig = {
 export const RELAY_SUPABASE_URL = "https://placeholder.supabase.co";
 export const RELAY_SUPABASE_ANON_KEY = "placeholder-anon-key";
 
+/** True when the hosted relay has real credentials (not the placeholder). */
+export function isRelayConfigured(): boolean {
+  return (
+    RELAY_SUPABASE_URL.includes("placeholder") === false &&
+    RELAY_SUPABASE_ANON_KEY.includes("placeholder") === false
+  );
+}
+
 /** Cross-browser durable storage adapter (browser.storage.local with chrome fallback). */
 function storageArea(): {
   get(key: string): Promise<unknown>;
