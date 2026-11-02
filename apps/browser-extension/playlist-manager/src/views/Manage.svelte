@@ -1471,7 +1471,9 @@
                   : "Add to favorites"}
                 onclick={(e) => {
                                 e.stopPropagation();
-                                persistFavoriteIds(toggleFavorite(favoritePlaylistIds, p.id)).then(() => {
+                                const next = toggleFavorite(favoritePlaylistIds, p.id);
+                                if (settings) settings.favoritePlaylistIds = next;
+                                persistFavoriteIds(next).then(() => {
                                   window.getSettings().then((s) => (settings = s));
                                 });
                               }}

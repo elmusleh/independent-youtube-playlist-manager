@@ -284,11 +284,11 @@
                 : "online"}
           isFavorite={settings?.favoritePlaylistIds?.includes(p.id) ?? false}
                      onToggleFavorite={() => {
-                       persistFavoriteIds(toggleFavorite(settings?.favoritePlaylistIds ?? [], p.id)).then(
-                         () => {
-                           window.getSettings().then((s) => (settings = s));
-                         }
-                       );
+                       const next = toggleFavorite(settings?.favoritePlaylistIds ?? [], p.id);
+                       if (settings) settings.favoritePlaylistIds = next;
+                       persistFavoriteIds(next).then(() => {
+                         window.getSettings().then((s) => (settings = s));
+                       });
                      }}
           onOpen={() => openInEditor(p)}
           actions={getCardActions(p)}
