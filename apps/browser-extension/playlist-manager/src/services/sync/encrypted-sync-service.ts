@@ -43,6 +43,7 @@ export type EncryptedSyncResult = {
   pushed: boolean;
   pulled: boolean;
   remoteRevision: number | null;
+  snapshot: SyncSnapshot | null;
   error?: string;
 };
 
@@ -72,36 +73,49 @@ export class EncryptedSyncService {
       const address = await deriveStorageAddress(syncKey);
       const key = await deriveEncryptionKey(syncKey);
 
-      // LWW guard: don't clobber a newer remote snapshot.
-      const { data: existing } = await client
-        .from(TABLE)
-        .select("revision")
-        .eq("address", address)
-        .maybeSingle();
-      const remoteRevision = existing?.revision ?? null;
-      if (isNewerRevision(remoteRevision, revision)) {
-        // Remote is strictly newer — local lost the LWW race; don't clobber.
-        return { pushed: false };
-      }
-
       const payload = selectSyncContent(source, selection) as unknown as Record<string, unknown>;
       const snapshot = createSnapshot({ revision, deviceId: this.deviceId, payload });
       const plaintext = encodeSnapshot(snapshot);
       const encrypted = await encryptSnapshot(key, plaintext);
       const blob = toBase64(encrypted);
+      const row = {
+        address,
+        blob,
+        revision,
+        device_id: this.deviceId,
+        updated_at: new Date().toISOString(),
+      };
 
-      const { error } = await client.from(TABLE).upsert(
-        {
-          address,
-          blob,
-          revision,
-          device_id: this.deviceId,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "address" }
-      );
-      if (error) throw error;
-      return { pushed: true };
+      // Atomic LWW guard: only overwrite when the stored revision is strictly older.
+      // A conditional update avoids the check-then-write race between two devices.
+      const { data: updated, error: upErr } = await client
+        .from(TABLE)
+        .update(row)
+        .eq("address", address)
+        .lt("revision", revision)
+        .select("address");
+      if (upErr) throw upErr;
+      if (updated && updated.length > 0) {
+        return { pushed: true };
+      }
+
+      // No row updated — either the row doesn't exist yet, or remote is newer.
+      const { data: existing } = await client
+        .from(TABLE)
+        .select("revision")
+        .eq("address", address)
+        .maybeSingle();
+      if (existing && isNewerRevision(existing.revision, revision)) {
+        // Remote is strictly newer — local lost the LWW race.
+        return { pushed: false };
+      }
+      if (!existing) {
+        const { error: insErr } = await client.from(TABLE).insert(row);
+        if (insErr) throw insErr;
+        return { pushed: true };
+      }
+      // Existing row with equal/newer revision — don't clobber.
+      return { pushed: false };
     } catch (err: any) {
       return { pushed: false, error: err?.message || String(err) };
     }
@@ -153,11 +167,14 @@ export class EncryptedSyncService {
       pulled = true;
     }
 
+    const hasError = !!uploadResult.error;
+
     return {
-      success: true,
+      success: !uploadResult.error,
       pushed: uploadResult.pushed,
       pulled,
       remoteRevision: remote?.revision ?? null,
+      snapshot: remote,
       error: uploadResult.error,
     };
   }

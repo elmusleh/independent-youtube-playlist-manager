@@ -15,10 +15,23 @@ vi.mock("../supabase-client", () => {
           },
         }),
       }),
-      upsert: async (row: { address: string; blob: string; revision: number }) => {
-        const existing = store.get(row.address);
-        if (existing && row.revision <= existing.revision) {
-          return { error: null }; // LWW: don't overwrite
+      update: (row: { address: string; blob: string; revision: number }) => ({
+        eq: (_col: string, val: string) => ({
+          lt: (_col2: string, rev: number) => ({
+            select: (_cols: string) => {
+              const existing = store.get(val);
+              if (existing && existing.revision < rev) {
+                store.set(val, { blob: row.blob, revision: row.revision });
+                return Promise.resolve({ data: [{ address: val }], error: null });
+              }
+              return Promise.resolve({ data: [], error: null });
+            },
+          }),
+        }),
+      }),
+      insert: async (row: { address: string; blob: string; revision: number }) => {
+        if (store.has(row.address)) {
+          return { error: { message: "duplicate" } };
         }
         store.set(row.address, { blob: row.blob, revision: row.revision });
         return { error: null };
