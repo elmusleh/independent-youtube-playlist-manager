@@ -61,7 +61,7 @@
           isLocal: false,
           thumbnailUrl: p.thumbnailUrl ?? undefined,
         })),
-      ];
+      ].filter((entry, index, arr) => arr.findIndex((e) => e.id === entry.id) === index);
     } catch (e) {
       logger.error("Failed to load playlists for favorites:", e);
     } finally {
@@ -84,10 +84,12 @@
   }
 
   async function toggle(id: string) {
-    await persistFavoriteIds(toggleFavorite(settings?.favoritePlaylistIds ?? [], id));
+    const nextIds = toggleFavorite(settings?.favoritePlaylistIds ?? [], id);
+    await persistFavoriteIds(nextIds);
+    if (settings) settings.favoritePlaylistIds = nextIds;
     if (window.logSystemEvent)
       await window.logSystemEvent("INFO", `[SETTINGS] Toggled favorite: ${id}`);
-    window.success(isFavorite(id) ? "Removed from favorites" : "Added to favorites");
+    window.success(nextIds.includes(id) ? "Added to favorites" : "Removed from favorites");
   }
 
   async function move(id: string, direction: -1 | 1) {

@@ -1158,10 +1158,12 @@ async function migrateSettings(settings: Settings) {
     });
   }
   // Seed pinned favorites from the legacy single favorite (one-time, additive).
+  // Only seed when the setting was never present (undefined/null), so an explicitly
+  // cleared favorites list is not re-populated.
   const favorites = settings.favoritePlaylistIds;
-  const hasFavorites = Array.isArray(favorites) && favorites.length > 0;
+  const neverMigrated = favorites === undefined || favorites === null;
   if (
-    !hasFavorites &&
+    neverMigrated &&
     typeof settings.watchLaterPlaylistId === "string" &&
     settings.watchLaterPlaylistId
   ) {
