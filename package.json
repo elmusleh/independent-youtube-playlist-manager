@@ -37,6 +37,7 @@
     "audit": "npm audit --audit-level=high",
     "prepare": "husky install",
     "release-notes": "node packages/build-tools/gen-release-notes.mjs",
+    "test:native-menu": "node packages/build-tools/verify-native-menu.js",
     "test:capture-mutations": "node packages/build-tools/verify-capture-mutations.js",
     "audit:all": "node packages/build-tools/audit-dependency-trees.js",
     "native:fixture": "node packages/build-tools/serve-native-menu-fixture.js",

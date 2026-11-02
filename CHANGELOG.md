@@ -18,6 +18,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   selection, searchable local/YouTube chooser, page import options, explicit remote
   Sync review, expiring capture jobs, progress and cancellation. Native captures keep
   tabs open by default; optional closure checks newly saved IDs and unchanged source tabs.
+- `npm run test:native-menu`: repeatable verification of the real native context menu across
+  five settings variants (default, saved off, builder off, menu off, link context). It asserts
+  both the registered entries and the labels OCR'd from the browser's own menu, refuses to run
+  on a stale `dist/`, and skips cleanly without X11 unless `IYPM_REQUIRE_NATIVE_MENU=1`.
 - Shared background authority for playlist and builder writes with atomic revisions,
   conflict feedback and retry receipts. Add dependency-tree triage, runtime module packaging
   verification and disposable safety mutation checks. Verification is pending Hermes.
