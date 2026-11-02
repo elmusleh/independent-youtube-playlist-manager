@@ -57,7 +57,7 @@
 </script>
 
 <div class="dropdown-container">
-  <SimpleButton {disabled} secondary onclick={toggle}>
+  <SimpleButton {disabled} secondary onclick={toggle} title={label}>
     <Fa {icon} fw />
     <span>{label}</span>
     <Fa icon={faChevronDown} fw class="chevron" />

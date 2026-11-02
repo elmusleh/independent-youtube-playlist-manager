@@ -130,6 +130,7 @@
       secondary
       disabled={nothingSelected}
       className="playlist-action"
+      title="Playlist"
     >
       <Fa icon={faLayerGroup} fw />
       <span>Playlist</span>
@@ -142,12 +143,12 @@
       disabled={nothingSelected}
     />
 
-    <SimpleButton onclick={onDelete} danger disabled={nothingSelected}>
+    <SimpleButton onclick={onDelete} danger disabled={nothingSelected} title="Delete">
       <Fa icon={faTrash} fw />
       <span>Delete</span>
     </SimpleButton>
 
-    <SimpleButton onclick={onCancel} secondary>
+    <SimpleButton onclick={onCancel} secondary title="Cancel">
       <Fa icon={faXmark} fw />
       <span>Cancel</span>
     </SimpleButton>

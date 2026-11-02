@@ -71,6 +71,13 @@
 
   const badge = $derived(getBadge(category));
   const resolvedTitle = $derived(titleProp || badge?.title || "");
+
+  function handleClick(event: MouseEvent) {
+    // A badge click must not bubble to an enclosing button (e.g. the playlist
+    // thumbnail's onOpen), otherwise filtering a category also navigates away.
+    event.stopPropagation();
+    onclick?.();
+  }
 </script>
 
 {#if status === "syncing"}
@@ -92,7 +99,7 @@
       style="background-color: {badge.color}; color: {badge.textColor}"
       title={resolvedTitle}
       aria-label="{badge.label}: {resolvedTitle}"
-      {onclick}
+      onclick={handleClick}
     >
       {badge.label}
     </button>
