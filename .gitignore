@@ -16,6 +16,7 @@ test-results/
 # Load dist/chrome/ in Chrome, dist/firefox/ in Firefox, dist/edge/ in Edge
 /dist
 /dist-zip
+/web-ext-artifacts
 .agents/
 .agent/
 .codex/
