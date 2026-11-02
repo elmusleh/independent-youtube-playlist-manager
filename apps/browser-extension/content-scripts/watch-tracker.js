@@ -4,7 +4,6 @@
 
   let currentVideoId = null;
   let currentPlaylistId = null;
-  let trackedVideoEl = null;
   let rules = {};
 
   let boundHandlers = {};
@@ -57,10 +56,8 @@
   }
 
   async function teardown() {
-    if (trackedVideoEl) {
-      for (const ev of ["pause", "ended", "timeupdate", "play"]) {
-        if (boundHandlers[ev]) trackedVideoEl.removeEventListener(ev, boundHandlers[ev]);
-      }
+    for (const ev of ["pause", "ended", "timeupdate", "play"]) {
+      if (boundHandlers[ev]) document.removeEventListener(ev, boundHandlers[ev], true);
     }
     if (boundHandlers.visibilitychange)
       document.removeEventListener("visibilitychange", boundHandlers.visibilitychange);
@@ -69,7 +66,6 @@
       window.removeEventListener("yt-navigate-start", boundHandlers.ytnavstart);
 
     boundHandlers = {};
-    trackedVideoEl = null;
 
     if (debounceTimer) {
       clearTimeout(debounceTimer);
@@ -139,8 +135,6 @@
       return;
     }
 
-    trackedVideoEl = videoEl;
-
     if (!urlParams.get("t")) {
       try {
         const history = await browser.runtime.sendMessage({
@@ -149,11 +143,14 @@
         });
         if (history?.t && !history.isCompleted) {
           const doResume = () => {
+            const video = getVideo();
+            if (!video) return;
             log("INFO", `Auto-resuming video to ${history.t}s`);
-            trackedVideoEl.currentTime = history.t;
+            video.currentTime = history.t;
           };
-          if (trackedVideoEl.readyState >= 1) doResume();
-          else trackedVideoEl.addEventListener("loadedmetadata", doResume, { once: true });
+          const video = getVideo();
+          if (video && video.readyState >= 1) doResume();
+          else if (video) video.addEventListener("loadedmetadata", doResume, { once: true });
         }
       } catch {
         /* ignore */
@@ -210,13 +207,23 @@
     boundHandlers.ended = () => onSaveTrigger("ended");
     boundHandlers.timeupdate = onTimeUpdate;
 
-    trackedVideoEl.addEventListener("pause", boundHandlers.pause);
-    trackedVideoEl.addEventListener("play", boundHandlers.play);
-    trackedVideoEl.addEventListener("ended", boundHandlers.ended);
-    trackedVideoEl.addEventListener("timeupdate", boundHandlers.timeupdate);
+    // Attach media events at the document level (capture phase) so they keep firing
+    // even when YouTube replaces the <video> element. The handlers re-query the live
+    // element via getVideo() instead of holding a stale reference.
+    document.addEventListener("pause", boundHandlers.pause, true);
+    document.addEventListener("play", boundHandlers.play, true);
+    document.addEventListener("ended", boundHandlers.ended, true);
+    document.addEventListener("timeupdate", boundHandlers.timeupdate, true);
     document.addEventListener("visibilitychange", boundHandlers.visibilitychange);
     window.addEventListener("pagehide", boundHandlers.pagehide);
     window.addEventListener("yt-navigate-start", boundHandlers.ytnavstart);
+  }
+
+  function getVideo() {
+    // Re-query the live video element on every access. YouTube replaces the <video>
+    // element on m.youtube.com (especially around pre-roll ads), so a cached
+    // reference goes stale — its readyState stays 0 and no events fire on it.
+    return document.querySelector(VIDEO_SELECTOR);
   }
 
   function isAdShowing() {
@@ -268,10 +275,11 @@
         }
       }
 
-      if (!trackedVideoEl || isAdShowing()) return;
+      const video = getVideo();
+      if (!video || isAdShowing()) return;
 
-      const dur = trackedVideoEl.duration;
-      const t = trackedVideoEl.currentTime;
+      const dur = video.duration;
+      const t = video.currentTime;
 
       // Don't save if it's invalid, zero, or if we haven't advanced since the last save (unless it's a completion event)
       if (!dur || isNaN(dur) || t === 0 || (t === lastSavedTimeValue && triggerType !== "ended"))
@@ -324,10 +332,11 @@
     if (now - lastTimeUpdateTick < 1000) return;
     lastTimeUpdateTick = now;
 
-    if (!trackedVideoEl || isAdShowing() || isCompleting) return;
+    const video = getVideo();
+    if (!video || isAdShowing() || isCompleting) return;
 
-    const dur = trackedVideoEl.duration;
-    const t = trackedVideoEl.currentTime;
+    const dur = video.duration;
+    const t = video.currentTime;
 
     if (!dur || isNaN(dur)) return;
 
