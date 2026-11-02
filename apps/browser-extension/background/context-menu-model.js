@@ -27,9 +27,9 @@ export function staleMenuIds(desired, previousIds) {
  * names a destination the user can actually reach.
  * @param {{disableContextMenu?: boolean, disableContextBuilder?: boolean,
  *   disableContextSaved?: boolean}} settings
- * @param {Array<{id: string, title: string, timestamp?: number}>} destinations
+ * @param {Array<{id: string, title: string, timestamp?: number}>} _destinations
  */
-export function menuModel(settings, destinations) {
+export function menuModel(settings, _destinations) {
   if (settings.disableContextMenu) return [];
   const savedAllowed = !settings.disableContextSaved;
   const items = [{ id: ROOT, title: "IYPM", contexts }];
