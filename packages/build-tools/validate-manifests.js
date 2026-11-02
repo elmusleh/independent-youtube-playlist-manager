@@ -52,6 +52,22 @@ function validate(path, shouldHaveKey, shouldHaveScripts) {
     console.error(`FAIL: ${path} should NOT have "background.scripts"`);
     errors++;
   }
+
+  // Regression guard: the watch-tracking content script must match every YouTube
+  // subdomain (m./www./music./…) — never a fragile subdomain whitelist that silently
+  // drops mobile. Assert the wildcard is present for both watch and shorts pages.
+  const trackerScript = (manifest.content_scripts || []).find((script) =>
+    (script.js || []).some((file) => file.endsWith("watch-tracker.js"))
+  );
+  if (trackerScript) {
+    const matches = trackerScript.matches || [];
+    for (const required of ["*://*.youtube.com/watch*", "*://*.youtube.com/shorts*"]) {
+      if (!matches.includes(required)) {
+        console.error(`FAIL: ${path} watch-tracker matches must include "${required}"`);
+        errors++;
+      }
+    }
+  }
 }
 
 function validateEdgeMatchesChrome() {

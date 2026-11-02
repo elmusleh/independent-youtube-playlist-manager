@@ -484,25 +484,10 @@ class VideoService {
         `[VIDEO-SERVICE] Opening playlist with ${videoIds.length} videos`
       );
 
-    let t = 0;
-    if (playlistId && playlistId.startsWith("local-") && typeof browser !== "undefined") {
-      try {
-        const history = await browser.runtime.sendMessage({
-          cmd: "get-yph-history",
-          videoId: videoIds[0],
-        });
-        if (history && history.t) {
-          t = Math.floor(history.t);
-          if (window.logSystemEvent)
-            await window.logSystemEvent(
-              "INFO",
-              `[VIDEO-SERVICE] Resuming ${videoIds[0]} at ${t}s from history`
-            );
-        }
-      } catch (e) {
-        console.error("Failed to fetch history:", e);
-      }
-    }
+    // Resume-from-history is delegated to the watch-tracker content script
+    // (get-yph-history → currentTime). The watch_videos generator below redirects to
+    // /watch?v=…&list=TL… and discards any t= query param, so a timestamp in the URL
+    // would be dropped — the content script performs the seek instead.
 
     const settings = await window.getSettings();
     const signedIn = await window.isSignedIn();
@@ -545,10 +530,6 @@ class VideoService {
       }
 
       if (idx === 0 && playlistId && playlistId.startsWith("local-")) {
-        if (t > 0) {
-          const separator = url.includes("?") ? "&" : "?";
-          url += `${separator}t=${t}s`;
-        }
         url = url.split("#")[0] + `#yph_local_list=${playlistId}`;
       }
 
