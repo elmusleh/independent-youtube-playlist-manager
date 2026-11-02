@@ -325,7 +325,7 @@
         );
         videoTitle = titleEl?.textContent?.trim() || "";
         const channelEl = document.querySelector(
-          "#text.ytd-channel-name, ytd-video-owner-renderer #channel-name #text, .slim-owner-channel-name, .slim-video-information-channel, a.yt-formatted-string[href*='/channel/']"
+          "#text.ytd-channel-name, ytd-video-owner-renderer #channel-name #text, .slim-owner-channel-name, .slim-video-information-channel, .ytVideoMetadataViewModelSubtitleContainer span.ytAttributedStringHost"
         );
         channelName = channelEl?.textContent?.trim() || "";
       } catch {
