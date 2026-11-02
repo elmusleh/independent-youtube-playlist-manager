@@ -88,6 +88,7 @@ const routes = [
   "/manage",
   "/history",
   "/settings",
+  "/sync",
   "/search",
   "/subscriptions",
   "/shortcuts",

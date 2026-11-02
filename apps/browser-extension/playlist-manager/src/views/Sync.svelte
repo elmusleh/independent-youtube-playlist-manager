@@ -28,7 +28,7 @@
     normalizeSyncKey,
   } from "../services/sync/sync-key.js";
   import { storeFolderHandle } from "../services/sync/file-sync-service.js";
-  import { getSyncStatus, triggerSyncNow } from "../services/sync-manager.js";
+  import { getSyncStatus, triggerSyncNow, startPolling } from "../services/sync-manager.js";
 
   const caps = detectCapabilities();
 
@@ -41,11 +41,19 @@
   let error = $state("");
   let lastSyncedAt = $state<number | null>(null);
   let lastError = $state<string | null>(null);
+  let lastSyncSummary = $state<string | null>(null);
+  let knownDevices = $state(0);
   let isSyncing = $state(false);
 
-  onMount(async () => {
-    config = await loadSyncConfig();
-    await refreshStatus();
+  onMount(() => {
+    startPolling();
+    // Refresh the status line periodically so a background sync updates it.
+    const timer = setInterval(refreshStatus, 10_000);
+    (async () => {
+      config = await loadSyncConfig();
+      await refreshStatus();
+    })();
+    return () => clearInterval(timer);
   });
 
   async function persist() {
@@ -56,6 +64,8 @@
     const s = await getSyncStatus();
     lastSyncedAt = s.lastSyncedAt;
     lastError = s.lastError;
+    lastSyncSummary = s.lastSyncSummary;
+    knownDevices = s.knownDevices;
     isSyncing = s.isSyncing;
   }
 
@@ -142,7 +152,7 @@
   }
 </script>
 
-<div class="sync-view">
+<main class="sync-view">
   <ViewHeader icon={faArrowsRotate} title="Sync" />
   <p class="sync-purpose">
     Keep your playlists in sync across your devices. Everything is encrypted with a key only you
@@ -259,6 +269,7 @@
       <h3><Fa icon={faArrowsRotate} /> Status</h3>
       <p class="sub-text">
         Last synced: {formatWhen(lastSyncedAt)}
+        {#if lastSyncSummary}<br />{lastSyncSummary}{/if}
         {#if lastError}<br /><span class="sync-error">⚠ {lastError}</span>{/if}
       </p>
       <SimpleButton secondary onclick={syncNow} disabled={isSyncing}>
@@ -267,7 +278,9 @@
       </SimpleButton>
       {#if config.syncKey && config.backend}
         <p class="sub-text">
-          <Fa icon={faCircleCheck} /> Sync is on. Changes will sync automatically.
+          <Fa icon={faCircleCheck} />
+          Sync is on across {knownDevices > 0 ? knownDevices : 1}
+          {knownDevices > 1 ? " devices" : " device"}. Changes will sync automatically.
         </p>
       {/if}
     </section>
@@ -283,4 +296,4 @@
       </a>
     </section>
   </div>
-</div>
+</main>

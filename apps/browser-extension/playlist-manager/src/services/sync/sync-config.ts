@@ -27,9 +27,14 @@ export type SyncConfig = {
   content: SyncContentSelection;
   lastSyncedAt: number | null;
   lastError: string | null;
+  /** Human-readable summary of the last completed sync (shown in status + toast). */
+  lastSyncSummary: string | null;
+  /** Pseudonymous device ids observed across syncs (local + remote writers). */
+  knownDevices: string[];
 };
 
 const KEY = "yph_sync_config";
+const DEVICE_ID_KEY = "yph_sync_device_id";
 
 export const DEFAULT_SYNC_CONFIG: SyncConfig = {
   syncKey: null,
@@ -39,6 +44,8 @@ export const DEFAULT_SYNC_CONFIG: SyncConfig = {
   content: { playlists: true, settings: false, history: false },
   lastSyncedAt: null,
   lastError: null,
+  lastSyncSummary: null,
+  knownDevices: [],
 };
 
 /**
@@ -77,6 +84,22 @@ function storageArea(): {
     get: async (k) => JSON.parse(localStorage.getItem(k) || "null"),
     set: async (k, v) => localStorage.setItem(k, JSON.stringify(v)),
   };
+}
+
+/** Get (or lazily create and persist) this device's stable pseudonymous id. */
+export async function getOrCreateDeviceId(): Promise<string> {
+  try {
+    const existing = await storageArea().get(DEVICE_ID_KEY);
+    if (typeof existing === "string" && existing) return existing;
+  } catch {
+    // fall through to generate
+  }
+  const id =
+    typeof crypto !== "undefined" && crypto.randomUUID
+      ? crypto.randomUUID()
+      : `dev-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+  await storageArea().set(DEVICE_ID_KEY, id);
+  return id;
 }
 
 export async function loadSyncConfig(): Promise<SyncConfig> {
