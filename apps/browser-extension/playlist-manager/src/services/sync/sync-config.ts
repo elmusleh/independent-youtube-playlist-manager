@@ -31,6 +31,12 @@ export type SyncConfig = {
   lastSyncSummary: string | null;
   /** Pseudonymous device ids observed across syncs (local + remote writers). */
   knownDevices: string[];
+  /**
+   * Lamport clock for LWW conflict resolution. This is a *globally* monotonic revision
+   * derived from the remote snapshot, NOT the device-local library mutation counter —
+   * two devices must never tie, or neither will pull the other's data.
+   */
+  syncRevision: number;
 };
 
 const KEY = "yph_sync_config";
@@ -46,6 +52,7 @@ export const DEFAULT_SYNC_CONFIG: SyncConfig = {
   lastError: null,
   lastSyncSummary: null,
   knownDevices: [],
+  syncRevision: 0,
 };
 
 /**
@@ -114,6 +121,7 @@ export async function loadSyncConfig(): Promise<SyncConfig> {
       ...stored,
       content,
       knownDevices: Array.isArray(stored.knownDevices) ? stored.knownDevices : [],
+      syncRevision: typeof stored.syncRevision === "number" ? stored.syncRevision : 0,
     };
   } catch {
     return structuredClone(DEFAULT_SYNC_CONFIG);

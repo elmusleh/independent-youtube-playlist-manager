@@ -162,18 +162,19 @@ export function scheduleSync(): void {
   }, DEBOUNCE_MS);
 }
 
-/** Periodic pull so a Syncthing-dropped file is noticed without a local edit. */
+/** Periodic pull (all backends) so a newer snapshot arrives without a local edit. */
 export function startPolling(): void {
   if (pollTimer) return;
   pollTimer = setInterval(async () => {
     const config = await loadSyncConfig();
-    if (config.syncKey && config.backend === "file") {
-      performSync().catch(() => {});
+    if (config.syncKey && config.backend) {
+      performSync({ push: false }).catch(() => {});
     }
   }, POLL_MS);
 }
 
-async function performSync(): Promise<void> {
+async function performSync(options: { push?: boolean } = {}): Promise<void> {
+  const push = options.push !== false;
   if (isSyncing) return;
   const config = await loadSyncConfig();
   if (!config.syncKey || !config.backend) return;
@@ -183,53 +184,66 @@ async function performSync(): Promise<void> {
 
   isSyncing = true;
   try {
-    const source = await collectSource();
     const selection = buildSelection(config);
 
-    const result = await transport.sync(
-      config.syncKey,
-      source as any,
-      selection as any,
-      source.revision
-    );
+    // Lamport clock: the sync revision must be globally monotonic, so derive it from
+    // the remote snapshot — never the device-local library revision, which can tie
+    // across two devices and then neither would ever pull the other's data.
+    const remote = await transport.download(config.syncKey);
+    const remoteRev = remote?.revision ?? 0;
+    const localRev = typeof config.syncRevision === "number" ? config.syncRevision : 0;
 
-    let summary: string;
     let applied: string[] = [];
 
-    if (result.error) {
-      summary = `Sync failed: ${result.error}`;
-      config.lastError = result.error;
-      config.lastSyncSummary = summary;
-    } else {
-      if (result.pulled && result.snapshot) {
-        await backupLocal();
-        applied = await applyRemote(result.snapshot.payload, selection);
-        const devices = new Set(config.knownDevices ?? []);
-        devices.add(await getOrCreateDeviceId());
-        if (result.snapshot.deviceId) devices.add(result.snapshot.deviceId);
-        config.knownDevices = [...devices];
-      }
-
-      const pulledLabel = applied.length ? applied.join(", ") : "";
-      if (result.pushed && applied.length) {
-        summary = `Synced your changes and pulled ${pulledLabel} from another device.`;
-      } else if (applied.length) {
-        summary = `Pulled ${pulledLabel} from another device.`;
-      } else if (result.pushed) {
-        summary = "Synced your changes.";
-      } else {
-        summary = "Already up to date.";
-      }
+    if (remote && remoteRev > localRev) {
+      // Another device wrote newer data — adopt it (LWW: newer wins).
+      await backupLocal();
+      applied = await applyRemote(remote.payload, selection);
+      config.syncRevision = remoteRev;
+      const devices = new Set(config.knownDevices ?? []);
+      devices.add(await getOrCreateDeviceId());
+      if (remote.deviceId) devices.add(remote.deviceId);
+      config.knownDevices = [...devices];
       config.lastError = null;
-      config.lastSyncSummary = summary;
+      config.lastSyncSummary = `Pulled ${applied.join(", ") || "data"} from another device.`;
+    } else if (push) {
+      // We are at least as new — push with a fresh Lamport timestamp.
+      const source = await collectSource();
+      const newRev = Math.max(localRev, remoteRev) + 1;
+      const uploadResult = await transport.upload(
+        config.syncKey,
+        source as any,
+        selection as any,
+        newRev
+      );
+      if (uploadResult.error) {
+        config.lastError = uploadResult.error;
+        config.lastSyncSummary = `Sync failed: ${uploadResult.error}`;
+      } else if (uploadResult.pushed) {
+        config.syncRevision = newRev;
+        config.lastError = null;
+        config.lastSyncSummary = "Synced your changes.";
+      } else {
+        // Our write lost a race to a concurrent device — re-read and adopt the winner.
+        const after = await transport.download(config.syncKey);
+        if (after && after.revision > localRev) {
+          await backupLocal();
+          applied = await applyRemote(after.payload, selection);
+          config.syncRevision = after.revision;
+          config.lastSyncSummary = `Pulled ${applied.join(", ") || "data"} from another device.`;
+        } else {
+          config.lastError = null;
+          config.lastSyncSummary = "Already up to date.";
+        }
+      }
+    } else {
+      config.lastError = null;
+      config.lastSyncSummary = "Already up to date.";
     }
 
     config.lastSyncedAt = Date.now();
     await saveSyncConfig(config);
-
-    if (applied.length) {
-      toast.show(summary, "success");
-    }
+    if (applied.length) toast.show(config.lastSyncSummary!, "success");
   } catch (e: any) {
     const config2 = await loadSyncConfig();
     config2.lastError = e?.message || String(e);

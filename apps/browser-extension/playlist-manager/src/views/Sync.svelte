@@ -61,6 +61,14 @@
 
   const syncIsOn = $derived(!!(config.syncKey && config.backend));
 
+  function hintFor(c: SyncConfig): string | null {
+    if (!c.syncKey) return "Generate or paste a sync key to begin.";
+    if (!c.backend) return "Choose how your data travels to start syncing.";
+    if (c.backend === "relay") return "Relay not configured — use BYO or File.";
+    return null;
+  }
+  const setupHint = $derived(hintFor(config));
+
   async function persist() {
     await status.save(() => saveSyncConfig(config));
   }
@@ -189,9 +197,13 @@
           {/if}
         </h3>
         <p class="sub-text">
-          Last synced: {formatWhen(lastSyncedAt)}
-          {#if lastSyncSummary}<br />{lastSyncSummary}{/if}
-          {#if lastError}<br /><span class="sync-error">⚠ {lastError}</span>{/if}
+          {#if setupHint}
+            {setupHint}
+          {:else}
+            Last synced: {formatWhen(lastSyncedAt)}
+            {#if lastSyncSummary}<br />{lastSyncSummary}{/if}
+            {#if lastError}<br /><span class="sync-error">⚠ {lastError}</span>{/if}
+          {/if}
         </p>
       </div>
       <SimpleButton secondary onclick={syncNow} disabled={isSyncing}>
