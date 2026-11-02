@@ -10,7 +10,6 @@
     faLockOpen,
     faStar as faStarSolid,
     faThumbTack,
-    faThumbTackSlash,
   } from "@fortawesome/free-solid-svg-icons";
   import { faStar as faStarRegular } from "@fortawesome/free-regular-svg-icons";
   import { faYoutube } from "@fortawesome/free-brands-svg-icons";
@@ -189,7 +188,7 @@
             title={isPinned ? "Unpin playlist from sidebar" : "Pin playlist to sidebar"}
             aria-label={isPinned ? "Unpin playlist from sidebar" : "Pin playlist to sidebar"}
           >
-            <Fa icon={isPinned ? faThumbTack : faThumbTackSlash} />
+            <Fa icon={faThumbTack} />
           </button>
         {/if}
         {@render children?.()}
