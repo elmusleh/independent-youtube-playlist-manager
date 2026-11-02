@@ -8,6 +8,13 @@
       `npx svelte-check` 0 errors.
 - [ ] Manual real-device (Firefox Android) record/resume/Shorts confirmation.
 
+## Improvement plan execution — 2026-11-01 (later)
+
+- Both PRs are now merged to `next` (#70 `977509d`, #71 `2fd2c88`); `next` HEAD `2fd2c88`,
+  `npm run check` exit 0. Release notes current. Phase 5 (release) still deferred — more
+  features coming.
+- Phase 2 (#10–#14) and Phase 4 groups 2–6 remain open (see below).
+
 ## Improvement plan execution — 2026-11-01 (late)
 
 Plan: `docs/IMPROVEMENT_PLAN.md` (merged with #69).

@@ -1,5 +1,17 @@
 # Handoff — 2026-10-31, verification complete with all automated gates passing
 
+## 2026-11-01 (later) — PRs #70 and #71 merged; `next` is green
+
+- **#70** `feat(ui): land editor follow-ups, duration capture and type-contract repair` — merged
+  (squash) as `977509d`.
+- **#71** `feat(sync): key, derivation, snapshot codec, AES-GCM and content selection` — merged
+  (squash) as `2fd2c88`.
+- `next` HEAD is `2fd2c88`; `npm run check` exits 0 (57 files / 623 tests, all gates).
+- Release notes are current (`gen-release-notes.mjs`: "Release notes already current (5 versions)").
+  No release cut — owner said more features are coming; Phase 5 stays deferred.
+- Remaining: Phase 2 issue closure (#10–#14) needs device/manual evidence; Phase 4 groups 2–6
+  (engine, backends, Plugins screen) not started.
+
 ## 2026-11-01 — watch-history mobile hardening (branch `fix/watch-history-mobile-hardening`)
 
 - Commit `6768c95` on `fix/watch-history-mobile-hardening` (cut off `next`): tracks
