@@ -8,6 +8,7 @@
   import Builder from "./views/Builder.svelte";
   import Saved from "./views/Saved.svelte";
   import Settings from "./views/Settings.svelte";
+  import Plugins from "./views/Plugins.svelte";
   import DeveloperSetup from "./views/DeveloperSetup.svelte";
   import Logs from "./views/Logs.svelte";
   import Manage from "./views/Manage.svelte";
@@ -107,6 +108,7 @@
     "/playlist": PlaylistView,
     "/editor": PlaylistView,
     "/settings": Settings,
+    "/plugins": Plugins,
     "/shortcuts": Shortcuts,
     "/api-setup": DeveloperSetup,
     "/logs": Logs,

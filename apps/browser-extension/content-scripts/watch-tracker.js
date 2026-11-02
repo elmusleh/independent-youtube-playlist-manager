@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 (function () {
   const logPrefix = "[Watch Tracker]";
 
@@ -141,6 +140,13 @@
 
     trackedVideoEl = videoEl;
 
+    await log("INFO", "Video element found, attaching listeners", {
+      selector: VIDEO_SELECTOR,
+      videoSrc: videoEl.src,
+      readyState: videoEl.readyState,
+      duration: videoEl.duration,
+    });
+
     if (!urlParams.get("t")) {
       try {
         const history = await browser.runtime.sendMessage({
@@ -200,6 +206,7 @@
   }
 
   function startProgressTracking() {
+    log("INFO", "Attaching event listeners to video element");
     boundHandlers.pause = () => onSaveTrigger("pause");
     boundHandlers.play = () => onPlayTrigger();
     boundHandlers.visibilitychange = () => {
@@ -217,6 +224,27 @@
     document.addEventListener("visibilitychange", boundHandlers.visibilitychange);
     window.addEventListener("pagehide", boundHandlers.pagehide);
     window.addEventListener("yt-navigate-start", boundHandlers.ytnavstart);
+
+    // On mobile (Fenix), video element may exist but not have metadata yet.
+    // Wait for loadedmetadata before allowing saves.
+    let metadataLoaded = trackedVideoEl.readyState >= 1;
+    if (!metadataLoaded) {
+      const onMeta = () => {
+        metadataLoaded = true;
+        trackedVideoEl.removeEventListener("loadedmetadata", onMeta);
+        log("INFO", "Video metadata loaded, tracking enabled");
+      };
+      trackedVideoEl.addEventListener("loadedmetadata", onMeta);
+    }
+
+    log("INFO", "Event listeners attached", {
+      hasPause: !!boundHandlers.pause,
+      hasPlay: !!boundHandlers.play,
+      hasEnded: !!boundHandlers.ended,
+      hasTimeupdate: !!boundHandlers.timeupdate,
+      metadataLoaded,
+      readyState: trackedVideoEl.readyState,
+    });
   }
 
   function isAdShowing() {
@@ -231,6 +259,7 @@
   }
 
   async function onSaveTrigger(triggerType) {
+    await log("INFO", `onSaveTrigger called`, { triggerType, ruleEnabled: rules.ruleEnabled });
     if (!rules.ruleEnabled) return;
     if (triggerType === "pause" && !rules.ruleTrackPause) return;
     if (triggerType === "unload" && !rules.ruleTrackUnload) return;
@@ -239,6 +268,7 @@
     // pagehide/visibilitychange/SPA-navigation — on mobile (Fenix) the page can be
     // suspended before a debounced timer runs, dropping the last timestamp.
     if (triggerType === "ended" || triggerType === "unload") {
+      await log("INFO", `Immediate save for ${triggerType}`);
       await performSave(triggerType);
       return;
     }
@@ -254,6 +284,11 @@
   }
 
   async function performSave(triggerType) {
+    await log("INFO", `performSave called`, {
+      triggerType,
+      isSaving,
+      hasVideoEl: !!trackedVideoEl,
+    });
     if (isSaving) return;
     isSaving = true;
 
@@ -264,22 +299,55 @@
       // save, and the latest position must still persist.
       if (triggerType !== "unload" && triggerType !== "ended") {
         if (now - lastSaveTimestamp < rules.ruleHistoryThrottleMs) {
+          await log("INFO", "Throttled save skipped", {
+            triggerType,
+            timeSinceLastSave: now - lastSaveTimestamp,
+          });
           return;
         }
       }
 
-      if (!trackedVideoEl || isAdShowing()) return;
+      if (!trackedVideoEl || isAdShowing()) {
+        await log("WARN", "No video element or ad showing, skipping save");
+        return;
+      }
+
+      // Wait for metadata to be loaded (critical on mobile/Fenix)
+      if (trackedVideoEl.readyState < 1) {
+        await log("WARN", "Video metadata not loaded yet, skipping save", {
+          readyState: trackedVideoEl.readyState,
+        });
+        return;
+      }
 
       const dur = trackedVideoEl.duration;
       const t = trackedVideoEl.currentTime;
 
+      await log("INFO", "Video state for save", { dur, t, lastSavedTimeValue });
+
       // Don't save if it's invalid, zero, or if we haven't advanced since the last save (unless it's a completion event)
-      if (!dur || isNaN(dur) || t === 0 || (t === lastSavedTimeValue && triggerType !== "ended"))
+      if (!dur || isNaN(dur) || t === 0 || (t === lastSavedTimeValue && triggerType !== "ended")) {
+        await log("WARN", "Invalid video state, skipping save", {
+          dur,
+          t,
+          lastSavedTimeValue,
+          triggerType,
+        });
         return;
+      }
 
       // A video is completed if the 'ended' event fired OR it passed the threshold
       const pct = (t / dur) * 100;
       const isCompleted = triggerType === "ended" || pct >= rules.ruleCompletionThreshold;
+
+      await log("INFO", "Saving history", {
+        videoId: currentVideoId,
+        t,
+        dur,
+        pct,
+        isCompleted,
+        triggerType,
+      });
 
       lastSaveTimestamp = now;
       lastSavedTimeValue = t;
@@ -310,8 +378,9 @@
           channel: channelName,
           isCompleted,
         });
+        await log("INFO", "save-yph-history message sent successfully");
       } catch (e) {
-        console.error(`${logPrefix} Failed to save history`, e);
+        await log("ERROR", "Failed to send save-yph-history message", e);
       }
     } finally {
       isSaving = false;

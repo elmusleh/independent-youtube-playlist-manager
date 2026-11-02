@@ -11,6 +11,7 @@
     faXmark,
     faWandMagicSparkles,
     faGear,
+    faPuzzlePiece,
     faKeyboard,
   } from "@fortawesome/free-solid-svg-icons";
   import { faGithub } from "@fortawesome/free-brands-svg-icons";
@@ -246,6 +247,10 @@
           </span>
         {/if}
       </a>
+      <a href="#/plugins" class="sidebar-footer-link">
+        <Fa icon={faPuzzlePiece} fw />
+        <span>Plugins</span>
+      </a>
       <a href="#/settings" class="sidebar-footer-link">
         <Fa icon={faGear} fw />
         <span>Settings</span>
@@ -396,6 +401,10 @@
                 {gapCount > 99 ? "99+" : gapCount}
               </span>
             {/if}
+          </a>
+          <a href="#/plugins" class="sidebar-footer-link" onclick={handleNavClick}>
+            <Fa icon={faPuzzlePiece} fw />
+            <span>Plugins</span>
           </a>
           <a href="#/settings" class="sidebar-footer-link" onclick={handleNavClick}>
             <Fa icon={faGear} fw />
