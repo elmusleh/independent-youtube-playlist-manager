@@ -259,9 +259,13 @@
 
     try {
       const now = Date.now();
-      // Throttle: ensure minimum time between saves
-      if (now - lastSaveTimestamp < rules.ruleHistoryThrottleMs) {
-        return;
+      // Throttle periodic saves, but never drop a final flush (unload) or a
+      // completion (ended): on mobile the page can be suspended right after a recent
+      // save, and the latest position must still persist.
+      if (triggerType !== "unload" && triggerType !== "ended") {
+        if (now - lastSaveTimestamp < rules.ruleHistoryThrottleMs) {
+          return;
+        }
       }
 
       if (!trackedVideoEl || isAdShowing()) return;
