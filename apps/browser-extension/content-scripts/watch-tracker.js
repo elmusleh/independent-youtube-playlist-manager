@@ -54,6 +54,18 @@
   async function init() {
     window.addEventListener("yt-navigate-finish", onNavigateFinish);
     await onNavigateFinish();
+
+    // m.youtube.com navigates in place when a related video is clicked (the URL
+    // changes but the page never reloads), and 'yt-navigate-finish' does not
+    // reliably fire on the mobile site. Poll for a video-id change so tracking
+    // follows SPA navigation too. currentVideoId is set inside onNavigateFinish,
+    // so a matching id simply keeps the poll quiet.
+    setInterval(() => {
+      const vid = getVideoIdFromLocation();
+      if (vid && vid !== currentVideoId) {
+        onNavigateFinish();
+      }
+    }, 1500);
   }
 
   async function teardown() {
@@ -91,8 +103,7 @@
 
     const urlParams = new URLSearchParams(window.location.search);
     // Watch pages carry the ID in ?v=; Shorts carry it in the path (/shorts/ID).
-    currentVideoId =
-      urlParams.get("v") || window.location.pathname.match(/^\/shorts\/([\w-]{11})\/?$/)?.[1];
+    currentVideoId = getVideoIdFromLocation();
 
     // Support URL param, Hash param, or Session Storage fallback (survives YouTube SPA navigation)
     const hashParams = new URLSearchParams(window.location.hash.substring(1));
@@ -246,6 +257,15 @@
     // element on m.youtube.com (especially around pre-roll ads), so a cached
     // reference goes stale — its readyState stays 0 and no events fire on it.
     return document.querySelector(VIDEO_SELECTOR);
+  }
+
+  function getVideoIdFromLocation() {
+    const urlParams = new URLSearchParams(window.location.search);
+    return (
+      urlParams.get("v") ||
+      window.location.pathname.match(/^\/shorts\/([\w-]{11})\/?$/)?.[1] ||
+      null
+    );
   }
 
   function isAdShowing() {
