@@ -2,8 +2,9 @@
 
 `npm run test:native-menu` proves, against the **real native browser menu**, that the
 context-menu entries and their labels follow the user's settings. It replaces the
-hand-run screenshot session recorded in PR #66 (Chromium captures for four settings
-variants) as the repeatable source of truth.
+hand-run screenshot session in
+[NATIVE_MENU_CHROMIUM_2026-11-01.md](NATIVE_MENU_CHROMIUM_2026-11-01.md) (Chromium captures for
+four settings variants) as the repeatable source of truth.
 
 ## Why it cannot live in `npm run check`
 

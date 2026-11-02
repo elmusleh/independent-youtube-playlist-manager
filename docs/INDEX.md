@@ -83,6 +83,8 @@ provenance, not as instructions.
 - [Hermes verification handoff](testing/HERMES_CONTEXT_MENU_VERIFICATION.md).
 - [Native menu gate](testing/NATIVE_MENU_GATE.md) — `npm run test:native-menu`, what it
   asserts against the real browser menu, and what it deliberately does not cover.
+- [Native menu evidence, Chromium](testing/NATIVE_MENU_CHROMIUM_2026-11-01.md) — the first
+  recorded captures for the four settings variants (superseded as evidence by the gate).
 - [Dependency advisory triage](DEPENDENCY_TRIAGE.md).
 
 ## Shared AI workflow and worktrees
