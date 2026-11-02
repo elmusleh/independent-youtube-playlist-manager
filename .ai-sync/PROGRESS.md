@@ -8,6 +8,13 @@
       `npx svelte-check` 0 errors.
 - [ ] Manual real-device (Firefox Android) record/resume/Shorts confirmation.
 
+## Improvement plan execution — 2026-11-01 (later)
+
+- Both PRs are now merged to `next` (#70 `977509d`, #71 `2fd2c88`); `next` HEAD `2fd2c88`,
+  `npm run check` exit 0. Release notes current. Phase 5 (release) still deferred — more
+  features coming.
+- Phase 2 (#10–#14) and Phase 4 groups 2–6 remain open (see below).
+
 ## Improvement plan execution — 2026-11-01 (late)
 
 Plan: `docs/IMPROVEMENT_PLAN.md` (merged with #69).
@@ -50,12 +57,7 @@ Shipped in `next` at `669049d` (#64, #65); version stays **1.2.1** — no releas
 - [ ] Popup theme assertion (the one theme consumer with no end-to-end check).
 - [ ] Dependabot #60 / #61 / #62 triage (all red, untriaged).
 
-## Pinned favorites — planning formalized (2026-11-01, no code)
-
-Owner approved replacing the single favorite with multiple pinned favorites in the
-sidebar. Planning only; no code changed. Decisions: separate `favoritePlaylistIds`
-list from `watchLaterPlaylistId` (migration seeds the list); each pin opens its
-playlist directly with ~6 visible then an "All favorites" overflow page.
+## Pinned favorites — pending (PR #75 open; implementation not yet on next)
 
 - [ ] Add `favoritePlaylistIds: string[]` to `Settings` + `DEFAULT_SETTINGS`.
 - [ ] `migrateSettings()` seed from `watchLaterPlaylistId` (idempotent).
@@ -63,11 +65,12 @@ playlist directly with ~6 visible then an "All favorites" overflow page.
       the single `#/favorite` link.
 - [ ] Replace `views/FavoritePlaylist.svelte` with `views/Favorites.svelte` (card
       grid); update `App.svelte`, `stores/shortcuts.ts`, `HeaderSearchBar.svelte`.
-- [ ] Star toggle on `PlaylistCard.svelte` + `PlaylistEditor.svelte`.
-- [ ] Replace `FavoriteSettings.svelte` single select with multi-select + reorder.
+- [ ] Star toggle on `PlaylistCard.svelte` + `PlaylistEditor.svelte` (via header).
+- [ ] Replace `FavoriteSettings.svelte` single select with multi-select + reorder
+      manager (`FavoritesManager.svelte` + `AddMoreFavorites.svelte`).
 - [ ] Migration + backup round-trip + sidebar/route tests; `npm run check && npm run build`.
 
-New suggestions recorded (FV-1…FV-5, outside implementation scope):
+Completed suggestions recorded (FV-1…FV-5, outside implementation scope):
 
 - FV-1 — Relabel the existing single "Favorite Playlist" settings entry to
   "Quick-add target (Watch Later)" so the two concepts stop sharing a name.

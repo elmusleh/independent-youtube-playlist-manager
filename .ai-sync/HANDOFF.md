@@ -1,5 +1,17 @@
 # Handoff — 2026-10-31, verification complete with all automated gates passing
 
+## 2026-11-01 (later) — PRs #70 and #71 merged; `next` is green
+
+- **#70** `feat(ui): land editor follow-ups, duration capture and type-contract repair` — merged
+  (squash) as `977509d`.
+- **#71** `feat(sync): key, derivation, snapshot codec, AES-GCM and content selection` — merged
+  (squash) as `2fd2c88`.
+- `next` HEAD is `2fd2c88`; `npm run check` exits 0 (57 files / 623 tests, all gates).
+- Release notes are current (`gen-release-notes.mjs`: "Release notes already current (5 versions)").
+  No release cut — owner said more features are coming; Phase 5 stays deferred.
+- Remaining: Phase 2 issue closure (#10–#14) needs device/manual evidence; Phase 4 groups 2–6
+  (engine, backends, Plugins screen) not started.
+
 ## 2026-11-01 — watch-history mobile hardening (branch `fix/watch-history-mobile-hardening`)
 
 - Commit `6768c95` on `fix/watch-history-mobile-hardening` (cut off `next`): tracks
@@ -99,7 +111,47 @@ e2e/extension.spec.ts` → 2 passed, exit 0, zero skipped.
   `docs/CONTEXT_MENU_PLAN.md`, `openspec/.../tasks.md`, new session record).
   Full detail: `.ai-sync/sessions/2026-11-01-context-menu-theme-merge.md`.
 
-## 2026-11-01 — pinned favorites plan formalized (planning only, no code)
+## 2026-11-01 — pinned favorites planned (PR #75 open; implementation NOT yet on next)
+
+- Owner request: replace the single `#/favorite` page with multiple favorites, pinned
+  in the sidebar between Manage Playlists and Subscriptions (or after Manage Playlists
+  when signed out), with horizontal rules around the group.
+- Status: **pending.** PR #75 (`feat/pinned-favorites`) is open but has not merged;
+  `favoritePlaylistIds`, `Favorites.svelte`, `FavoritesManager.svelte` are NOT yet on
+  `next`. Do not treat this as complete until #75 merges and verification passes.
+  - Separate concepts: new `favoritePlaylistIds: string[]` (ordered) for pinned
+    favorites; `watchLaterPlaylistId` stays the single quick-add / Watch-Later keep-alive
+    target and is never deleted. Migration seeds the list from the old value.
+  - Each pin opens its playlist directly; show ~6 then an "All favorites (N)" link
+    to a `#/favorites` card-grid page. Empty list → no pins, no dividers.
+  - Backup `schemaVersion` stays 2 (additive settings key).
+- Backward compatibility: additive settings key (default `[]`), idempotent migration
+  seed, backup `schemaVersion` stays 2. "Many favorites" handled via visible-pin cap
+  - overflow page + sanitize-on-load (dedupe / drop missing playlists).
+- Files changed:
+  - `types/model.d.ts`: added `favoritePlaylistIds: string[]` to Settings.
+  - `services/storage-service.ts`: DEFAULT_SETTINGS + migrateSettings seed.
+  - `services/favorites.ts` (new): pure helpers (sanitize, toggle, move, persist, resolve).
+  - `services/favorites.test.ts` (new): unit tests for pure helpers.
+  - `components/Sidebar.svelte`: favorites group (desktop + mobile) with `<hr>` before/after;
+    removed single `#/favorite` link.
+  - `views/Favorites.svelte` (new): card-grid page for all favorites.
+  - `views/FavoritePlaylist.svelte` (deleted).
+  - `App.svelte`: routes updated (`/favorites` → Favorites; removed `/favorite`).
+  - `stores/shortcuts.ts`: shortcut `/favorite` → `/favorites`.
+  - `components/HeaderSearchBar.svelte`: removed `/favorite` from editor route list.
+  - `components/PlaylistCard.svelte`: interactive star toggle (`isFavorite`, `onToggleFavorite`).
+  - `views/Saved.svelte`: star toggle wired to new favorites list.
+  - `views/Manage.svelte`: star toggle in row actions; `favoritePlaylistIds` derived for snippet.
+  - `components/FavoritesManager.svelte` + `AddMoreFavorites.svelte` (new): Settings UI for
+    reorder/manage pinned favorites.
+  - `views/Settings.svelte`: added FavoritesManager; relabeled FavoriteSettings to
+    "Quick-add Target (Watch Later)".
+  - `packages/build-tools/verify-budgets.js`: CSS budget raised 198→204 KiB.
+  - `packages/build-tools/extension-fixture.js` + `verify-extension.js`: test fixtures
+    updated for `/favorites` route.
+- Verification: `npm run check` (0 errors), `npm run build` (3 targets), `npm run test:extension`
+  (96 route/viewport checks + interaction groups).
 
 - Owner request: replace the single `#/favorite` page with multiple favorites, pinned
   in the sidebar between Manage Playlists and Subscriptions (or after Manage
