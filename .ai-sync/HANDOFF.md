@@ -1,4 +1,13 @@
-# Handoff — 2026-11-02, m.youtube.com watch-history fixed (PR #83)
+# Handoff — 2026-11-02, m.youtube.com watch-history + popup fixes (PRs #83, #84)
+
+## 2026-11-02 — Firefox Android action popup fills the screen (PR #84)
+
+The toolbar popup rendered as a 420px block cropped into the upper-left corner on Firefox for
+Android. Root cause: Firefox Android renders the action popup as a full-screen overlay, but
+`extension.getViews({type:"popup"})` still reports it as a popup, so `mode.js` kept the fixed
+420px desktop width. Fixed in `apps/browser-extension/popup/mode.js` by detecting Firefox
+Android via UA and forcing full-page mode (`f9fd7bd`, rebased to `51ef646` after #83 merged).
+Real-device confirmed by owner. PR #84.
 
 ## 2026-11-02 — m.youtube.com watch-history fully fixed (`fix/watch-history-mobile` → PR #83)
 

@@ -1,5 +1,12 @@
 # Progress — open work only (Mobile UX Improvements)
 
+## Firefox Android action popup — fills screen (2026-11-02)
+
+- [x] Detect Firefox Android via UA in `popup/mode.js` and force full-page mode (the overlay
+      renders full-screen but reports as a popup, which kept the fixed 420px desktop width).
+- [x] Real-device (Fenix) confirmation by owner.
+- [x] `npm run check` + `npm run build` exit 0. PR #84.
+
 ## m.youtube.com watch-history — fully fixed and merged (2026-11-02)
 
 Watch history (record + resume + title + channel + SPA navigation) now works on `m.youtube.com`
