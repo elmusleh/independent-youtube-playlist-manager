@@ -88,7 +88,9 @@
     isSaving = false;
 
     const urlParams = new URLSearchParams(window.location.search);
-    currentVideoId = urlParams.get("v");
+    // Watch pages carry the ID in ?v=; Shorts carry it in the path (/shorts/ID).
+    currentVideoId =
+      urlParams.get("v") || window.location.pathname.match(/^\/shorts\/([\w-]{11})\/?$/)?.[1];
 
     // Support URL param, Hash param, or Session Storage fallback (survives YouTube SPA navigation)
     const hashParams = new URLSearchParams(window.location.hash.substring(1));
@@ -133,7 +135,7 @@
 
     const videoEl = await waitForVideoElement();
     if (!videoEl) {
-      await log("WARN", "No video element found after polling.");
+      await log("WARN", "No video element found after observing.");
       return;
     }
 
@@ -161,23 +163,39 @@
     startProgressTracking();
   }
 
-  // Poll longer on mobile (Fenix) where the player can take well over 4s to
-  // materialize on a slow connection — 150 × 200ms ≈ 30s before giving up.
-  function waitForVideoElement(maxRetries = 150, intervalMs = 200) {
+  const VIDEO_SELECTOR =
+    "#movie_player video, #shorts-player video, ytd-reel-video-renderer[is-active] video, video.html5-main-video, video";
+
+  // Observe for the video element instead of a fixed poll, so tracking starts the
+  // moment the player materialises (slow Fenix loads, Shorts reels). A bounded
+  // timeout still resolves null so onNavigateFinish can fail safely.
+  function waitForVideoElement(timeoutMs = 30000) {
     return new Promise((resolve) => {
-      let retries = 0;
-      const check = () => {
-        const video = document.querySelector("#movie_player video, video.html5-main-video, video");
-        if (video) {
-          resolve(video);
-        } else if (retries >= maxRetries) {
-          resolve(null);
-        } else {
-          retries++;
-          setTimeout(check, intervalMs);
-        }
+      const existing = document.querySelector(VIDEO_SELECTOR);
+      if (existing) {
+        resolve(existing);
+        return;
+      }
+
+      let settled = false;
+      let timer = null;
+      let observer = null;
+
+      const settle = (video) => {
+        if (settled) return;
+        settled = true;
+        if (observer) observer.disconnect();
+        if (timer) clearTimeout(timer);
+        resolve(video);
       };
-      check();
+
+      observer = new MutationObserver(() => {
+        const video = document.querySelector(VIDEO_SELECTOR);
+        if (video) settle(video);
+      });
+      observer.observe(document.documentElement, { childList: true, subtree: true });
+
+      timer = setTimeout(() => settle(null), timeoutMs);
     });
   }
 
@@ -217,13 +235,15 @@
     if (triggerType === "pause" && !rules.ruleTrackPause) return;
     if (triggerType === "unload" && !rules.ruleTrackUnload) return;
 
-    // Completion events save immediately without debounce
-    if (triggerType === "ended") {
+    // Completion and unload events save immediately (no debounce). Unload fires on
+    // pagehide/visibilitychange/SPA-navigation — on mobile (Fenix) the page can be
+    // suspended before a debounced timer runs, dropping the last timestamp.
+    if (triggerType === "ended" || triggerType === "unload") {
       await performSave(triggerType);
       return;
     }
 
-    // Debounce pause/unload events
+    // Debounce pause events only
     if (debounceTimer) {
       clearTimeout(debounceTimer);
     }
@@ -239,9 +259,13 @@
 
     try {
       const now = Date.now();
-      // Throttle: ensure minimum time between saves
-      if (now - lastSaveTimestamp < rules.ruleHistoryThrottleMs) {
-        return;
+      // Throttle periodic saves, but never drop a final flush (unload) or a
+      // completion (ended): on mobile the page can be suspended right after a recent
+      // save, and the latest position must still persist.
+      if (triggerType !== "unload" && triggerType !== "ended") {
+        if (now - lastSaveTimestamp < rules.ruleHistoryThrottleMs) {
+          return;
+        }
       }
 
       if (!trackedVideoEl || isAdShowing()) return;

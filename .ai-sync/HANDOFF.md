@@ -1,5 +1,15 @@
 # Handoff — 2026-10-31, verification complete with all automated gates passing
 
+## 2026-11-01 — watch-history mobile hardening (branch `fix/watch-history-mobile-hardening`)
+
+- Commit `6768c95` on `fix/watch-history-mobile-hardening` (cut off `next`): tracks
+  Shorts, observes the video element via MutationObserver, flushes history on unload,
+  drops the dead `t=` resume param, and adds a manifest match regression guard.
+- Verification (real exit codes): `npm run build` exit 0, `npm run test` 588/588,
+  `npm run lint` 0 errors, `npx svelte-check` 0 errors.
+- Overlaps the owner's `e19f440` (on PR #70) which already broadened watch-page matches;
+  this branch carries the follow-ups. Manual real-device (Fenix) confirmation remains.
+
 ## 2026-11-01 (late) — dirty tree committed, contracts repaired, sync core started
 
 Executed the approved `docs/IMPROVEMENT_PLAN.md` phases 0–2/4 as far as automation allows.

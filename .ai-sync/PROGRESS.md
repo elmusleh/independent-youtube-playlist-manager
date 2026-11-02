@@ -1,5 +1,13 @@
 # Progress — open work only (Mobile UX Improvements)
 
+## Watch-history mobile hardening — committed (`fix/watch-history-mobile-hardening`)
+
+- [x] Track Shorts, MutationObserver video detection, immediate unload flush, drop dead
+      `t=`, manifest match regression guard — commit `6768c95`.
+- [x] Verify: `npm run build` exit 0, `npm run test` 588/588, `npm run lint` 0 errors,
+      `npx svelte-check` 0 errors.
+- [ ] Manual real-device (Firefox Android) record/resume/Shorts confirmation.
+
 ## Improvement plan execution — 2026-11-01 (late)
 
 Plan: `docs/IMPROVEMENT_PLAN.md` (merged with #69).

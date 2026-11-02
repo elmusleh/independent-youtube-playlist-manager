@@ -22,6 +22,15 @@ Read in this order, and stop when you have what you need:
 **On stop, update `.ai-sync/HANDOFF.md`** — state, not narrative — and tick off
 `PROGRESS.md`. Append to `HISTORY.md` only when retiring detail from `HANDOFF.md`.
 
+**Every session MUST end with a commit — never leave implementation work uncommitted.**
+After implementing: (1) run `npm run check` and `npm run build` (evidence, not
+assertion); (2) commit on a feature branch off `next` (see _Git Workflow_); (3) update
+`AGENTS.md` + `.ai-sync/HANDOFF.md`/`PLAN.md`/`PROGRESS.md` to record what changed and
+the commit SHA; and (4) explicitly warn the owner of any branch change you observed
+(e.g. a concurrent session moved the checkout) and of the current PR status. Leaving
+edits in the working tree across sessions risks losing them to — or clobbering — a
+parallel agent.
+
 ## UI consistency
 
 - Reuse existing UI patterns and shared components across views for visual and behavioral consistency; prefer extending shared components over bespoke markup.

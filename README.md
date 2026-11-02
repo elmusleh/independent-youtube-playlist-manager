@@ -229,6 +229,17 @@ Use `./iypm.sh` at repository root for quick overview and operations:
 
 ---
 
+## ⚠️ Known limitations
+
+- **Shorts tracking records only the initial Short.** Scrolling to the next Short in
+  the reel is a same-page SPA transition (no URL change the current
+  `yt-navigate-finish` hook catches), so per-Short watch-history is not recorded as you
+  swipe through a reel.
+- **Real-device confirmation still needed.** Automated coverage runs on desktop browsers
+  and a Firefox Android user-agent only; recording/resuming history on a physical
+  Firefox for Android (Fenix) device remains a manual check — see
+  [`docs/testing/HERMES_CONTEXT_MENU_VERIFICATION.md`](docs/testing/HERMES_CONTEXT_MENU_VERIFICATION.md).
+
 ## 🔗 Links
 
 - [Chrome Web Store](https://chromewebstore.google.com/detail/dapjjdcnolpmfcnobilphjfpkmmokgid)

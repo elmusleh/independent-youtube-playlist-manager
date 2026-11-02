@@ -82,6 +82,28 @@ approved local web-ext tooling. Open `http://127.0.0.1:43177/`.
 - Firefox Android: popup/extension-page paths continue to work; no native-menu parity
   claim. Real phone testing is separate from desktop emulation.
 
+## Firefox Android watch-history acceptance (manual)
+
+> **Status: pending manual check.** Not yet run on a physical device — this section is
+> the manual checklist to execute, not a record of completed verification. Automated
+> coverage uses desktop browsers and a Firefox Android user-agent only.
+
+Real phone (Fenix 142+), not desktop emulation. Load the rebuilt `dist/firefox`
+package via `about:debugging` or the signed unlisted `.xpi`.
+
+- Play a video from a local playlist on `m.youtube.com` (Fenix serves mobile there).
+  Confirm a `[Watch Tracker] Initializing for video …` log and that the video appears
+  in Watch History with the correct title/channel.
+- Watch partway, background the app (or lock the screen) and foreground it. Reopen the
+  same video: it must resume from the recorded timestamp.
+- Open a `/shorts/ID` video and confirm it is recorded in Watch History.
+- Rotate the device, open/close the software keyboard and navigate away mid-video:
+  the last position must still be saved (no debounce drop on suspend).
+
+History must record and resume on `m.youtube.com`, `www.youtube.com` and `youtube.com`
+alike. If it only works on one host, re-check the content-script `matches` against the
+`validate-manifests.js` wildcard guard.
+
 ## Open issue regression checks
 
 - #14: import many IDs, fetch missing titles/durations, verify duration badges and
