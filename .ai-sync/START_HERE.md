@@ -21,10 +21,13 @@ These are reusable instructions, not evidence that any work has been performed.
 > base ref and starting SHA before implementation. Follow the app's managed-worktree
 > lifecycle when available. Do not force an already checked-out branch into another tree.
 > Confirm prerequisite code, plans and instructions exist in the starting snapshot.
-> Uncommitted/untracked files do not transfer automatically. Preserve all existing edits;
-> do not stash/reset/copy everything or commit another agent's work to manufacture a base.
+> Uncommitted/untracked work does not transfer automatically. Preserve all existing edits;
+> do not stash or reset or copy everything or commit another agent's work to manufacture a base.
 > Work only in the selected worktree with one active writer. Set up dependencies and
 > OpenSpec skill discovery for that path; keep secrets, ports, test data and profiles safe.
+> **Acquire the editing lock (`node packages/build-tools/agent-lock.js acquire`) and record
+> `git branch --show-current` + `git rev-parse HEAD` at session start; re-check both before
+> every commit. If the branch/HEAD moved (a concurrent session), stop and re-orient.**
 > Verification owner: <agent/person; state whether you may run checks>.
 > Leave delegated verification pending. Use blank .ai-sync/templates in session copies.
 > Record exact commands, exit codes, tree/artifact identities and evidence. Distinguish
