@@ -24,6 +24,17 @@
     /* no extension API (e.g. served test page) -> page mode */
   }
 
+  // Firefox for Android renders the action popup as a full-screen overlay, but it
+  // still reports via getViews({type:"popup"}), so without this it would keep the
+  // fixed 420px desktop width and render as a cropped block. Force full-page mode.
+  try {
+    if (/Android/.test(navigator.userAgent) && /Firefox/.test(navigator.userAgent)) {
+      isPopup = false;
+    }
+  } catch {
+    /* ignore */
+  }
+
   // Explicit override for dev/tests.
   try {
     const mode = new URLSearchParams(window.location.search).get("mode");
