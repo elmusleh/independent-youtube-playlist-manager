@@ -1051,6 +1051,7 @@ window.getSettings = async (): Promise<Settings> => {
       playlistsPerPage: 20,
       cacheDuration: -1, // -1 = no expiration
       watchLaterPlaylistId: null, // null = use YouTube's Watch Later
+      favoritePlaylistIds: [], // ordered list of pinned favorites shown in the sidebar
       maxLogLines: 500,
       defaultPrivacy: "private",
       autoRemoveDuplicates: false,
@@ -1154,6 +1155,21 @@ async function migrateSettings(settings: Settings) {
     settings.defaultEditorPage = "/saved";
     await browser.storage.sync.set({
       defaultEditorPage: settings.defaultEditorPage,
+    });
+  }
+  // Seed pinned favorites from the legacy single favorite (one-time, additive).
+  // Only seed when the setting was never present (undefined/null), so an explicitly
+  // cleared favorites list is not re-populated.
+  const favorites = settings.favoritePlaylistIds;
+  const neverMigrated = favorites === undefined || favorites === null;
+  if (
+    neverMigrated &&
+    typeof settings.watchLaterPlaylistId === "string" &&
+    settings.watchLaterPlaylistId
+  ) {
+    settings.favoritePlaylistIds = [settings.watchLaterPlaylistId];
+    await browser.storage.sync.set({
+      favoritePlaylistIds: settings.favoritePlaylistIds,
     });
   }
 }

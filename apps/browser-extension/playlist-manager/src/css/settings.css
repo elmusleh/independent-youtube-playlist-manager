@@ -44,14 +44,16 @@
 }
 
 .settings-grid {
-  column-count: 2;
+  column-count: 1;
   column-gap: 24px;
   width: 100%;
+  max-width: 100%;
+  overflow: hidden;
 }
 
-@media (max-width: 767px) {
+@media (min-width: 768px) {
   .settings-grid {
-    column-count: 1;
+    column-count: 2;
   }
 }
 

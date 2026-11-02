@@ -27,6 +27,7 @@
     requestSyncConfirm,
     syncPlaylist,
   } from "../services/playlist-actions";
+  import { toggleFavorite, persistFavoriteIds } from "../services/favorites";
 
   let signedIn = $state(false);
   let loading = $state(true);
@@ -281,7 +282,9 @@
               : p.isTagged
                 ? "synced"
                 : "online"}
-          showFavoriteBadge={!!(settings && p.id === settings.watchLaterPlaylistId)}
+          isFavorite={settings?.favoritePlaylistIds?.includes(p.id) ?? false}
+          onToggleFavorite={() =>
+            persistFavoriteIds(toggleFavorite(settings?.favoritePlaylistIds ?? [], p.id))}
           onOpen={() => openInEditor(p)}
           actions={getCardActions(p)}
           category={p.category}

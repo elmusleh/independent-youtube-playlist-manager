@@ -14,7 +14,7 @@
   let isHistoryView = $derived(router.location === "/history");
   let isManageView = $derived(router.location === "/manage");
   let isEditorView = $derived(
-    ["/editor", "/playlist", "/favorite", "/new", "/playlist-builder"].includes(router.location)
+    ["/editor", "/playlist", "/new", "/playlist-builder"].includes(router.location)
   );
   let showSearchBar = $derived(isSavedView || isHistoryView || isManageView || isEditorView);
 

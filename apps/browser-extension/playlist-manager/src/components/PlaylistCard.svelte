@@ -23,6 +23,8 @@
     isLocal?: boolean;
     status?: "syncing" | "synced" | "local" | "online";
     showFavoriteBadge?: boolean;
+    isFavorite?: boolean;
+    onToggleFavorite?: () => void;
     onOpen: () => void;
     actions?: Action[];
     category?: string;
@@ -38,6 +40,8 @@
     isLocal = false,
     status = isLocal ? "local" : isTagged ? "synced" : "online",
     showFavoriteBadge = false,
+    isFavorite = false,
+    onToggleFavorite,
     onOpen,
     actions = [],
     category,
@@ -79,7 +83,21 @@
       <button class="playlist-title" onclick={onOpen}>
         {title || "Untitled Playlist"}
       </button>
-      {#if showFavoriteBadge}
+      {#if onToggleFavorite}
+        <button
+          class="fav-toggle"
+          onclick={(e) => {
+            e.stopPropagation();
+            onToggleFavorite();
+          }}
+          aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
+          title={isFavorite ? "Remove from favorites" : "Add to favorites"}
+        >
+          <span class:filled={isFavorite}>
+            <Fa icon={faStar} fw />
+          </span>
+        </button>
+      {:else if showFavoriteBadge}
         <span class="fav-star-inline" title="Favorite Playlist" aria-label="Favorite Playlist">
           <Fa icon={faStar} fw />
         </span>
@@ -246,6 +264,38 @@
     flex-shrink: 0;
     padding-top: 3px;
     pointer-events: none;
+  }
+
+  .fav-toggle {
+    background: none;
+    border: none;
+    padding: 4px;
+    cursor: pointer;
+    border-radius: 6px;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition:
+      color 0.15s ease,
+      background-color 0.15s ease;
+    min-width: var(--touch-target-min);
+    min-height: var(--touch-target-min);
+  }
+
+  .fav-toggle:hover {
+    background-color: var(--hover-color);
+    color: var(--color-brand-warning);
+  }
+
+  .fav-toggle :global(svg.filled),
+  .fav-toggle.filled :global(svg) {
+    color: var(--color-brand-warning);
+  }
+
+  .fav-toggle:focus-visible {
+    outline: 2px solid var(--color-brand-primary);
+    outline-offset: 2px;
   }
 
   .playlist-actions {
