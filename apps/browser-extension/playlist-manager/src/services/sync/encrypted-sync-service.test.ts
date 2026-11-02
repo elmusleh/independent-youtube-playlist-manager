@@ -39,7 +39,7 @@ vi.mock("../supabase-client", () => {
     }),
   };
   return {
-    getSupabaseClient: async () => client,
+    createAnonClient: () => client,
     getSession: async () => ({ user: { id: "test-user" } }),
   };
 });

@@ -1,0 +1,144 @@
+/* Sync view — shared styles for the cross-device sync feature. Imported in main.ts. */
+
+.sync-view {
+  padding: var(--space-gutter);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-component-gap-lg);
+}
+
+.sync-purpose {
+  margin: 0;
+  font-size: var(--font-size-base);
+  color: var(--text-secondary);
+  line-height: var(--leading-normal);
+}
+
+.sync-columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(360px, 100%), 1fr));
+  gap: var(--space-component-gap-lg);
+  align-items: start;
+}
+
+.sync-view input[type="text"] {
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--background-color);
+  color: var(--text-color);
+  font-size: var(--font-size-base);
+  min-height: var(--input-height);
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.key-display {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--bg-secondary, var(--color-bg-secondary));
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+}
+
+.key-value {
+  font-family: var(--font-family-mono);
+  font-size: 1.1rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-align: center;
+  word-break: break-all;
+  color: var(--text-color);
+}
+
+.key-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.link-btn {
+  background: none;
+  border: none;
+  color: var(--primary-color);
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  padding: 0;
+  align-self: flex-start;
+}
+
+.link-btn:hover {
+  text-decoration: underline;
+}
+
+.backend-option {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+}
+
+.backend-option.selected {
+  border-color: var(--primary-color);
+  background: var(--bg-hover, var(--color-bg-hover));
+}
+
+.backend-option label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  cursor: pointer;
+  flex-wrap: wrap;
+}
+
+.backend-option label svg {
+  color: var(--primary-color);
+}
+
+.backend-name {
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.sync-badge {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  white-space: nowrap;
+}
+
+.sync-badge-yes {
+  background: var(--color-brand-success);
+  color: #fff;
+}
+
+.sync-badge-no {
+  background: var(--color-bg-tertiary);
+  color: var(--text-muted);
+}
+
+.sync-error {
+  color: var(--color-brand-danger);
+  font-size: var(--font-size-sm);
+  margin: 0;
+  line-height: var(--leading-normal);
+}
+
+.api-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--primary-color);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: var(--font-size-base);
+}
+
+.api-link:hover {
+  text-decoration: underline;
+}

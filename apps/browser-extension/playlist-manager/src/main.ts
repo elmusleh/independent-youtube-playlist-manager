@@ -22,6 +22,7 @@ import "./css/design-tokens.css";
 import "./css/view-layout.css";
 import "./css/responsive.css";
 import "./css/settings.css";
+import "./css/sync.css";
 
 import { mount } from "svelte";
 import App from "./App.svelte";

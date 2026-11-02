@@ -11,6 +11,7 @@
     faXmark,
     faWandMagicSparkles,
     faGear,
+    faArrowsRotate,
     faKeyboard,
   } from "@fortawesome/free-solid-svg-icons";
   import { faGithub } from "@fortawesome/free-brands-svg-icons";
@@ -272,6 +273,10 @@
           </span>
         {/if}
       </a>
+      <a href="#/sync" class="sidebar-footer-link">
+        <Fa icon={faArrowsRotate} fw />
+        <span>Sync</span>
+      </a>
       <a href="#/settings" class="sidebar-footer-link">
         <Fa icon={faGear} fw />
         <span>Settings</span>
@@ -439,6 +444,10 @@
                 {gapCount > 99 ? "99+" : gapCount}
               </span>
             {/if}
+          </a>
+          <a href="#/sync" class="sidebar-footer-link" onclick={handleNavClick}>
+            <Fa icon={faArrowsRotate} fw />
+            <span>Sync</span>
           </a>
           <a href="#/settings" class="sidebar-footer-link" onclick={handleNavClick}>
             <Fa icon={faGear} fw />
