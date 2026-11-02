@@ -1,5 +1,20 @@
 # Handoff — 2026-10-31, verification complete with all automated gates passing
 
+## 2026-11-02 — encrypted sync service shipped (PR #78 open)
+
+- **PR #78** `feat/sync-supabase-upload-download` — encrypted Supabase upload/download
+  service + 4 unit tests. MERGED.
+- **#75** (pinned favorites) — OPEN, visual overflow fix pushed (c78a741), CI running.
+- **#76/#77** (native-menu Firefox gate, docs/state-sync) merged.
+- `feat/ui-polish` deleted (fully superseded by #70).
+- **Next actions (in order):**
+  1. Merge #75 (pinned favorites) — visual overflow fix pushed (c78a741), CI running.
+  2. Merge #78 (encrypted sync service) — already merged.
+  3. Start device pairing (key exchange UI + pairing flow) as next PR.
+  4. Context-menu acceptance (CM-R7/R8/R9) — dedicated consolidation session.
+  5. Cleanup: dead branches, lint-staged stashes, stash@{0} inspection.
+- `next` HEAD: `3ec664e` (docs/state-sync).
+
 ## 2026-11-01 (later) — PRs #70 and #71 merged; `next` is green
 
 - **#70** `feat(ui): land editor follow-ups, duration capture and type-contract repair` — merged
