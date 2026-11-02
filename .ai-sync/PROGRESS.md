@@ -1,5 +1,13 @@
 # Progress — open work only (Mobile UX Improvements)
 
+## Watch-history mobile hardening — committed (`fix/watch-history-mobile-hardening`)
+
+- [x] Track Shorts, MutationObserver video detection, immediate unload flush, drop dead
+      `t=`, manifest match regression guard — commit `6768c95`.
+- [x] Verify: `npm run build` exit 0, `npm run test` 588/588, `npm run lint` 0 errors,
+      `npx svelte-check` 0 errors.
+- [ ] Manual real-device (Firefox Android) record/resume/Shorts confirmation.
+
 Completed work is not listed here. It lives in `CHANGELOG.md` (user-facing), the PR history,
 and `.ai-sync/HISTORY.md` (per-session detail, frozen).
 
