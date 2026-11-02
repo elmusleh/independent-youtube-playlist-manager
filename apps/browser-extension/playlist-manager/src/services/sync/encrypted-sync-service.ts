@@ -79,8 +79,8 @@ export class EncryptedSyncService {
         .eq("address", address)
         .maybeSingle();
       const remoteRevision = existing?.revision ?? null;
-      if (!isNewerRevision(remoteRevision, revision)) {
-        // Local is not strictly newer — nothing to push.
+      if (isNewerRevision(remoteRevision, revision)) {
+        // Remote is strictly newer — local lost the LWW race; don't clobber.
         return { pushed: false };
       }
 
