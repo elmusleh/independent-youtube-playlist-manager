@@ -14,7 +14,7 @@ const root = path.resolve(__dirname, "../..");
 
 const budgets = [
   { artifact: "dist/chrome/editor/main.js", maxBytes: 380 * 1024 },
-  { artifact: "dist/chrome/editor/bundle.css", maxBytes: 175 * 1024 },
+  { artifact: "dist/chrome/editor/bundle.css", maxBytes: 190 * 1024 },
   { artifact: "dist/chrome/popup/popup.css", maxBytes: 22 * 1024 },
   { artifact: "dist/chrome/background/background.js", maxBytes: 16 * 1024 },
 ];

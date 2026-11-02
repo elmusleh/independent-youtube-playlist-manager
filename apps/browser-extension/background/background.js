@@ -1,6 +1,6 @@
 /* eslint-disable no-console */
 import { isAndroid, playlistBuilderId, updateBadge } from "./utils.js";
-import { buildContextMenus } from "./context-menus.js";
+import { buildContextMenus, refreshMenu } from "./context-menus.js";
 import {
   saveHistory,
   getHistory,
@@ -10,6 +10,8 @@ import {
   pruneStaleMetadataCache,
 } from "./history.js";
 import "./sync.js"; // registers alarms.onAlarm listener as side effect
+import "./capture-controller.js"; // registers message handlers as side effect
+import { enqueuePlaylistMutation, getPlaylistsRevision } from "./capture-controller.js";
 
 // ---------------------------------------------------------------------------
 // init — run on install and every service worker restart
@@ -222,11 +224,32 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
     sendResponse(true);
     return true;
+  } else if (request.cmd === "get-playlists-revision") {
+    // For mutation queue revision checking
+    (async () => {
+      const revision = await getPlaylistsRevision();
+      sendResponse({ revision });
+    })();
+    return true;
+  } else if (request.cmd === "enqueue-playlist-mutation") {
+    // For SPA to enqueue mutations through the background queue
+    (async () => {
+      try {
+        const { mutationFn, expectedRevision } = request;
+        // Note: We can't serialize functions over message passing.
+        // This is a placeholder for future use if needed.
+        // For now, SPA mutations go directly through storage-service.ts
+        sendResponse({ success: false, error: "Function serialization not supported" });
+      } catch (e) {
+        sendResponse({ success: false, error: e.message });
+      }
+    })();
+    return true;
   }
 });
 
 // ---------------------------------------------------------------------------
-// createPlaylist
+// createPlaylist (used by keyboard shortcut and context menu)
 // ---------------------------------------------------------------------------
 
 /**
@@ -301,3 +324,9 @@ setTimeout(() => {
   pruneHistory();
   pruneStaleMetadataCache();
 }, 5000);
+
+// ---------------------------------------------------------------------------
+// Export mutation queue functions for other modules
+// ---------------------------------------------------------------------------
+
+export { enqueuePlaylistMutation, getPlaylistsRevision };
