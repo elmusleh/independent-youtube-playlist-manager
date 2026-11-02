@@ -19,6 +19,7 @@
   import StorageSettings from "../components/StorageSettings.svelte";
   import BackupSettings from "../components/BackupSettings.svelte";
   import YouTubeAdvancedSettings from "../components/YouTubeAdvancedSettings.svelte";
+  import SyncSettings from "../components/SyncSettings.svelte";
 
   const browser = (window as any).browser || (window as any).chrome;
 
@@ -113,6 +114,7 @@
         <IntegrationSettings {settings} {save} />
         <StorageSettings />
         <BackupSettings />
+        <SyncSettings />
       </div>
     {:else}
       <div class="loading-state">
