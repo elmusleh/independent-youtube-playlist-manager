@@ -179,9 +179,34 @@
     return new Promise((resolve) => {
       const existing = document.querySelector(VIDEO_SELECTOR);
       if (existing) {
+        log("DEBUG", "Video element found immediately", {
+          selector: VIDEO_SELECTOR,
+          src: existing.src,
+          readyState: existing.readyState,
+          duration: existing.duration,
+          currentTime: existing.currentTime,
+          paused: existing.paused,
+        });
         resolve(existing);
         return;
       }
+
+      // Also log all video elements on page for debugging
+      const allVideos = document.querySelectorAll("video");
+      log(
+        "DEBUG",
+        "All video elements on page",
+        Array.from(allVideos).map((v, i) => ({
+          index: i,
+          src: v.src?.substring(0, 80),
+          readyState: v.readyState,
+          duration: v.duration,
+          paused: v.paused,
+          className: v.className,
+          parentId: v.parentElement?.id,
+          parentClass: v.parentElement?.className,
+        }))
+      );
 
       let settled = false;
       let timer = null;
