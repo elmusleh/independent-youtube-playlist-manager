@@ -121,5 +121,9 @@ export async function loadSyncConfig(): Promise<SyncConfig> {
 }
 
 export async function saveSyncConfig(config: SyncConfig): Promise<void> {
-  await storageArea().set(KEY, config);
+  // `config` is often a Svelte 5 $state proxy, which the storage API cannot
+  // structured-clone (DataCloneError: Proxy object could not be cloned).
+  // Serialize to a plain object before handing it to storage.
+  const plain = JSON.parse(JSON.stringify(config)) as SyncConfig;
+  await storageArea().set(KEY, plain);
 }
