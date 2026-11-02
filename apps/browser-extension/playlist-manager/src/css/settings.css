@@ -312,7 +312,6 @@ input[type="number"]:focus {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 24px;
 }
 
 .modal-header h3 {

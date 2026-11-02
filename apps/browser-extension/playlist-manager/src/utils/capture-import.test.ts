@@ -61,3 +61,30 @@ it("validates options and preserves zero as unlimited for channel scrolling", as
     expect.objectContaining({ args: [0], target: { tabId: 7, frameIds: [0] } })
   );
 });
+it("forwards scraped title, channel and duration to the page metadata cache", async () => {
+  const { cacheScrapedMetadata } = await setup();
+  const cache = vi.fn().mockResolvedValue(undefined);
+  vi.stubGlobal("videoService", { cacheScrapedMetadata: cache });
+  const count = await cacheScrapedMetadata([
+    { id: "abcdefghijk", title: "  Track  ", channel: "Chan", durationLabel: "1:02:03" },
+    { id: "", title: "no id, must be ignored" },
+    { id: "zzzzzzzzzzz", durationLabel: "not a duration" },
+  ]);
+  expect(count).toBe(1);
+  expect(cache).toHaveBeenCalledTimes(1);
+  expect(cache.mock.calls[0][0]).toEqual({
+    abcdefghijk: expect.objectContaining({
+      videoId: "abcdefghijk",
+      title: "Track",
+      channel: "Chan",
+      durationISO: "PT1H2M3S",
+      durationSeconds: 3723,
+      isLive: false,
+    }),
+  });
+});
+it("does not throw when the page service is absent from the worker", async () => {
+  const { cacheScrapedMetadata } = await setup();
+  vi.stubGlobal("videoService", undefined);
+  await expect(cacheScrapedMetadata([{ id: "abcdefghijk", title: "T" }])).resolves.toBe(1);
+});

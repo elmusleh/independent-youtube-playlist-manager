@@ -26,7 +26,9 @@
   import ProgressBar from "../components/ProgressBar.svelte";
   import { StatusManager } from "../services/status-manager.svelte";
   import SkeletonCard from "../components/SkeletonCard.svelte";
-  import SyncStatusIndicator from "../components/SyncStatusIndicator.svelte";
+  import CategoryBadge from "../components/CategoryBadge.svelte";
+  import PaginationBar from "../components/PaginationBar.svelte";
+  import { getPlaylistCategory } from "../utils/playlist-category";
   import ListRow from "../components/common/ListRow.svelte";
   import { requestConfirm } from "../stores/confirmation";
   import { onDestroy } from "svelte";
@@ -34,6 +36,8 @@
   import { dbGetMetadataBatch } from "../services/db-service.js";
   import { push } from "svelte-spa-router";
   import { manageSearch } from "../stores/playlists-filters";
+  import { paginate } from "svelte-paginate";
+  import { clampPage } from "../utils/pagination";
 
   const browser = (window as any).browser || (window as any).chrome;
 
@@ -47,7 +51,10 @@
   let sortBy = $state("newest"); // newest, oldest, title_asc, title_desc, count_desc
   let deleteAfterMerge = $state(true);
   let favoritePlaylistId = $state<string | null>(null);
+  let playlistsPerPage = $state(20);
+  let currentPage = $state(1);
   const status = new StatusManager();
+
   let savedTimeout: ReturnType<typeof setTimeout> | null = null;
 
   // Local search value that syncs with the store
@@ -87,6 +94,7 @@
       sortBy = settings.manageSortBy || "newest";
       deleteAfterMerge = settings.deleteAfterMerge !== undefined ? settings.deleteAfterMerge : true;
       favoritePlaylistId = settings.watchLaterPlaylistId ?? null;
+      playlistsPerPage = settings.playlistsPerPage || 20;
       if (window.logSystemEvent)
         await window.logSystemEvent("INFO", `[MANAGE-VIEW] Initialized: signedIn=${signedIn}`);
     } catch (e) {
@@ -169,6 +177,36 @@
   let allSelected = $derived(
     filteredPlaylists.length > 0 && filteredPlaylists.every((p) => selectedIds.has(p.id))
   );
+
+  let paginatedPlaylists = $derived(
+    paginate({
+      items: filteredPlaylists,
+      pageSize: playlistsPerPage,
+      currentPage,
+    }) as YtPlaylistInfoExtended[]
+  );
+
+  $effect(() => {
+    const validPage = clampPage(
+      currentPage,
+      Math.ceil(filteredPlaylists.length / playlistsPerPage)
+    );
+    if (validPage !== currentPage) currentPage = validPage;
+  });
+
+  function updatePaginationPage(event: { detail: { page: number } }) {
+    currentPage = event.detail.page;
+  }
+
+  function handlePageSizeChange(size: number) {
+    if (!Number.isFinite(size) || size === playlistsPerPage) return;
+    const total = filteredPlaylists.length;
+    const firstVisible = Math.min((currentPage - 1) * playlistsPerPage, Math.max(total - 1, 0));
+    const totalPages = Math.max(1, Math.ceil(total / size));
+    currentPage = Math.min(totalPages, Math.floor(firstVisible / size) + 1);
+    playlistsPerPage = size;
+    void saveSetting("playlistsPerPage", size);
+  }
 
   let someSelected = $derived(selectedIds.size > 0 && !allSelected);
 
@@ -1358,7 +1396,7 @@
     {:else}
       <div class="list-container">
         <div class="playlist-list">
-          {#each filteredPlaylists as p, index (p.id)}
+          {#each paginatedPlaylists as p, index (p.id)}
             {#snippet contentSnippet()}
               <div
                 class="thumb-container"
@@ -1400,10 +1438,7 @@
                 </div>
                 <div class="row-meta">
                   <span class="row-count">{p.videoCount} video{p.videoCount !== 1 ? "s" : ""}</span>
-                  <SyncStatusIndicator
-                    status={p.isLocal ? "local" : p.isTagged ? "synced" : "online"}
-                    size="sm"
-                  />
+                  <CategoryBadge category={getPlaylistCategory(p)} />
                   {#if !p.isLocal && p.privacyStatus}
                     <span class="badge privacy-{p.privacyStatus}">
                       {p.privacyStatus === "private"
@@ -1465,15 +1500,8 @@
 
             <ListRow
               selected={selectedIds.has(p.id)}
-              dragging={draggingIndex === index}
-              dragOver={dragOverIndex === index}
-              draggable={true}
               selectable={true}
               {index}
-              onDragStart={handleDragStart}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
               onclick={() => toggleOne(p.id)}
               onSelect={() => toggleOne(p.id)}
               content={contentSnippet}
@@ -1482,6 +1510,15 @@
           {/each}
         </div>
       </div>
+      <PaginationBar
+        totalItems={filteredPlaylists.length}
+        pageSize={playlistsPerPage}
+        {currentPage}
+        onPageChange={updatePaginationPage}
+        onPageSizeChange={handlePageSizeChange}
+        pageSizeId="manage-page-size"
+        pageSizeLabel="Playlists per page"
+      />
     {/if}
   </div>
 </main>
@@ -1589,7 +1626,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 16px;
-    padding: 10px 16px;
+    padding: 10px 16px 10px 17px;
     background: var(--background-color);
     border-bottom: 1px solid var(--border-color);
     transition: background 0.2s;
@@ -1603,6 +1640,25 @@
     display: flex;
     align-items: center;
     gap: 16px;
+  }
+
+  .check-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    min-width: var(--touch-target-min);
+    min-height: var(--touch-target-min);
+    margin: 0;
+    cursor: pointer;
+  }
+
+  .check-cell input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    cursor: pointer;
+    accent-color: var(--primary-color);
   }
 
   .select-label {
@@ -1879,14 +1935,57 @@
 
   @media (max-width: 768px) {
     .list-header {
-      flex-direction: column;
-      align-items: flex-start;
+      flex-direction: row;
+      align-items: center;
+      flex-wrap: nowrap;
+      gap: 8px;
+      padding: 6px 8px 6px 17px;
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+
+    .header-left {
+      flex-shrink: 0;
+      gap: 8px;
+    }
+
+    .header-left :global(.btn) {
+      width: var(--header-control-size);
+      min-width: var(--header-control-size);
+      height: var(--header-control-size);
+      padding: 0;
+      border-radius: 50%;
+    }
+
+    .header-left :global(.btn .content span) {
+      display: none;
     }
 
     .bulk-actions {
-      width: 100%;
-      overflow-x: auto;
-      padding-bottom: 4px;
+      width: auto;
+      flex-wrap: nowrap;
+      flex-shrink: 0;
+      padding-bottom: 0;
+      overflow: visible;
+    }
+
+    .bulk-actions :global(.btn) {
+      width: var(--header-control-size);
+      min-width: var(--header-control-size);
+      height: var(--header-control-size);
+      padding: 0;
+      border-radius: 50%;
+    }
+
+    .bulk-actions :global(.btn .content span) {
+      display: none;
+    }
+
+    .privacy-select {
+      width: 120px;
+      min-width: 120px;
+      height: var(--header-control-size);
+      font-size: 12px;
     }
 
     .row-actions {

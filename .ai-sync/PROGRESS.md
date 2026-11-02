@@ -1,5 +1,170 @@
 # Progress — open work only (Mobile UX Improvements)
 
+## Improvement plan execution — 2026-11-01 (late)
+
+Plan: `docs/IMPROVEMENT_PLAN.md` (merged with #69).
+
+- [x] Phase 0.1 — `contracts:check` repaired: `shared/page-service.js` typed accessor;
+      `npm run check` exit 0. `capture-import.d.ts` regenerated (no hand edits).
+- [x] Phase 0.2 — portal logo fix merged (#68, previously opened as PR).
+- [x] Phase 1 — 61 uncommitted files landed as 4 scoped commits + merge of `next`
+      (PR #70). Working tree clean.
+- [x] Phase 3 (partial) — `BulkActionsBar` split to 250 lines, `Modal` focus trap extracted
+      with 6 tests, background bridge covered by 2 tests.
+- [x] Phase 4 group 1 — sync core (`sync-key`, `key-derivation`, `snapshot-codec`,
+      `encryption-service`, `content-selector`), 45 tests (PR #71).
+- [ ] Phase 2 — issue closure still needs evidence that automation cannot produce: - #10 pagination: unit tests pass (4) and 96 route/viewport checks pass; a
+      `dist/verification` screenshot at 390 px with first/last page visible is still
+      needed before closing. - #14 durations: covered by 2 new unit tests plus the scrape path; a real imported
+      playlist with badges visible is still needed. - #13 dark-mode flash: #65 shipped the startup-theme fix; needs a first-paint trace
+      on a real device, not a code read. - #11 thumbnails: the archive option exists only in the editor's settings panel, not
+      in the global Settings view — surfacing it is still open.
+- [ ] Phase 4 groups 2–6 — engine, File/Supabase/Drive backends, Plugins screen.
+- [ ] Phase 5 — release decision; owner-gated, nothing tagged or published.
+
+## Context menu + theme — merged to `next`, acceptance incomplete (2026-11-01)
+
+Shipped in `next` at `669049d` (#64, #65); version stays **1.2.1** — no release.
+
+- [x] Context-menu defects: disabled families honoured (hidden, not greyed), links resolve
+      only the clicked URL, reconciliation removes unowned entries after a worker restart,
+      `contextMenus.update` no longer receives `type`, and the action matches the label
+      (`effectiveDestinationMode`). 9 tests + 3 mutations (7/7 caught).
+- [x] Theme: a persisted/synced `themeChoice` is applied at startup (retried storage read)
+      and an E2E guard asserts first paint, failing on the pre-#63 storage key.
+- [x] Evidence on `669049d`: `check` 0 (573 tests), `build` 0, `test:extension` 0 (102
+      checks, 8 interaction groups), headed portal E2E 2 passed / exit 0 / 0 skipped.
+- [ ] Native menu runs in a disposable Chrome profile (OpenSpec 3.2) — human only.
+- [ ] Native menu run in a disposable Firefox profile (OpenSpec 3.3) — human only.
+- [ ] Remaining contexts/scopes/settings/restart cases (OpenSpec 3.4).
+- [ ] Issue evidence for #10, #11, #14 (OpenSpec 3.5); #13 first paint is covered.
+- [ ] CM-R7 CI receipts, CM-R8 contract coverage, CM-R9 bundle triage.
+- [ ] Popup theme assertion (the one theme consumer with no end-to-end check).
+- [ ] Dependabot #60 / #61 / #62 triage (all red, untriaged).
+
+## Pinned favorites — planning formalized (2026-11-01, no code)
+
+Owner approved replacing the single favorite with multiple pinned favorites in the
+sidebar. Planning only; no code changed. Decisions: separate `favoritePlaylistIds`
+list from `watchLaterPlaylistId` (migration seeds the list); each pin opens its
+playlist directly with ~6 visible then an "All favorites" overflow page.
+
+- [ ] Add `favoritePlaylistIds: string[]` to `Settings` + `DEFAULT_SETTINGS`.
+- [ ] `migrateSettings()` seed from `watchLaterPlaylistId` (idempotent).
+- [ ] Sidebar favorites group (desktop + mobile) with `<hr>` before/after; remove
+      the single `#/favorite` link.
+- [ ] Replace `views/FavoritePlaylist.svelte` with `views/Favorites.svelte` (card
+      grid); update `App.svelte`, `stores/shortcuts.ts`, `HeaderSearchBar.svelte`.
+- [ ] Star toggle on `PlaylistCard.svelte` + `PlaylistEditor.svelte`.
+- [ ] Replace `FavoriteSettings.svelte` single select with multi-select + reorder.
+- [ ] Migration + backup round-trip + sidebar/route tests; `npm run check && npm run build`.
+
+New suggestions recorded (FV-1…FV-5, outside implementation scope):
+
+- FV-1 — Relabel the existing single "Favorite Playlist" settings entry to
+  "Quick-add target (Watch Later)" so the two concepts stop sharing a name.
+  Priority 60% (Nice to have) [Professionalism].
+- FV-2 — Persist per-favorite `pinnedAt` timestamps instead of bare IDs so the list
+  can show "recently pinned" and stable ordering metadata. Priority 45% (Optional).
+- FV-3 — Add an "N favorites are missing (deleted)" inline notice on the Favorites
+  page with a one-click cleanup. Priority 55% (Nice to have) [Professionalism].
+- FV-4 — Support drag-to-reorder directly in the sidebar (desktop) in addition to
+  the Settings manager. Priority 40% (Optional).
+- FV-5 — Add a keyboard shortcut to jump to the first pinned favorite. Priority 35%
+  (Optional).
+
+## Firefox mobile (m.youtube.com) watch-history detection — hardened (2026-11-01)
+
+- [x] Confirm `m.youtube.com` is already covered in content-script `matches` and all host checks (`endsWith(".youtube.com")`); the "youtube.com vs m.youtube.com" hypothesis does not hold against the current source.
+- [x] Broaden content-script `matches` to `["*://*.youtube.com/watch*", "*://youtube.com/watch*"]` (chrome + firefox) so every subdomain and the bare domain match.
+- [x] Raise `waitForVideoElement` window 4s → 30s for slow Fenix page loads.
+- [x] Update README + PRIVACY_POLICY match description.
+- [x] Verify: `npm run build` exit 0 (all 3 targets, budgets pass), `npm run test` 570/570, `npm run lint` 0 errors.
+- [ ] Manual real-device (Firefox Android) confirmation that history records and resumes; and a dedicated look at the `watch_videos` `t=`-param drop (resume currently relies on the content-script `get-yph-history` fallback).
+
+## Modal dismissal on outside click — planning formalized (2026-11-01, no code)
+
+Owner asked to fix dialogs that only dismiss via X/Cancel. Planning only; no code changed.
+
+- [x] Create OpenSpec change `dismiss-dialogs-on-outside-click` (proposal, capability
+      `modal-dismissal` spec, design, tasks); `openspec validate --all --strict
+--no-interactive` passes 4/4 with exit 0.
+- [x] Record the plan in `.ai-sync/PLAN.md`, this file, and `HANDOFF.md`.
+- [ ] Implement in `Modal.svelte` (remove the size gate; pointerdown + click backdrop tracking).
+- [ ] Add Playwright interaction checks and run `npm run test:extension`.
+- [ ] Manual device matrix (mouse + touch, desktop + Firefox Android).
+
+New suggestions recorded (MD-1…MD-4, outside implementation scope):
+
+- MD-1 — Add a "clicking outside will discard changes" hint/aria on dismissible dialogs
+  with unsaved edits. Priority 55% (Nice to have) [Professionalism].
+- MD-2 — Add an Escape-to-dismiss parity check alongside the backdrop test so both cancel
+  paths stay covered. Priority 60% (Nice to have) [Best practices].
+- MD-3 — Fade/translate non-drawer dialogs on open like the drawer for consistency.
+  Priority 45% (Optional) [Professionalism].
+- MD-4 — Add a `close-on-backdrop` prop so specific dialogs can opt out of backdrop
+  dismissal even when dismissible (e.g. destructive multi-step flows).
+  Priority 50% (Nice to have) [Best practices].
+
+## Data Manager explainability + unavailable tombstones (2026-11-01, uncommitted)
+
+- [x] Persist confirmed-unavailable videos as terminal tombstones (oEmbed 400/404/410).
+- [x] Skip terminal rows in background enrichment; add origin + Retry/Forget list.
+- [x] Add Usage Estimate (Data API requests, quota %, resolved count).
+- [x] Merge source facts into expandable engine rows (BETA/Official/Community/Future
+      tags); remove the separate guide, scalability and roadmap panels.
+- [x] Add Apify / hosted actors as an unconnected `FUTURE · PAID` engine option.
+- [x] Make the Usage Estimate explanation an expander; avoid repeated quota copy.
+- [x] Pure estimate + queue helpers with tests; full suite 56 files / 570 tests.
+- [x] Consolidate actions + issue lists into one Repair Metadata panel with tabs.
+- [x] Paginate Incomplete and Unavailable (10 default, persisted `metadataPageSize`).
+- [x] Add duration-only refresh, reason/origin filters, checked age, origin deep links,
+      selection-based bulk retry, and Test API Key.
+- [x] Add quota-aware Data API health guard + key-status badge.
+- [x] Persist active tab, reason, origin and page size.
+- [ ] Owner review of copy/layout; commit with UI polish.
+
+## Encrypted cross-device sync — planning formalized (2026-11-01, no code)
+
+Owner approved the zero-knowledge sync plan after discussion and asked to formalize it
+first (OpenSpec + .ai-sync + docs). All change tasks below start unchecked; planning
+only, no application code changed.
+
+- [x] Create OpenSpec change `add-encrypted-cross-device-sync` (proposal, 3 capability
+      specs, SOLID design, tasks); `openspec validate --all --strict --no-interactive`
+      passes 3/3 with exit 0.
+- [x] Write `docs/ENCRYPTED_SYNC_PLAN.md` (decisions, architecture, phases, exclusions)
+      and link it from `docs/INDEX.md`; update `openspec/README.md` current change.
+- [x] Record the plan in `.ai-sync/PLAN.md`, this file, and `HANDOFF.md`.
+- [ ] All implementation tasks in the change's `tasks.md` (groups 1–8) — untouched.
+- [ ] Two-device and Firefox Android manual acceptance — untouched.
+
+New suggestions recorded for the sync work (SY-1…SY-9, outside implementation scope):
+
+- SY-1 — Keep the last N snapshots per backend with a rollback picker; the pre-import
+  backup only protects the local side. Priority 70% (High value) [Best practices].
+- SY-2 — Auto-prune old pre-import backups after a configurable retention window so the
+  safety net never grows unbounded. Priority 65% (Nice to have) [Best practices].
+- SY-3 — Show a sync health row (last sync time, backend reachable, blob size) in the
+  Plugins screen. Priority 60% (Nice to have) [Professionalism].
+- SY-4 — Support re-keying: change the sync key by decrypting the last snapshot and
+  re-encrypting under the new key, with a confirm step. Priority 55% (Nice to have)
+  [Best practices].
+- SY-5 — Add a size guard and quota warning for the Drive `appDataFolder` (~1 GB)
+  before upload. Priority 70% (High value) [Best practices].
+- SY-6 — Property-based roundtrip tests for the codec/encryption layer (random
+  payloads, tampered bytes, truncated ciphertext). Priority 60% (Nice to have)
+  [Best practices].
+- SY-7 — Make the sync-key reveal accessible and printable (readable font, copy button,
+  "save as text" export) for the write-it-down step. Priority 50% (Nice to have)
+  [Professionalism].
+- SY-8 — Extend the consent gate so disabling a cloud module revokes its token and
+  stops its alarm, matching the existing permission-revocation pattern. Priority 70%
+  (High value) [Security].
+- SY-9 — Annotate the Plugins screen's privacy copy honestly: contents are encrypted,
+  but backends still see timing, IP and payload size. Priority 60% (Nice to have)
+  [Professionalism].
+
 Completed work is not listed here. It lives in `CHANGELOG.md` (user-facing), the PR history,
 and `.ai-sync/HISTORY.md` (per-session detail, frozen).
 

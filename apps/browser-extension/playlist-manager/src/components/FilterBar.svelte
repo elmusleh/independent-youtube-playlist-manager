@@ -41,7 +41,8 @@
 <div class="chip-bar">
   <div class="sort-wrapper">
     <button class="chip" class:sort-open={sortOpen} onclick={toggleSort}>
-      {activeSort}
+      <span class="sort-label">{activeSort}</span>
+      <span class="sort-label-mobile">Sort</span>
       <Fa icon={faChevronDown} fw />
     </button>
     {#if sortOpen}
@@ -113,6 +114,10 @@
     position: relative;
   }
 
+  .sort-label-mobile {
+    display: none;
+  }
+
   .sort-dropdown {
     position: absolute;
     top: calc(100% + var(--space-2));
@@ -157,23 +162,35 @@
 
   @media (max-width: 768px) {
     .chip-bar {
-      padding: var(--space-3) var(--space-4);
+      flex-wrap: nowrap;
+      gap: var(--space-1);
+      padding: 4px 12px;
+      overflow: visible;
     }
 
     .chip {
+      flex-shrink: 0;
       font-size: var(--font-size-sm);
-      padding: var(--space-1) var(--space-2);
+      padding: 0 var(--space-2);
+    }
+
+    .sort-label {
+      display: none;
+    }
+
+    .sort-label-mobile {
+      display: inline;
     }
   }
 
   /* Touch target enforcement for mobile */
   @media (pointer: coarse), (max-width: 767px) {
     .chip {
-      min-height: var(--touch-target-comfortable);
-      min-width: var(--touch-target-comfortable);
+      min-height: var(--touch-target-min);
+      min-width: var(--touch-target-min);
     }
     .sort-option {
-      min-height: var(--touch-target-comfortable);
+      min-height: var(--touch-target-min);
     }
   }
 

@@ -8,25 +8,23 @@ generated from the Chrome manifest; there is no separate Edge source manifest.
 | Field           | Value                                                                                                               |
 | --------------- | ------------------------------------------------------------------------------------------------------------------- |
 | Extension name  | Independent YouTube Playlist Manager                                                                                |
-| Version         | 1.1.1                                                                                                               |
-| Status          | Draft / uploaded, not submitted for certification or review                                                         |
+| Version         | 1.2.1                                                                                                               |
+| Status          | Draft / 1.1.1 package uploaded, never submitted for certification. 1.2.1 package ready to upload                    |
 | Store ID        | `0RDCKFZCVDRK`                                                                                                      |
 | CRX ID          | `ncmipojoamaoacinccopmdkflgocghno`                                                                                  |
 | Product ID      | `20f9b17d-73e7-45f8-8692-796867b7ec80`                                                                              |
 | Partner Center  | https://partner.microsoft.com/en-us/dashboard/microsoftedge/20f9b17d-73e7-45f8-8692-796867b7ec80/packages/dashboard |
 | Public URL      | Not available until published                                                                                       |
-| Package SHA-256 | `4696ecfad281a050ad292b53ee9441c67ec23293b992712f4e7b1254274ca377`                                                  |
+| Package SHA-256 | `5bf1c87c173c5a81d41fce05fada4afa56e67c86b74098b80677a815cf133e46`                                                  |
 
 The listing is still a **draft**. Uploading a package alone does not publish it;
 certification and submission remain separate, explicit steps.
 
-> **Warning:** The ZIP previously uploaded to this draft was stale. It was built
-> before the new first-run onboarding existed and still required an API key. Before
-> submitting for certification, replace it with the rebuilt
-> `dist/independent-youtube-playlist-manager-edge.zip` (SHA-256
-> `4696ecfad281a050ad292b53ee9441c67ec23293b992712f4e7b1254274ca377`). A same-version
-> draft package replacement should be attempted first. If Partner Center rejects the
-> replacement for version 1.1.1, bump the version and rebuild all packages.
+> **Note:** the draft currently holds the **1.1.1** package, which predates the
+> first-run onboarding and still required an API key. The rebuilt package is
+> **1.2.1** (`dist/independent-youtube-playlist-manager-edge.zip`, SHA-256 above).
+> Upload it over the draft: Edge keeps one package per version, so a higher version
+> is accepted and becomes the submitted one. The 1.1.1 package is never published.
 
 ## Prerequisites
 
@@ -48,11 +46,10 @@ npm run pack:edge
 ```
 
 Build the ZIP from the exact commit you intend to ship, not from a dirty working
-tree. The repository currently has unrelated uncommitted UI/CSS work, and `1.1.1`
-is already submitted to Chrome and Firefox. Either commit the Edge changes and
-rebuild from that clean commit, or bump the version before uploading if the
-package must include newer runtime changes. The hash in `docs/RELEASE_READINESS.md`
-records the current working-tree build and will change after either action.
+tree. `1.2.1` is prepared on `next` but not yet tagged, and the working tree still
+carries uncommitted UI-polish work, so commit what the package should contain and
+rebuild from that clean commit before uploading. The SHA-256 recorded above is the
+current working-tree build and will change after any further edit.
 
 `npm run build` runs `validate-manifests.js`, which asserts that
 `dist/edge/manifest.json` exactly matches the Chrome manifest minus `key` and
@@ -66,11 +63,11 @@ unzip -p dist/independent-youtube-playlist-manager-edge.zip manifest.json
 
 Confirm:
 
-- `manifest_version` is `3`, version is `1.1.1`.
+- `manifest_version` is `3`, version is `1.2.1`.
 - No `key`.
 - No `browser_specific_settings`.
 - No `update_url`.
-- The ZIP contains `editor/`, `background/`, `content-scripts/`, `popup/`, `assets/`.
+- The ZIP contains `editor/`, `background/`, `content-scripts/`, `popup/`, `shared/`, `assets/`.
 - No `.map` files.
 
 ## 2. Listing Values
@@ -133,13 +130,22 @@ Paste the following into the certification notes field:
 
 ## 6. Submit
 
-1. Sign in to [Partner Center](https://partner.microsoft.com/dashboard/microsoftedge).
-2. Create a new extension and upload `dist/independent-youtube-playlist-manager-edge.zip`.
-3. Complete the store listing with the values and assets above.
-4. Complete the IARC questionnaire.
-5. Add the certification notes.
-6. Submit for certification.
-7. Review typically takes up to 7 business days. Respond to any reviewer questions promptly.
+1. Sign in to [Partner Center](https://partner.microsoft.com/dashboard/microsoftedge)
+   and open the existing draft (Product ID
+   `20f9b17d-73e7-45f8-8692-796867b7ec80`). Do not create a second listing — that
+   would split installs and reviews.
+2. In **Packages**, upload `dist/independent-youtube-playlist-manager-edge.zip`
+   (1.2.1). Wait for validation to finish; a failed validation must be fixed before
+   the listing can be submitted.
+3. Complete **Store listing**: short description, detailed description, 7 search
+   terms, logo, small and large promotional tiles, 6 screenshots, category,
+   language.
+4. Complete **Privacy**: privacy policy URL, and declare the single purpose plus the
+   data the extension handles (local-only by default; optional Google/Supabase use).
+5. Complete the IARC age-rating questionnaire.
+6. Paste the certification notes above into **Notes for certification**.
+7. **Publish / Submit for certification.** Review typically takes up to 7 business
+   days; answer reviewer questions promptly or the submission is failed.
 
 ## 7. After Approval
 
@@ -163,15 +169,29 @@ Paste the following into the certification notes field:
 
 ## 8. Manual Smoke Test
 
-Before submitting, install `dist/edge/` via `edge://extensions/` → **Load unpacked**
-and verify:
+Edge is installed on this machine (`/usr/bin/microsoft-edge`), so the store package can
+be tested in the real browser rather than another Chromium build. Use a throwaway
+profile so the test never touches your browsing profile:
 
-- Toolbar popup opens and can add the current video.
+```bash
+cd ~/dev/independent-youtube-playlist-manager
+microsoft-edge \
+  --user-data-dir="$HOME/.hermes/cache/scratch/edge-smoke" \
+  --load-extension="$PWD/dist/edge" \
+  about:blank
+```
+
+Then check `edge://extensions` shows the unpacked build, and verify:
+
+- Toolbar popup opens on the first click and can add the current video.
 - Playlist editor loads all views and persists changes after reload.
 - YouTube content script and context menus work on a watch page.
 - Export/import backup works.
 - Optional Google/Supabase flows show consent and fail safely when unconfigured.
 - No uncaught errors in the service worker or extension pages.
+
+Signing in to the store listing is not involved in this step; it only proves the
+package works in Edge's runtime.
 
 ## Common Rejection Risks
 

@@ -401,14 +401,6 @@
     padding-right: 10px;
   }
 
-  .info-scroll ul {
-    padding-left: 20px;
-  }
-
-  .info-scroll li {
-    margin-bottom: 12px;
-  }
-
   .info-section {
     margin-bottom: 20px;
     padding: 16px;

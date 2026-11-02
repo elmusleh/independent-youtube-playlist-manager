@@ -1,6 +1,8 @@
 // @ts-check
 import { validIds } from "./library-mutations.js";
 import { createJob, putJob, openCapture, withJob, checkCancelled } from "./capture-jobs.js";
+import { durationLabelToISO, durationLabelToSeconds } from "../shared/duration-label.js";
+import { videoServiceBridge } from "../shared/page-service.js";
 /** @param {import("../shared/protocol-contracts.js").SourceAnchor | null} source */
 async function requireSource(source) {
   if (!source || !/^https?:\/\//.test(source.url || ""))
@@ -10,6 +12,42 @@ async function requireSource(source) {
     throw new Error("The source page changed or closed. Open its menu and retry.");
   return tab;
 }
+
+/**
+ * Cache title/channel/duration that the page DOM already exposes. This is free,
+ * instant, and avoids re-fetching videos that were captured from a playlist or
+ * channel page.
+ * @param {Array<{id?: string, title?: string, channel?: string, durationLabel?: string}>} items
+ */
+export async function cacheScrapedMetadata(items) {
+  if (!Array.isArray(items) || !items.length) return 0;
+  /** @type {Record<string, any>} */
+  const records = {};
+  for (const item of items) {
+    if (!item || typeof item !== "object") continue;
+    const id = typeof item.id === "string" ? item.id : "";
+    if (!id) continue;
+    const title = typeof item.title === "string" ? item.title.trim() : "";
+    const channel = typeof item.channel === "string" ? item.channel.trim() : "";
+    const durationISO = durationLabelToISO(item.durationLabel || "");
+    if (!title && !channel && !durationISO) continue;
+    records[id] = {
+      videoId: id,
+      title,
+      channel,
+      durationISO,
+      durationSeconds: durationLabelToSeconds(item.durationLabel || ""),
+      isLive: durationISO ? durationISO === "LIVE" : undefined,
+      lastCachedAt: Date.now(),
+    };
+  }
+  const videoService = videoServiceBridge();
+  if (Object.keys(records).length && typeof videoService?.cacheScrapedMetadata === "function") {
+    await videoService.cacheScrapedMetadata(records);
+  }
+  return Object.keys(records).length;
+}
+
 function isChannel(url) {
   const source = new URL(url);
   return (
@@ -37,14 +75,18 @@ async function readPage(source, quantity, scrolling) {
         files: ["/content-scripts/injectors/get-channel-video-ids.js"],
       });
       await requireSource(source);
-      return validIds((results[0]?.result || []).map((item) => item.id));
+      const items = results[0]?.result || [];
+      await cacheScrapedMetadata(items);
+      return validIds(items.map((item) => item.id));
     }
     const results = await browser.scripting.executeScript({
       target,
       files: ["/content-scripts/injectors/scrape-youtube-links.js"],
     });
     await requireSource(source);
-    return validIds((results[0]?.result?.links || []).map((link) => link.id));
+    const links = results[0]?.result?.links || [];
+    await cacheScrapedMetadata(links);
+    return validIds(links.map((link) => link.id));
   } catch (error) {
     if (/permission|cannot access|not allowed|restricted/i.test(error.message))
       throw new Error(
