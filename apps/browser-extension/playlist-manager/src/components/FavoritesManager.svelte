@@ -280,6 +280,12 @@
     flex-shrink: 0;
   }
 
+  .fav-actions :global(.btn) {
+    min-width: 32px;
+    min-height: 32px;
+    padding: 4px;
+  }
+
   .fav-remove {
     background: none;
     border: none;
