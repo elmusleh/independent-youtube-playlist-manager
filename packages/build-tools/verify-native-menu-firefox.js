@@ -18,7 +18,8 @@ const fs = require("node:fs");
 const http = require("node:http");
 const path = require("node:path");
 
-const { ocr, locatePanel, findRow, shows, brandedRow } = require("./native-menu/shared.js");
+const { ocr, locatePanel, findRow, brandedRow } = require("./native-menu/ocr.js");
+const { shows } = require("./native-menu/match.js");
 
 const FIXTURE = `<!doctype html><html><head><meta charset="utf-8"><title>Native menu fixture</title></head>
 <body style="font:16px system-ui;padding:40px"><h1>Native menu fixture</h1>
@@ -215,7 +216,7 @@ async function main() {
   console.log("\nPASS: Firefox native menu verified (brand root entry present).");
   if (record) {
     const stamp = new Date().toISOString().slice(0, 10);
-    const dir = path.join(__dirname, "../../../docs/testing", `native-menu-firefox-${stamp}`);
+    const dir = path.join(__dirname, "../../docs/testing", `native-menu-firefox-${stamp}`);
     fs.mkdirSync(dir, { recursive: true });
     for (const name of ["ff-parent"]) {
       const source = path.join(output, `${name}.png`);
