@@ -95,9 +95,9 @@
   async function move(id: string, direction: -1 | 1) {
     const ids = settings?.favoritePlaylistIds ?? [];
     const next = moveFavorite(ids, ids.indexOf(id), direction);
-         await persistFavoriteIds(next);
-         if (settings) settings.favoritePlaylistIds = next;
-         if (window.logSystemEvent)
+    await persistFavoriteIds(next);
+    if (settings) settings.favoritePlaylistIds = next;
+    if (window.logSystemEvent)
       await window.logSystemEvent("INFO", `[SETTINGS] Reordered favorite: ${id}`);
   }
 

@@ -56,6 +56,7 @@ function createFixture() {
       autoFetchMetadata: false,
       autoSaveEditor: false,
       watchLaterPlaylistId: "local-release",
+      favoritePlaylistIds: ["local-second"],
     },
     metadata: Object.fromEntries(
       ids.map((id) => [

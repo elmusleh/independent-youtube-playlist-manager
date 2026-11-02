@@ -9,6 +9,7 @@
     faLock,
     faLockOpen,
     faStar as faStarSolid,
+    faThumbTack,
   } from "@fortawesome/free-solid-svg-icons";
   import { faStar as faStarRegular } from "@fortawesome/free-regular-svg-icons";
   import { faYoutube } from "@fortawesome/free-brands-svg-icons";
@@ -49,6 +50,9 @@
     isFavorite = false,
     favoriteReadOnly = false,
     onToggleFavorite = undefined,
+    showPinButton = false,
+    isPinned = false,
+    onTogglePin = undefined,
   }: {
     icon: any;
     title: string;
@@ -81,6 +85,9 @@
     /** When true, the star is a non-interactive indicator (used on the Favorite Playlist page) */
     favoriteReadOnly?: boolean;
     onToggleFavorite?: () => void | Promise<void>;
+    showPinButton?: boolean;
+    isPinned?: boolean;
+    onTogglePin?: () => void | Promise<void>;
   } = $props();
 
   let originalTitle = $state("");
@@ -171,6 +178,18 @@
               <Fa icon={isFavorite ? faStarSolid : faStarRegular} />
             </button>
           {/if}
+        {/if}
+        {#if showPinButton && !editingTitle}
+          <button
+            type="button"
+            class="pin-playlist-btn"
+            class:active={isPinned}
+            onclick={onTogglePin}
+            title={isPinned ? "Unpin playlist from sidebar" : "Pin playlist to sidebar"}
+            aria-label={isPinned ? "Unpin playlist from sidebar" : "Pin playlist to sidebar"}
+          >
+            <Fa icon={faThumbTack} fw />
+          </button>
         {/if}
         {@render children?.()}
       {:else}
@@ -351,6 +370,37 @@
     display: flex;
     align-items: center;
     margin-right: 4px;
+  }
+
+  .pin-playlist-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--touch-target-min, 44px);
+    height: var(--touch-target-min, 44px);
+    padding: 0;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--background-color);
+    color: var(--text-muted, #888);
+    cursor: pointer;
+    flex: 0 0 auto;
+    transition:
+      color 0.15s ease,
+      background-color 0.15s ease,
+      border-color 0.15s ease;
+  }
+
+  .pin-playlist-btn:hover,
+  .pin-playlist-btn.active {
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+    background: var(--active-bg-color);
+  }
+
+  .pin-playlist-btn:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
   }
 
   .favorite-star-btn {

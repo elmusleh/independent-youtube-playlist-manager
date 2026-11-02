@@ -8,6 +8,16 @@
       `npx svelte-check` 0 errors.
 - [ ] Manual real-device (Firefox Android) record/resume/Shorts confirmation.
 
+## Pinned favorites editor pin affordance — fixed on branch `fix/favorites-multi-pin`
+
+- [x] Find the missing UI cause: the prior `rightActions` slot was hidden in editable-title mode.
+- [x] Render a dedicated pin button beside the Watch Later star in `ViewHeader.svelte`.
+- [x] Add offline Chromium regression assertions for visibility, multi-pin toggles, sidebar entries,
+      and unchanged unique Watch Later state.
+- [x] Verify `npm run check`, `npm run build`, `npm run test:extension`, and packed Chrome ZIP
+      loaded in isolated Chromium. Refreshed all three browser packages.
+- [ ] Commit and push follow-up to PR #81; owner to reload the Chrome unpacked directory / XPI.
+
 ## Improvement plan execution — 2026-11-01 (later)
 
 - Both PRs are now merged to `next` (#70 `977509d`, #71 `2fd2c88`); `next` HEAD `2fd2c88`,

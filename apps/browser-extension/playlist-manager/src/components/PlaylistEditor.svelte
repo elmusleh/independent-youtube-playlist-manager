@@ -9,7 +9,11 @@
   import PlaylistVideo from "./PlaylistVideo.svelte";
   import SaveStatus from "./SaveStatus.svelte";
   import { StatusManager } from "../services/status-manager.svelte";
-  import { toggleFavorite as togglePinFav, persistFavoriteIds, isFavorite as isPinnedFav } from "../services/favorites";
+  import {
+    toggleFavorite as togglePinFav,
+    persistFavoriteIds,
+    isFavorite as isPinnedFav,
+  } from "../services/favorites";
   import { paginate } from "svelte-paginate";
   import Fa from "svelte-fa";
   import {
@@ -1516,6 +1520,9 @@
         isFavorite={isFavoritePlaylist}
         favoriteReadOnly={isFavoritePage || isFavoritePlaylist}
         onToggleFavorite={toggleFavorite}
+        showPinButton={true}
+        isPinned={isPinnedPlaylist}
+        onTogglePin={togglePin}
         showSyncStatus={true}
         syncStatus={isLocal ? "local" : playlist?.isTagged ? "synced" : "online"}
         showLockButton={true}
@@ -1545,14 +1552,6 @@
         onSave={handleManualSave}
       >
         {#snippet rightActions()}
-          <SimpleButton
-            secondary
-            iconOnly
-            onclick={togglePin}
-            title={isPinnedPlaylist ? "Unpin from sidebar" : "Pin to sidebar"}
-          >
-            <Fa icon={faThumbTack} fw />
-          </SimpleButton>
           {#if showUndoToast}
             <SimpleButton
               secondary

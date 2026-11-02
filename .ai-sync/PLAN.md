@@ -1,5 +1,17 @@
 # Plan — encrypted cross-device sync (planning) + context-menu completion (open)
 
+## Pinned favorites pin-button regression — fix in progress (2026-11-02)
+
+The sidebar pinning implementation is present; the missing editor affordance was caused by
+placing the control in `ViewHeader`'s `rightActions` slot while that slot is shown only when
+the title is not being edited. The editor starts in editable-title mode, so the control never
+rendered in the user's normal view. A fix now renders the dedicated pin button in the title
+action row next to—but independent from—the unique Watch Later star. Regression coverage
+proves multiple offline pins, sidebar visibility, and Watch Later independence; `npm run check`,
+build, extension UI checks and the packed Chrome ZIP runtime smoke check passed. All three
+packages were refreshed. Local changes are not yet committed/pushed to PR #81; do not claim
+manual user installation is verified—only isolated Chromium package verification is.
+
 ## Ship remaining unshipped work — plan (2026-11-01)
 
 **Base branch: `next` @ `669049d`** (synced; already includes #63 ui-polish, #64

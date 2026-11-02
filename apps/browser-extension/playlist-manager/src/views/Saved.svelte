@@ -283,13 +283,13 @@
                 ? "synced"
                 : "online"}
           isFavorite={settings?.favoritePlaylistIds?.includes(p.id) ?? false}
-                     onToggleFavorite={() => {
-                       const next = toggleFavorite(settings?.favoritePlaylistIds ?? [], p.id);
-                       if (settings) settings.favoritePlaylistIds = next;
-                       persistFavoriteIds(next).then(() => {
-                         window.getSettings().then((s) => (settings = s));
-                       });
-                     }}
+          onToggleFavorite={() => {
+            const next = toggleFavorite(settings?.favoritePlaylistIds ?? [], p.id);
+            if (settings) settings.favoritePlaylistIds = next;
+            persistFavoriteIds(next).then(() => {
+              window.getSettings().then((s) => (settings = s));
+            });
+          }}
           onOpen={() => openInEditor(p)}
           actions={getCardActions(p)}
           category={p.category}
