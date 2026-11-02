@@ -235,7 +235,11 @@ async function performSync(): Promise<void> {
     config2.lastError = e?.message || String(e);
     config2.lastSyncSummary = `Sync failed: ${config2.lastError}`;
     config2.lastSyncedAt = Date.now();
-    await saveSyncConfig(config2);
+    try {
+      await saveSyncConfig(config2);
+    } catch {
+      // Config write is secondary; the sync error is already surfaced.
+    }
     console.warn("[AUTO-SYNC] exception:", e);
   } finally {
     isSyncing = false;

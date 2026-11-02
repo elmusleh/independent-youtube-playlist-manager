@@ -14,7 +14,10 @@
   import ViewHeader from "../components/ViewHeader.svelte";
   import SimpleButton from "../components/SimpleButton.svelte";
   import StickyHeader from "../components/StickyHeader.svelte";
+  import SaveStatus from "../components/SaveStatus.svelte";
+  import { StatusManager } from "../services/status-manager.svelte";
   import BackendSection from "../components/sync/BackendSection.svelte";
+  import CompatibilitySection from "../components/sync/CompatibilitySection.svelte";
   import {
     loadSyncConfig,
     saveSyncConfig,
@@ -33,6 +36,7 @@
   import { getSyncStatus, triggerSyncNow, startPolling } from "../services/sync-manager.js";
 
   const caps = detectCapabilities();
+  const status = new StatusManager();
 
   let config = $state<SyncConfig>({
     ...DEFAULT_SYNC_CONFIG,
@@ -51,17 +55,21 @@
     startPolling();
     // Refresh the status banner periodically so a background sync updates it.
     const timer = setInterval(refreshStatus, 10_000);
-    (async () => {
-      config = await loadSyncConfig();
-      await refreshStatus();
-    })();
+    refresh();
     return () => clearInterval(timer);
   });
 
   const syncIsOn = $derived(!!(config.syncKey && config.backend));
 
   async function persist() {
-    await saveSyncConfig(config);
+    await status.save(() => saveSyncConfig(config));
+  }
+
+  async function refresh() {
+    await status.refresh(async () => {
+      config = await loadSyncConfig();
+      await refreshStatus();
+    });
   }
 
   async function refreshStatus() {
@@ -160,7 +168,11 @@
   <div class="view-body sync-page">
     <StickyHeader>
       {#snippet children()}
-        <ViewHeader icon={faArrowsRotate} title="Sync" />
+        <ViewHeader icon={faArrowsRotate} title="Sync">
+          {#snippet rightActions()}
+            <SaveStatus onclick={refresh} {status} />
+          {/snippet}
+        </ViewHeader>
       {/snippet}
     </StickyHeader>
 
@@ -318,6 +330,9 @@
           <Fa icon={faLink} /> Open API setup
         </a>
       </section>
+
+      <!-- Compatibility -->
+      <CompatibilitySection {caps} />
     </div>
   </div>
 </main>

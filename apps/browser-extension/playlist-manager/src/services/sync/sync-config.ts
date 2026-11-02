@@ -104,18 +104,22 @@ export async function getOrCreateDeviceId(): Promise<string> {
 
 export async function loadSyncConfig(): Promise<SyncConfig> {
   try {
-    const stored = await storageArea().get(KEY);
+    const stored = (await storageArea().get(KEY)) as Partial<SyncConfig> | null;
     if (!stored) return structuredClone(DEFAULT_SYNC_CONFIG);
-    return { ...DEFAULT_SYNC_CONFIG, ...(stored as Partial<SyncConfig>) };
+    // Deep-merge the nested `content` object so a config saved by an older build
+    // (missing settings/history) never loses the user's new toggles.
+    const content = { ...DEFAULT_SYNC_CONFIG.content, ...(stored.content ?? {}) };
+    return {
+      ...DEFAULT_SYNC_CONFIG,
+      ...stored,
+      content,
+      knownDevices: Array.isArray(stored.knownDevices) ? stored.knownDevices : [],
+    };
   } catch {
     return structuredClone(DEFAULT_SYNC_CONFIG);
   }
 }
 
 export async function saveSyncConfig(config: SyncConfig): Promise<void> {
-  try {
-    await storageArea().set(KEY, config);
-  } catch {
-    // Persistence is best-effort; a failed write should not break the UI.
-  }
+  await storageArea().set(KEY, config);
 }

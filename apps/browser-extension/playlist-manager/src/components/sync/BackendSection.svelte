@@ -1,6 +1,12 @@
 <script lang="ts">
   import Fa from "svelte-fa";
-  import { faCloud, faServer, faFolderOpen } from "@fortawesome/free-solid-svg-icons";
+  import {
+    faCloud,
+    faServer,
+    faFolderOpen,
+    faChevronDown,
+    faChevronUp,
+  } from "@fortawesome/free-solid-svg-icons";
   import SimpleButton from "../SimpleButton.svelte";
   import { supportsFileTransport } from "../../services/sync/file-sync-service.js";
   import type { SyncConfig, SyncBackend } from "../../services/sync/sync-config.js";
@@ -23,6 +29,11 @@
   } = $props();
 
   const fileSupported = supportsFileTransport();
+
+  let expanded = $state<string | null>(null);
+  function toggle(id: string) {
+    expanded = expanded === id ? null : id;
+  }
 </script>
 
 <section class="card">
@@ -47,6 +58,23 @@
     <p class="sub-text">
       Easiest. Uses IYPM's hosted sync service. Nothing but encrypted data is stored.
     </p>
+    <button type="button" class="learn-more" onclick={() => toggle("relay")}>
+      <Fa icon={expanded === "relay" ? faChevronUp : faChevronDown} />
+      {expanded === "relay" ? "Hide details" : "Learn more"}
+    </button>
+    {#if expanded === "relay"}
+      <div class="backend-detail">
+        <p>
+          <strong>Where your data goes:</strong> your playlists, settings and watch history are encrypted
+          on this device before anything leaves it. Only the encrypted blob is uploaded to IYPM's hosted
+          server.
+        </p>
+        <p>
+          <strong>Privacy:</strong> the server stores ciphertext only — nobody (including IYPM) can read
+          it without your sync key. There is no account; your key is the only identity.
+        </p>
+      </div>
+    {/if}
   </div>
 
   <div class="backend-option" class:selected={config.backend === "supabase-byo"}>
@@ -65,6 +93,22 @@
     <p class="sub-text">
       Free tier. You supply the project; the extension stores only encrypted data.
     </p>
+    <button type="button" class="learn-more" onclick={() => toggle("supabase-byo")}>
+      <Fa icon={expanded === "supabase-byo" ? faChevronUp : faChevronDown} />
+      {expanded === "supabase-byo" ? "Hide details" : "Learn more"}
+    </button>
+    {#if expanded === "supabase-byo"}
+      <div class="backend-detail">
+        <p>
+          <strong>Where your data goes:</strong> same encryption. The encrypted blob is uploaded to your
+          own Supabase project (a free-tier database you control).
+        </p>
+        <p>
+          <strong>Privacy:</strong> you own the server, but it still stores ciphertext only — even you
+          can't read the data there without your key.
+        </p>
+      </div>
+    {/if}
     {#if config.backend === "supabase-byo"}
       <div class="field">
         <label for="sb-url">Project URL</label>
@@ -107,6 +151,23 @@
       Your own files, no account. A tool like Syncthing moves the file between devices.
       {!fileSupported ? ` ${caps.fileNote}` : ""}
     </p>
+    <button type="button" class="learn-more" onclick={() => toggle("file")}>
+      <Fa icon={expanded === "file" ? faChevronUp : faChevronDown} />
+      {expanded === "file" ? "Hide details" : "Learn more"}
+    </button>
+    {#if expanded === "file"}
+      <div class="backend-detail">
+        <p>
+          <strong>Where your data goes:</strong> the encrypted blob is written as a single file in a folder
+          you choose on this device.
+        </p>
+        <p>
+          <strong>Privacy:</strong> nothing touches a server you don't control. Use Syncthing (or Dropbox
+          / Google Drive) to move that file between your devices — each device reads and writes the same
+          file.
+        </p>
+      </div>
+    {/if}
     {#if config.backend === "file"}
       <SimpleButton secondary onclick={onChooseFolder}>
         <Fa icon={faFolderOpen} /> Choose folder

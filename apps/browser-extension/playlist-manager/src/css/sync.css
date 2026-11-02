@@ -183,3 +183,84 @@
 .api-link:hover {
   text-decoration: underline;
 }
+
+.learn-more {
+  background: none;
+  border: none;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--primary-color);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  align-self: flex-start;
+}
+
+.learn-more:hover {
+  text-decoration: underline;
+}
+
+.backend-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: var(--bg-secondary, var(--color-bg-secondary));
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--text-color);
+  line-height: 1.5;
+}
+
+.backend-detail p {
+  margin: 0;
+}
+
+.compat-table {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.compat-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 8px;
+  padding: 8px 12px;
+  font-size: 13px;
+  align-items: center;
+}
+
+.compat-row + .compat-row {
+  border-top: 1px solid var(--border-color);
+}
+
+.compat-head {
+  font-weight: 700;
+  color: var(--text-muted, var(--text-secondary));
+  background: var(--bg-secondary, var(--color-bg-secondary));
+}
+
+.compat-row.you {
+  background: rgba(6, 95, 212, 0.06);
+}
+
+.compat-row.you span:first-child {
+  font-weight: 700;
+  color: var(--primary-color);
+}
+
+.compat-ok,
+.compat-no,
+.compat-na {
+  text-align: center;
+}
+
+.compat-na {
+  color: var(--text-muted, var(--text-secondary));
+  opacity: 0.6;
+}
