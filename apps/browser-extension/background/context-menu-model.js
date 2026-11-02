@@ -10,11 +10,9 @@ export const SCOPES = [
   ["all", "All tabs across normal windows"],
 ];
 const TARGETS = [
-  ["favorite", "Favorite playlist", "saved"],
-  ["latest", "Latest playlist", "saved"],
-  ["builder", "Playlist Builder", "builder"],
-  ["new", "New local playlist", "saved"],
-  ["choose", "Choose saved playlist…", "saved"],
+  ["favorite", "Favorite playlist"],
+  ["latest", "Latest playlist"],
+  ["new", "Create new playlist"],
 ];
 const contexts = ["page", "link", "image", "video", "frame", "selection"];
 
@@ -35,34 +33,35 @@ export function staleMenuIds(desired, previousIds) {
 export function menuModel(settings, destinations) {
   if (settings.disableContextMenu) return [];
   const savedAllowed = !settings.disableContextSaved;
-  const builderAllowed = !settings.disableContextBuilder;
-  const anyAllowed = savedAllowed || builderAllowed;
   // Label the menu with the destination the next action will really use.
   const selected = resolveDestination(effectiveDestinationMode(settings), settings, destinations);
+  const selectedDestId = selected?.id ?? null;
   const label = (selected?.title || "Choose playlist").slice(0, 60);
-  const items = [{ id: ROOT, title: "Playlist Manager", contexts }];
+  const items = [{ id: ROOT, title: "IYPM", contexts }];
   const item = (id, title, extra = {}) =>
     items.push({ id: `yph:${id}`, parentId: ROOT, title, contexts, ...extra });
   const separator = (id) =>
     items.push({ id: `yph:${id}`, parentId: ROOT, type: "separator", contexts });
   if (savedAllowed) item("saved", "My Playlists");
-  if (savedAllowed && anyAllowed) separator("sep-saved");
-  if (anyAllowed) {
-    item("scopes", `Add YouTube tabs to ${label}`);
-    for (const [scope, title] of SCOPES)
-      items.push({ id: `yph:scope:${scope}`, parentId: "yph:scopes", title, contexts });
-    item("link", `Add this YouTube link to ${label}`, {
+  if (savedAllowed) {
+    separator("sep-saved");
+    // Each destination gets its own scope submenu
+    for (const [destId, destTitle] of TARGETS) {
+      const destItemId = `destination:${destId}`;
+      item(destItemId, `Add YouTube tabs to ${destTitle}`);
+      for (const [scope, title] of SCOPES)
+        items.push({
+          id: `yph:scope:${destId}:${scope}`,
+          parentId: `yph:destination:${destId}`,
+          title,
+          contexts,
+        });
+    }
+    item("link", "Add this YouTube link to selected destination", {
       contexts: ["link", "video"],
       targetUrlPatterns: ["*://*.youtube.com/*", "*://youtu.be/*"],
     });
-    item("destination", "Destination");
-    for (const [id, title, family] of TARGETS) {
-      if (family === "builder" ? !builderAllowed : !savedAllowed) continue;
-      items.push({ id: `yph:destination:${id}`, parentId: "yph:destination", title, contexts });
-    }
-  }
-  if (anyAllowed && savedAllowed) separator("sep-actions");
-  if (savedAllowed) {
+    separator("sep-actions");
     item("save-playlist", "Save this YouTube playlist…", {
       documentUrlPatterns: ["*://*.youtube.com/*"],
     });

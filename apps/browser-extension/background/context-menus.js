@@ -1,5 +1,5 @@
 import { isAndroid, alert } from "./utils.js";
-import { menuModel, staleMenuIds, ROOT, SCOPES } from "./context-menu-model.js";
+import { menuModel, ROOT, SCOPES } from "./context-menu-model.js";
 import { cachedDestinations, requireDestinationEnabled } from "../shared/quick-add.js";
 import { startCapture, scanPage, openCapture } from "./capture-controller.js";
 import { createJob } from "./capture-jobs.js";
@@ -48,36 +48,29 @@ async function reconcile(settings) {
     if ((await rememberedMenuIds()).length) await rememberMenuIds([]);
     return;
   }
-  for (const item of desired) {
-    const { id, ...properties } = item;
-    // `type` is fixed at creation; update() rejects it.
-    delete properties.type;
-    const signature = JSON.stringify(item);
-    if (lastModel.get(id) === signature) continue;
-    try {
-      await browser.contextMenus.update(id, properties);
-    } catch {
-      await createMenu(item);
-    }
-    lastModel.set(id, signature);
-  }
-  // Anything the current model no longer contains (disabled group, stale scope)
-  // is removed instead of being rebuilt wholesale. Menus survive service-worker
-  // restarts, so the owned ids are persisted and not just kept in memory.
+  // Remove ALL existing menu items first to avoid browser reordering on update().
+  // Then recreate from scratch for stable ordering.
   const remembered = await rememberedMenuIds();
-  const previous = new Set([...lastModel.keys(), ...remembered]);
-  for (const id of staleMenuIds(desired, [...previous])) {
+  const allExisting = new Set([...lastModel.keys(), ...remembered, ROOT]);
+  for (const id of allExisting) {
     try {
       await browser.contextMenus.remove(id);
     } catch {
       /* Already absent. */
     }
-    lastModel.delete(id);
   }
-  // Only persist on real change: Firefox refreshes on every menu open.
+  lastModel.clear();
+  // Create all items fresh in the correct order.
+  for (const item of desired) {
+    const { id, ...properties } = item;
+    // `type` is fixed at creation; update() rejects it.
+    delete properties.type;
+    await createMenu(item);
+    lastModel.set(id, JSON.stringify(item));
+  }
+  // Persist the owned ids.
   const owned = desired.map((item) => item.id);
-  if (remembered.length !== owned.length || remembered.some((id, index) => id !== owned[index]))
-    await rememberMenuIds(owned);
+  await rememberMenuIds(owned);
 }
 const MENU_IDS_KEY = "yph_context_menu_ids";
 async function rememberedMenuIds() {
@@ -118,24 +111,26 @@ async function dispatch(info, tab) {
   const settings = await window.getSettings();
   if (settings.disableContextMenu) throw new Error("The context menu is disabled.");
   if (id.startsWith("yph:scope:")) {
-    const scope = id.slice("yph:scope:".length);
+    // New format: yph:scope:<destination>:<scope>
+    const parts = id.slice("yph:scope:".length).split(":");
+    if (parts.length !== 2) throw new Error("Invalid scope menu item.");
+    const [destination, scope] = parts;
+    if (!["favorite", "latest", "new"].includes(destination))
+      throw new Error("Unknown destination.");
     if (!SCOPES.some(([value]) => value === scope)) throw new Error("Invalid tab scope.");
+    requireDestinationEnabled(destination, settings, "menu");
+    await window.storeObject("contextMenuDestination", destination);
     const result = await startCapture({ scope, anchor: tab });
     if (!result.review)
       await alert(`Saved ${result.added} video(s); ${result.duplicates} already present.`, true);
   } else if (id.startsWith("yph:destination:")) {
+    // Legacy destination items (should not exist anymore, but handle gracefully)
     const destination = id.slice("yph:destination:".length);
-    if (!["favorite", "latest", "builder", "new", "choose"].includes(destination))
+    if (!["favorite", "latest", "new"].includes(destination))
       throw new Error("Unknown destination.");
     requireDestinationEnabled(destination, settings, "menu");
-    if (destination === "choose") {
-      await openCapture(
-        await createJob({ operation: "destination", source: "menu", ids: [], tabs: [] })
-      );
-    } else {
-      await window.storeObject("contextMenuDestination", destination);
-      await buildContextMenus(await window.getSettings());
-    }
+    await window.storeObject("contextMenuDestination", destination);
+    await buildContextMenus(await window.getSettings());
   } else if (id === "yph:link") {
     const videoId = linkCaptureVideoId(clickContext(info), info, tab?.url);
     if (!videoId) throw new Error("This is not a YouTube video link.");

@@ -140,7 +140,6 @@ export interface Settings {
   defaultEditorPage: "/new" | "/saved";
   saveCreatedPlaylists: boolean;
   disableContextMenu: boolean;
-  closeContextAddedTabs: boolean;
   contextMenuDestination: string | null;
   disableContextBuilder: boolean;
   disableContextSaved: boolean;

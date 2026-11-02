@@ -1042,7 +1042,6 @@ window.getSettings = async (): Promise<Settings> => {
       defaultEditorPage: "/saved",
       saveCreatedPlaylists: false,
       disableContextMenu: false,
-      closeContextAddedTabs: false,
       contextMenuDestination: null,
       disableContextBuilder: false,
       disableContextSaved: false,
@@ -1156,6 +1155,16 @@ async function migrateSettings(settings: Settings) {
     await browser.storage.sync.set({
       defaultEditorPage: settings.defaultEditorPage,
     });
+  }
+  // Migrate old closeContextAddedTabs to unified closeAddedTabs
+  if (typeof (settings as any).closeContextAddedTabs === "boolean") {
+    const oldVal = (settings as any).closeContextAddedTabs;
+    settings.closeAddedTabs = oldVal;
+    await browser.storage.sync.set({
+      closeAddedTabs: oldVal,
+    });
+    // Remove the old setting
+    delete (settings as any).closeContextAddedTabs;
   }
   // Seed pinned favorites from the legacy single favorite (one-time, additive).
   // Only seed when the setting was never present (undefined/null), so an explicitly

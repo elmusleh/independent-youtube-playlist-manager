@@ -111,7 +111,7 @@ export async function startCapture({
     ),
     sourceTab: anchor ? { id: anchor.id, url: anchor.url, windowId: anchor.windowId } : null,
     position: settings.addToLatestPosition || "bottom",
-    closeTabs: source === "menu" ? !!settings.closeContextAddedTabs : !!settings.closeAddedTabs,
+    closeTabs: !!settings.closeAddedTabs,
   });
   const destination = resolveDestination(target, settings, await cachedDestinations());
   if (destination) {
@@ -239,7 +239,7 @@ export async function commitJob(id, destinationId, remoteConsent, options = {}) 
       job.tabs = [];
       job.sourceTab = null;
       await putJob(job);
-      if (job.closeTabs) await closeSavedTabs(closingCandidates, result.addedIds);
+      if (job.closeTabs) await closeSavedTabs(closingCandidates, job.ids);
       return job.result;
     } catch (error) {
       if (/** @type {string} */ (job.status) !== "cancelled") job.status = "failed";
