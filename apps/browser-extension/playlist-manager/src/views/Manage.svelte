@@ -1470,9 +1470,11 @@
                   ? "Remove from favorites"
                   : "Add to favorites"}
                 onclick={(e) => {
-                  e.stopPropagation();
-                  persistFavoriteIds(toggleFavorite(favoritePlaylistIds, p.id));
-                }}
+                                e.stopPropagation();
+                                persistFavoriteIds(toggleFavorite(favoritePlaylistIds, p.id)).then(() => {
+                                  window.getSettings().then((s) => (settings = s));
+                                });
+                              }}
               >
                 <span class:filled={favoritePlaylistIds.includes(p.id)}>
                   <Fa icon={faStar} />

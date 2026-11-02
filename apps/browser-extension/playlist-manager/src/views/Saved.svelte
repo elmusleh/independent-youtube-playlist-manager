@@ -283,8 +283,13 @@
                 ? "synced"
                 : "online"}
           isFavorite={settings?.favoritePlaylistIds?.includes(p.id) ?? false}
-          onToggleFavorite={() =>
-            persistFavoriteIds(toggleFavorite(settings?.favoritePlaylistIds ?? [], p.id))}
+                     onToggleFavorite={() => {
+                       persistFavoriteIds(toggleFavorite(settings?.favoritePlaylistIds ?? [], p.id)).then(
+                         () => {
+                           window.getSettings().then((s) => (settings = s));
+                         }
+                       );
+                     }}
           onOpen={() => openInEditor(p)}
           actions={getCardActions(p)}
           category={p.category}
