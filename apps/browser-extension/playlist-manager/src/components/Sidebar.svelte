@@ -568,6 +568,7 @@
 
   .sidenav a,
   .drawer-nav a {
+    padding: 0 16px;
     min-width: 0;
     overflow: hidden;
   }
