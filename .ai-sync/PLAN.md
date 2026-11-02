@@ -27,13 +27,12 @@ Cleanup after shipping: archive `feat/orchestration-coordinator` (pilot #52), `c
 (superseded by #57), `backup/codex-context-menu-plan-pre-split` (after context-menu ships);
 drop the 3 lint-staged stashes; inspect `stash@{0}` (vercel rootDirectory) before discarding.
 
-## Pinned favorites — implemented 2026-11-01 (complete)
+## Pinned favorites — pending (PR #75 open; NOT yet on next)
 
-All phases complete. Verification: `npm run check` (0 errors), `npm run build` (3 targets),
-`npm run test:extension` (96 route/viewport checks + interaction groups). Full detail in
+PR #75 (`feat/pinned-favorites`) is open but has not merged. `favoritePlaylistIds`,
+`Favorites.svelte`, `FavoritesManager.svelte` are NOT yet on `next`. Do not treat this
+as complete until #75 merges and verification passes. Full detail in
 `.ai-sync/sessions/2026-11-01-pinned-favorites-planning.md` and `.ai-sync/HANDOFF.md`.
-
-Next: implementation awaits a new owner request.
 
 ## Modal dismissal on outside click — planning authorized 2026-11-01 (no code yet)
 

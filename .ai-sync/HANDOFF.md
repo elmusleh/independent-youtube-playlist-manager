@@ -111,12 +111,14 @@ e2e/extension.spec.ts` → 2 passed, exit 0, zero skipped.
   `docs/CONTEXT_MENU_PLAN.md`, `openspec/.../tasks.md`, new session record).
   Full detail: `.ai-sync/sessions/2026-11-01-context-menu-theme-merge.md`.
 
-## 2026-11-01 — pinned favorites implemented (all phases complete)
+## 2026-11-01 — pinned favorites planned (PR #75 open; implementation NOT yet on next)
 
 - Owner request: replace the single `#/favorite` page with multiple favorites, pinned
   in the sidebar between Manage Playlists and Subscriptions (or after Manage Playlists
   when signed out), with horizontal rules around the group.
-- Decisions implemented:
+- Status: **pending.** PR #75 (`feat/pinned-favorites`) is open but has not merged;
+  `favoritePlaylistIds`, `Favorites.svelte`, `FavoritesManager.svelte` are NOT yet on
+  `next`. Do not treat this as complete until #75 merges and verification passes.
   - Separate concepts: new `favoritePlaylistIds: string[]` (ordered) for pinned
     favorites; `watchLaterPlaylistId` stays the single quick-add / Watch-Later keep-alive
     target and is never deleted. Migration seeds the list from the old value.

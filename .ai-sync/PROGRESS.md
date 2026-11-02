@@ -57,18 +57,18 @@ Shipped in `next` at `669049d` (#64, #65); version stays **1.2.1** — no releas
 - [ ] Popup theme assertion (the one theme consumer with no end-to-end check).
 - [ ] Dependabot #60 / #61 / #62 triage (all red, untriaged).
 
-## Pinned favorites — implemented (2026-11-01, complete)
+## Pinned favorites — pending (PR #75 open; implementation not yet on next)
 
-- [x] Add `favoritePlaylistIds: string[]` to `Settings` + `DEFAULT_SETTINGS`.
-- [x] `migrateSettings()` seed from `watchLaterPlaylistId` (idempotent).
-- [x] Sidebar favorites group (desktop + mobile) with `<hr>` before/after; remove
+- [ ] Add `favoritePlaylistIds: string[]` to `Settings` + `DEFAULT_SETTINGS`.
+- [ ] `migrateSettings()` seed from `watchLaterPlaylistId` (idempotent).
+- [ ] Sidebar favorites group (desktop + mobile) with `<hr>` before/after; remove
       the single `#/favorite` link.
-- [x] Replace `views/FavoritePlaylist.svelte` with `views/Favorites.svelte` (card
+- [ ] Replace `views/FavoritePlaylist.svelte` with `views/Favorites.svelte` (card
       grid); update `App.svelte`, `stores/shortcuts.ts`, `HeaderSearchBar.svelte`.
-- [x] Star toggle on `PlaylistCard.svelte` + `PlaylistEditor.svelte` (via header).
-- [x] Replace `FavoriteSettings.svelte` single select with multi-select + reorder
+- [ ] Star toggle on `PlaylistCard.svelte` + `PlaylistEditor.svelte` (via header).
+- [ ] Replace `FavoriteSettings.svelte` single select with multi-select + reorder
       manager (`FavoritesManager.svelte` + `AddMoreFavorites.svelte`).
-- [x] Migration + backup round-trip + sidebar/route tests; `npm run check && npm run build`.
+- [ ] Migration + backup round-trip + sidebar/route tests; `npm run check && npm run build`.
 
 Completed suggestions recorded (FV-1…FV-5, outside implementation scope):
 
