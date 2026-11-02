@@ -331,11 +331,12 @@
 
     if (!dur || isNaN(dur)) return;
 
-    // Optional: Track position during playback if enabled
-    if (rules.ruleTrackDuringPlayback) {
-      if (now - lastSaveTimestamp >= rules.ruleHistoryThrottleMs) {
-        await performSave("timeupdate");
-      }
+    // Always save position periodically during playback (throttled). On mobile
+    // (m.youtube.com / Fenix) the pause/ended events do not reliably fire, and the
+    // unload flush often runs after YouTube has already reset the video element
+    // (readyState back to 0), so periodic saves are the only reliable signal.
+    if (now - lastSaveTimestamp >= rules.ruleHistoryThrottleMs) {
+      await performSave("timeupdate");
     }
 
     // Check for completion threshold
