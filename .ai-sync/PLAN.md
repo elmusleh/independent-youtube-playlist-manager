@@ -27,28 +27,13 @@ Cleanup after shipping: archive `feat/orchestration-coordinator` (pilot #52), `c
 (superseded by #57), `backup/codex-context-menu-plan-pre-split` (after context-menu ships);
 drop the 3 lint-staged stashes; inspect `stash@{0}` (vercel rootDirectory) before discarding.
 
-## Pinned favorites — planning authorized 2026-11-01 (no code yet)
+## Pinned favorites — implemented 2026-11-01 (complete)
 
-Owner approved replacing the single `#/favorite` page with multiple pinned favorites
-in the sidebar (between Manage Playlists and Subscriptions, or after Manage Playlists
-when signed out), separated by horizontal rules.
+All phases complete. Verification: `npm run check` (0 errors), `npm run build` (3 targets),
+`npm run test:extension` (96 route/viewport checks + interaction groups). Full detail in
+`.ai-sync/sessions/2026-11-01-pinned-favorites-planning.md` and `.ai-sync/HANDOFF.md`.
 
-Locked decisions (owner-confirmed):
-
-- **Separate concepts.** New `favoritePlaylistIds: string[]` (ordered) is the pinned
-  list; `watchLaterPlaylistId` stays the single quick-add / Watch-Later keep-alive
-  target and is never deleted. `migrateSettings()` seeds the new list from the old
-  value when empty.
-- **Overflow.** Each pin opens its playlist directly; show ~6 then an
-  "All favorites (N)" link to a `#/favorites` card-grid page. Empty list → no pins,
-  no dividers. Backup `schemaVersion` stays 2 (additive settings key).
-- Sanitize on load (dedupe, drop missing playlists, coerce to array); order = pin
-  order; reorder via a Settings manager.
-
-Sequencing: data model + migration → sidebar pins + `#/favorites` route → star toggle
-(card + editor header) → Settings reorder manager → `npm run check && npm run build`.
-All tasks unchecked; implementation awaits owner go. Full detail in
-`.ai-sync/sessions/2026-11-01-pinned-favorites-planning.md`.
+Next: implementation awaits a new owner request.
 
 ## Modal dismissal on outside click — planning authorized 2026-11-01 (no code yet)
 

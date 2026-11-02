@@ -50,24 +50,20 @@ Shipped in `next` at `669049d` (#64, #65); version stays **1.2.1** — no releas
 - [ ] Popup theme assertion (the one theme consumer with no end-to-end check).
 - [ ] Dependabot #60 / #61 / #62 triage (all red, untriaged).
 
-## Pinned favorites — planning formalized (2026-11-01, no code)
+## Pinned favorites — implemented (2026-11-01, complete)
 
-Owner approved replacing the single favorite with multiple pinned favorites in the
-sidebar. Planning only; no code changed. Decisions: separate `favoritePlaylistIds`
-list from `watchLaterPlaylistId` (migration seeds the list); each pin opens its
-playlist directly with ~6 visible then an "All favorites" overflow page.
-
-- [ ] Add `favoritePlaylistIds: string[]` to `Settings` + `DEFAULT_SETTINGS`.
-- [ ] `migrateSettings()` seed from `watchLaterPlaylistId` (idempotent).
-- [ ] Sidebar favorites group (desktop + mobile) with `<hr>` before/after; remove
+- [x] Add `favoritePlaylistIds: string[]` to `Settings` + `DEFAULT_SETTINGS`.
+- [x] `migrateSettings()` seed from `watchLaterPlaylistId` (idempotent).
+- [x] Sidebar favorites group (desktop + mobile) with `<hr>` before/after; remove
       the single `#/favorite` link.
-- [ ] Replace `views/FavoritePlaylist.svelte` with `views/Favorites.svelte` (card
+- [x] Replace `views/FavoritePlaylist.svelte` with `views/Favorites.svelte` (card
       grid); update `App.svelte`, `stores/shortcuts.ts`, `HeaderSearchBar.svelte`.
-- [ ] Star toggle on `PlaylistCard.svelte` + `PlaylistEditor.svelte`.
-- [ ] Replace `FavoriteSettings.svelte` single select with multi-select + reorder.
-- [ ] Migration + backup round-trip + sidebar/route tests; `npm run check && npm run build`.
+- [x] Star toggle on `PlaylistCard.svelte` + `PlaylistEditor.svelte` (via header).
+- [x] Replace `FavoriteSettings.svelte` single select with multi-select + reorder
+      manager (`FavoritesManager.svelte` + `AddMoreFavorites.svelte`).
+- [x] Migration + backup round-trip + sidebar/route tests; `npm run check && npm run build`.
 
-New suggestions recorded (FV-1…FV-5, outside implementation scope):
+Completed suggestions recorded (FV-1…FV-5, outside implementation scope):
 
 - FV-1 — Relabel the existing single "Favorite Playlist" settings entry to
   "Quick-add target (Watch Later)" so the two concepts stop sharing a name.
