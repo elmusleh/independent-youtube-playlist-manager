@@ -1,0 +1,217 @@
+-- IYPM sync relay v2 — record-level, RPC-only, encrypted.
+-- Run this in the SQL Editor of your Supabase project. It is idempotent.
+-- Supersedes docs/sync-relay.sql (v1 single-snapshot). v1 table is left in place
+-- for one release so older clients can still read; drop it after migration.
+
+-- ---------------------------------------------------------------------------
+-- Tables
+-- ---------------------------------------------------------------------------
+
+create table if not exists public.sync_spaces (
+  space text primary key,            -- SHA-256 address derived from the sync key
+  auth_hash text not null,           -- SHA-256 of the key-derived auth token
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists public.sync_records (
+  space text not null references public.sync_spaces(space) on delete cascade,
+  collection text not null,          -- 'playlists' | 'history' | 'settings' | 'devices'
+  rid text not null,                 -- opaque HMAC record id
+  version bigint not null,           -- HLC / monotonic version for this record
+  seq bigint generated always as identity,  -- global pull cursor
+  payload text not null,             -- AES-256-GCM ciphertext (base64)
+  deleted boolean not null default false,
+  updated_at timestamptz not null default now(),
+  primary key (space, collection, rid)
+);
+
+create index if not exists sync_records_space_seq_idx
+  on public.sync_records (space, seq);
+
+alter table public.sync_spaces enable row level security;
+alter table public.sync_records enable row level security;
+
+-- anon has NO direct access. All reads/writes go through the security-definer RPCs.
+revoke all on table public.sync_spaces from anon;
+revoke all on table public.sync_records from anon;
+
+-- ---------------------------------------------------------------------------
+-- RPC: claim a space (first device). Stores the auth token hash.
+-- ---------------------------------------------------------------------------
+create or replace function public.sync_claim(p_space text, p_auth_hash text)
+returns boolean
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if p_space is null or length(p_space) < 32 then
+    raise exception 'invalid space';
+  end if;
+  if p_auth_hash is null or length(p_auth_hash) < 32 then
+    raise exception 'invalid auth hash';
+  end if;
+
+  insert into public.sync_spaces (space, auth_hash)
+  values (p_space, p_auth_hash)
+  on conflict (space) do nothing;
+
+  -- If a row already exists, accept only when the auth hash matches.
+  if exists (select 1 from public.sync_spaces where space = p_space and auth_hash <> p_auth_hash) then
+    return false;
+  end if;
+  return true;
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- RPC: pull records since a sequence number.
+-- ---------------------------------------------------------------------------
+create or replace function public.sync_pull(
+  p_space text,
+  p_auth_hash text,
+  p_since_seq bigint default 0,
+  p_limit integer default 200
+)
+returns table (
+  collection text,
+  rid text,
+  version bigint,
+  seq bigint,
+  payload text,
+  deleted boolean,
+  updated_at timestamptz
+)
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not exists (
+    select 1 from public.sync_spaces
+    where space = p_space and auth_hash = p_auth_hash
+  ) then
+    raise exception 'unauthorized';
+  end if;
+
+  return query
+    select r.collection, r.rid, r.version, r.seq, r.payload, r.deleted, r.updated_at
+    from public.sync_records r
+    where r.space = p_space and r.seq > p_since_seq
+    order by r.seq asc
+    limit greatest(1, least(coalesce(p_limit, 200), 500));
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- RPC: push a batch of records. Returns per-record status.
+-- ---------------------------------------------------------------------------
+create or replace function public.sync_push(
+  p_space text,
+  p_auth_hash text,
+  p_records jsonb
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  rec jsonb;
+  results jsonb := '[]'::jsonb;
+  cur_version bigint;
+  incoming_version bigint;
+  incoming_collection text;
+  incoming_rid text;
+  incoming_payload text;
+  incoming_deleted boolean;
+  new_seq bigint;
+  status text;
+begin
+  if not exists (
+    select 1 from public.sync_spaces
+    where space = p_space and auth_hash = p_auth_hash
+  ) then
+    raise exception 'unauthorized';
+  end if;
+
+  for rec in select * from jsonb_array_elements(coalesce(p_records, '[]'::jsonb)) loop
+    incoming_collection := rec->>'collection';
+    incoming_rid := rec->>'rid';
+    incoming_version := (rec->>'version')::bigint;
+    incoming_payload := rec->>'payload';
+    incoming_deleted := coalesce((rec->>'deleted')::boolean, false);
+
+    if incoming_collection is null or incoming_rid is null or incoming_payload is null then
+      results := results || jsonb_build_array(jsonb_build_object(
+        'collection', incoming_collection,
+        'rid', incoming_rid,
+        'status', 'error',
+        'message', 'missing fields'
+      ));
+      continue;
+    end if;
+
+    select version into cur_version
+    from public.sync_records
+    where space = p_space and collection = incoming_collection and rid = incoming_rid;
+
+    if cur_version is null then
+      -- new record
+      insert into public.sync_records (space, collection, rid, version, payload, deleted)
+      values (p_space, incoming_collection, incoming_rid, incoming_version, incoming_payload, incoming_deleted);
+      status := 'ok';
+    elsif incoming_version > cur_version then
+      update public.sync_records
+      set version = incoming_version,
+          payload = incoming_payload,
+          deleted = incoming_deleted,
+          updated_at = now()
+      where space = p_space and collection = incoming_collection and rid = incoming_rid;
+      status := 'ok';
+    else
+      -- conflict: server has a newer-or-equal version
+      status := 'conflict';
+    end if;
+
+    results := results || jsonb_build_array(jsonb_build_object(
+      'collection', incoming_collection,
+      'rid', incoming_rid,
+      'status', status,
+      'current_version', cur_version
+    ));
+  end loop;
+
+  return results;
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- RPC: delete a space (key rotation / reset).
+-- ---------------------------------------------------------------------------
+create or replace function public.sync_delete_space(p_space text, p_auth_hash text)
+returns boolean
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not exists (
+    select 1 from public.sync_spaces
+    where space = p_space and auth_hash = p_auth_hash
+  ) then
+    return false;
+  end if;
+  delete from public.sync_spaces where space = p_space;
+  return true;
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- Grants
+-- ---------------------------------------------------------------------------
+grant execute on function public.sync_claim(text, text) to anon;
+grant execute on function public.sync_pull(text, text, bigint, integer) to anon;
+grant execute on function public.sync_push(text, text, jsonb) to anon;
+grant execute on function public.sync_delete_space(text, text) to anon;
