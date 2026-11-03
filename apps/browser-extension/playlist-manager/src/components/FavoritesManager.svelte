@@ -35,31 +35,21 @@
   let playlists: FavoritePlaylistInfo[] = $state([]);
   let allPlaylists: FavoritePlaylistInfo[] = $state([]);
   let loadingPlaylists = $state(false);
-  let searchValue = $state("");
   let draggingIndex = $state(-1);
   let dragOverIndex = $state(-1);
   let playlistsPerPage = $state(20);
   let currentPage = $state(1);
   let liveMessage = $state("");
-  let filteredPlaylists = $derived(
-    searchValue.trim()
-      ? playlists.filter((p) => p.title.toLowerCase().includes(searchValue.toLowerCase()))
-      : playlists
-  );
-
   let paginatedPlaylists = $derived(
     paginate({
-      items: filteredPlaylists,
+      items: playlists,
       pageSize: playlistsPerPage,
       currentPage,
     }) as FavoritePlaylistInfo[]
   );
 
   $effect(() => {
-    const validPage = clampPage(
-      currentPage,
-      Math.ceil(filteredPlaylists.length / playlistsPerPage) || 1
-    );
+    const validPage = clampPage(currentPage, Math.ceil(playlists.length / playlistsPerPage) || 1);
     if (validPage !== currentPage) currentPage = validPage;
   });
 
@@ -136,7 +126,6 @@
   }
 
   function handleDragStart(e: DragEvent, index: number) {
-    if (searchValue.trim()) return;
     draggingIndex = index;
     if (e.dataTransfer) {
       e.dataTransfer.effectAllowed = "move";
@@ -145,7 +134,6 @@
   }
 
   function handleDragOver(e: DragEvent, index: number) {
-    if (searchValue.trim()) return;
     e.preventDefault();
     dragOverIndex = index;
   }
@@ -157,7 +145,6 @@
   async function handleDrop(e: DragEvent, targetIndex: number) {
     e.preventDefault();
     dragOverIndex = -1;
-    if (searchValue.trim()) return;
     if (draggingIndex === -1 || draggingIndex === targetIndex) {
       draggingIndex = -1;
       return;
@@ -180,19 +167,6 @@
     These playlists appear in the sidebar for quick access. Use arrows to reorder; click the pin to
     unpin.
   </p>
-  {#if playlists.length > 0}
-    <div class="search-sort-bar">
-      <div class="search-box">
-        <input
-          type="text"
-          placeholder="Search pinned playlists..."
-          bind:value={searchValue}
-          aria-label="Search pinned playlists"
-        />
-      </div>
-      <span class="select-label">{filteredPlaylists.length} pinned</span>
-    </div>
-  {/if}
   {#if loadingPlaylists}
     <div class="skeleton-list">
       {#each Array(5) as _}
@@ -217,8 +191,7 @@
       <div class="playlist-list">
         {#each paginatedPlaylists as fav, index (fav.id)}
           <ListRow
-            draggable={filteredPlaylists.length === playlists.length &&
-              filteredPlaylists.length <= playlistsPerPage}
+            draggable={playlists.length <= playlistsPerPage}
             dragging={draggingIndex === index}
             dragOver={dragOverIndex === index}
             {index}
@@ -296,27 +269,27 @@
               >
                 <Fa icon={faArrowDown} />
               </SimpleButton>
-              <button
-                class="action-btn"
+              <SimpleButton
+                secondary
+                className="pin-toggle"
                 onclick={(e) => {
                   e.stopPropagation();
                   toggle(fav.id);
                 }}
-                aria-label="Unpin from sidebar"
                 title="Unpin from sidebar"
               >
                 <span class="filled">
                   <Fa icon={faThumbTack} />
                 </span>
-              </button>
+              </SimpleButton>
             {/snippet}
           </ListRow>
         {/each}
       </div>
     </div>
-    {#if filteredPlaylists.length > playlistsPerPage}
+    {#if playlists.length > playlistsPerPage}
       <PaginationBar
-        totalItems={filteredPlaylists.length}
+        totalItems={playlists.length}
         pageSize={playlistsPerPage}
         {currentPage}
         onPageChange={(e: any) => (currentPage = e?.detail?.page ?? currentPage)}
@@ -339,6 +312,14 @@
     clip: rect(0, 0, 0, 0);
     white-space: nowrap;
     border: 0;
+  }
+
+  .btn.pin-toggle {
+    color: var(--color-brand-primary, #3b82f6);
+  }
+
+  .btn.pin-toggle .filled svg {
+    color: var(--color-brand-primary, #3b82f6);
   }
 
   .empty-favorites {
