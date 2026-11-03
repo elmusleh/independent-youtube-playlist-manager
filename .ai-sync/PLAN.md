@@ -188,3 +188,26 @@ CM-R7 evidence receipts, CM-R8 canonical/generated checked contracts and fail-on
 headed acceptance, and CM-R9 actual bundle dependency inventory. Task/constraints:
 `.ai-sync/sessions/2026-10-31-evidence-contracts-task.md`. Tests/build/audits stay with
 Hermes; orchestration runtime, release preparation and remote publication stay separate.
+
+## Recommendations for codebase improvement (2026-11-03)
+
+### Immediate (before release)
+
+1. **Wire up context menu capture flow.** The cherry-picked files (ChooseDestination.svelte, CaptureOptions.svelte, DestinationOptions.svelte, menu-state.js, mutation-queue.js) exist but may not be fully wired into App.svelte routes. Verify the capture flow works end-to-end.
+2. **Fix a11y warnings.** Svelte-check reports a11y_click_events_have_key_events in FavoritesManager.svelte. Add keyboard handlers or use `<button>` elements.
+3. **Fix non_reactive_update warnings.** HeaderSearchBar.svelte uses non-$state variables that are updated. Declare with $state().
+4. **Remove unused CSS selectors.** FavoritesManager.svelte and Sidebar.svelte have unused CSS selectors that inflate bundle size.
+
+### Short-term
+
+5. **Split large files.** Several files exceed 350 lines and are allowlisted: PlaylistEditor.svelte (1930), Manage.svelte (2137), youtube-api.ts (1770), storage-service.ts (1230). Split these in dedicated sessions.
+6. **Migrate Next.js middleware to proxy.** Next.js 16 deprecates `middleware.ts` in favor of `proxy`. Run `npx @next/codemod@canary middleware-to-proxy .` in apps/web-portal.
+7. **Add `type: module` to playlist-manager package.json.** Eliminates the rollup ESM warning during builds.
+8. **Monitor bundle budget.** CSS bundle is at 217.5/220 KiB. Future CSS additions may exceed the limit.
+
+### Long-term
+
+9. **Consolidate sync branches.** All future sync work should go through a single branch to avoid the overlap that occurred.
+10. **Automate branch cleanup.** Consider adding a CI check or GitHub Action that flags branches older than 30 days without PRs.
+11. **Add dependency update automation.** Consider configuring Dependabot to auto-merge patch/minor updates with passing CI.
+12. **Improve test coverage.** The sync modules have tests but the new capture flow modules (menu-state, mutation-queue) may not have tests yet.

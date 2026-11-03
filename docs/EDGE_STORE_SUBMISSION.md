@@ -1,6 +1,6 @@
 # Microsoft Edge Add-ons Submission Guide
 
-This guide prepares the 1.1.1 package for Microsoft Edge Add-ons. The Edge build is
+This guide prepares the package for Microsoft Edge Add-ons. The Edge build is
 generated from the Chrome manifest; there is no separate Edge source manifest.
 
 ## Current Partner Center identity
@@ -8,23 +8,23 @@ generated from the Chrome manifest; there is no separate Edge source manifest.
 | Field           | Value                                                                                                               |
 | --------------- | ------------------------------------------------------------------------------------------------------------------- |
 | Extension name  | Independent YouTube Playlist Manager                                                                                |
-| Version         | 1.2.1                                                                                                               |
-| Status          | Draft / 1.1.1 package uploaded, never submitted for certification. 1.2.1 package ready to upload                    |
+| Version         | 1.2.0 (from `main` / tag `v1.2.0`)                                                                                  |
+| Status          | Draft / 1.1.1 package uploaded, never submitted for certification. 1.2.0 package ready to upload                    |
 | Store ID        | `0RDCKFZCVDRK`                                                                                                      |
 | CRX ID          | `ncmipojoamaoacinccopmdkflgocghno`                                                                                  |
 | Product ID      | `20f9b17d-73e7-45f8-8692-796867b7ec80`                                                                              |
 | Partner Center  | https://partner.microsoft.com/en-us/dashboard/microsoftedge/20f9b17d-73e7-45f8-8692-796867b7ec80/packages/dashboard |
 | Public URL      | Not available until published                                                                                       |
-| Package SHA-256 | `5bf1c87c173c5a81d41fce05fada4afa56e67c86b74098b80677a815cf133e46`                                                  |
+| Package SHA-256 | `fecc3b7a1f2009dec8115450e6087801b19f646bdeaa03add21e459f66ca064d`                                                  |
 
 The listing is still a **draft**. Uploading a package alone does not publish it;
 certification and submission remain separate, explicit steps.
 
 > **Note:** the draft currently holds the **1.1.1** package, which predates the
-> first-run onboarding and still required an API key. The rebuilt package is
-> **1.2.1** (`dist/independent-youtube-playlist-manager-edge.zip`, SHA-256 above).
-> Upload it over the draft: Edge keeps one package per version, so a higher version
-> is accepted and becomes the submitted one. The 1.1.1 package is never published.
+> first-run onboarding and still required an API key. Build the **1.2.0** package
+> from tag `v1.2.0` and upload it: Edge keeps one package per version, so a higher
+> version is accepted and becomes the submitted one. The 1.1.1 package is never
+> published.
 
 ## Prerequisites
 
@@ -34,6 +34,44 @@ certification and submission remain separate, explicit steps.
   privacy-policy update has not been pushed yet, so push it (or use a URL that
   serves the current policy) before submitting.
 - The built Edge ZIP: `dist/independent-youtube-playlist-manager-edge.zip`.
+
+### For automated future releases (Edge Publish API v1.1)
+
+After the **first manual submission** (1.2.0), subsequent releases can be
+published via API without visiting Partner Center. One-time setup:
+
+1. In Partner Center → your extension → **Publish API** → _Enable the new experience_ → **Create API credentials**.
+   Record:
+   - `EDGE_CLIENT_ID`
+   - `EDGE_API_KEY`
+2. Store them as **GitHub repository secrets** (not in the repo):
+   - `EDGE_CLIENT_ID`
+   - `EDGE_API_KEY`
+   - `EDGE_PRODUCT_ID` = `20f9b17d-73e7-45f8-8692-796867b7ec80` (can be a variable)
+3. The CI workflow will then:
+   - Upload package: `POST /v1/products/{productId}/submissions/draft/package`
+   - Poll operation status
+   - Submit: `POST /v1/products/{productId}/submissions` with notes
+   - Poll publish status
+
+OAuth redirect URIs for store-installed Edge builds (add to Google Cloud Console after approval):
+
+- `https://ncmipojoamaoacinccopmdkflgocghno.chromiumapp.org/`
+- `https://ncmipojoamaoacinccopmdkflgocghno.chromiumapp.org/supabase`
+
+Public key (for reference / redirect URI construction):
+
+```
+-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA+niPZKflMsMNjpY9Em9D
+AlD7HSBnTFaUZiYUvljoaCcVtPKs9QkRNyPVwVGWoMoeMFnm9awxAVVxmaIAyOUO
+sv6Hj9B5cUpkudhsExuT9gXNLXxCkviXZ9A3Q5fdtbhnQ+pHYikRYkqHWxpd1AVx
+GSw3Uqq06q8l8G3W1VsOQKwKG24NVcXDPWMkNg6n91O2xYoITEwTKKvVk3534RxW
+ghcWURAqsyhHeSQR3F5e4BUn4DM1Y7n69x5WVis7tAoUBE6g1YAeY/2qfxFlnKl3
+hIvrPnCED8bQZ2cTOTtraYKG7ccwPiNBaznS9PfPL0CzSPsG48J6lpodX8KdM7fB
+xQIDAQAB
+-----END PUBLIC KEY-----
+```
 
 ## 1. Build and Validate
 

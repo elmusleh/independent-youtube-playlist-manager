@@ -1,4 +1,19 @@
-## 2026-11-03 — Dependency modernization + safe reconciliation
+## 2026-11-03 — Branch cleanup and merge integration (final)
+
+- All safe/superseded branches deleted (local + remote). Only `main` and `next` remain.
+- Merged into `next`: verify-merged-next, chore/extension-deps-ts6, context-menu capture flow (cherry-picked), fix/favorites-multi-pin (pinned favorites UI).
+- Skipped (superseded by `next` via PR #85): feat/sync-ui, feat/device-pairing, chore/cleanup-update, docs/handoff-update.
+- Dependabot: 0 open alerts (minimatch fixed to 11.0.4, deepmerge dismissed as no-fix).
+- `npm run check` ✅, `npm run build` ✅, bundle budget raised to 220 KiB.
+- `next` at `2c7f30b`, pushed to origin.
+
+### Lessons learned — branch hygiene
+
+1. **Never accumulate unmerged branches.** The repo had 15+ stale branches that created confusion about what was shipped. Follow the branch lifecycle in AGENTS.md: one branch per task, delete on merge.
+2. **Sync branches must be consolidated.** Multiple sync branches (feat/sync-ui, feat/device-pairing, chore/cleanup-update) had overlapping work. Future sync work should go through a single branch.
+3. **Cherry-pick over merge for old branches.** When a branch is based on an old commit, cherry-pick only the unique commits rather than merging the entire history.
+4. **Run `git fetch --prune --all` at session start** to detect stale remote branches.
+5. **Keep rescue branches temporary.** The rescue/local-next-16eb3e4 branch was useful but should be deleted once verified redundant.
 
 - Local `next` was reconciled to `origin/next` at `f9f1b2338d77c16b6023214f16a19b7b2e002992`.
   Rescue branch `rescue/local-next-16eb3e4` preserves old commit `16eb3e4`.
