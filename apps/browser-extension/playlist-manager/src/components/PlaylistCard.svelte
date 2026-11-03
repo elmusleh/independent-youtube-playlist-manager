@@ -288,9 +288,17 @@
     color: var(--color-brand-warning);
   }
 
-  .fav-toggle :global(svg.filled),
-  .fav-toggle.filled :global(svg) {
+  .fav-toggle span.filled {
     color: var(--color-brand-warning);
+    opacity: 1;
+  }
+
+  .fav-toggle:not(:has(span.filled)) {
+    opacity: 0.45;
+  }
+
+  .fav-toggle:hover {
+    opacity: 1;
   }
 
   .fav-toggle:focus-visible {
