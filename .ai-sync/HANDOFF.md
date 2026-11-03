@@ -39,6 +39,19 @@
 - Phase 4: Sync Center UI (split `Sync.svelte` into components)
 - Phase 5: Optional extras (QR pairing, Realtime nudge, key rotation)
 
+## 2026-11-03 — Sync v2 Phases 0–3 (branch `feat/sync-hardening`)
+
+Full status: `docs/SYNC_V2_STATUS.md`.
+
+- Phase 0 hotfix shipped (polling on app open, relay SQL aligned, key validation).
+- Phase 1 protocol core committed + unit-tested (keys, codec, HLC, merge, shadow store).
+- Phase 2 relay v2 SQL + fetch transport + fake relay committed.
+- Phase 3 background engine skeleton + wiring + status-store + playlists adapter committed.
+- Bug fixes: service worker imports, Sync overflow at 320px, agent-lock stale release.
+- Test gate green: `npm run check` 0 errors, `npm run test:extension` exit 0.
+
+Remaining: Phase 3 adapter wiring (history/settings/devices), Phase 4 UI split, Phase 5 extras.
+
 ## 2026-11-03 — Sync v2 Phase 0 hotfix (branch `feat/sync-hardening`)
 
 - Branch `feat/sync-hardening` was `a86413b` when this pass started. Two commits from another

@@ -486,5 +486,7 @@ Suggested next steps (new, not scheduled):
 - [x] Phase 2: relay v2 SQL (sync_spaces, sync_records, RPCs) + fetch transport + fake relay
 - [x] Phase 3: background sync engine skeleton (state machine, backoff, rollup entry, wired into SW)
 - [ ] Phase 3 follow-up: per-collection adapters (playlists/history/settings/devices) + status-store + storage.onChanged triggers
+- [ ] Phase 3 follow-up: wire runOnce to per-collection adapters (history/settings/devices); add storage.onChanged triggers
 - [ ] Phase 4: Sync Center UI split (Sync.svelte -> components/sync/*)
 - [ ] Phase 5: extras (QR, Realtime nudge, key rotation)
+- [ ] Run relay v2 SQL on hosted Supabase project (qvwitlpnetwthyhrobca)

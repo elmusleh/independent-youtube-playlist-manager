@@ -34,6 +34,7 @@ shared capture design, permissions and browser tests; implementation pending.
 | `RESPONSIVE_UI_PLAN.md`                 | Phased responsive work; phases 1–3 shipped, verification outstanding.                                                 |
 | `POPUP_MOBILE_PLAN.md`                  | Popup sizing/instant-open diagnosis and fix; implemented (mode split, SVG icons).                                     |
 | `ENCRYPTED_SYNC_PLAN.md`                | Zero-knowledge cross-device sync plan (sync key, encrypted snapshots, pluggable backends); approved, not implemented. |
+| `SYNC_V2_STATUS.md`                     | Sync v2 implementation status — Phases 0–3 done, Phase 4 (UI split) and Phase 5 (extras) remaining.                   |
 | `architecture.dot` / `architecture.png` | Rendered architecture graph.                                                                                          |
 | `../packages/build-tools/`              | The guards referenced by `npm run check` — read the file headers.                                                     |
 
