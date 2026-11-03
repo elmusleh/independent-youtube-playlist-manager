@@ -609,7 +609,12 @@
 
     if (area !== "local") return;
 
-    const relevantKeys = ["yt_playlist_cache_v1", "saved_playlists"];
+    const relevantKeys = [
+      "yt_playlist_cache_v1",
+      "saved_playlists",
+      "yph_local_playlists",
+      "yph_library_revision",
+    ];
     const hasPlaylistChanges = Object.keys(changes).some(
       (key) => relevantKeys.includes(key) || key.startsWith("playlist_")
     );
