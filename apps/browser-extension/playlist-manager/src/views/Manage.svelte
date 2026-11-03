@@ -47,6 +47,7 @@
 
   let allPlaylists: YtPlaylistInfoExtended[] = $state([]);
   let loading = $state(true);
+  let initialLoadDone = $state(false);
   let syncing = $state(false);
   let signedIn = $state(false);
   let errorMessage = $state("");
@@ -567,6 +568,7 @@
     } finally {
       loading = false;
       syncing = false;
+      initialLoadDone = true;
     }
   }
 
@@ -1383,7 +1385,7 @@
       {/snippet}
     </StickyHeader>
 
-    {#if loading}
+    {#if loading && !initialLoadDone}
       <div class="skeleton-grid">
         {#each Array(6) as _}
           <SkeletonCard />
