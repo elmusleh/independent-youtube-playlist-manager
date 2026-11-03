@@ -257,10 +257,31 @@ async function performSync(options: { push?: boolean } = {}): Promise<void> {
         config.lastError = pushError;
         config.lastSyncSummary = `Sync failed: ${pushError}`;
       } else if (uploadConflict) {
-        config.lastError =
-          "A backend rejected this snapshot because another device may have written concurrently.";
-        config.lastSyncSummary =
-          "Sync was not marked complete. Retry to reconcile the latest snapshot.";
+        // Another device wrote newer data during our push — pull it instead of
+        // surfacing an error. This makes sync silent and self-healing.
+        if (newestRemote && remoteRev > localRev) {
+          await backupLocal();
+          const pullResult = await applyRemote(newestRemote.payload, selection);
+          const pullFailed = pullResult.failed;
+          if (pullFailed.length === 0) {
+            const devices = new Set(config.knownDevices ?? []);
+            devices.add(await getOrCreateDeviceId());
+            if (newestRemote.deviceId) devices.add(newestRemote.deviceId);
+            config.knownDevices = [...devices];
+            config.syncRevision = remoteRev;
+            config.lastError = null;
+            config.lastSyncSummary = `Pulled ${pullResult.applied.join(", ") || "data"} from another device.`;
+          } else {
+            config.lastError = `Partial sync: ${pullFailed.join("; ")}`;
+            config.lastSyncSummary = `Sync partially applied: ${pullFailed.join("; ")}`;
+          }
+        } else {
+          // No newer snapshot identified — likely an equal-revision tie.
+          // Re-read to reconcile; if still tied, report clearly.
+          config.lastError =
+            "Another device wrote at the same moment. Click Sync now to reconcile.";
+          config.lastSyncSummary = "Sync conflict detected. Click Sync now to reconcile.";
+        }
       } else {
         config.syncRevision = newRev;
         config.lastError = null;

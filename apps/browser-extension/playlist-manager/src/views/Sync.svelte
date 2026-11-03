@@ -54,8 +54,12 @@
   const syncIsOn = $derived(!!(config.syncKey && config.backends.length > 0));
 
   function hintFor(c: SyncConfig): string | null {
-    if (!c.syncKey) return "Generate or paste a sync key to begin.";
-    if (c.backends.length === 0) return "Turn on a sync option below to start syncing.";
+    if (!c.syncKey)
+      return "Generate a key on your first device, or paste a key from another device.";
+    if (c.backends.length === 0)
+      return "You have a key, but no sync backend is enabled. Turn on \u201CIYPM hosted\u201D below.";
+    if (!lastSyncedAt)
+      return "Key and backend ready. Click \u201CSync now\u201D to upload your data.";
     return null;
   }
   const setupHint = $derived(hintFor(config));
@@ -175,7 +179,8 @@
         </p>
         {#if syncIsOn}
           <p class="sub-text">
-            Changes sync automatically — they appear on your other devices within a minute.
+            On your other devices, paste this same key and click "Sync now" (or wait up to 5
+            minutes).
           </p>
         {/if}
       </div>
