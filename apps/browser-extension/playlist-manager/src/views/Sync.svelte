@@ -47,6 +47,13 @@
     startPolling,
     onSyncProgress,
   } from "../services/sync-manager.js";
+  import {
+    generateSyncKey,
+    isValidSyncKey,
+    formatSyncKey,
+    SYNC_KEY_SYMBOLS,
+  } from "../services/sync/sync-key.js";
+  import { requestConfirm } from "../stores/confirmation";
 
   const caps = detectCapabilities();
   const status = new StatusManager();
@@ -85,6 +92,14 @@
 
   const syncIsOn = $derived(!!(config.syncKey && config.backends.length > 0));
   const hasSyncKey = $derived(!!config.syncKey);
+
+  function hintFor(c: SyncConfig): string | null {
+    if (!c.syncKey) return "Enter a sync key to begin. Generate one on your first device, or paste a key from another device.";
+    if (c.backends.length === 0) return "You have a key, but no sync backend is enabled. Turn on \"IYPM hosted\" below.";
+    if (!lastSyncedAt) return "Key and backend ready. Click \"Sync now\" to upload your data.";
+    return null;
+  }
+  const setupHint = $derived(hintFor(config));
 
   const stageProgress: Record<string, number> = {
     idle: 0,
@@ -184,17 +199,36 @@
     return new Date(ts).toLocaleString();
   }
 
+  let keyError = $state<string | null>(null);
+
   function handleKeySave() {
-    const normalized = keyInput.toUpperCase().replace(/[^A-Z0-9]/g, "");
-    if (normalized.length === 32) {
-      const formatted = normalized.match(/.{1,8}/g)?.join("-") || normalized;
-      config.syncKey = formatted;
+    if (isValidSyncKey(keyInput)) {
+      config.syncKey = formatSyncKey(keyInput);
       keyInput = "";
+      keyError = null;
       persist();
       addLogEntry("Sync key saved", "success");
     } else {
-      addLogEntry("Invalid key format — must be 32 characters", "error");
+      keyError = `A sync key has ${SYNC_KEY_SYMBOLS} letters/digits, e.g. ABCDE-FGHJK-MNPQR-STVWX.`;
+      addLogEntry(keyError, "error");
     }
+  }
+
+  function handleGenerateKey() {
+    requestConfirm({
+      title: "Create a new sync key?",
+      message:
+        "Only do this on your FIRST device. Every other device must paste this same key — a second generated key creates a separate, unconnected sync space.",
+      color: "primary",
+      confirmLabel: "Create key",
+      onConfirm: () => {
+        config.syncKey = generateSyncKey();
+        if (config.backends.length === 0 && isRelayConfigured()) config.backends = ["relay"];
+        keyError = null;
+        persist();
+        addLogEntry("New sync key created — copy it to your other devices", "success");
+      },
+    });
   }
 
   function copyKey() {
@@ -399,9 +433,15 @@
                 <Fa icon={faKey} /> Save Key
               </SimpleButton>
             </div>
+            {#if keyError}
+              <p class="error-text" role="alert">{keyError}</p>
+            {/if}
             <p class="sub-text">
-              Don't have a key? Generate one on your first device, then paste it here.
+              First device? Create a key here, then paste the same key on every other device.
             </p>
+            <SimpleButton secondary onclick={handleGenerateKey}>
+              <Fa icon={faShieldHalved} /> Create a new sync key
+            </SimpleButton>
           </div>
         {/if}
       </section>
