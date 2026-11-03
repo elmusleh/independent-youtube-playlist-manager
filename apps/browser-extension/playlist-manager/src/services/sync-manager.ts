@@ -162,6 +162,11 @@ export function startPolling(): void {
   }, POLL_MS);
 }
 
+/** One pull (no upload) so a newer remote snapshot is applied as soon as the app opens. */
+export function pullNow(): Promise<void> {
+  return performSync({ push: false });
+}
+
 async function performSync(options: { push?: boolean } = {}): Promise<void> {
   const push = options.push !== false;
   if (isSyncing) return;

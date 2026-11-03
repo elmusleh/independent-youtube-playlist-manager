@@ -141,7 +141,12 @@
   const mobileLayout = window.matchMedia("(max-width: 768px)");
   mobileLayout.addEventListener("change", handleLayoutChange);
 
-  import { onDestroy } from "svelte";
+  import { onDestroy, onMount } from "svelte";
+  import { pullNow, startPolling } from "./services/sync-manager";
+  onMount(() => {
+    startPolling();
+    pullNow().catch((error) => console.warn("[AUTO-SYNC] pull on open failed:", error));
+  });
   onDestroy(() => {
     mobileLayout.removeEventListener("change", handleLayoutChange);
   });

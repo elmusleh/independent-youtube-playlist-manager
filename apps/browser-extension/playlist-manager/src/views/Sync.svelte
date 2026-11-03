@@ -41,12 +41,7 @@
   import { detectCapabilities } from "../services/sync/capabilities.js";
   import { requestSyncHostPermission } from "../services/sync/host-permissions.js";
   import { storeFolderHandle } from "../services/sync/file-sync-service.js";
-  import {
-    getSyncStatus,
-    triggerSyncNow,
-    startPolling,
-    onSyncProgress,
-  } from "../services/sync-manager.js";
+  import { getSyncStatus, triggerSyncNow, onSyncProgress } from "../services/sync-manager.js";
   import {
     generateSyncKey,
     isValidSyncKey,
@@ -270,7 +265,6 @@
   }
 
   onMount(() => {
-    startPolling();
     onSyncProgress((stage, detail) => {
       syncStage = stage;
       syncStageDetail = detail || "";
