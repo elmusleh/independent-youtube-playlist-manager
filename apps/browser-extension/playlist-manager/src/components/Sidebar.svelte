@@ -172,6 +172,13 @@
         <span>All Playlists</span>
       </a>
       <a
+        href="#/favorite"
+        class:active={isActive("/favorite", router.location, router.querystring || "")}
+      >
+        <Fa icon={faStar} fw />
+        <span>Favorite Playlist</span>
+      </a>
+      <a
         href="#/history"
         class:active={isActive("/history", router.location, router.querystring || "")}
       >
@@ -329,6 +336,14 @@
           >
             <Fa icon={faListUl} fw />
             <span>All Playlists</span>
+          </a>
+          <a
+            href="#/favorite"
+            onclick={handleNavClick}
+            class:active={isActive("/favorite", router.location, router.querystring || "")}
+          >
+            <Fa icon={faStar} fw />
+            <span>Favorite Playlist</span>
           </a>
           <a
             href="#/history"
