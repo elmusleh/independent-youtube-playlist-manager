@@ -25,7 +25,7 @@ import {
 } from "./content-selector";
 import type { SyncSnapshot } from "./snapshot-codec";
 
-const TABLE = "sync_snapshots";
+const TABLE = "relay_snapshots";
 
 /** Base64 helpers that work on Uint8Array in the extension (no Node Buffer). */
 function toBase64(bytes: Uint8Array): string {
@@ -95,10 +95,9 @@ export class EncryptedSyncService {
       const snapshot = createSnapshot({ revision, deviceId: this.deviceId, payload });
       const plaintext = encodeSnapshot(snapshot);
       const encrypted = await encryptSnapshot(key, plaintext);
-      const blob = toBase64(encrypted);
       const row = {
         address,
-        blob,
+        payload: toBase64(encrypted),
         revision,
         device_id: this.deviceId,
         updated_at: new Date().toISOString(),
@@ -151,7 +150,7 @@ export class EncryptedSyncService {
 
       const { data, error } = await client
         .from(TABLE)
-        .select("blob, revision")
+        .select("payload, revision")
         .eq("address", address)
         .maybeSingle();
       if (error) {
@@ -162,11 +161,11 @@ export class EncryptedSyncService {
         }
         throw error;
       }
-      if (!data || !data.blob) return { status: "missing" };
+      if (!data || !data.payload) return { status: "missing" };
 
       let plaintext: Uint8Array;
       try {
-        const encrypted = fromBase64(data.blob);
+        const encrypted = fromBase64(data.payload);
         plaintext = await decryptSnapshot(key, encrypted);
       } catch (err: any) {
         return { status: "decrypt", message: err?.message || String(err) };

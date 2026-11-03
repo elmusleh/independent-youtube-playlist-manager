@@ -4,24 +4,27 @@ import { generateSyncKey } from "./sync-key";
 
 // Mock the Supabase client module so the service never touches the network.
 vi.mock("../supabase-client", () => {
-  const store = new Map<string, { blob: string; revision: number }>();
+  const store = new Map<string, { payload: string; revision: number }>();
   const client = {
     from: (table: string) => ({
       select: (_cols: string) => ({
         eq: (_col: string, val: string) => ({
           maybeSingle: async () => {
             const row = store.get(val);
-            return { data: row ? { blob: row.blob, revision: row.revision } : null, error: null };
+            return {
+              data: row ? { payload: row.payload, revision: row.revision } : null,
+              error: null,
+            };
           },
         }),
       }),
-      update: (row: { address: string; blob: string; revision: number }) => ({
+      update: (row: { address: string; payload: string; revision: number }) => ({
         eq: (_col: string, val: string) => ({
           lt: (_col2: string, rev: number) => ({
             select: (_cols: string) => {
               const existing = store.get(val);
               if (existing && existing.revision < rev) {
-                store.set(val, { blob: row.blob, revision: row.revision });
+                store.set(val, { payload: row.payload, revision: row.revision });
                 return Promise.resolve({ data: [{ address: val }], error: null });
               }
               return Promise.resolve({ data: [], error: null });
@@ -29,11 +32,11 @@ vi.mock("../supabase-client", () => {
           }),
         }),
       }),
-      insert: async (row: { address: string; blob: string; revision: number }) => {
+      insert: async (row: { address: string; payload: string; revision: number }) => {
         if (store.has(row.address)) {
           return { error: { message: "duplicate" } };
         }
-        store.set(row.address, { blob: row.blob, revision: row.revision });
+        store.set(row.address, { payload: row.payload, revision: row.revision });
         return { error: null };
       },
     }),

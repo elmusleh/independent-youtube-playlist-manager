@@ -73,8 +73,8 @@ export const DEFAULT_SYNC_CONFIG: SyncConfig = {
  * Supabase project URL + anon key before the "easy / recommended" backend can function.
  * The relay is zero-knowledge: it stores only ciphertext keyed by a SHA-256 address.
  *
- * TODO(owner): provision a Supabase project with a `sync_snapshots` table
- * (`address text primary key`, `blob text`, `revision bigint`, `device_id text`,
+ * TODO(owner): provision a Supabase project with a `relay_snapshots` table
+ * (`address text primary key`, `payload text`, `revision bigint`, `device_id text`,
  * `updated_at timestamptz`) and paste the URL + anon key here.
  */
 export const RELAY_SUPABASE_URL = "https://qvwitlpnetwthyhrobca.supabase.co";
