@@ -18,6 +18,7 @@
     faLockOpen,
     faEarthAmericas,
     faStar,
+    faThumbTack,
   } from "@fortawesome/free-solid-svg-icons";
   import ViewHeader from "../components/ViewHeader.svelte";
   import StickyHeader from "../components/StickyHeader.svelte";
@@ -1463,12 +1464,10 @@
             {#snippet actionsSnippet()}
               <button
                 class="action-btn"
-                title={favoritePlaylistIds.includes(p.id)
-                  ? "Remove from favorites"
-                  : "Add to favorites"}
+                title={favoritePlaylistIds.includes(p.id) ? "Unpin from sidebar" : "Pin to sidebar"}
                 aria-label={favoritePlaylistIds.includes(p.id)
-                  ? "Remove from favorites"
-                  : "Add to favorites"}
+                  ? "Unpin from sidebar"
+                  : "Pin to sidebar"}
                 onclick={(e) => {
                   e.stopPropagation();
                   const next = toggleFavorite(favoritePlaylistIds, p.id);
@@ -1479,7 +1478,7 @@
                 }}
               >
                 <span class:filled={favoritePlaylistIds.includes(p.id)}>
-                  <Fa icon={faStar} />
+                  <Fa icon={faThumbTack} />
                 </span>
               </button>
               <a
@@ -1816,7 +1815,16 @@
   }
 
   .action-btn :global(svg.filled) {
-    color: var(--color-brand-warning);
+    color: var(--color-brand-primary, #3b82f6);
+    opacity: 1;
+  }
+
+  .action-btn span:not(.filled) {
+    opacity: 0.45;
+  }
+
+  .action-btn:hover span {
+    opacity: 1;
   }
 
   .action-btn.delete:hover {
