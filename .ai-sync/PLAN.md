@@ -1,4 +1,13 @@
-# Plan — encrypted cross-device sync (planning) + context-menu completion (open)
+## 2026-11-03 — Dependency modernization plan (completed)
+
+- Goal: update all dependencies to latest compatible versions and fix resulting issues.
+- Completed in isolated worktree `chore/dependency-modernization`:
+  - Next.js 15→16.4.4, React 19.3.1, ESLint 9→10, Rollup 4.67.4, Svelte-check 4.7.8
+  - Portal Radix/Supabase/Tailwind deps upgraded
+  - minimatch override 11.0.4 applied (fixes Dependabot alerts #104-#107)
+  - Portal lint migrated from `next lint` to `eslint .`; eslint.config.mjs flat config
+- `npm run check` exit 0, `npm run build` exit 0 after all changes.
+- Remaining: `deepmerge` (no patched version), `@sveltejs/vite-plugin-svelte` (dev-only).
 
 ## Pinned favorites pin-button regression — fix in progress (2026-11-02)
 

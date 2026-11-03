@@ -1,4 +1,13 @@
-# Progress — open work only (Mobile UX Improvements)
+## Dependency modernization (2026-11-03)
+
+- [x] Safe reconciliation: rescue branch `rescue/local-next-16eb3e4`, local `next` reset to `origin/next`.
+- [x] Upgraded Next.js 15→16.4.4, React 19.3.1, ESLint 9→10, Rollup 4.67.4, Svelte-check 4.7.8.
+- [x] Portal Radix/Supabase/Tailwind deps upgraded.
+- [x] minimatch override 11.0.4 applied (fixes Dependabot alerts #104-#107).
+- [x] Portal lint migrated from `next lint` to `eslint .`; eslint.config.mjs flat config.
+- [x] `npm run check` exit 0, `npm run build` exit 0.
+- [ ] `deepmerge` low-severity vuln (no patched version upstream) — monitor.
+- [ ] `@sveltejs/vite-plugin-svelte` low-severity vuln (dev-only) — monitor.
 
 ## Firefox Android action popup — fills screen (2026-11-02)
 

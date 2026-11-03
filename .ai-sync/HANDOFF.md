@@ -1,4 +1,17 @@
-# Handoff — 2026-11-02, m.youtube.com watch-history + popup fixes (PRs #83, #84)
+## 2026-11-03 — Dependency modernization + safe reconciliation
+
+- Local `next` was reconciled to `origin/next` at `f9f1b2338d77c16b6023214f16a19b7b2e002992`.
+  Rescue branch `rescue/local-next-16eb3e4` preserves old commit `16eb3e4`.
+- Dependency work was done in isolated worktree `/home/steve/.hermes/cache/scratch/iypm-dependency-upgrade`
+  on branch `chore/dependency-modernization`. Changes applied to main repo and validated:
+  `npm run check` exit 0, `npm run build` exit 0.
+- Upgraded: Next.js 15→16.4.4, React 19.3.1, ESLint 9→10, Rollup 4.67.4, Svelte-check 4.7.8,
+  minimatch override 11.0.4, portal Radix/Supabase/Tailwind deps. Portal `lint` script migrated
+  from `next lint` to `eslint .`; eslint.config.mjs migrated to flat config imports.
+- Remaining low-severity vulnerabilities: `deepmerge` (no patched version upstream) and
+  `@sveltejs/vite-plugin-svelte` (dev-only). Production audit (`npm audit --omit=dev`) = 0.
+- Beta `1.2.1-beta.48` remains live and untouched.
+- No source code changes beyond dependency/config updates.
 
 ## 2026-11-02 — Firefox Android action popup fills the screen (PR #84)
 
