@@ -1432,6 +1432,10 @@
               >
                 <div class="row-title-line">
                   <span class="row-title">{p.title || "Untitled Playlist"}</span>
+                </div>
+                <div class="row-meta">
+                  <span class="row-count">{p.videoCount} video{p.videoCount !== 1 ? "s" : ""}</span>
+                  <CategoryBadge category={getPlaylistCategory(p)} />
                   {#if p.id === favoritePlaylistId}
                     <span
                       class="fav-badge"
@@ -1441,10 +1445,6 @@
                       <Fa icon={faStar} fw />
                     </span>
                   {/if}
-                </div>
-                <div class="row-meta">
-                  <span class="row-count">{p.videoCount} video{p.videoCount !== 1 ? "s" : ""}</span>
-                  <CategoryBadge category={getPlaylistCategory(p)} />
                   {#if !p.isLocal && p.privacyStatus}
                     <span class="badge privacy-{p.privacyStatus}">
                       {p.privacyStatus === "private"
@@ -1811,7 +1811,6 @@
 
   .action-btn:hover {
     background: var(--border-color);
-    color: var(--text-color);
   }
 
   .action-btn :global(svg.filled) {
