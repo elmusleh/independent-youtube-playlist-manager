@@ -39,7 +39,7 @@ vi.mock("../supabase-client", () => {
     }),
   };
   return {
-    getSupabaseClient: async () => client,
+    createAnonClient: () => client,
     getSession: async () => ({ user: { id: "test-user" } }),
   };
 });
@@ -70,9 +70,31 @@ describe("EncryptedSyncService", () => {
     const result = await b.upload(key, { playlists: [{ id: "p2" }] }, { playlists: true }, 3);
     expect(result.pushed).toBe(false);
 
+    const updated = await b.upload(key, { playlists: [{ id: "p2" }] }, { playlists: true }, 5);
+    expect(updated.pushed).toBe(false);
+
     const remote = await a.download(key);
     expect(remote!.revision).toBe(5);
     expect((remote!.payload as any).playlists).toEqual([{ id: "p1" }]);
+  });
+
+  it("reports a rejected equal-revision write as a conflict", async () => {
+    const key = generateSyncKey();
+    const firstDevice = new EncryptedSyncService("device-a");
+    const secondDevice = new EncryptedSyncService("device-b");
+    await firstDevice.upload(key, { playlists: [{ id: "first" }] }, { playlists: true }, 5);
+
+    const result = await secondDevice.sync(
+      key,
+      { playlists: [{ id: "second" }] },
+      { playlists: true },
+      5
+    );
+
+    expect(result.success).toBe(false);
+    expect(result.pushed).toBe(false);
+    expect(result.error).toContain("rejected this write");
+    expect(result.remoteRevision).toBe(5);
   });
 
   it("returns null when no snapshot exists", async () => {

@@ -94,21 +94,6 @@
   </div>
   <div class="toggle-row">
     <div class="toggle-info">
-      <span>Close tabs saved by the context menu</span><span class="sub-text"
-        >Off by default. Only newly saved, unchanged and unpinned video tabs close after a
-        successful save.</span
-      >
-    </div>
-    <ToggleSwitch
-      checked={settings?.closeContextAddedTabs || false}
-      onchange={(val) => {
-        settings!.closeContextAddedTabs = val;
-        save("closeContextAddedTabs", val);
-      }}
-    />
-  </div>
-  <div class="toggle-row">
-    <div class="toggle-info">
       <span>Open saved playlist after add</span>
     </div>
     <ToggleSwitch

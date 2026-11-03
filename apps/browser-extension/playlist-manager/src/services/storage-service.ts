@@ -1042,7 +1042,6 @@ window.getSettings = async (): Promise<Settings> => {
       defaultEditorPage: "/saved",
       saveCreatedPlaylists: false,
       disableContextMenu: false,
-      closeContextAddedTabs: false,
       contextMenuDestination: null,
       disableContextBuilder: false,
       disableContextSaved: false,
@@ -1158,6 +1157,20 @@ async function migrateSettings(settings: Settings) {
       defaultEditorPage: settings.defaultEditorPage,
     });
   }
+  // Migrate old closeContextAddedTabs to unified closeAddedTabs
+  if (typeof (settings as any).closeContextAddedTabs === "boolean") {
+    const oldVal = (settings as any).closeContextAddedTabs;
+    settings.closeAddedTabs = oldVal;
+    await browser.storage.sync.set({
+      closeAddedTabs: oldVal,
+    });
+    // Remove both legacy copies so the next cache miss cannot reapply the old value.
+    await Promise.all([
+      browser.storage.sync.remove("closeContextAddedTabs"),
+      browser.storage.local.remove("closeContextAddedTabs"),
+    ]);
+    delete (settings as any).closeContextAddedTabs;
+  }
   // Seed pinned favorites from the legacy single favorite (one-time, additive).
   // Only seed when the setting was never present (undefined/null), so an explicitly
   // cleared favorites list is not re-populated.
@@ -1193,6 +1206,8 @@ function notifyPlaylistsChanged() {
   if (typeof browser !== "undefined") {
     browser.runtime.sendMessage({ cmd: "update-saved-playlists" }).catch(() => {});
   }
+  // Schedule auto-sync after local changes (debounced)
+  import("./sync-manager.js").then((m) => m.scheduleSync()).catch(() => {});
 }
 
 window.invalidateCacheAndNotify = () => {

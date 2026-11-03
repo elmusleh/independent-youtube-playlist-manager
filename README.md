@@ -8,8 +8,25 @@
 
 <a href="https://chromewebstore.google.com/detail/dapjjdcnolpmfcnobilphjfpkmmokgid"><img alt="Chrome Web Store" src="https://img.shields.io/badge/Chrome-141e24.svg?&style=for-the-badge&logo=google-chrome&logoColor=white" /></a>
 <a href="https://addons.mozilla.org/en-US/firefox/addon/iypm/"><img alt="Firefox Add-ons" src="https://img.shields.io/badge/Firefox-141e24.svg?&style=for-the-badge&logo=firefox-browser&logoColor=white" /></a>
+<a href="https://github.com/elmusleh/independent-youtube-playlist-manager/stargazers"><img alt="GitHub stars" src="https://img.shields.io/github/stars/elmusleh/independent-youtube-playlist-manager?style=for-the-badge&color=141e24&labelColor=141e24" /></a>
+<a href="https://github.com/elmusleh/independent-youtube-playlist-manager/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/github/license/elmusleh/independent-youtube-playlist-manager?style=for-the-badge&color=141e24&labelColor=141e24" /></a>
 
 </div>
+
+## 🌐 Supported browsers
+
+Install IYPM on any browser that supports WebExtensions. Chromium-based browsers all run the same build.
+
+| Browser                           | Status                        | Install                                                                                       |
+| --------------------------------- | ----------------------------- | --------------------------------------------------------------------------------------------- |
+| Google Chrome                     | ✅ Live                       | [Chrome Web Store](https://chromewebstore.google.com/detail/dapjjdcnolpmfcnobilphjfpkmmokgid) |
+| Mozilla Firefox (desktop)         | ✅ Live                       | [Firefox Add-ons](https://addons.mozilla.org/en-US/firefox/addon/iypm/)                       |
+| Mozilla Firefox (Android / Fenix) | ✅ Live (unlisted test build) | [AMO unlisted](https://addons.mozilla.org/en-US/firefox/addon/iypm/)                          |
+| Microsoft Edge                    | 🚧 Coming soon                | Link will be added once the Partner Center review finishes                                    |
+| Opera / Brave / Vivaldi / Arc     | ✅ Use the Chrome build       | [Chrome Web Store](https://chromewebstore.google.com/detail/dapjjdcnolpmfcnobilphjfpkmmokgid) |
+| Apple Safari (macOS / iOS)        | 🔜 Planned                    | Tracking in the roadmap; not yet available                                                    |
+
+> **Coming soon** rows are placeholders: when a platform goes live, only the status emoji and the install link need to change — no README restructuring required.
 
 ---
 

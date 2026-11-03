@@ -257,6 +257,19 @@ async function main() {
     );
     report.interactions.push("Manage bulk selection bar renders");
 
+    // Sync view smoke test: all three backend options render with capability badges.
+    await visit("/sync");
+    const syncBody = await page.locator("body").innerText();
+    for (const label of [
+      "IYPM hosted (Beta)",
+      "Beta · coming soon",
+      "Your own Supabase project",
+      "File / Syncthing",
+    ]) {
+      assert(syncBody.includes(label), `Sync view is missing "${label}"`);
+    }
+    report.interactions.push("Sync view renders all three backend options with capability badges");
+
     // Regression guard for the theme desync that shipped in 1.2.1: the persisted
     // setting, the pre-paint local cache and the rendered attribute must agree.
     for (const choice of ["dark", "light"]) {

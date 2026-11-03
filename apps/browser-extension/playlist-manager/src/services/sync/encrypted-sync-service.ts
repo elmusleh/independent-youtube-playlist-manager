@@ -11,7 +11,8 @@
  * per address and reports its revision.
  */
 
-import { getSupabaseClient } from "../supabase-client";
+import { createAnonClient } from "../supabase-client";
+import { RELAY_SUPABASE_URL, RELAY_SUPABASE_ANON_KEY } from "./sync-config";
 import { deriveEncryptionKey, deriveStorageAddress } from "./key-derivation";
 import { encryptSnapshot, decryptSnapshot } from "./encryption-service";
 import { createSnapshot, encodeSnapshot, decodeSnapshot, isNewerRevision } from "./snapshot-codec";
@@ -49,13 +50,29 @@ export type EncryptedSyncResult = {
 
 export class EncryptedSyncService {
   private deviceId: string;
+  private url: string;
+  private key: string;
+  private client: ReturnType<typeof createAnonClient> | null = null;
+  private clientKey = "";
 
-  constructor(deviceId?: string) {
+  constructor(deviceId?: string, options?: { url?: string; key?: string }) {
     this.deviceId =
       deviceId ??
       (typeof crypto !== "undefined" && crypto.randomUUID
         ? crypto.randomUUID()
         : `dev-${Date.now()}`);
+    this.url = options?.url ?? RELAY_SUPABASE_URL;
+    this.key = options?.key ?? RELAY_SUPABASE_ANON_KEY;
+  }
+
+  /** Lazily build (and cache) the anon client for the configured endpoint. */
+  private getClient(): ReturnType<typeof createAnonClient> {
+    const ck = `${this.url}|${this.key}`;
+    if (!this.client || this.clientKey !== ck) {
+      this.client = createAnonClient(this.url, this.key);
+      this.clientKey = ck;
+    }
+    return this.client;
   }
 
   /**
@@ -69,7 +86,7 @@ export class EncryptedSyncService {
     revision: number
   ): Promise<{ pushed: boolean; error?: string }> {
     try {
-      const client = await getSupabaseClient();
+      const client = this.getClient();
       const address = await deriveStorageAddress(syncKey);
       const key = await deriveEncryptionKey(syncKey);
 
@@ -127,7 +144,7 @@ export class EncryptedSyncService {
    */
   async download(syncKey: string): Promise<SyncSnapshot | null> {
     try {
-      const client = await getSupabaseClient();
+      const client = this.getClient();
       const address = await deriveStorageAddress(syncKey);
       const key = await deriveEncryptionKey(syncKey);
 
@@ -167,15 +184,17 @@ export class EncryptedSyncService {
       pulled = true;
     }
 
-    const hasError = !!uploadResult.error;
+    const conflictMessage = uploadResult.pushed
+      ? uploadResult.error
+      : (uploadResult.error ?? "A newer or equal remote snapshot rejected this write.");
 
     return {
-      success: !uploadResult.error,
+      success: uploadResult.pushed && !conflictMessage,
       pushed: uploadResult.pushed,
       pulled,
       remoteRevision: remote?.revision ?? null,
       snapshot: remote,
-      error: uploadResult.error,
+      error: conflictMessage,
     };
   }
 }

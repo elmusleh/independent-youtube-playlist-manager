@@ -34,6 +34,27 @@ it.each([1404, 14000])("saves %i sorted videos with nested reactive sort rules",
   expect(stored.yph_local_playlists[0].videos[0]).toBe("video000000");
 });
 
+it("removes both legacy copies after migrating close-added-tabs", async () => {
+  stored.closeContextAddedTabs = true;
+  const api = (globalThis as any).browser;
+  api.storage.sync = {
+    get: vi.fn(async () => structuredClone(stored)),
+    set: vi.fn(async (items: Record<string, any>) => Object.assign(stored, items)),
+    remove: vi.fn(async (key: string) => delete stored[key]),
+  };
+
+  const { invalidateSettingsCache } = await import("./storage-service");
+  const settings = await window.getSettings();
+
+  expect(settings.closeAddedTabs).toBe(true);
+  expect(stored).not.toHaveProperty("closeContextAddedTabs");
+  expect(api.storage.sync.remove).toHaveBeenCalledWith("closeContextAddedTabs");
+  expect(api.storage.local.remove).toHaveBeenCalledWith("closeContextAddedTabs");
+
+  invalidateSettingsCache();
+  expect((await window.getSettings()).closeAddedTabs).toBe(true);
+});
+
 it("preserves the saved playlist when storage fails and allows retry", async () => {
   const playlist = { id: "local-retry", title: "Retry", videos: ["video000000"], timestamp: 1 };
   await window.savePlaylist(playlist, { syncToYoutube: false });

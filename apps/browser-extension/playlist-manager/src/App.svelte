@@ -9,6 +9,7 @@
   import Saved from "./views/Saved.svelte";
   import FavoritePlaylist from "./views/FavoritePlaylist.svelte";
   import Settings from "./views/Settings.svelte";
+  import Sync from "./views/Sync.svelte";
   import DeveloperSetup from "./views/DeveloperSetup.svelte";
   import Logs from "./views/Logs.svelte";
   import Manage from "./views/Manage.svelte";
@@ -109,6 +110,7 @@
     "/playlist": PlaylistView,
     "/editor": PlaylistView,
     "/settings": Settings,
+    "/sync": Sync,
     "/shortcuts": Shortcuts,
     "/api-setup": DeveloperSetup,
     "/logs": Logs,
