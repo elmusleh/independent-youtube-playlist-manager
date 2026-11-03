@@ -40,6 +40,7 @@
   let dragOverIndex = $state(-1);
   let playlistsPerPage = $state(20);
   let currentPage = $state(1);
+  let liveMessage = $state("");
   let filteredPlaylists = $derived(
     searchValue.trim()
       ? playlists.filter((p) => p.title.toLowerCase().includes(searchValue.toLowerCase()))
@@ -121,6 +122,7 @@
     if (window.logSystemEvent)
       await window.logSystemEvent("INFO", `[SETTINGS] Toggled favorite: ${id}`);
     window.success(nextIds.includes(id) ? "Added to favorites" : "Removed from favorites");
+    liveMessage = nextIds.includes(id) ? "Playlist pinned" : "Playlist unpinned";
   }
 
   async function move(id: string, direction: -1 | 1) {
@@ -130,6 +132,7 @@
     if (settings) settings.favoritePlaylistIds = next;
     if (window.logSystemEvent)
       await window.logSystemEvent("INFO", `[SETTINGS] Reordered favorite: ${id}`);
+    liveMessage = "Pinned order updated";
   }
 
   function handleDragStart(e: DragEvent, index: number) {
@@ -172,6 +175,7 @@
 
 <!-- Pinned -->
 <div class="pinned-list-wrapper">
+  <div class="sr-only" aria-live="polite" aria-atomic="true">{liveMessage}</div>
   <p class="sub-text">
     These playlists appear in the sidebar for quick access. Use arrows to reorder; click the pin to
     unpin.
@@ -325,6 +329,18 @@
 </div>
 
 <style>
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
   .empty-favorites {
     text-align: center;
     padding: 40px 20px;
