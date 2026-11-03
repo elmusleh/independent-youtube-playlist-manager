@@ -32,8 +32,10 @@
     pullNow,
     onSyncProgress,
   } from "../services/sync-manager.js";
+  import { rotateSyncKey } from "../services/sync/rotate-key.js";
   import { subscribeToSyncNudge } from "../services/sync/realtime-nudge.js";
   import { toast } from "../stores/toast.js";
+  import { requestConfirm } from "../stores/confirmation";
   import { isValidSyncKey, formatSyncKey } from "../services/sync/sync-key.js";
 
   const caps = detectCapabilities();
@@ -182,6 +184,28 @@
     await refreshStatus();
   }
 
+  async function handleRotateKey() {
+    requestConfirm({
+      title: "Rotate sync key?",
+      message:
+        "Generates a new key, moves all current data to a new sync space, and updates this device. Other devices must use the new key. The old space will be deleted.",
+      color: "primary",
+      confirmLabel: "Rotate",
+      onConfirm: async () => {
+        try {
+          const newKey = await rotateSyncKey();
+          await refresh();
+          await subscribeNudge();
+          addLogEntry("Sync key rotated", "success");
+          toast.show(`Sync key rotated. New key: ${newKey}`, "success");
+        } catch (e) {
+          addLogEntry(`Key rotation failed: ${e}`, "error");
+          toast.show("Key rotation failed", "error");
+        }
+      },
+    });
+  }
+
   function toggleContent(key: "playlists" | "settings" | "history") {
     config.content[key] = !config.content[key];
     persist();
@@ -314,7 +338,7 @@
       />
 
       <!-- Sync Key Section -->
-      <SyncKeyCard {config} onPersist={persist} onLog={addLogEntry} />
+      <SyncKeyCard {config} onPersist={persist} onLog={addLogEntry} onRotate={handleRotateKey} />
 
       <!-- What to Sync with Per-Category Status -->
       <SyncContents

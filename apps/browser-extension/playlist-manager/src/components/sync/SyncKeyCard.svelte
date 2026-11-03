@@ -8,6 +8,7 @@
     faInfoCircle,
     faCircleExclamation,
     faLink,
+    faArrowsRotate,
   } from "@fortawesome/free-solid-svg-icons";
   import SimpleButton from "../SimpleButton.svelte";
   import {
@@ -24,10 +25,12 @@
     config,
     onPersist,
     onLog,
+    onRotate,
   }: {
     config: SyncConfig;
     onPersist: () => void | Promise<void>;
     onLog: (message: string, type?: "info" | "success" | "error" | "warning") => void;
+    onRotate?: () => void | Promise<void>;
   } = $props();
 
   let keyInput = $state("");
@@ -122,6 +125,11 @@
       <SimpleButton secondary className="danger" onclick={removeKey}>
         <Fa icon={faTrash} /> Remove key from this device
       </SimpleButton>
+      {#if onRotate}
+        <SimpleButton secondary onclick={() => onRotate?.()}>
+          <Fa icon={faArrowsRotate} /> Rotate key (advanced)
+        </SimpleButton>
+      {/if}
     </div>
   {:else}
     <div class="key-input-wrapper">

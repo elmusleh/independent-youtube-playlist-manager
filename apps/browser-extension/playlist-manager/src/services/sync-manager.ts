@@ -9,6 +9,9 @@
 
 import { EncryptedSyncService } from "./sync/encrypted-sync-service.js";
 import { FileSyncService, loadFolderHandle } from "./sync/file-sync-service.js";
+import { createAnonClient } from "./supabase-client.js";
+import { computeStorageAddress } from "./sync/keys.js";
+import { generateSyncKey } from "./sync/sync-key.js";
 import {
   loadSyncConfig,
   saveSyncConfig,
@@ -59,7 +62,10 @@ function extBrowser() {
   return (globalThis as any).browser || (globalThis as any).chrome;
 }
 
-async function buildTransport(config: SyncConfig, backend: SyncBackend): Promise<Transport | null> {
+export async function buildTransport(
+  config: SyncConfig,
+  backend: SyncBackend
+): Promise<Transport | null> {
   const deviceId = await getOrCreateDeviceId();
   if (backend === "file") {
     const handle = await loadFolderHandle();
@@ -98,7 +104,7 @@ async function readHistory(): Promise<unknown> {
   }
 }
 
-async function collectSource(): Promise<{
+export async function collectSource(): Promise<{
   playlists: unknown;
   settings: unknown;
   history: unknown;
@@ -114,7 +120,7 @@ async function collectSource(): Promise<{
   };
 }
 
-function buildSelection(config: SyncConfig): Selection {
+export function buildSelection(config: SyncConfig): Selection {
   return {
     playlists: config.content.playlists,
     metadata: false,
