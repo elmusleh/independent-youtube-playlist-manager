@@ -9,6 +9,11 @@
   import PlaylistVideo from "./PlaylistVideo.svelte";
   import SaveStatus from "./SaveStatus.svelte";
   import { StatusManager } from "../services/status-manager.svelte";
+  import {
+    toggleFavorite as togglePinFav,
+    persistFavoriteIds,
+    isFavorite as isPinnedFav,
+  } from "../services/favorites";
   import { paginate } from "svelte-paginate";
   import Fa from "svelte-fa";
   import {
@@ -555,11 +560,13 @@
 
   // Favorite state
   let isFavoritePlaylist = $state(false);
+  let isPinnedPlaylist = $state(false);
 
   async function loadFavoriteStatus() {
     if (!playlist || !playlist.id || playlist.id === "new") return;
     const settings = await window.getSettings();
     isFavoritePlaylist = settings.watchLaterPlaylistId === playlist.id;
+    isPinnedPlaylist = isPinnedFav(settings.favoritePlaylistIds, playlist.id);
   }
 
   async function toggleFavorite() {
@@ -582,6 +589,23 @@
     isFavoritePlaylist = true;
     window.success("Set playlist as favorite ⭐️");
     window.invalidateCacheAndNotify();
+  }
+
+  async function togglePin() {
+    if (!playlist) return;
+    const isValidId =
+      playlist.id &&
+      playlist.id !== "new" &&
+      (playlist.id.startsWith("local-") || playlist.id.length > 10);
+    if (!isValidId) {
+      window.info("Please save this playlist first before pinning.");
+      return;
+    }
+    const settings = await window.getSettings();
+    const next = togglePinFav(settings.favoritePlaylistIds ?? [], playlist.id);
+    await persistFavoriteIds(next);
+    isPinnedPlaylist = isPinnedFav(next, playlist.id);
+    window.success(isPinnedPlaylist ? "Pinned to sidebar 📌" : "Unpinned from sidebar");
   }
 
   // Keep isFavoritePlaylist in sync if watchLaterPlaylistId is changed from another page (e.g. Settings)
@@ -1495,6 +1519,9 @@
         isFavorite={isFavoritePlaylist}
         favoriteReadOnly={isFavoritePage || isFavoritePlaylist}
         onToggleFavorite={toggleFavorite}
+        showPinButton={true}
+        isPinned={isPinnedPlaylist}
+        onTogglePin={togglePin}
         showSyncStatus={true}
         syncStatus={isLocal ? "local" : playlist?.isTagged ? "synced" : "online"}
         showLockButton={true}

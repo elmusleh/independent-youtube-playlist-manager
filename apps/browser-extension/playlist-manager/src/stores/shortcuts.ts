@@ -120,7 +120,7 @@ if (typeof window !== "undefined") {
       push("/history");
     } else if (matchesShortcut(config.mappings.favorite, e)) {
       e.preventDefault();
-      push("/favorites");
+      push("/favorite");
     } else if (matchesShortcut(config.mappings.saved, e)) {
       e.preventDefault();
       push("/saved");

@@ -7,12 +7,13 @@
   import New from "./views/New.svelte";
   import Builder from "./views/Builder.svelte";
   import Saved from "./views/Saved.svelte";
+  import FavoritePlaylist from "./views/FavoritePlaylist.svelte";
   import Settings from "./views/Settings.svelte";
   import DeveloperSetup from "./views/DeveloperSetup.svelte";
   import Logs from "./views/Logs.svelte";
   import Manage from "./views/Manage.svelte";
   import History from "./views/History.svelte";
-  import Favorites from "./views/Favorites.svelte";
+  import Pinned from "./views/Pinned.svelte";
   import PlaylistView from "./views/PlaylistView.svelte";
   import Shortcuts from "./views/Shortcuts.svelte";
   import Subscriptions from "./views/Subscriptions.svelte";
@@ -103,7 +104,8 @@
     "/new": New,
     "/playlist-builder": Builder,
     "/saved": Saved,
-    "/favorites": Favorites,
+    "/pinned": Pinned,
+    "/favorite": FavoritePlaylist,
     "/playlist": PlaylistView,
     "/editor": PlaylistView,
     "/settings": Settings,

@@ -282,9 +282,8 @@
               : p.isTagged
                 ? "synced"
                 : "online"}
-          isFavorite={settings?.favoritePlaylistIds?.includes(p.id) ?? false}
-          onToggleFavorite={() =>
-            persistFavoriteIds(toggleFavorite(settings?.favoritePlaylistIds ?? [], p.id))}
+          isPinned={settings?.favoritePlaylistIds?.includes(p.id) ?? false}
+          isWatchLater={settings?.watchLaterPlaylistId === p.id}
           onOpen={() => openInEditor(p)}
           actions={getCardActions(p)}
           category={p.category}
