@@ -61,6 +61,74 @@ export function getStatus(): SyncStatus {
   return { ...status };
 }
 
+// ---------------------------------------------------------------------------
+// Registration: expose on window and wire alarms / triggers (browser only).
+// ---------------------------------------------------------------------------
+
+const browserObj = (globalThis as any).browser || (globalThis as any).chrome;
+
+if (browserObj?.runtime) {
+  // Expose for the legacy alarm handler and UI messaging.
+  (globalThis as any).window = (globalThis as any).window || globalThis;
+  (globalThis as any).window.syncEngine = {
+    runOnce,
+    scheduleRun,
+    pause,
+    resume,
+    getStatus,
+    triggerSync: runOnce,
+  };
+
+  // Periodic pull every 5 minutes.
+  try {
+    browserObj.alarms?.create?.("yph-sync-periodic", { periodInMinutes: 5 });
+  } catch {
+    /* ignore */
+  }
+
+  // Run once on startup.
+  browserObj.runtime.onStartup?.addListener?.(() => {
+    runOnce().catch(() => {});
+  });
+
+  // Debounced push on storage change.
+  let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+  browserObj.storage?.onChanged?.addListener?.(() => {
+    if (debounceTimer) clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      debounceTimer = null;
+      runOnce().catch(() => {});
+    }, 3_000);
+  });
+
+  // Alarm handler for the periodic sync.
+  browserObj.alarms?.onAlarm?.addListener?.((alarm: any) => {
+    if (alarm?.name === "yph-sync-periodic") {
+      runOnce().catch(() => {});
+    }
+  });
+
+  // Message commands for the UI.
+  browserObj.runtime.onMessage.addListener((request: any, _sender: any, sendResponse: any) => {
+    if (request?.cmd === "sync-now") {
+      runOnce()
+        .then((s) => sendResponse(s))
+        .catch((e) => sendResponse({ phase: "error", lastError: String(e) }));
+      return true;
+    }
+    if (request?.cmd === "sync-pause") {
+      pause();
+      sendResponse(getStatus());
+      return false;
+    }
+    if (request?.cmd === "sync-status") {
+      sendResponse(getStatus());
+      return false;
+    }
+    return undefined;
+  });
+}
+
 export async function runOnce(): Promise<SyncStatus> {
   if (isRunning) return getStatus();
   isRunning = true;
