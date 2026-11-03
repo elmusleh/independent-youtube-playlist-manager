@@ -73,7 +73,7 @@
   <div class="view-body">
     <StickyHeader>
       {#snippet children()}
-        <ViewHeader icon={faThumbTack} title="Pinned">
+        <ViewHeader icon={faThumbTack} title="Pinned" count={settings?.favoritePlaylistIds?.length}>
           {#snippet rightActions()}
             <SaveStatus onclick={refresh} {status} />
           {/snippet}
