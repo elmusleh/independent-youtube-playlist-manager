@@ -103,24 +103,26 @@
           <span>{action.loading ? "Loading…" : action.label}</span>
         </SimpleButton>
       {/each}
-      {#if isWatchLater}
-        <span
-          class="playlist-badge watchlater-badge"
-          title="Favorite Playlist"
-          aria-label="Favorite Playlist"
-        >
-          <Fa icon={faStar} fw />
-        </span>
-      {/if}
-      {#if isPinned}
-        <span
-          class="playlist-badge pinned-badge"
-          title="Pinned to sidebar"
-          aria-label="Pinned to sidebar"
-        >
-          <Fa icon={faThumbTack} fw />
-        </span>
-      {/if}
+      <div class="playlist-badges">
+        {#if isWatchLater}
+          <span
+            class="playlist-badge watchlater-badge"
+            title="Favorite Playlist"
+            aria-label="Favorite Playlist"
+          >
+            <Fa icon={faStar} fw />
+          </span>
+        {/if}
+        {#if isPinned}
+          <span
+            class="playlist-badge pinned-badge"
+            title="Pinned to sidebar"
+            aria-label="Pinned to sidebar"
+          >
+            <Fa icon={faThumbTack} fw />
+          </span>
+        {/if}
+      </div>
     </div>
   </div>
 </div>
@@ -292,8 +294,16 @@
 
   .playlist-actions {
     display: flex;
+    align-items: center;
     gap: var(--space-2);
     flex-wrap: wrap;
+  }
+
+  .playlist-badges {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-left: auto;
   }
 
   @media (max-width: 768px) {
