@@ -26,7 +26,13 @@
   import { detectCapabilities } from "../services/sync/capabilities.js";
   import { requestSyncHostPermission } from "../services/sync/host-permissions.js";
   import { storeFolderHandle } from "../services/sync/file-sync-service.js";
-  import { getSyncStatus, triggerSyncNow, onSyncProgress } from "../services/sync-manager.js";
+  import {
+    getSyncStatus,
+    triggerSyncNow,
+    pullNow,
+    onSyncProgress,
+  } from "../services/sync-manager.js";
+  import { subscribeToSyncNudge } from "../services/sync/realtime-nudge.js";
   import { toast } from "../stores/toast.js";
   import { isValidSyncKey, formatSyncKey } from "../services/sync/sync-key.js";
 
@@ -86,6 +92,23 @@
     partial: 75,
     conflict: 25,
   };
+
+  let nudgeUnsubscribe: (() => void) | null = null;
+
+  async function subscribeNudge() {
+    if (nudgeUnsubscribe) {
+      nudgeUnsubscribe();
+      nudgeUnsubscribe = null;
+    }
+    if (!config.syncKey) return;
+    try {
+      nudgeUnsubscribe = await subscribeToSyncNudge(config.syncKey, () => {
+        pullNow().catch(() => {});
+      });
+    } catch {
+      // ignore subscription failures
+    }
+  }
 
   async function persist() {
     await status.save(() => saveSyncConfig(config));
@@ -229,10 +252,11 @@
         addLogEntry(detail, stage === "error" ? "error" : stage === "success" ? "success" : "info");
     });
     const timer = setInterval(refreshStatus, 10_000);
-    refresh();
+    refresh().then(() => subscribeNudge());
     return () => {
       clearInterval(timer);
       onSyncProgress(null);
+      if (nudgeUnsubscribe) nudgeUnsubscribe();
     };
   });
 </script>
