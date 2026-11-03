@@ -190,7 +190,17 @@
     </div>
   {/if}
   {#if loadingPlaylists}
-    <p class="loading">Loading playlists...</p>
+    <div class="skeleton-list">
+      {#each Array(5) as _}
+        <div class="skeleton-row">
+          <div class="skeleton-thumb"></div>
+          <div class="skeleton-text">
+            <div class="skeleton-line title"></div>
+            <div class="skeleton-line meta"></div>
+          </div>
+        </div>
+      {/each}
+    </div>
   {:else if playlists.length === 0}
     <div class="empty-favorites">
       <Fa icon={faThumbTack} class="empty-icon" />
@@ -455,6 +465,60 @@
     background: var(--color-brand-primary);
     color: #fff;
     text-decoration: none;
+  }
+
+  .skeleton-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .skeleton-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .skeleton-thumb {
+    width: 56px;
+    height: 32px;
+    border-radius: 4px;
+    background: var(--border-color);
+    animation: pulse 1.2s ease-in-out infinite;
+  }
+
+  .skeleton-text {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .skeleton-line {
+    height: 12px;
+    border-radius: 4px;
+    background: var(--border-color);
+    animation: pulse 1.2s ease-in-out infinite;
+  }
+
+  .skeleton-line.title {
+    width: 60%;
+  }
+
+  .skeleton-line.meta {
+    width: 30%;
+  }
+
+  @keyframes pulse {
+    0%,
+    100% {
+      opacity: 0.6;
+    }
+    50% {
+      opacity: 1;
+    }
   }
 
   .loading {
