@@ -26,6 +26,7 @@
     type SyncBackend,
   } from "../services/sync/sync-config.js";
   import { detectCapabilities } from "../services/sync/capabilities.js";
+  import { requestSyncHostPermission } from "../services/sync/host-permissions.js";
   import { storeFolderHandle } from "../services/sync/file-sync-service.js";
   import { getSyncStatus, triggerSyncNow, startPolling } from "../services/sync-manager.js";
 
@@ -108,7 +109,19 @@
   }
 
   async function syncNow() {
-    triggerSyncNow();
+    if (config.backends.includes("supabase-byo")) {
+      const permissions =
+        (globalThis as any).browser?.permissions || (globalThis as any).chrome?.permissions;
+      const granted = await requestSyncHostPermission(config.supabaseUrl, permissions);
+      if (!granted) {
+        lastError =
+          "Allow secure access to your Supabase project before syncing. Check its HTTPS URL and try again.";
+        lastSyncSummary = "Supabase permission was not granted.";
+        return;
+      }
+    }
+    lastError = null;
+    await triggerSyncNow();
     await refreshStatus();
   }
 

@@ -47,7 +47,7 @@
     "alarms"
   ],
   "host_permissions": ["https://*.youtube.com/*"],
-  "optional_host_permissions": ["https://i.ytimg.com/*"],
+  "optional_host_permissions": ["https://i.ytimg.com/*", "https://*/*"],
   "commands": {
     "_execute_action": {
       "suggested_key": {

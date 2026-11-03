@@ -102,6 +102,27 @@ export class FileSyncService {
     return `${FILE_PREFIX}${address}${FILE_SUFFIX}`;
   }
 
+  /** Read and validate the stored snapshot; a corrupt file must never be overwritten silently. */
+  private async readSnapshot(syncKey: string): Promise<SyncSnapshot | null> {
+    const address = await deriveStorageAddress(syncKey);
+    const key = await deriveEncryptionKey(syncKey);
+
+    let fileHandle: FileSystemFileHandle;
+    try {
+      fileHandle = await this.directory.getFileHandle(this.fileName(address));
+    } catch (err) {
+      if (err && typeof err === "object" && "name" in err && err.name === "NotFoundError") {
+        return null;
+      }
+      throw err;
+    }
+
+    const file = await fileHandle.getFile();
+    const encrypted = new Uint8Array(await file.arrayBuffer());
+    const plaintext = await decryptSnapshot(key, encrypted);
+    return decodeSnapshot(plaintext);
+  }
+
   /** Encrypt and write the local snapshot into the synced folder. */
   async upload(
     syncKey: string,
@@ -112,6 +133,13 @@ export class FileSyncService {
     try {
       const address = await deriveStorageAddress(syncKey);
       const key = await deriveEncryptionKey(syncKey);
+      const existing = await this.readSnapshot(syncKey);
+      if (existing && existing.revision >= revision) {
+        return {
+          pushed: false,
+          error: `The folder already contains revision ${existing.revision}; refusing to replace it with revision ${revision}.`,
+        };
+      }
 
       const payload = selectSyncContent(source, selection) as unknown as Record<string, unknown>;
       const snapshot = createSnapshot({ revision, deviceId: this.deviceId, payload });
@@ -132,22 +160,9 @@ export class FileSyncService {
   /** Read, decrypt and decode whatever snapshot arrived in the folder (or null). */
   async download(syncKey: string): Promise<SyncSnapshot | null> {
     try {
-      const address = await deriveStorageAddress(syncKey);
-      const key = await deriveEncryptionKey(syncKey);
-
-      let fileHandle: FileSystemFileHandle;
-      try {
-        fileHandle = await this.directory.getFileHandle(this.fileName(address));
-      } catch {
-        return null; // No file yet — first device / fresh key.
-      }
-
-      const file = await fileHandle.getFile();
-      const encrypted = new Uint8Array(await file.arrayBuffer());
-      const plaintext = await decryptSnapshot(key, encrypted);
-      return decodeSnapshot(plaintext);
+      return await this.readSnapshot(syncKey);
     } catch (err: any) {
-      // Wrong key or tampered/corrupt file — never crash sync.
+      // A wrong key or tampered/corrupt file — never crash sync.
       console.warn("[FILE-SYNC] download failed:", err?.message || err);
       return null;
     }

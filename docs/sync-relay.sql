@@ -24,3 +24,6 @@ create policy "sync_anon_insert" on public.sync_snapshots
 drop policy if exists "sync_anon_update" on public.sync_snapshots;
 create policy "sync_anon_update" on public.sync_snapshots
   for update using (true) with check (true);
+
+-- SQL Editor-created tables may not inherit the API role grants used by the dashboard.
+grant select, insert, update on table public.sync_snapshots to anon;

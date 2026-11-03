@@ -1164,7 +1164,11 @@ async function migrateSettings(settings: Settings) {
     await browser.storage.sync.set({
       closeAddedTabs: oldVal,
     });
-    // Remove the old setting
+    // Remove both legacy copies so the next cache miss cannot reapply the old value.
+    await Promise.all([
+      browser.storage.sync.remove("closeContextAddedTabs"),
+      browser.storage.local.remove("closeContextAddedTabs"),
+    ]);
     delete (settings as any).closeContextAddedTabs;
   }
   // Seed pinned favorites from the legacy single favorite (one-time, additive).

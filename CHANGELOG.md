@@ -15,6 +15,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   revisions, AES-256-GCM packing that fails closed on any tampering, and category-based
   content selection (thumbnails off by default). No UI, no network and no engine yet —
   45 unit tests cover round-trips, wrong keys, flipped bytes and truncated payloads.
+- Cross-device sync UI with device pairing, capability-aware backend selection, encrypted
+  file and Supabase transports, and explicit conflict reporting when a backend rejects stale
+  writes. Custom HTTPS Supabase hosts are requested only when the user starts a sync.
+- Pin frequently used playlists for quick access; the pinned list is managed separately from
+  the full Saved and Manage views and migrates existing single-favorite settings.
 - Automated beta releases: every merge to `next` now builds the extension and cuts a
   public GitHub Prerelease (`vX.Y.Z-beta.N`, manifest build `X.Y.Z.N`) with the Chrome,
   Edge and Firefox ZIPs attached, so builds can be tested before an official release.
@@ -87,6 +92,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Context-menu settings are now honoured by removal instead of greying: disabling saved
   destinations or the playlist builder removes that branch, and the "Add YouTube tabs to …"
   label always names a destination that can actually be used.
+- Sync exports only an explicit settings allowlist, never local sync credentials; stale or
+  rejected writes remain visible as conflicts rather than marking the device up to date, and
+  legacy close-tabs settings are removed from both storage areas after migration.
 - Right-clicking a YouTube link that is not a video (channel, playlist, search) no longer
   captures the video that happens to be open. A link click resolves only the clicked link;
   the watch-page fallback still applies to page, video and image contexts.

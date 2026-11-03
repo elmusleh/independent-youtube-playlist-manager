@@ -13,12 +13,14 @@ import {
   loadSyncConfig,
   saveSyncConfig,
   getOrCreateDeviceId,
+  isRelayConfigured,
   RELAY_SUPABASE_URL,
   RELAY_SUPABASE_ANON_KEY,
   type SyncConfig,
   type SyncBackend,
 } from "./sync/sync-config.js";
 import type { SyncSnapshot } from "./sync/snapshot-codec.js";
+import { selectSyncableSettings } from "./sync/settings-selector.js";
 import { toast } from "../stores/toast.js";
 
 const DEBOUNCE_MS = 5000;
@@ -55,6 +57,7 @@ async function buildTransport(config: SyncConfig, backend: SyncBackend): Promise
     });
   }
   if (backend === "relay") {
+    if (!isRelayConfigured()) return null;
     return new EncryptedSyncService(deviceId, {
       url: RELAY_SUPABASE_URL,
       key: RELAY_SUPABASE_ANON_KEY,
@@ -89,7 +92,7 @@ async function collectSource(): Promise<{
   const snapshot = await librarySnapshot();
   return {
     playlists: snapshot.playlists,
-    settings: await readSettings(),
+    settings: selectSyncableSettings(await readSettings()),
     history: await readHistory(),
     revision: snapshot.revision,
   };
@@ -113,7 +116,7 @@ async function backupLocal(): Promise<void> {
     await extBrowser().storage.local.set({
       yph_sync_preimport_backup: {
         playlists: snapshot.playlists,
-        settings: await readSettings(),
+        settings: selectSyncableSettings(await readSettings()),
         history: await readHistory(),
         at: Date.now(),
       },
@@ -140,12 +143,13 @@ async function applyRemote(
     applied.push("playlists");
   }
   if (selection.settings && payload.settings && typeof payload.settings === "object") {
-    for (const [key, value] of Object.entries(payload.settings as Record<string, unknown>)) {
+    const safeSettings = selectSyncableSettings(payload.settings);
+    for (const [key, value] of Object.entries(safeSettings)) {
       if (typeof (window as any).storeObject === "function") {
         await (window as any).storeObject(key, value);
       }
     }
-    applied.push("settings");
+    if (Object.keys(safeSettings).length > 0) applied.push("settings");
   }
   if (selection.history && payload.history) {
     await extBrowser().storage.local.set({ local_yt_history: payload.history });
@@ -220,6 +224,7 @@ async function performSync(options: { push?: boolean } = {}): Promise<void> {
       const source = await collectSource();
       const newRev = Math.max(localRev, remoteRev) + 1;
       let pushError: string | undefined;
+      let uploadConflict = false;
       for (const transport of transports) {
         const result = await transport.upload(
           config.syncKey!,
@@ -228,10 +233,16 @@ async function performSync(options: { push?: boolean } = {}): Promise<void> {
           newRev
         );
         if (result.error && !pushError) pushError = result.error;
+        if (!result.pushed) uploadConflict = true;
       }
       if (pushError) {
         config.lastError = pushError;
         config.lastSyncSummary = `Sync failed: ${pushError}`;
+      } else if (uploadConflict) {
+        config.lastError =
+          "A backend rejected this snapshot because another device may have written concurrently.";
+        config.lastSyncSummary =
+          "Sync was not marked complete. Retry to reconcile the latest snapshot.";
       } else {
         config.syncRevision = newRev;
         config.lastError = null;
@@ -283,10 +294,10 @@ export async function getSyncStatus(): Promise<{
 }
 
 /** Force an immediate sync (used by the "Sync now" action). */
-export function triggerSyncNow(): void {
+export async function triggerSyncNow(): Promise<void> {
   if (syncTimer) {
     clearTimeout(syncTimer);
     syncTimer = null;
   }
-  performSync().catch((e) => console.warn("[AUTO-SYNC] failed:", e));
+  await performSync();
 }

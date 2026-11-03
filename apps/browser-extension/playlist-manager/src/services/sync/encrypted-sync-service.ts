@@ -184,15 +184,17 @@ export class EncryptedSyncService {
       pulled = true;
     }
 
-    const hasError = !!uploadResult.error;
+    const conflictMessage = uploadResult.pushed
+      ? uploadResult.error
+      : (uploadResult.error ?? "A newer or equal remote snapshot rejected this write.");
 
     return {
-      success: !uploadResult.error,
+      success: uploadResult.pushed && !conflictMessage,
       pushed: uploadResult.pushed,
       pulled,
       remoteRevision: remote?.revision ?? null,
       snapshot: remote,
-      error: uploadResult.error,
+      error: conflictMessage,
     };
   }
 }
