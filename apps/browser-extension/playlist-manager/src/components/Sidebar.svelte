@@ -202,7 +202,6 @@
           class="favorite-section-header"
           class:active={isActive("/favorites", router.location, router.querystring || "")}
         >
-          <Fa icon={faThumbTack} fw />
           <span>Pinned</span>
           <Fa icon={faChevronRight} fw />
         </a>
@@ -372,7 +371,6 @@
               class="favorite-section-header"
               class:active={isActive("/favorites", router.location, router.querystring || "")}
             >
-              <Fa icon={faThumbTack} fw />
               <span>Pinned</span>
               <Fa icon={faChevronRight} fw />
             </a>
