@@ -257,12 +257,8 @@
           if (config.backends.length === 0 && isRelayConfigured()) config.backends = ["relay"];
           persist();
           toast.show("Sync key imported from pairing link", "success");
-        } else {
-          toast.show("Invalid pairing link", "error");
-        }
-        // Clean the param from the URL without reloading.
-        const cleanHash = location.hash.split("?")[0];
-        history.replaceState(null, "", cleanHash || "#/sync");
+        } else toast.show("Invalid pairing link", "error");
+        history.replaceState(null, "", location.hash.split("?")[0] || "#/sync");
       }
     } catch {
       // ignore malformed params
