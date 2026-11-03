@@ -6,6 +6,7 @@ const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
 const { createFixture, seedExtension, routes, sizes } = require("./extension-fixture.js");
+const { verifyPinnedSidebarTruncation } = require("./verify-pinned-sidebar.js");
 
 const root = path.resolve(__dirname, "../..");
 const output = path.join(root, "dist/verification");
@@ -79,6 +80,40 @@ async function main() {
           });
       }
     }
+    await visit("/playlist?id=local-release");
+    const pinButton = page.getByRole("button", { name: "Pin playlist to sidebar", exact: true });
+    assert.equal(
+      await pinButton.count(),
+      1,
+      "Playlist editor must expose a pin control beside the title"
+    );
+    assert(await pinButton.isVisible(), "Playlist editor pin control is not visible");
+    assert(
+      await pinButton.evaluate(
+        (button) => button.closest("h1")?.querySelector(".favorite-star-indicator") !== null
+      ),
+      "Pin control must appear next to the unique Watch Later star"
+    );
+    await pinButton.click();
+    await page.getByRole("button", { name: "Unpin playlist from sidebar", exact: true }).waitFor();
+    await page.goto(`${base}/editor/index.html#/playlist?id=local-second`);
+    await page.locator(".playlist-video").first().waitFor();
+    await page.getByRole("button", { name: "Unpin playlist from sidebar", exact: true }).waitFor();
+    const favoriteSettings = await page.evaluate(
+      () =>
+        new Promise((resolve) =>
+          chrome.storage.sync.get(["favoritePlaylistIds", "watchLaterPlaylistId"], resolve)
+        )
+    );
+    assert.deepEqual(favoriteSettings.favoritePlaylistIds, ["local-second", "local-release"]);
+    assert.equal(favoriteSettings.watchLaterPlaylistId, "local-release");
+    await page.goto(`${base}/editor/index.html#/saved`);
+    for (const id of ["local-second", "local-release"]) {
+      await page.locator(`.nav-group a[href="#/playlist?id=${id}"]`).waitFor();
+    }
+    await verifyPinnedSidebarTruncation(page);
+    report.interactions.push("Pinned sidebar titles ellipsize without horizontal overflow");
+
     await page.setViewportSize({ width: 390, height: 844 });
     await visit("/playlist?id=local-release");
     assert.equal(await page.locator(".playlist-video").count(), 10);
@@ -281,7 +316,7 @@ async function main() {
     assert.deepEqual(errors, [], "Runtime errors were observed");
     fs.writeFileSync(path.join(output, "chromium-report.json"), JSON.stringify(report, null, 2));
     console.log(
-      `PASS: ${report.routeChecks.length} real-extension route/viewport checks; ${report.interactions.length} interaction groups; no runtime errors.`
+      `PASS: ${report.routeChecks.length} route/viewport checks; ${report.interactions.length} interaction groups; no runtime errors.`
     );
   } finally {
     await context.close();

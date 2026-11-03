@@ -22,7 +22,8 @@ function createFixture() {
       yph_local_playlists: [
         {
           id: "local-release",
-          title: "Large playlist with a long descriptive title for mobile layouts",
+          title:
+            "A deliberately very long pinned playlist title for verifying that the desktop sidebar truncates rather than scrolling horizontally",
           videos: ids,
           isLocal: true,
           saved: true,
@@ -56,6 +57,7 @@ function createFixture() {
       autoFetchMetadata: false,
       autoSaveEditor: false,
       watchLaterPlaylistId: "local-release",
+      favoritePlaylistIds: ["local-second"],
     },
     metadata: Object.fromEntries(
       ids.map((id) => [

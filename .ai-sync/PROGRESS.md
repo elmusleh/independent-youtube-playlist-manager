@@ -1,5 +1,26 @@
 # Progress — open work only (Mobile UX Improvements)
 
+## Firefox Android action popup — fills screen (2026-11-02)
+
+- [x] Detect Firefox Android via UA in `popup/mode.js` and force full-page mode (the overlay
+      renders full-screen but reports as a popup, which kept the fixed 420px desktop width).
+- [x] Real-device (Fenix) confirmation by owner.
+- [x] `npm run check` + `npm run build` exit 0. PR #84.
+
+## m.youtube.com watch-history — fully fixed and merged (2026-11-02)
+
+Watch history (record + resume + title + channel + SPA navigation) now works on `m.youtube.com`
+in Firefox Android. All fixes committed on `fix/watch-history-mobile` → PR #83 (owner-requested merge).
+
+- [x] Periodic save during playback (`b2d8368`); live `<video>` re-query on every access (`1e924b4`).
+- [x] Firefox title/channel selectors (`da731c4`, `d1e9baf`, `82b2566`).
+- [x] Resume polls until the video is ready and the pre-roll ad ends (`d1e9baf`).
+- [x] SPA navigation via a video-id poller (`b664845`).
+- [x] Real-device (Fenix) confirmation: record, resume, title, channel, related-video click.
+- [x] `npm run check` + `npm run build` exit 0; CHANGELOG consolidated under `### Fixed`.
+
+Closes the earlier "manual real-device confirmation" items in the two hardening sections below.
+
 ## Watch-history mobile hardening — committed (`fix/watch-history-mobile-hardening`)
 
 - [x] Track Shorts, MutationObserver video detection, immediate unload flush, drop dead
@@ -7,6 +28,16 @@
 - [x] Verify: `npm run build` exit 0, `npm run test` 588/588, `npm run lint` 0 errors,
       `npx svelte-check` 0 errors.
 - [ ] Manual real-device (Firefox Android) record/resume/Shorts confirmation.
+
+## Pinned favorites editor pin affordance — fixed on branch `fix/favorites-multi-pin`
+
+- [x] Find the missing UI cause: the prior `rightActions` slot was hidden in editable-title mode.
+- [x] Render a dedicated pin button beside the Watch Later star in `ViewHeader.svelte`.
+- [x] Add offline Chromium regression assertions for visibility, multi-pin toggles, sidebar entries,
+      and unchanged unique Watch Later state.
+- [x] Verify `npm run check`, `npm run build`, `npm run test:extension`, and packed Chrome ZIP
+      loaded in isolated Chromium. Refreshed all three browser packages.
+- [ ] Commit and push follow-up to PR #81; owner to reload the Chrome unpacked directory / XPI.
 
 ## Improvement plan execution — 2026-11-01 (later)
 
@@ -393,3 +424,13 @@ Suggested next steps (new, not scheduled):
 - PS-3 (best practices) — Add Playwright visual snapshots of the popup at 4 widths ×
   2 themes so icon and spacing changes cannot silently regress the way Font Awesome's
   93 KB stylesheet hid the layout problem.
+
+## Pinned Favorites (completed 2026-11-03)
+
+- [x] Restore Watch Later route alongside pinned
+- [x] /pinned page with Manage-style rows
+- [x] Sidebar pinned header and nav styling
+- [x] Distinct pin icons and badge states
+- [x] Search/pagination/drag reorder (later simplified: search removed)
+- [x] Configurable sidebar pinned limit in settings
+- [x] Build/test verification

@@ -1,4 +1,57 @@
-# Handoff — 2026-10-31, verification complete with all automated gates passing
+# Handoff — 2026-11-02, m.youtube.com watch-history + popup fixes (PRs #83, #84)
+
+## 2026-11-02 — Firefox Android action popup fills the screen (PR #84)
+
+The toolbar popup rendered as a 420px block cropped into the upper-left corner on Firefox for
+Android. Root cause: Firefox Android renders the action popup as a full-screen overlay, but
+`extension.getViews({type:"popup"})` still reports it as a popup, so `mode.js` kept the fixed
+420px desktop width. Fixed in `apps/browser-extension/popup/mode.js` by detecting Firefox
+Android via UA and forcing full-page mode (`f9fd7bd`, rebased to `51ef646` after #83 merged).
+Real-device confirmed by owner. PR #84.
+
+## 2026-11-02 — m.youtube.com watch-history fully fixed (`fix/watch-history-mobile` → PR #83)
+
+Watch history now works completely on the mobile YouTube site (`m.youtube.com`) in Firefox for
+Android. The root cause was several ways the Gecko mobile site differs from desktop Chrome, each
+fixed on `fix/watch-history-mobile` (off `next`):
+
+- `b2d8368` — save position periodically during playback (mobile `pause`/`ended`/unload don't fire).
+- `1e924b4` — re-query the live `<video>` element on every access (YouTube swaps it around pre-roll ads).
+- `da731c4` + `d1e9baf` — title/channel extraction for Firefox's DOM; resume now polls until the real
+  video is ready and the pre-roll ad has finished.
+- `82b2566` — channel selector corrected to `.ytVideoMetadataViewModelSubtitleContainer span.ytAttributedStringHost`.
+- `b664845` — SPA navigation: clicking a related video changes the URL without a reload, so a video-id
+  poller re-initializes tracking.
+- `26ce3c3` — CHANGELOG consolidated under `### Fixed`.
+
+Verification: `npm run check` exit 0, `npm run build` exit 0 (chrome/firefox/edge, budgets pass).
+Real-device (Fenix) confirmed record, resume, title, channel and SPA navigation. Owner asked to merge PR #83.
+
+Key trap: `browser_exec` with a Firefox UA string is **not** a faithful proxy for real Firefox — Gecko is
+served different HTML than Chromium even with an identical UA. Use the on-device `CHANNEL-DIAG`/logcat
+or Firefox USB remote-debugging (RDP over `adb forward tcp:6000 localabstract:org.mozilla.fenix/firefox-debugger-socket`)
+for DOM ground truth. Debugging used `web-ext run --target=firefox-android` (temporary add-on) — keep a
+single `web-ext` process per device, or two will fight over the install and cause intermittent re-installs.
+
+## 2026-11-02 — editor pin control regression fixed; built package verified in Chromium
+
+- Root cause: `PlaylistEditor.svelte` passed the pin through `rightActions`, which renders
+  after the editable title; `ViewHeader.svelte` rendered those actions only in read-only
+  title mode. Since playlist titles are editable by default, the pin was not visible in the
+  normal editor state. Presence of the text in the bundle did not prove the button rendered.
+- Fix: render an accessible, 44px `📌` button directly beside the title's Watch Later star
+  from `ViewHeader.svelte`, with a separate active state and offline-capable toggle.
+- Regression coverage: the extension Playwright suite now asserts adjacency/visibility,
+  toggles two pinned playlists from the editor, checks sidebar entries and proves the
+  unique `watchLaterPlaylistId` remains independent. Regression failed against pre-fix code
+  (`pin control ... 0 !== 1`) and passes after the fix.
+- Verified: `npm run check` exit 0 (647 unit tests, svelte-check 0 errors/6 existing
+  warnings), `npm run build` exit 0, `npm run test:extension` exit 0 (96 route/viewport
+  checks, 10 interaction groups), `npm run format:check` exit 0. Also loaded the built
+  Chrome extension ZIP in isolated Chromium with offline fixtures; pin control appeared
+  and click changed to Unpin.
+- Rebuilt packages: Chrome/Edge ZIPs are 542136 bytes; Firefox XPI is 542296 bytes.
+  PR #81 remains open against `next`; current changes are local and uncommitted.
 
 ## 2026-11-01 (later) — PRs #70 and #71 merged; `next` is green
 
@@ -625,3 +678,42 @@ alone — this pass should also be spot-checked against it on a real device.
 No commit, push, PR, version bump or release performed. Editing lock released after the
 writes. `.husky/pre-commit` was modified by a concurrent process (a commit attempt at
 22:37) and left untouched by this pass.
+
+---
+
+## Handoff — Pinned Favorites Feature (2026-11-03)
+
+### Completed Work
+
+- Restored Watch Later “Favorite Playlist” alongside pinned playlists (`/favorite`).
+- Renamed `/favorites` to `/pinned`; moved Pinned Favorites management to `/pinned` using Manage-style `ListRow` layout.
+- Added search removal, pagination, drag-and-drop reorder, metadata badges (category, count, date), loading skeletons, empty state, live-region announcements.
+- Fixed sidebar “Pinned >” header, nav styling, pin button pressed/unpressed states.
+- Saved page uses non-clickable pinned/Watch Later badges.
+- Manage page uses thumbtack pin icon with clear pressed state.
+- Added configurable sidebar pinned limit in Favorite Settings (`maxVisibleFavorites`, 0 = unlimited).
+
+### Files Changed (key)
+
+- `apps/browser-extension/playlist-manager/src/App.svelte`
+- `apps/browser-extension/playlist-manager/src/components/Sidebar.svelte`
+- `apps/browser-extension/playlist-manager/src/components/FavoritesManager.svelte`
+- `apps/browser-extension/playlist-manager/src/views/Pinned.svelte`
+- `apps/browser-extension/playlist-manager/src/views/Settings.svelte`
+- `apps/browser-extension/playlist-manager/src/components/FavoriteSettings.svelte`
+- `apps/browser-extension/playlist-manager/src/services/favorites.ts`
+- `apps/browser-extension/playlist-manager/src/services/storage-service.ts`
+- `apps/browser-extension/playlist-manager/src/types/model.d.ts`
+- `packages/build-tools/verify-file-size.js`
+
+### Build Status
+
+- `npm run check` ✅
+- `npm run build` ✅
+- `npm run test:extension` ✅ (96 route/viewport checks + 10 interaction groups)
+- Firefox package: `dist/independent-youtube-playlist-manager-firefox.xpi`
+
+### Next Steps
+
+- Review PR #81 on GitHub and merge into `next`.
+- Optional: add undo for unpin/reorder and bulk actions (future).

@@ -1,6 +1,6 @@
 <script lang="ts">
   import Fa from "svelte-fa";
-  import { faListUl, faStar } from "@fortawesome/free-solid-svg-icons";
+  import { faListUl, faThumbTack, faStar } from "@fortawesome/free-solid-svg-icons";
   import SimpleButton from "./SimpleButton.svelte";
   import ArchivedThumbnail from "./ArchivedThumbnail.svelte";
   import CategoryBadge from "./CategoryBadge.svelte";
@@ -23,8 +23,8 @@
     isLocal?: boolean;
     status?: "syncing" | "synced" | "local" | "online";
     showFavoriteBadge?: boolean;
-    isFavorite?: boolean;
-    onToggleFavorite?: () => void;
+    isPinned?: boolean;
+    isWatchLater?: boolean;
     onOpen: () => void;
     actions?: Action[];
     category?: string;
@@ -40,8 +40,8 @@
     isLocal = false,
     status = isLocal ? "local" : isTagged ? "synced" : "online",
     showFavoriteBadge = false,
-    isFavorite = false,
-    onToggleFavorite,
+    isPinned = false,
+    isWatchLater = false,
     onOpen,
     actions = [],
     category,
@@ -67,7 +67,7 @@
     </div>
     {#if showFavoriteBadge}
       <div class="favorite-overlay">
-        <div class="favorite-badge"><Fa icon={faStar} fw /></div>
+        <div class="favorite-badge"><Fa icon={faThumbTack} fw /></div>
       </div>
     {/if}
     <CategoryBadge
@@ -83,23 +83,9 @@
       <button class="playlist-title" onclick={onOpen}>
         {title || "Untitled Playlist"}
       </button>
-      {#if onToggleFavorite}
-        <button
-          class="fav-toggle"
-          onclick={(e) => {
-            e.stopPropagation();
-            onToggleFavorite();
-          }}
-          aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
-          title={isFavorite ? "Remove from favorites" : "Add to favorites"}
-        >
-          <span class:filled={isFavorite}>
-            <Fa icon={faStar} fw />
-          </span>
-        </button>
-      {:else if showFavoriteBadge}
-        <span class="fav-star-inline" title="Favorite Playlist" aria-label="Favorite Playlist">
-          <Fa icon={faStar} fw />
+      {#if showFavoriteBadge && !isPinned && !isWatchLater}
+        <span class="fav-star-inline" title="Pinned Playlist" aria-label="Pinned Playlist">
+          <Fa icon={faThumbTack} fw />
         </span>
       {/if}
     </div>
@@ -117,6 +103,26 @@
           <span>{action.loading ? "Loading…" : action.label}</span>
         </SimpleButton>
       {/each}
+      <div class="playlist-badges">
+        {#if isWatchLater}
+          <span
+            class="playlist-badge watchlater-badge"
+            title="Favorite Playlist"
+            aria-label="Favorite Playlist"
+          >
+            <Fa icon={faStar} fw />
+          </span>
+        {/if}
+        {#if isPinned}
+          <span
+            class="playlist-badge pinned-badge"
+            title="Pinned to sidebar"
+            aria-label="Pinned to sidebar"
+          >
+            <Fa icon={faThumbTack} fw />
+          </span>
+        {/if}
+      </div>
     </div>
   </div>
 </div>
@@ -266,42 +272,38 @@
     pointer-events: none;
   }
 
-  .fav-toggle {
-    background: none;
-    border: none;
-    padding: 4px;
-    cursor: pointer;
-    border-radius: 6px;
-    color: var(--text-muted);
-    display: flex;
+  .playlist-badge {
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    transition:
-      color 0.15s ease,
-      background-color 0.15s ease;
-    min-width: var(--touch-target-min);
-    min-height: var(--touch-target-min);
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    flex: 0 0 auto;
+    margin-left: 4px;
+    opacity: 0.9;
   }
 
-  .fav-toggle:hover {
-    background-color: var(--hover-color);
-    color: var(--color-brand-warning);
+  .pinned-badge {
+    color: var(--color-brand-primary, #3b82f6);
   }
 
-  .fav-toggle :global(svg.filled),
-  .fav-toggle.filled :global(svg) {
-    color: var(--color-brand-warning);
-  }
-
-  .fav-toggle:focus-visible {
-    outline: 2px solid var(--color-brand-primary);
-    outline-offset: 2px;
+  .watchlater-badge {
+    color: #ffc107;
   }
 
   .playlist-actions {
     display: flex;
+    align-items: center;
     gap: var(--space-2);
     flex-wrap: wrap;
+  }
+
+  .playlist-badges {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-left: auto;
   }
 
   @media (max-width: 768px) {

@@ -51,7 +51,7 @@
 <style>
   .playlist-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--card-min-width, 280px)), 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--card-min-width, 280px)), 1fr));
     gap: 20px;
     padding: 20px 0;
     align-items: stretch;

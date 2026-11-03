@@ -4,6 +4,8 @@
     faBoxArchive,
     faClockRotateLeft,
     faStar,
+    faThumbTack,
+    faChevronRight,
     faUsers,
     faClock,
     faLink,
@@ -172,6 +174,13 @@
         <span>All Playlists</span>
       </a>
       <a
+        href="#/favorite"
+        class:active={isActive("/favorite", router.location, router.querystring || "")}
+      >
+        <Fa icon={faStar} fw />
+        <span>Favorite Playlist</span>
+      </a>
+      <a
         href="#/history"
         class:active={isActive("/history", router.location, router.querystring || "")}
       >
@@ -189,22 +198,24 @@
       <hr class="nav-divider" />
 
       {#if favorites.length > 0}
-        <hr class="nav-divider" />
-        {#each favorites.slice(0, MAX_VISIBLE_FAVORITES) as fav (fav.id)}
-          <a href="#/playlist?id={fav.id}" class:active={isActivePlaylist(fav.id)}>
-            <Fa icon={faStar} fw />
-            <span>{fav.title}</span>
+        <a
+          href="#/pinned"
+          class="favorite-section-header"
+          class:active={isActive("/pinned", router.location, router.querystring || "")}
+        >
+          <span>Pinned</span>
+          <Fa icon={faChevronRight} fw />
+        </a>
+        {#each favorites.slice(0, (settings?.maxVisibleFavorites ?? 0) === 0 ? favorites.length : (settings?.maxVisibleFavorites ?? MAX_VISIBLE_FAVORITES)) as fav (fav.id)}
+          <a
+            href="#/playlist?id={fav.id}"
+            class="favorite-nav-link"
+            class:active={isActivePlaylist(fav.id)}
+          >
+            <Fa icon={faThumbTack} fw />
+            <span class="favorite-nav-title" title={fav.title}>{fav.title}</span>
           </a>
         {/each}
-        {#if favorites.length > MAX_VISIBLE_FAVORITES}
-          <a
-            href="#/favorites"
-            class:active={isActive("/favorites", router.location, router.querystring || "")}
-          >
-            <Fa icon={faStar} fw />
-            <span>All favorites ({favorites.length})</span>
-          </a>
-        {/if}
         <hr class="nav-divider" />
       {/if}
 
@@ -332,6 +343,14 @@
             <span>All Playlists</span>
           </a>
           <a
+            href="#/favorite"
+            onclick={handleNavClick}
+            class:active={isActive("/favorite", router.location, router.querystring || "")}
+          >
+            <Fa icon={faStar} fw />
+            <span>Favorite Playlist</span>
+          </a>
+          <a
             href="#/history"
             onclick={handleNavClick}
             class:active={isActive("/history", router.location, router.querystring || "")}
@@ -351,27 +370,26 @@
           <hr class="nav-divider" />
 
           {#if favorites.length > 0}
-            <hr class="nav-divider" />
-            {#each favorites.slice(0, MAX_VISIBLE_FAVORITES) as fav (fav.id)}
+            <a
+              href="#/pinned"
+              onclick={handleNavClick}
+              class="favorite-section-header"
+              class:active={isActive("/pinned", router.location, router.querystring || "")}
+            >
+              <span>Pinned</span>
+              <Fa icon={faChevronRight} fw />
+            </a>
+            {#each favorites.slice(0, (settings?.maxVisibleFavorites ?? 0) === 0 ? favorites.length : (settings?.maxVisibleFavorites ?? MAX_VISIBLE_FAVORITES)) as fav (fav.id)}
               <a
                 href="#/playlist?id={fav.id}"
+                class="favorite-nav-link"
                 onclick={handleNavClick}
                 class:active={isActivePlaylist(fav.id)}
               >
-                <Fa icon={faStar} fw />
-                <span>{fav.title}</span>
+                <Fa icon={faThumbTack} fw />
+                <span class="favorite-nav-title" title={fav.title}>{fav.title}</span>
               </a>
             {/each}
-            {#if favorites.length > MAX_VISIBLE_FAVORITES}
-              <a
-                href="#/favorites"
-                onclick={handleNavClick}
-                class:active={isActive("/favorites", router.location, router.querystring || "")}
-              >
-                <Fa icon={faStar} fw />
-                <span>All favorites ({favorites.length})</span>
-              </a>
-            {/if}
             <hr class="nav-divider" />
           {/if}
 
@@ -585,6 +603,67 @@
     transition: all 0.15s ease;
     border-radius: 12px;
     white-space: nowrap;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .favorite-nav-link {
+    box-sizing: border-box;
+    width: 100%;
+    height: 44px;
+    min-width: 0;
+    padding: 0 16px;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-color);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    transition: all 0.15s ease;
+    border-radius: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+
+  .favorite-nav-title {
+    display: block;
+    min-width: 0;
+    flex: 1 1 0%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .favorite-section-header {
+    padding: 0 16px;
+    height: 44px;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-color);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s ease;
+    border-radius: 12px;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+
+  .favorite-section-header:hover {
+    background-color: var(--hover-color);
+  }
+
+  .favorite-section-header.active {
+    background-color: var(--active-bg-color);
+    color: var(--active-text-color);
+  }
+
+  .favorite-section-header :global(svg:last-child) {
+    width: 12px !important;
+    height: 12px !important;
+    min-width: 12px;
   }
 
   .nav-divider {

@@ -4,7 +4,6 @@
 
   let currentVideoId = null;
   let currentPlaylistId = null;
-  let trackedVideoEl = null;
   let rules = {};
 
   let boundHandlers = {};
@@ -14,6 +13,7 @@
   let lastTimeUpdateTick = 0;
   let debounceTimer = null;
   let isSaving = false;
+  let resumeTimer = null;
 
   async function log(level, message, /** @type {any} */ details = null) {
     try {
@@ -54,13 +54,23 @@
   async function init() {
     window.addEventListener("yt-navigate-finish", onNavigateFinish);
     await onNavigateFinish();
+
+    // m.youtube.com navigates in place when a related video is clicked (the URL
+    // changes but the page never reloads), and 'yt-navigate-finish' does not
+    // reliably fire on the mobile site. Poll for a video-id change so tracking
+    // follows SPA navigation too. currentVideoId is set inside onNavigateFinish,
+    // so a matching id simply keeps the poll quiet.
+    setInterval(() => {
+      const vid = getVideoIdFromLocation();
+      if (vid && vid !== currentVideoId) {
+        onNavigateFinish();
+      }
+    }, 1500);
   }
 
   async function teardown() {
-    if (trackedVideoEl) {
-      for (const ev of ["pause", "ended", "timeupdate", "play"]) {
-        if (boundHandlers[ev]) trackedVideoEl.removeEventListener(ev, boundHandlers[ev]);
-      }
+    for (const ev of ["pause", "ended", "timeupdate", "play"]) {
+      if (boundHandlers[ev]) document.removeEventListener(ev, boundHandlers[ev], true);
     }
     if (boundHandlers.visibilitychange)
       document.removeEventListener("visibilitychange", boundHandlers.visibilitychange);
@@ -69,11 +79,15 @@
       window.removeEventListener("yt-navigate-start", boundHandlers.ytnavstart);
 
     boundHandlers = {};
-    trackedVideoEl = null;
 
     if (debounceTimer) {
       clearTimeout(debounceTimer);
       debounceTimer = null;
+    }
+
+    if (resumeTimer) {
+      clearInterval(resumeTimer);
+      resumeTimer = null;
     }
 
     document.getElementById("yph-native-panel")?.remove();
@@ -89,8 +103,7 @@
 
     const urlParams = new URLSearchParams(window.location.search);
     // Watch pages carry the ID in ?v=; Shorts carry it in the path (/shorts/ID).
-    currentVideoId =
-      urlParams.get("v") || window.location.pathname.match(/^\/shorts\/([\w-]{11})\/?$/)?.[1];
+    currentVideoId = getVideoIdFromLocation();
 
     // Support URL param, Hash param, or Session Storage fallback (survives YouTube SPA navigation)
     const hashParams = new URLSearchParams(window.location.hash.substring(1));
@@ -139,8 +152,6 @@
       return;
     }
 
-    trackedVideoEl = videoEl;
-
     if (!urlParams.get("t")) {
       try {
         const history = await browser.runtime.sendMessage({
@@ -148,12 +159,31 @@
           videoId: currentVideoId,
         });
         if (history?.t && !history.isCompleted) {
-          const doResume = () => {
-            log("INFO", `Auto-resuming video to ${history.t}s`);
-            trackedVideoEl.currentTime = history.t;
+          const resumeTarget = history.t;
+          let resumeDone = false;
+          const tryResume = () => {
+            if (resumeDone) return;
+            const video = getVideo();
+            // Wait for the real video to be ready and for any pre-roll ad to finish —
+            // both the element and the ad state change during mobile load.
+            if (!video || video.readyState < 1 || isAdShowing()) return;
+            resumeDone = true;
+            if (resumeTimer) clearInterval(resumeTimer);
+            resumeTimer = null;
+            log("INFO", `Auto-resuming video to ${resumeTarget}s`);
+            video.currentTime = resumeTarget;
           };
-          if (trackedVideoEl.readyState >= 1) doResume();
-          else trackedVideoEl.addEventListener("loadedmetadata", doResume, { once: true });
+          // Poll every 500ms instead of a one-shot loadedmetadata listener: YouTube
+          // replaces the <video> element around pre-roll ads, so a listener attached to
+          // the first element never fires on its replacement.
+          tryResume();
+          resumeTimer = setInterval(tryResume, 500);
+          setTimeout(() => {
+            if (resumeTimer) {
+              clearInterval(resumeTimer);
+              resumeTimer = null;
+            }
+          }, 60000);
         }
       } catch {
         /* ignore */
@@ -210,13 +240,32 @@
     boundHandlers.ended = () => onSaveTrigger("ended");
     boundHandlers.timeupdate = onTimeUpdate;
 
-    trackedVideoEl.addEventListener("pause", boundHandlers.pause);
-    trackedVideoEl.addEventListener("play", boundHandlers.play);
-    trackedVideoEl.addEventListener("ended", boundHandlers.ended);
-    trackedVideoEl.addEventListener("timeupdate", boundHandlers.timeupdate);
+    // Attach media events at the document level (capture phase) so they keep firing
+    // even when YouTube replaces the <video> element. The handlers re-query the live
+    // element via getVideo() instead of holding a stale reference.
+    document.addEventListener("pause", boundHandlers.pause, true);
+    document.addEventListener("play", boundHandlers.play, true);
+    document.addEventListener("ended", boundHandlers.ended, true);
+    document.addEventListener("timeupdate", boundHandlers.timeupdate, true);
     document.addEventListener("visibilitychange", boundHandlers.visibilitychange);
     window.addEventListener("pagehide", boundHandlers.pagehide);
     window.addEventListener("yt-navigate-start", boundHandlers.ytnavstart);
+  }
+
+  function getVideo() {
+    // Re-query the live video element on every access. YouTube replaces the <video>
+    // element on m.youtube.com (especially around pre-roll ads), so a cached
+    // reference goes stale — its readyState stays 0 and no events fire on it.
+    return document.querySelector(VIDEO_SELECTOR);
+  }
+
+  function getVideoIdFromLocation() {
+    const urlParams = new URLSearchParams(window.location.search);
+    return (
+      urlParams.get("v") ||
+      window.location.pathname.match(/^\/shorts\/([\w-]{11})\/?$/)?.[1] ||
+      null
+    );
   }
 
   function isAdShowing() {
@@ -268,10 +317,11 @@
         }
       }
 
-      if (!trackedVideoEl || isAdShowing()) return;
+      const video = getVideo();
+      if (!video || isAdShowing()) return;
 
-      const dur = trackedVideoEl.duration;
-      const t = trackedVideoEl.currentTime;
+      const dur = video.duration;
+      const t = video.currentTime;
 
       // Don't save if it's invalid, zero, or if we haven't advanced since the last save (unless it's a completion event)
       if (!dur || isNaN(dur) || t === 0 || (t === lastSavedTimeValue && triggerType !== "ended"))
@@ -284,16 +334,18 @@
       lastSaveTimestamp = now;
       lastSavedTimeValue = t;
 
-      // Get video title and channel from page
+      // Get video title and channel from page. The selectors cover desktop YouTube
+      // (ytd-*), the Chrome mobile site (slim-*) and the Firefox mobile site
+      // (ytVideoMetadataViewModel* / yt-formatted-string), which all use different markup.
       let videoTitle = "";
       let channelName = "";
       try {
         const titleEl = document.querySelector(
-          "h1.ytd-watch-metadata, .title.ytd-video-primary-info-renderer, .slim-video-metadata-title"
+          "h1.ytd-watch-metadata, .title.ytd-video-primary-info-renderer, .slim-video-metadata-title, .slim-video-information-title, .ytVideoMetadataViewModelTitle"
         );
         videoTitle = titleEl?.textContent?.trim() || "";
         const channelEl = document.querySelector(
-          "#text.ytd-channel-name, ytd-video-owner-renderer #channel-name #text, .slim-owner-channel-name"
+          "#text.ytd-channel-name, ytd-video-owner-renderer #channel-name #text, .slim-owner-channel-name, .slim-video-information-channel, .ytVideoMetadataViewModelSubtitleContainer span.ytAttributedStringHost"
         );
         channelName = channelEl?.textContent?.trim() || "";
       } catch {
@@ -324,18 +376,20 @@
     if (now - lastTimeUpdateTick < 1000) return;
     lastTimeUpdateTick = now;
 
-    if (!trackedVideoEl || isAdShowing() || isCompleting) return;
+    const video = getVideo();
+    if (!video || isAdShowing() || isCompleting) return;
 
-    const dur = trackedVideoEl.duration;
-    const t = trackedVideoEl.currentTime;
+    const dur = video.duration;
+    const t = video.currentTime;
 
     if (!dur || isNaN(dur)) return;
 
-    // Optional: Track position during playback if enabled
-    if (rules.ruleTrackDuringPlayback) {
-      if (now - lastSaveTimestamp >= rules.ruleHistoryThrottleMs) {
-        await performSave("timeupdate");
-      }
+    // Always save position periodically during playback (throttled). On mobile
+    // (m.youtube.com / Fenix) the pause/ended events do not reliably fire, and the
+    // unload flush often runs after YouTube has already reset the video element
+    // (readyState back to 0), so periodic saves are the only reliable signal.
+    if (now - lastSaveTimestamp >= rules.ruleHistoryThrottleMs) {
+      await performSave("timeupdate");
     }
 
     // Check for completion threshold

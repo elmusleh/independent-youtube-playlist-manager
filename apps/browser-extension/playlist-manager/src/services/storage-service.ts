@@ -1051,6 +1051,7 @@ window.getSettings = async (): Promise<Settings> => {
       cacheDuration: -1, // -1 = no expiration
       watchLaterPlaylistId: null, // null = use YouTube's Watch Later
       favoritePlaylistIds: [], // ordered list of pinned favorites shown in the sidebar
+      maxVisibleFavorites: 0,
       maxLogLines: 500,
       defaultPrivacy: "private",
       autoRemoveDuplicates: false,
@@ -1068,7 +1069,7 @@ window.getSettings = async (): Promise<Settings> => {
       ruleHistoryRetentionDays: 30,
       ruleHistoryThrottleMs: 5000, // Minimum time between saves in milliseconds
       ruleHistoryDebounceMs: 1000, // Delay before saving after pause/unload in milliseconds
-      ruleTrackDuringPlayback: false, // Enable periodic position saves during active playback
+      ruleTrackDuringPlayback: true, // Periodic position saves during playback (required for mobile reliability)
       playAllChunkEnabled: false, // split large playlists into multiple tabs
       playAllChunkSize: 50, // max videos per tab when chunking is enabled
       enableLikedVideos: false,

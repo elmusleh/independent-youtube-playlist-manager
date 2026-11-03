@@ -18,6 +18,7 @@
     faLockOpen,
     faEarthAmericas,
     faStar,
+    faThumbTack,
   } from "@fortawesome/free-solid-svg-icons";
   import ViewHeader from "../components/ViewHeader.svelte";
   import StickyHeader from "../components/StickyHeader.svelte";
@@ -1431,6 +1432,10 @@
               >
                 <div class="row-title-line">
                   <span class="row-title">{p.title || "Untitled Playlist"}</span>
+                </div>
+                <div class="row-meta">
+                  <span class="row-count">{p.videoCount} video{p.videoCount !== 1 ? "s" : ""}</span>
+                  <CategoryBadge category={getPlaylistCategory(p)} />
                   {#if p.id === favoritePlaylistId}
                     <span
                       class="fav-badge"
@@ -1440,10 +1445,6 @@
                       <Fa icon={faStar} fw />
                     </span>
                   {/if}
-                </div>
-                <div class="row-meta">
-                  <span class="row-count">{p.videoCount} video{p.videoCount !== 1 ? "s" : ""}</span>
-                  <CategoryBadge category={getPlaylistCategory(p)} />
                   {#if !p.isLocal && p.privacyStatus}
                     <span class="badge privacy-{p.privacyStatus}">
                       {p.privacyStatus === "private"
@@ -1463,19 +1464,21 @@
             {#snippet actionsSnippet()}
               <button
                 class="action-btn"
-                title={favoritePlaylistIds.includes(p.id)
-                  ? "Remove from favorites"
-                  : "Add to favorites"}
+                title={favoritePlaylistIds.includes(p.id) ? "Unpin from sidebar" : "Pin to sidebar"}
                 aria-label={favoritePlaylistIds.includes(p.id)
-                  ? "Remove from favorites"
-                  : "Add to favorites"}
+                  ? "Unpin from sidebar"
+                  : "Pin to sidebar"}
                 onclick={(e) => {
                   e.stopPropagation();
-                  persistFavoriteIds(toggleFavorite(favoritePlaylistIds, p.id));
+                  const next = toggleFavorite(favoritePlaylistIds, p.id);
+                  if (settings) settings.favoritePlaylistIds = next;
+                  persistFavoriteIds(next).then(() => {
+                    window.getSettings().then((s) => (settings = s));
+                  });
                 }}
               >
                 <span class:filled={favoritePlaylistIds.includes(p.id)}>
-                  <Fa icon={faStar} />
+                  <Fa icon={faThumbTack} />
                 </span>
               </button>
               <a
@@ -1808,11 +1811,23 @@
 
   .action-btn:hover {
     background: var(--border-color);
-    color: var(--text-color);
   }
 
-  .action-btn :global(svg.filled) {
-    color: var(--color-brand-warning);
+  .action-btn span.filled :global(svg) {
+    color: var(--color-brand-primary, #3b82f6);
+    opacity: 1;
+  }
+
+  .action-btn span:not(.filled) :global(svg) {
+    opacity: 0.45;
+  }
+
+  .action-btn span:not(.filled) {
+    opacity: 0.45;
+  }
+
+  .action-btn:hover span {
+    opacity: 1;
   }
 
   .action-btn.delete:hover {

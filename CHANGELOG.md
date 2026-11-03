@@ -47,6 +47,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Watch history now works fully on the mobile YouTube site (`m.youtube.com`) in Firefox for
+  Android, which differs from desktop Chrome in several ways: YouTube swaps the `<video>`
+  element around pre-roll ads (the tracker now re-queries the live element and listens for
+  media events at the document level); Firefox is served a different DOM (title and channel
+  are read from `ytVideoMetadataViewModel*` rather than the `slim-*` classes Chrome gets, so
+  entries no longer record as "Unknown Title"); resume polls until the real video is ready
+  and any pre-roll ad has finished before seeking; and clicking a related video navigates in
+  place without a reload, so a video-id poller re-initializes tracking on SPA navigation.
+- The toolbar popup now fills the screen width on Firefox for Android instead of rendering as a
+  fixed 420px block cropped into the corner: Firefox Android opens the action popup as a
+  full-screen overlay but still reports it as a popup, so the mode classifier kept the desktop
+  width. It now detects Firefox Android and uses full-page layout.
 - A theme chosen in Settings is applied on the next start even when the browser's local
   cache is empty (fresh install, cleared storage, another synced device): the persisted
   value is retried after startup instead of silently falling back to the device theme.
