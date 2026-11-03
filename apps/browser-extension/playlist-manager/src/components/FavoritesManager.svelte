@@ -120,16 +120,26 @@
     <div class="list-container">
       <div class="playlist-list">
         {#each playlists as fav, index (fav.id)}
-          <ListRow onclick={() => (location.hash = `#/playlist?id=${fav.id}`)}>
+          <ListRow>
             {#snippet content()}
-              <div class="thumb-container" role="button" tabindex="-1">
+              <div
+                class="thumb-container"
+                role="button"
+                tabindex="-1"
+                onclick={() => (location.hash = `#/playlist?id=${fav.id}`)}
+              >
                 {#if fav.thumbnailUrl}
                   <img class="thumb" src={fav.thumbnailUrl} alt="" />
                 {:else}
                   <div class="thumb placeholder"><Fa icon={faThumbTack} /></div>
                 {/if}
               </div>
-              <div class="row-content">
+              <div
+                class="row-content"
+                role="button"
+                tabindex="-1"
+                onclick={() => (location.hash = `#/playlist?id=${fav.id}`)}
+              >
                 <div class="row-title-line">
                   <span class="row-title">{fav.title}</span>
                 </div>
@@ -143,7 +153,10 @@
             {#snippet actions()}
               <SimpleButton
                 secondary
-                onclick={() => move(fav.id, -1)}
+                onclick={(e) => {
+                  e.stopPropagation();
+                  move(fav.id, -1);
+                }}
                 disabled={playlists[0]?.id === fav.id}
                 title="Move up"
               >
@@ -151,7 +164,10 @@
               </SimpleButton>
               <SimpleButton
                 secondary
-                onclick={() => move(fav.id, 1)}
+                onclick={(e) => {
+                  e.stopPropagation();
+                  move(fav.id, 1);
+                }}
                 disabled={playlists[playlists.length - 1]?.id === fav.id}
                 title="Move down"
               >
@@ -159,7 +175,10 @@
               </SimpleButton>
               <button
                 class="action-btn"
-                onclick={() => toggle(fav.id)}
+                onclick={(e) => {
+                  e.stopPropagation();
+                  toggle(fav.id);
+                }}
                 aria-label="Unpin from sidebar"
                 title="Unpin from sidebar"
               >
