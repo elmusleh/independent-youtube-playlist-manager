@@ -1,6 +1,7 @@
 <script lang="ts">
   import { push } from "svelte-spa-router";
   import SimpleButton from "./SimpleButton.svelte";
+  import ListRow from "./common/ListRow.svelte";
   import Fa from "svelte-fa";
   import { faThumbTack, faArrowUp, faArrowDown } from "@fortawesome/free-solid-svg-icons";
   import type { Settings } from "../types/model";
@@ -101,11 +102,10 @@
   }
 </script>
 
-<!-- Pinned Favorites -->
-<section class="card">
-  <h3><Fa icon={faThumbTack} /> Pinned Favorites</h3>
+<!-- Pinned -->
+<div class="pinned-list-wrapper">
   <p class="sub-text">
-    These playlists appear in the sidebar for quick access. Drag to reorder; click the star to
+    These playlists appear in the sidebar for quick access. Use arrows to reorder; click the pin to
     unpin.
   </p>
   {#if loadingPlaylists}
@@ -117,58 +117,63 @@
       <p class="hint">Star a playlist in Saved or Manage to pin it here.</p>
     </div>
   {:else}
-    <div class="favorites-list">
-      {#each playlists as fav (fav.id)}
-        <div class="favorite-item">
-          <div
-            class="fav-info"
-            role="button"
-            tabindex="0"
-            onclick={() => (location.hash = `#/playlist?id=${fav.id}`)}
-          >
-            {#if fav.thumbnailUrl}
-              <img class="fav-thumb" src={fav.thumbnailUrl} alt="" />
-            {:else}
-              <div class="fav-thumb placeholder"><Fa icon={faThumbTack} /></div>
-            {/if}
-            <div class="fav-details">
-              <span class="fav-title">{fav.title}</span>
-              <span class="fav-meta">{fav.videoCount} video{fav.videoCount !== 1 ? "s" : ""}</span>
-            </div>
-          </div>
-          <div class="fav-actions">
-            <SimpleButton
-              secondary
-              onclick={() => move(fav.id, -1)}
-              disabled={playlists[0]?.id === fav.id}
-              title="Move up"
-            >
-              <Fa icon={faArrowUp} />
-            </SimpleButton>
-            <SimpleButton
-              secondary
-              onclick={() => move(fav.id, 1)}
-              disabled={playlists[playlists.length - 1]?.id === fav.id}
-              title="Move down"
-            >
-              <Fa icon={faArrowDown} />
-            </SimpleButton>
-            <button
-              class="fav-remove"
-              onclick={() => toggle(fav.id)}
-              aria-label="Unpin from sidebar"
-              title="Unpin from sidebar"
-            >
-              <span class:filled={true}>
-                <Fa icon={faThumbTack} />
-              </span>
-            </button>
-          </div>
-        </div>
-      {/each}
+    <div class="list-container">
+      <div class="playlist-list">
+        {#each playlists as fav, index (fav.id)}
+          <ListRow onclick={() => (location.hash = `#/playlist?id=${fav.id}`)}>
+            {#snippet content()}
+              <div class="thumb-container" role="button" tabindex="-1">
+                {#if fav.thumbnailUrl}
+                  <img class="thumb" src={fav.thumbnailUrl} alt="" />
+                {:else}
+                  <div class="thumb placeholder"><Fa icon={faThumbTack} /></div>
+                {/if}
+              </div>
+              <div class="row-content">
+                <div class="row-title-line">
+                  <span class="row-title">{fav.title}</span>
+                </div>
+                <div class="row-meta">
+                  <span class="row-count"
+                    >{fav.videoCount} video{fav.videoCount !== 1 ? "s" : ""}</span
+                  >
+                </div>
+              </div>
+            {/snippet}
+            {#snippet actions()}
+              <SimpleButton
+                secondary
+                onclick={() => move(fav.id, -1)}
+                disabled={playlists[0]?.id === fav.id}
+                title="Move up"
+              >
+                <Fa icon={faArrowUp} />
+              </SimpleButton>
+              <SimpleButton
+                secondary
+                onclick={() => move(fav.id, 1)}
+                disabled={playlists[playlists.length - 1]?.id === fav.id}
+                title="Move down"
+              >
+                <Fa icon={faArrowDown} />
+              </SimpleButton>
+              <button
+                class="action-btn"
+                onclick={() => toggle(fav.id)}
+                aria-label="Unpin from sidebar"
+                title="Unpin from sidebar"
+              >
+                <span class="filled">
+                  <Fa icon={faThumbTack} />
+                </span>
+              </button>
+            {/snippet}
+          </ListRow>
+        {/each}
+      </div>
     </div>
   {/if}
-</section>
+</div>
 
 <style>
   .empty-favorites {
