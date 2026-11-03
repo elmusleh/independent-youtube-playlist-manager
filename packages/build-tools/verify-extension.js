@@ -262,7 +262,7 @@ async function main() {
     const syncBody = await page.locator("body").innerText();
     for (const label of [
       "IYPM hosted (Beta)",
-      "Beta · coming soon",
+      "Zero setup",
       "Your own Supabase project",
       "File / Syncthing",
     ]) {
