@@ -584,6 +584,17 @@
   .sidenav a,
   .drawer-nav a {
     padding: 0 16px;
+    height: 44px;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-color);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    transition: all 0.15s ease;
+    border-radius: 12px;
+    white-space: nowrap;
     min-width: 0;
     overflow: hidden;
   }
