@@ -1,3 +1,16 @@
+## Sync v2 Phase 1: Protocol Core — completed (2026-11-03)
+
+- [x] `keys.ts`: HKDF-SHA256 derives encryption/record-id/auth keys from 20-char sync key
+- [x] `fingerprint.ts` + `fingerprint-emoji.ts` + `fingerprint-words.ts`: human-friendly key verification (emoji/word)
+- [x] `record-codec.ts`: AES-256-GCM record envelopes with AAD binding (`collection|recordId`)
+- [x] `hlc.ts`: Hybrid Logical Clock for causality tracking + conflict resolution
+- [x] `merge/playlists.ts`: 3-way merge (title LWW, video add/remove merge, delete-vs-edit conflict)
+- [x] `merge/history.ts`: per-video LWW with tombstones
+- [x] `merge/settings.ts`: per-key LWW with allowlist
+- [x] `shadow-store.ts`: IndexedDB base-copy tracking for dirty detection
+- [x] Fixed `Sync.svelte` TypeScript errors (`class` → `className`)
+- [x] All files under 350 lines; `npm run check` + `npm run build` pass
+
 ## Dependency modernization (2026-11-03)
 
 - [x] Safe reconciliation: rescue branch `rescue/local-next-16eb3e4`, local `next` reset to `origin/next`.

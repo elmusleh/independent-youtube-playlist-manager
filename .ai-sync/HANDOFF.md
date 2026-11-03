@@ -1,3 +1,44 @@
+## 2026-11-03 — Sync v2 Phase 1: Protocol Core completed (on `feat/sync-hardening`)
+
+### Completed Work
+
+- **keys.ts**: HKDF-SHA256 derives three independent keys (encryption, record-id HMAC, auth-token HMAC) from the 20-char Crockford base32 sync key
+- **fingerprint.ts** + **fingerprint-emoji.ts** + **fingerprint-words.ts**: Human-friendly key verification (4-symbol emoji + word fingerprint) for device pairing
+- **record-codec.ts**: AES-256-GCM record envelopes with AAD binding (`collection|recordId`) preventing ciphertext slot confusion
+- **hlc.ts**: Hybrid Logical Clock (48-bit wall time + 16-bit counter + 16-bit device hash) for causality + total ordering
+- **merge/playlists.ts**: 3-way merge — title LWW, video add/remove merge, delete-vs-edit → edit wins
+- **merge/history.ts**: Per-video LWW with tombstones (`lastWatchedAt` wins)
+- **merge/settings.ts**: Per-key LWW with allowlist for syncable settings
+- **shadow-store.ts**: IndexedDB tracking base copy hash, remote version, local device ID for dirty detection
+- **Sync.svelte**: Fixed TypeScript errors (`class` → `className` on SimpleButton)
+
+### Files Changed (key)
+
+- `apps/browser-extension/playlist-manager/src/services/sync/keys.ts`
+- `apps/browser-extension/playlist-manager/src/services/sync/fingerprint.ts`
+- `apps/browser-extension/playlist-manager/src/services/sync/fingerprint-emoji.ts`
+- `apps/browser-extension/playlist-manager/src/services/sync/fingerprint-words.ts`
+- `apps/browser-extension/playlist-manager/src/services/sync/record-codec.ts`
+- `apps/browser-extension/playlist-manager/src/services/sync/hlc.ts`
+- `apps/browser-extension/playlist-manager/src/services/sync/merge/playlists.ts`
+- `apps/browser-extension/playlist-manager/src/services/sync/merge/history.ts`
+- `apps/browser-extension/playlist-manager/src/services/sync/merge/settings.ts`
+- `apps/browser-extension/playlist-manager/src/services/sync/shadow-store.ts`
+- `apps/browser-extension/playlist-manager/src/views/Sync.svelte`
+
+### Build Status
+
+- `npm run check` ✅ (lint, format, 680 tests, contracts, file-size, svelte-check, CSS bundle, Vercel config, tooling versions)
+- `npm run build` ✅ (Chrome/Firefox/Edge packages, all bundle budgets pass)
+- All new files under 350-line limit
+
+### Next Steps
+
+- Phase 2: Relay v2 schema (`sync-relay-v2.sql`), `relay-transport.ts`, `fake-relay.ts`
+- Phase 3: Background sync engine (`sync-engine.ts`, adapters, `status-store.ts`)
+- Phase 4: Sync Center UI (split `Sync.svelte` into components)
+- Phase 5: Optional extras (QR pairing, Realtime nudge, key rotation)
+
 ## 2026-11-03 — Branch cleanup and merge integration (final)
 
 - All safe/superseded branches deleted (local + remote). Only `main` and `next` remain.
