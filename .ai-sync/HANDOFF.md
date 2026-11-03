@@ -645,3 +645,42 @@ alone — this pass should also be spot-checked against it on a real device.
 No commit, push, PR, version bump or release performed. Editing lock released after the
 writes. `.husky/pre-commit` was modified by a concurrent process (a commit attempt at
 22:37) and left untouched by this pass.
+
+---
+
+## Handoff — Pinned Favorites Feature (2026-11-03)
+
+### Completed Work
+
+- Restored Watch Later “Favorite Playlist” alongside pinned playlists (`/favorite`).
+- Renamed `/favorites` to `/pinned`; moved Pinned Favorites management to `/pinned` using Manage-style `ListRow` layout.
+- Added search removal, pagination, drag-and-drop reorder, metadata badges (category, count, date), loading skeletons, empty state, live-region announcements.
+- Fixed sidebar “Pinned >” header, nav styling, pin button pressed/unpressed states.
+- Saved page uses non-clickable pinned/Watch Later badges.
+- Manage page uses thumbtack pin icon with clear pressed state.
+- Added configurable sidebar pinned limit in Favorite Settings (`maxVisibleFavorites`, 0 = unlimited).
+
+### Files Changed (key)
+
+- `apps/browser-extension/playlist-manager/src/App.svelte`
+- `apps/browser-extension/playlist-manager/src/components/Sidebar.svelte`
+- `apps/browser-extension/playlist-manager/src/components/FavoritesManager.svelte`
+- `apps/browser-extension/playlist-manager/src/views/Pinned.svelte`
+- `apps/browser-extension/playlist-manager/src/views/Settings.svelte`
+- `apps/browser-extension/playlist-manager/src/components/FavoriteSettings.svelte`
+- `apps/browser-extension/playlist-manager/src/services/favorites.ts`
+- `apps/browser-extension/playlist-manager/src/services/storage-service.ts`
+- `apps/browser-extension/playlist-manager/src/types/model.d.ts`
+- `packages/build-tools/verify-file-size.js`
+
+### Build Status
+
+- `npm run check` ✅
+- `npm run build` ✅
+- `npm run test:extension` ✅ (96 route/viewport checks + 10 interaction groups)
+- Firefox package: `dist/independent-youtube-playlist-manager-firefox.xpi`
+
+### Next Steps
+
+- Review PR #81 on GitHub and merge into `next`.
+- Optional: add undo for unpin/reorder and bulk actions (future).

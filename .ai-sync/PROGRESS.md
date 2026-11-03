@@ -403,3 +403,13 @@ Suggested next steps (new, not scheduled):
 - PS-3 (best practices) — Add Playwright visual snapshots of the popup at 4 widths ×
   2 themes so icon and spacing changes cannot silently regress the way Font Awesome's
   93 KB stylesheet hid the layout problem.
+
+## Pinned Favorites (completed 2026-11-03)
+
+- [x] Restore Watch Later route alongside pinned
+- [x] /pinned page with Manage-style rows
+- [x] Sidebar pinned header and nav styling
+- [x] Distinct pin icons and badge states
+- [x] Search/pagination/drag reorder (later simplified: search removed)
+- [x] Configurable sidebar pinned limit in settings
+- [x] Build/test verification
