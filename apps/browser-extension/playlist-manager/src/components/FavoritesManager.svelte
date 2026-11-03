@@ -2,13 +2,7 @@
   import { push } from "svelte-spa-router";
   import SimpleButton from "./SimpleButton.svelte";
   import Fa from "svelte-fa";
-  import {
-    faThumbTack,
-    faArrowUp,
-    faArrowDown,
-    faGripLines,
-    faPencil,
-  } from "@fortawesome/free-solid-svg-icons";
+  import { faThumbTack, faArrowUp, faArrowDown } from "@fortawesome/free-solid-svg-icons";
   import type { Settings } from "../types/model";
   import { StatusManager } from "../services/status-manager.svelte";
   import { logger } from "../services/logger";
@@ -126,9 +120,6 @@
     <div class="favorites-list">
       {#each playlists as fav (fav.id)}
         <div class="favorite-item">
-          <button class="drag-handle" aria-label="Drag to reorder" title="Drag to reorder">
-            <Fa icon={faGripLines} />
-          </button>
           <div
             class="fav-info"
             role="button"
@@ -162,9 +153,6 @@
             >
               <Fa icon={faArrowDown} />
             </SimpleButton>
-            <a class="fav-edit" href="#/playlist?id={fav.id}" title="Edit">
-              <Fa icon={faPencil} />
-            </a>
             <button
               class="fav-remove"
               onclick={() => toggle(fav.id)}
@@ -221,21 +209,6 @@
     background: var(--hover-color);
   }
 
-  .drag-handle {
-    background: none;
-    border: none;
-    color: var(--text-muted);
-    cursor: grab;
-    padding: 8px;
-    border-radius: 6px;
-    flex-shrink: 0;
-  }
-
-  .drag-handle:hover {
-    background: var(--border-color);
-    color: var(--text-color);
-  }
-
   .fav-info {
     display: flex;
     align-items: center;
@@ -290,26 +263,6 @@
     min-width: 32px;
     min-height: 32px;
     padding: 4px;
-  }
-
-  .fav-edit {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 32px;
-    min-height: 32px;
-    padding: 4px;
-    border-radius: 6px;
-    color: var(--text-muted);
-    text-decoration: none;
-    transition:
-      background-color 0.15s ease,
-      color 0.15s ease;
-  }
-
-  .fav-edit:hover {
-    background: var(--border-color);
-    color: var(--text-color);
   }
 
   .fav-remove {
