@@ -8,7 +8,7 @@
  *   - auth token key (HMAC for relay write authorization)
  */
 
-import { normalizeSyncKey } from "./sync-key";
+import { assertValidSyncKey, normalizeSyncKey } from "./sync-key";
 import { generateKeyFingerprint, type KeyFingerprint } from "./fingerprint";
 
 /** Public application constant for HKDF info string. */
@@ -40,7 +40,7 @@ export async function deriveKeys(
   syncKey: string,
   subtle: SubtleCrypto = globalThis.crypto.subtle
 ): Promise<DerivedKeys> {
-  const normalized = normalizeSyncKey(syncKey);
+  const normalized = assertValidSyncKey(syncKey);
   const baseKey = await subtle.importKey("raw", encoder.encode(normalized), "HKDF", false, [
     "deriveBits",
   ]);
@@ -157,7 +157,7 @@ export async function computeStorageAddress(
   syncKey: string,
   subtle: SubtleCrypto = globalThis.crypto.subtle
 ): Promise<string> {
-  const normalized = normalizeSyncKey(syncKey);
+  const normalized = assertValidSyncKey(syncKey);
   const digest = await subtle.digest(
     "SHA-256",
     encoder.encode(`iypm-sync-address-v2:${normalized}`)

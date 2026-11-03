@@ -176,7 +176,12 @@ function main(argv = process.argv.slice(2)) {
 
   if (command === "release") {
     try {
-      console.log(JSON.stringify(releaseLock({ repoRoot, force: argv.includes("--force") })));
+      const force = argv.includes("--force");
+      const existing = readLock(repoRoot);
+      // A marker whose owner process is gone is stale; allow `release` to clear it
+      // without an explicit --force so a dead session's lock does not linger.
+      const stale = !force && !!existing && !existing.alive && !existing.corrupt;
+      console.log(JSON.stringify(releaseLock({ repoRoot, force: force || stale })));
       return 0;
     } catch (error) {
       console.error(`${error.code}: ${error.message}`);

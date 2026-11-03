@@ -51,7 +51,7 @@ async function openDb(): Promise<IDBDatabase> {
  * Uses a fast non-crypto hash (FNV-1a) for performance.
  */
 export function computeHash(data: unknown): string {
-  const json = JSON.stringify(data);
+  const json = JSON.stringify(data === undefined ? null : data) ?? "null";
   let hash = 0x811c9dc5; // FNV offset basis
   for (let i = 0; i < json.length; i++) {
     hash ^= json.charCodeAt(i);
