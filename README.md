@@ -233,14 +233,14 @@ Use `./iypm.sh` at repository root for quick overview and operations:
 ## 📊 Current Status
 
 > Live state (branches, SHAs, pending work) is in [`.ai-sync/HANDOFF.md`](.ai-sync/HANDOFF.md).
-> The block below records store submission status as of the 1.2.1 release.
+> The block below records store submission status as of the 1.2.0 release cycle.
 
-- **Version**: 1.2.1 — patch release prepared on `next`, awaiting owner to ship
-- **Chrome**: 1.1.1 in review (auto-publish on approval); 1.2.1 package ready
-- **Microsoft Edge**: 1.1.1 draft in Partner Center (never submitted); 1.2.1 package ready to upload
-- **Firefox Listed**: 1.1.1 (ID 6620554); 1.2.1 package ready
+- **Version**: 1.2.0 on `main` (tagged `v1.2.0`); 1.2.1 prep on `next`
+- **Chrome**: 1.1.1 in review (auto-publish on approval); 1.2.0 package ready
+- **Microsoft Edge**: 1.2.0 submitted for certification (Product ID `20f9b17d-73e7-45f8-8692-796867b7ec80`); listing will appear at `https://microsoftedge.microsoft.com/addons/detail/<slug>/20f9b17d-73e7-45f8-8692-796867b7ec80` after approval. **Install button on the web portal auto-appears once `NEXT_PUBLIC_EDGE_STORE_URL` is set in Vercel.**
+- **Firefox Listed**: 1.1.1 (ID 6620554) in review; 1.2.0 package ready
 - **Firefox Unlisted Test**: v1.2.0.1 (ID 6620940)
-- **All checks pass**: 195 tests, zero Svelte errors, clean builds, 90 E2E route checks
+- **All checks pass**: 658 tests, zero Svelte errors, clean builds, E2E route checks
 - **Enforced on `main`**: quality, extension diagnostics and E2E must pass before merge
 - **Cutting a release**: see [docs/RELEASING.md](docs/RELEASING.md)
 
