@@ -1813,9 +1813,13 @@
     background: var(--border-color);
   }
 
-  .action-btn :global(svg.filled) {
+  .action-btn span.filled :global(svg) {
     color: var(--color-brand-primary, #3b82f6);
     opacity: 1;
+  }
+
+  .action-btn span:not(.filled) :global(svg) {
+    opacity: 0.45;
   }
 
   .action-btn span:not(.filled) {
