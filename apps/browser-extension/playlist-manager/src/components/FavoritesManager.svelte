@@ -13,7 +13,6 @@
     resolveFavoritePlaylists,
     type FavoritePlaylistInfo,
   } from "../services/favorites";
-  import AddMoreFavorites from "./AddMoreFavorites.svelte";
 
   const {
     settings,
@@ -100,11 +99,6 @@
     if (window.logSystemEvent)
       await window.logSystemEvent("INFO", `[SETTINGS] Reordered favorite: ${id}`);
   }
-
-  function availableForAdding() {
-    const currentIds = new Set(settings?.favoritePlaylistIds ?? []);
-    return allPlaylists.filter((p) => !currentIds.has(p.id));
-  }
 </script>
 
 <!-- Pinned Favorites -->
@@ -173,15 +167,6 @@
     </div>
   {/if}
 </section>
-
-<!-- Add More Favorites -->
-{#if availableForAdding().length > 0}
-  <section class="card add-more-section">
-    <h3><Fa icon={faStar} /> Add More Favorites</h3>
-    <p class="sub-text">Click the star to pin a playlist to the sidebar.</p>
-    <AddMoreFavorites playlists={availableForAdding()} onToggle={toggle} />
-  </section>
-{/if}
 
 <style>
   .empty-favorites {

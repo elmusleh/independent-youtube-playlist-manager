@@ -13,7 +13,6 @@
   import PlaybackSettings from "../components/PlaybackSettings.svelte";
   import HistorySettings from "../components/HistorySettings.svelte";
   import FavoriteSettings from "../components/FavoriteSettings.svelte";
-  import FavoritesManager from "../components/FavoritesManager.svelte";
   import EditorSettings from "../components/EditorSettings.svelte";
   import MetadataSettings from "../components/MetadataSettings.svelte";
   import IntegrationSettings from "../components/IntegrationSettings.svelte";
@@ -108,7 +107,6 @@
         <PlaybackSettings {settings} {save} bind:showPlayAllInfo />
         <HistorySettings {settings} {save} {status} />
         <FavoriteSettings {settings} {save} {status} {signedIn} />
-        <FavoritesManager {settings} {save} {status} {signedIn} />
         <YouTubeAdvancedSettings {settings} {save} />
         <EditorSettings {settings} {save} />
         <MetadataSettings {settings} {save} />
