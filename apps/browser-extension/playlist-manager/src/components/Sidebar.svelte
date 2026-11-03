@@ -631,11 +631,11 @@
     height: 44px;
     text-decoration: none;
     font-size: 14px;
-    font-weight: 600;
+    font-weight: 700;
     color: var(--text-color);
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 4px;
     transition: all 0.15s ease;
     border-radius: 12px;
     white-space: nowrap;
@@ -652,10 +652,9 @@
   }
 
   .favorite-section-header :global(svg:last-child) {
-    margin-left: auto;
-    width: 14px !important;
-    height: 14px !important;
-    min-width: 14px;
+    width: 12px !important;
+    height: 12px !important;
+    min-width: 12px;
   }
 
   .nav-divider {
