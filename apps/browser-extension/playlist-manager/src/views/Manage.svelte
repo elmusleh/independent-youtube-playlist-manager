@@ -1385,13 +1385,7 @@
       {/snippet}
     </StickyHeader>
 
-    {#if loading && !initialLoadDone}
-      <div class="skeleton-grid">
-        {#each Array(6) as _}
-          <SkeletonCard />
-        {/each}
-      </div>
-    {:else if filteredPlaylists.length === 0}
+    {#if filteredPlaylists.length === 0}
       <div class="empty-state">
         <Fa icon={faBoxArchive} size="3x" />
         <p>
@@ -1400,6 +1394,12 @@
         {#if !$manageSearch}
           <SimpleButton onclick={() => push("/new")} primary>Create New Playlist</SimpleButton>
         {/if}
+      </div>
+    {:else if loading && !initialLoadDone}
+      <div class="skeleton-grid">
+        {#each Array(6) as _}
+          <SkeletonCard />
+        {/each}
       </div>
     {:else}
       <div class="list-container">
