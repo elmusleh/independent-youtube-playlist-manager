@@ -750,3 +750,24 @@ writes. `.husky/pre-commit` was modified by a concurrent process (a commit attem
 
 - Review PR #81 on GitHub and merge into `next`.
 - Optional: add undo for unpin/reorder and bulk actions (future).
+
+## 2026-11-03 — Edge store packaging: stale-ZIP trap fixed + guard added (uncommitted)
+
+- Root cause: the Edge store ZIP in `dist/` was stale — its `manifest.json` still
+  carried `short_name: "Playlist Manager"` (16 chars, Edge limit 12) and older
+  content_scripts patterns, while `dist/edge/manifest.json` correctly had `IYPM`.
+  The Partner Center warning came from the leftover ZIP, not from source.
+  Chrome/Firefox are unaffected (separate artifacts; installed users see nothing).
+- Rebuilt: `npm run build && npm run pack:edge` → ZIP `1.2.1`,
+  SHA-256 `fecc3b7a1f2009dec8115450e6087801b19f646bdeaa03add21e459f66ca064d`,
+  `short_name: "IYPM"` (4 chars). `npm run check` exit 0; `npm run test:extension`
+  exit 0 (new guard included).
+- Added `packages/build-tools/verify-edge-package.js`, wired into `test:extension`.
+  Asserts the ZIP manifest agrees with `dist/edge/manifest.json` (version,
+  short_name ≤ 12, name, permissions, forbidden fields, required dirs, no .map).
+- Documented the trap in `AGENTS.md` (new "📦 Packaging & Store Submission (traps)"
+  section) and strengthened `docs/EDGE_STORE_SUBMISSION.md` §1.
+- Updated `docs/edge-release-metadata.json` version/packageVersion to 1.2.1.
+- No commit, push, store submission, tag, or remote action performed. The Edge
+  draft in Partner Center still holds the old 1.1.1 package; upload the rebuilt
+  1.2.1 ZIP and click Continue.

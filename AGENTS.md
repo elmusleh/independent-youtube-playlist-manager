@@ -230,6 +230,17 @@ Rollup uses `rollup-plugin-css-only` to bundle all CSS into `editor/bundle.css`.
 
 ---
 
+## 📦 Packaging & Store Submission (traps)
+
+- **`dist/` is gitignored and drifts.** The Edge/Chrome/Firefox ZIPs in `dist/` are build artifacts, never committed. A ZIP left over from a previous session can be stale even when `dist/edge/` is fresh — `package-edge-store.js` copies `dist/edge` into a temp dir, but if you point it at an old temp dir or skip the build, the ZIP's manifest disagrees with source. **Always** `npm run build && npm run pack:edge` (or `npm run pack`) immediately before uploading, then verify the ZIP's manifest matches `dist/edge/manifest.json`.
+- **Verification guard:** `packages/build-tools/verify-edge-package.js` (wired into `npm run test:extension`) asserts version, `short_name` (≤ 12 chars — Edge's hard limit), name, permissions, forbidden fields, required directories and no `.map` files all agree between the ZIP and `dist/edge`. Run it; do not upload a ZIP that fails it.
+- **`short_name` ≤ 12 characters.** Edge rejects longer values (error: "The string … has exceeded the maximum length of 12"). Both manifests use `"IYPM"`. Do not lengthen it.
+- **Chrome `key` must be stripped** for the store ZIP (`package-chrome-store.js` does this); the dev build keeps it. Never upload `dist/chrome` directly.
+- **Edge manifest is generated** from `manifest.chrome.json` minus `key`/`browser_specific_settings` (`build-extension.js edge`). Never create `manifest.edge.json`.
+- **First Edge submission is manual** (Partner Center API only updates already-published products). From the second release, publishing is API-driven. See `docs/EDGE_STORE_SUBMISSION.md` and `docs/edge-release-metadata.json`.
+
+---
+
 ## 🏛️ Architecture Overview
 
 The codebase is split into three layers:

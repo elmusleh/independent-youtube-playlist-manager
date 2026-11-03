@@ -48,8 +48,19 @@ npm run pack:edge
 Build the ZIP from the exact commit you intend to ship, not from a dirty working
 tree. `1.2.1` is prepared on `next` but not yet tagged, and the working tree still
 carries uncommitted UI-polish work, so commit what the package should contain and
-rebuild from that clean commit before uploading. The SHA-256 recorded above is the
-current working-tree build and will change after any further edit.
+rebuild from that clean commit before uploading. The ZIP in `dist/` is **gitignored
+and drifts between sessions** — a leftover ZIP can be stale even when `dist/edge/`
+is fresh (its manifest disagrees with source). Always rebuild **and** repackage
+immediately before uploading:
+
+```bash
+npm run build && npm run pack:edge
+npm run test:extension   # runs verify-edge-package.js
+```
+
+Do not upload a ZIP that fails `verify-edge-package.js`. The guard asserts the ZIP's
+manifest matches `dist/edge/manifest.json` (version, `short_name` ≤ 12 chars,
+name, permissions, forbidden fields, required directories, no `.map` files).
 
 `npm run build` runs `validate-manifests.js`, which asserts that
 `dist/edge/manifest.json` exactly matches the Chrome manifest minus `key` and
@@ -64,11 +75,16 @@ unzip -p dist/independent-youtube-playlist-manager-edge.zip manifest.json
 Confirm:
 
 - `manifest_version` is `3`, version is `1.2.1`.
+- `short_name` is `IYPM` (4 chars — Edge's hard maximum is 12; longer values are
+  rejected with "The string … has exceeded the maximum length of 12").
 - No `key`.
 - No `browser_specific_settings`.
 - No `update_url`.
 - The ZIP contains `editor/`, `background/`, `content-scripts/`, `popup/`, `shared/`, `assets/`.
 - No `.map` files.
+
+Record the resulting SHA-256 in `docs/edge-release-metadata.json` (`packageSha256`)
+after the rebuild; do not reuse a hash from an earlier build.
 
 ## 2. Listing Values
 
