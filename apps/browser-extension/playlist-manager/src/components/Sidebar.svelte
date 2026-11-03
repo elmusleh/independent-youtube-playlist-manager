@@ -198,14 +198,14 @@
 
       {#if favorites.length > 0}
         <a
-          href="#/favorites"
+          href="#/pinned"
           class="favorite-section-header"
-          class:active={isActive("/favorites", router.location, router.querystring || "")}
+          class:active={isActive("/pinned", router.location, router.querystring || "")}
         >
           <span>Pinned</span>
           <Fa icon={faChevronRight} fw />
         </a>
-        {#each favorites.slice(0, MAX_VISIBLE_FAVORITES) as fav (fav.id)}
+        {#each favorites.slice(0, (settings?.maxVisibleFavorites ?? 0) === 0 ? favorites.length : (settings?.maxVisibleFavorites ?? MAX_VISIBLE_FAVORITES)) as fav (fav.id)}
           <a
             href="#/playlist?id={fav.id}"
             class="favorite-nav-link"
@@ -366,15 +366,15 @@
 
           {#if favorites.length > 0}
             <a
-              href="#/favorites"
+              href="#/pinned"
               onclick={handleNavClick}
               class="favorite-section-header"
-              class:active={isActive("/favorites", router.location, router.querystring || "")}
+              class:active={isActive("/pinned", router.location, router.querystring || "")}
             >
               <span>Pinned</span>
               <Fa icon={faChevronRight} fw />
             </a>
-            {#each favorites.slice(0, MAX_VISIBLE_FAVORITES) as fav (fav.id)}
+            {#each favorites.slice(0, (settings?.maxVisibleFavorites ?? 0) === 0 ? favorites.length : (settings?.maxVisibleFavorites ?? MAX_VISIBLE_FAVORITES)) as fav (fav.id)}
               <a
                 href="#/playlist?id={fav.id}"
                 class="favorite-nav-link"

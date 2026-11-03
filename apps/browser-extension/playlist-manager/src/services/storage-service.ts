@@ -1052,6 +1052,7 @@ window.getSettings = async (): Promise<Settings> => {
       cacheDuration: -1, // -1 = no expiration
       watchLaterPlaylistId: null, // null = use YouTube's Watch Later
       favoritePlaylistIds: [], // ordered list of pinned favorites shown in the sidebar
+      maxVisibleFavorites: 0,
       maxLogLines: 500,
       defaultPrivacy: "private",
       autoRemoveDuplicates: false,
