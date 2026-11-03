@@ -42,6 +42,7 @@ const legacyAllowlist = new Set([
   "apps/browser-extension/playlist-manager/src/components/ViewHeader.svelte",
   "apps/browser-extension/playlist-manager/src/components/editor/PlaylistModals.svelte",
   "apps/browser-extension/playlist-manager/src/components/Sidebar.svelte",
+  "apps/browser-extension/playlist-manager/src/components/FavoritesManager.svelte",
   "apps/browser-extension/playlist-manager/src/services/backup-service.ts",
   "apps/browser-extension/playlist-manager/src/services/youtube-auth.ts",
 

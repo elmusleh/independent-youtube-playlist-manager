@@ -7,6 +7,7 @@ export interface FavoritePlaylistInfo {
   videoCount: number;
   isLocal: boolean;
   thumbnailUrl?: string;
+  timestamp?: number;
 }
 
 /** Number of pinned favorites shown directly in the sidebar before the overflow link. */
@@ -76,6 +77,7 @@ export async function resolveFavoritePlaylists(ids: unknown): Promise<FavoritePl
         title: playlist.title || "Untitled Playlist",
         videoCount: playlist.videos?.length ?? 0,
         isLocal: !!playlist.isLocal || id.startsWith("local-"),
+        timestamp: playlist.timestamp,
         thumbnailUrl: firstVideoId
           ? (window.videoService?.getVideoThumbnailUrl?.(firstVideoId) ?? undefined)
           : undefined,
