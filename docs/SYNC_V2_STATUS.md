@@ -55,6 +55,14 @@ error | offline | paused`), single-flight guard, exponential backoff, status per
   push, pull + merge + apply via `mutateLibrary`, shadow update).
 - Rollup entry added (`sync-engine`).
 
+### Phase 3 follow-up — Adapter wiring (DONE)
+
+- `runOnce` now pulls via relay-transport, merges per collection (playlists,
+  history, settings, devices), pushes dirty records, updates lastSeq.
+- Adapter pass extracted to `sync-engine-adapters.ts`.
+- Devices adapter added (`services/sync/adapters/devices.ts`).
+- `storage.onChanged` triggers already wired (debounced push).
+
 ### Bug fixes (discovered during this work)
 
 - Service worker did not load at all: `background/index.js` imported
@@ -68,28 +76,31 @@ error | offline | paused`), single-flight guard, exponential backoff, status per
 
 ## What still needs to be done
 
-### Phase 3 follow-up (adapter wiring)
+### Phase 3 follow-up (adapter wiring) — DONE
 
-- Wire `runOnce` to the per-collection adapters (playlists done; history, settings,
-  devices still to do) using `relay-transport` + `merge/*` + `shadow-store`.
-- Add `storage.onChanged` triggers in the engine (debounced push on local edit).
-- Expose `yph_sync_status` consumption by the UI.
+- `runOnce` now pulls via relay-transport, merges per collection (playlists,
+  history, settings, devices), pushes dirty records, and updates lastSeq.
+- Adapter pass extracted to `sync-engine-adapters.ts` (file-size gate).
+- `storage.onChanged` triggers already wired in the engine (debounced push).
+- `yph_sync_status` consumption by the UI is via the existing `getSyncStatus` path.
 
-### Phase 4 — Sync Center UI
+### Phase 4 — Sync Center UI (remaining)
 
 - Split `Sync.svelte` (1054 lines) into `components/sync/*`:
   `SyncHero`, `SyncCounters`, `DeviceList`, `SyncContents`, `PairingCard`,
   `SyncActivity`, `SyncAdvanced`.
-- Drive `SyncStatusIndicator.svelte` (header) from `yph_sync_status` with a badge when
-  changes are waiting or a run failed.
+- Drive `SyncStatusIndicator.svelte` (header) from `yph_sync_status` with a badge
+  when changes are waiting or a run failed.
 
-### Phase 5 — Extras (optional)
+### Phase 5 — Extras (optional, remaining)
 
-- QR / pairing link (needs a small portal page + content-script handoff for Firefox Android).
-- Supabase Realtime _broadcast_ nudge while a page is open (no data, only "pull now").
+- QR / pairing link (needs a small portal page + content-script handoff for
+  Firefox Android).
+- Supabase Realtime _broadcast_ nudge while a page is open (no data, only
+  "pull now").
 - Key rotation that moves data to a new space.
 
-### Backend / ops
+### Backend / ops (remaining)
 
 - Run `docs/sync-relay-v2.sql` on the hosted Supabase project (`qvwitlpnetwthyhrobca`).
 - Drop the v1 `relay_snapshots` table after migration.
