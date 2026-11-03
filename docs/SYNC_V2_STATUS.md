@@ -86,11 +86,10 @@ error | offline | paused`), single-flight guard, exponential backoff, status per
 
 ### Phase 4 — Sync Center UI (remaining)
 
-- Split `Sync.svelte` (1054 lines) into `components/sync/*`:
-  `SyncHero`, `SyncCounters`, `DeviceList`, `SyncContents`, `PairingCard`,
-  `SyncActivity`, `SyncAdvanced`.
-- Drive `SyncStatusIndicator.svelte` (header) from `yph_sync_status` with a badge
-  when changes are waiting or a run failed.
+- Split `Sync.svelte` into `components/sync/*`: `SyncHero`, `SyncCounters`,
+  `SyncKeyCard`, `SyncContents`, `SyncActivity`, `SyncAdvanced` (DONE).
+- `SyncStatusIndicator.svelte` (header) driven by `yph_sync_status` with a badge
+  when changes are waiting or a run failed (DONE).
 
 ### Phase 5 — Extras (optional, remaining)
 
