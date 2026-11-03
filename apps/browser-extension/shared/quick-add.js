@@ -1,8 +1,25 @@
 export const scopeAliases = {
-  "all-this-window-include": "window",
   "all-this-window-exclude": "other",
   "all-windows": "all",
 };
+export const DestinationType = {
+  FAVORITE: "favorite",
+  LATEST: "latest",
+  BUILDER: "builder",
+  NEW_LOCAL: "new",
+  CUSTOM: "custom",
+};
+export function getDefaultQuickAddSettings() {
+  return {
+    disableContextBuilder: false,
+    disableContextSaved: false,
+    disableContextMenu: false,
+    watchLaterPlaylistId: null,
+    contextMenuDestination: null,
+    defaultQuickAddTarget: "latest",
+  };
+}
+
 export function destinationMode(settings, remembered = true) {
   return (
     (remembered && settings.contextMenuDestination) ||

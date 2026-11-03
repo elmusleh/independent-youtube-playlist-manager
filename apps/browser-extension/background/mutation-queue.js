@@ -14,7 +14,7 @@ let _revision = 0;
  * Get current revision of playlists storage.
  * @returns {Promise<number>}
  */
-async function getPlaylistsRevision() {
+export async function getPlaylistsRevision() {
   const result = await browser.storage.local.get("yph_playlists_revision");
   return result.yph_playlists_revision || 0;
 }

@@ -3,7 +3,11 @@
  */
 
 import { getDefaultQuickAddSettings } from "../shared/quick-add.js";
-import { resolveDestination, DestinationType } from "../shared/quick-add.js";
+import {
+  resolveDestination,
+  DestinationType,
+  effectiveDestinationMode,
+} from "../shared/quick-add.js";
 
 let _cachedSettings = null;
 let _cachedPlaylists = null;
@@ -86,7 +90,7 @@ export async function hasSavedPlaylists() {
  * @returns {string}
  */
 export function buildDestinationLabel(settings) {
-  const destination = resolveDestination(settings, null, null);
+  const destination = resolveDestination(effectiveDestinationMode(settings), settings, []);
   const typeLabels = {
     [DestinationType.FAVORITE]: "Favorite",
     [DestinationType.LATEST]: "Latest",
@@ -94,7 +98,7 @@ export function buildDestinationLabel(settings) {
     [DestinationType.NEW_LOCAL]: "New local",
     [DestinationType.CUSTOM]: "Custom",
   };
-  const label = typeLabels[destination.type] || "Destination";
+  const label = typeLabels[destination?.type] || "Destination";
   return `Destination: ${label}`;
 }
 
@@ -104,7 +108,7 @@ export function buildDestinationLabel(settings) {
  * @returns {string}
  */
 export function buildScopesLabel(settings) {
-  const destination = resolveDestination(settings, null, null);
+  const destination = resolveDestination(effectiveDestinationMode(settings), settings, []);
   const typeLabels = {
     [DestinationType.FAVORITE]: "Favorite playlist",
     [DestinationType.LATEST]: "Latest playlist",
@@ -112,7 +116,7 @@ export function buildScopesLabel(settings) {
     [DestinationType.NEW_LOCAL]: "New local playlist",
     [DestinationType.CUSTOM]: "Custom playlist",
   };
-  const label = typeLabels[destination.type] || "destination";
+  const label = typeLabels[destination?.type] || "destination";
   return `Add YouTube tabs to ${label}`;
 }
 
