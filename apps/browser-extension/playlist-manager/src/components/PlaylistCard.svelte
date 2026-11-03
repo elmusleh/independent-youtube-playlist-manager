@@ -83,24 +83,6 @@
       <button class="playlist-title" onclick={onOpen}>
         {title || "Untitled Playlist"}
       </button>
-      {#if isPinned}
-        <span
-          class="playlist-badge pinned-badge"
-          title="Pinned to sidebar"
-          aria-label="Pinned to sidebar"
-        >
-          <Fa icon={faThumbTack} fw />
-        </span>
-      {/if}
-      {#if isWatchLater}
-        <span
-          class="playlist-badge watchlater-badge"
-          title="Favorite Playlist"
-          aria-label="Favorite Playlist"
-        >
-          <Fa icon={faStar} fw />
-        </span>
-      {/if}
       {#if showFavoriteBadge && !isPinned && !isWatchLater}
         <span class="fav-star-inline" title="Pinned Playlist" aria-label="Pinned Playlist">
           <Fa icon={faThumbTack} fw />
@@ -121,6 +103,24 @@
           <span>{action.loading ? "Loading…" : action.label}</span>
         </SimpleButton>
       {/each}
+      {#if isWatchLater}
+        <span
+          class="playlist-badge watchlater-badge"
+          title="Favorite Playlist"
+          aria-label="Favorite Playlist"
+        >
+          <Fa icon={faStar} fw />
+        </span>
+      {/if}
+      {#if isPinned}
+        <span
+          class="playlist-badge pinned-badge"
+          title="Pinned to sidebar"
+          aria-label="Pinned to sidebar"
+        >
+          <Fa icon={faThumbTack} fw />
+        </span>
+      {/if}
     </div>
   </div>
 </div>
