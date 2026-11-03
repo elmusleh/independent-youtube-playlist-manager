@@ -282,14 +282,8 @@
               : p.isTagged
                 ? "synced"
                 : "online"}
-          isFavorite={settings?.favoritePlaylistIds?.includes(p.id) ?? false}
-          onToggleFavorite={() => {
-            const next = toggleFavorite(settings?.favoritePlaylistIds ?? [], p.id);
-            if (settings) settings.favoritePlaylistIds = next;
-            persistFavoriteIds(next).then(() => {
-              window.getSettings().then((s) => (settings = s));
-            });
-          }}
+          isPinned={settings?.favoritePlaylistIds?.includes(p.id) ?? false}
+          isWatchLater={settings?.watchLaterPlaylistId === p.id}
           onOpen={() => openInEditor(p)}
           actions={getCardActions(p)}
           category={p.category}
