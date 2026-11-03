@@ -23,10 +23,11 @@ This guide stands up that relay in ~10 minutes, once.
 Open **SQL Editor** → **New query**, paste the contents of
 [`sync-relay.sql`](./sync-relay.sql), and **Run**.
 
-That creates the `sync_snapshots` table and enables row-level security with an
+That creates the `relay_snapshots` table and enables row-level security with an
 allow-anonymous policy. The policy is deliberately open (`using (true)`): the _address_
 column is a one-way SHA-256 hash of a 100-bit sync key, so it is effectively a bearer token,
-and the _blob_ is AES-256-GCM ciphertext. Nothing readable is ever stored.
+and the _payload_ column is AES-256-GCM ciphertext. Nothing readable is ever stored.
+The open policy also lets anyone overwrite or delete rows; see `SYNC_HARDENING_PLAN.md`.
 
 ## Step 3 — copy the URL + anon key
 

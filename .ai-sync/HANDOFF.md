@@ -39,6 +39,35 @@
 - Phase 4: Sync Center UI (split `Sync.svelte` into components)
 - Phase 5: Optional extras (QR pairing, Realtime nudge, key rotation)
 
+## 2026-11-03 — Sync v2 Phase 0 hotfix (branch `feat/sync-hardening`)
+
+- Branch `feat/sync-hardening` was `a86413b` when this pass started. Two commits from another
+  session landed during the pass (`f51feeb` Phase 1 core, `8fab611` docs); Phase 0 is
+  `5ca6a94` on top of them. The Antigravity diagnosis
+  (`fb04c92`) is partly stale: at HEAD, `setupHint` is defined, keys are validated as 20
+  Crockford characters, and "Generate key" is wired. Re-check each claim against the
+  current tree before acting on it.
+- Phase 0 changes: polling moved from the Sync view into `App.svelte` (`startPolling` on
+  mount plus a new `pullNow()` in `sync-manager.ts`); `relay_snapshots(payload)` aligned in
+  `docs/sync-relay.sql` and `docs/SYNC_RELAY_SETUP.md`; `className` fix on "Sync now";
+  one key-acceptance test. CHANGELOG `[Unreleased]` updated.
+- Evidence: `npm run check` exit 0 (70 files / 681 tests, before and after the change);
+  `npm run build` exit 0 (budgets pass); real-extension smoke test loads `#/sync` with
+  all three backend labels and zero page errors.
+- **Not green:** `npm run test:extension` exits 1 at `/playlist-builder` ("Loading playlist
+  builder…", no `.playlist-video`). Reproduced on the baseline without this pass's
+  App.svelte change, so it is pre-existing. The suite never reaches its Sync interaction
+  check. Investigate before relying on that gate.
+- Playwright Chromium (`chromium-1234`) installed locally to run the extension suite.
+- **Phase 1 is committed (`f51feeb`) but unproven:** `services/sync/` modules (`keys.ts`,
+  `hlc.ts`, `record-codec.ts`, `fingerprint*.ts`, `shadow-store.ts`, `merge/*.ts`) have no
+  unit tests and are not wired into any engine. The "completed" wording in `PROGRESS.md`
+  overstates this. Add tests before wiring them in.
+- Lock: the stale Antigravity lock (pid dead) was taken over by `opencode`. Release it at
+  the end of the session.
+- Still open for v2: relay RLS is still `using (true)` (Phase 2 RPC relay); polling
+  runs only while the editor is open (Phase 3 background engine).
+
 ## 2026-11-03 — Branch cleanup and merge integration (final)
 
 - All safe/superseded branches deleted (local + remote). Only `main` and `next` remain.

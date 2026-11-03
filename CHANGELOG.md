@@ -53,6 +53,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Sync: the "Sync now" button's styling prop is passed as `className`, so it is no longer
+  dropped. The sync-relay SQL and setup guide now create `relay_snapshots(payload)`, matching
+  the extension. Background polling and one pull start when the editor opens, not only on
+  the Sync page. Accepted-key tests cover lowercase input and handwritten O/I/L glyphs.
 - Watch history now works fully on the mobile YouTube site (`m.youtube.com`) in Firefox for
   Android, which differs from desktop Chrome in several ways: YouTube swaps the `<video>`
   element around pre-roll ads (the tracker now re-queries the live element and listens for

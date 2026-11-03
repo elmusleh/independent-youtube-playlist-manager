@@ -1,4 +1,18 @@
-## Sync v2 Phase 1: Protocol Core — completed (2026-11-03)
+## Sync v2 Phase 0: hotfix — done on `feat/sync-hardening` (2026-11-03)
+
+- [x] Sync view: `setupHint`, 20-character key validation and "Generate key" present at HEAD (re-verified)
+- [x] "Sync now" uses `className` (SimpleButton prop)
+- [x] Polling starts in `App.svelte` on mount; one `pullNow()` on open
+- [x] `docs/sync-relay.sql` and `docs/SYNC_RELAY_SETUP.md` use `relay_snapshots(payload)`
+- [x] Key-acceptance test for lowercase and O/I/L input
+- [ ] `npm run test:extension` green (blocked: `/playlist-builder` fails on baseline too)
+- [ ] Owner runs the relay SQL on the hosted Supabase project, if the table is not already `relay_snapshots`
+
+## Sync v2 Phase 1: Protocol Core — committed (`f51feeb`), no unit tests, not wired (correction 2026-11-03)
+
+The modules are committed, but the earlier "completed" wording is too strong. Add unit
+tests (HKDF/codec tamper, HLC, merge matrix, shadow store) before treating Phase 1 as done.
+The checklist below is the author's list of modules.
 
 - [x] `keys.ts`: HKDF-SHA256 derives encryption/record-id/auth keys from 20-char sync key
 - [x] `fingerprint.ts` + `fingerprint-emoji.ts` + `fingerprint-words.ts`: human-friendly key verification (emoji/word)
