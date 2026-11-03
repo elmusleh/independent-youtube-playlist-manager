@@ -27,6 +27,8 @@
   import { requestSyncHostPermission } from "../services/sync/host-permissions.js";
   import { storeFolderHandle } from "../services/sync/file-sync-service.js";
   import { getSyncStatus, triggerSyncNow, onSyncProgress } from "../services/sync-manager.js";
+  import { toast } from "../stores/toast.js";
+  import { isValidSyncKey, formatSyncKey } from "../services/sync/sync-key.js";
 
   const caps = detectCapabilities();
   const status = new StatusManager();
@@ -195,6 +197,30 @@
   }
 
   onMount(() => {
+    // Handle pairing link (?join=<base64url-key>).
+    try {
+      const params = new URLSearchParams(location.hash.split("?")[1] || "");
+      const join = params.get("join");
+      if (join) {
+        const padded =
+          join.replace(/-/g, "+").replace(/_/g, "/") + "===".slice((join.length + 3) % 4);
+        const decoded = atob(padded);
+        if (isValidSyncKey(decoded)) {
+          config.syncKey = formatSyncKey(decoded);
+          if (config.backends.length === 0 && isRelayConfigured()) config.backends = ["relay"];
+          persist();
+          toast.show("Sync key imported from pairing link", "success");
+        } else {
+          toast.show("Invalid pairing link", "error");
+        }
+        // Clean the param from the URL without reloading.
+        const cleanHash = location.hash.split("?")[0];
+        history.replaceState(null, "", cleanHash || "#/sync");
+      }
+    } catch {
+      // ignore malformed params
+    }
+
     onSyncProgress((stage, detail) => {
       syncStage = stage;
       syncStageDetail = detail || "";
