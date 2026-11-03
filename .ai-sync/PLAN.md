@@ -1,3 +1,8 @@
+## Sync v2 — encrypted cross-device sync (in progress on `feat/sync-hardening`)
+
+Full status: `docs/SYNC_V2_STATUS.md`. Phases 0–3 done; Phase 3 follow-up (adapter wiring),
+Phase 4 (UI split), Phase 5 (extras) remaining.
+
 ## 2026-11-03 — Dependency modernization plan (completed)
 
 - Goal: update all dependencies to latest compatible versions and fix resulting issues.
