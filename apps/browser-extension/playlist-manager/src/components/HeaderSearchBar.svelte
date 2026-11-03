@@ -30,9 +30,9 @@
 
   let searchValue = $state("");
   let mobileSearchOpen = $state(false);
-  let mobileSearchInput: HTMLInputElement;
-  let mobileSearchPanel: HTMLDivElement;
-  let mobileSearchTrigger: HTMLButtonElement;
+  let mobileSearchInput = $state<HTMLInputElement>();
+  let mobileSearchPanel = $state<HTMLDivElement>();
+  let mobileSearchTrigger = $state<HTMLButtonElement>();
 
   $effect(() => {
     if (mobileSearchOpen) {

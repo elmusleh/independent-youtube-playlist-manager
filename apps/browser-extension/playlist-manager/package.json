@@ -1,6 +1,7 @@
 {
   "name": "svelte-app",
   "version": "1.2.1",
+  "type": "module",
   "private": true,
   "scripts": {
     "build": "rollup -c --environment PRODUCTION",
