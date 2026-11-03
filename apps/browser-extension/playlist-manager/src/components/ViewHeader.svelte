@@ -395,6 +395,12 @@
   .pin-playlist-btn,
   .edit-title-btn {
     color: var(--text-muted, #888);
+    opacity: 0.45;
+  }
+
+  .pin-playlist-btn.active {
+    opacity: 1;
+    color: var(--primary-color);
   }
 
   .pin-playlist-btn:hover,
@@ -407,6 +413,7 @@
   .pin-playlist-btn.active,
   .edit-title-btn:hover {
     color: var(--primary-color);
+    opacity: 1;
   }
 
   .favorite-star-btn {
