@@ -470,3 +470,13 @@ Suggested next steps (new, not scheduled):
 - [x] Search/pagination/drag reorder (later simplified: search removed)
 - [x] Configurable sidebar pinned limit in settings
 - [x] Build/test verification
+
+## Sync v2 Phase 1: tests added (2026-11-03, commit 8a8a259)
+
+- [x] Unit tests: keys, record-codec, fingerprint, HLC, merge (playlists/history/settings), shadow-store
+- [x] Fixed HLC overflow (tuple comparison)
+- [x] deriveKeys validates sync key
+- [x] agent-lock CLI clears stale markers without --force
+- [ ] Phase 2: relay v2 SQL + transport (not started)
+- [ ] Phase 3: background engine (not started)
+- [ ] Phase 4: Sync Center UI split (not started)
