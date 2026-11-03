@@ -7,6 +7,7 @@
     faArrowUp,
     faArrowDown,
     faGripLines,
+    faPencil,
   } from "@fortawesome/free-solid-svg-icons";
   import type { Settings } from "../types/model";
   import { StatusManager } from "../services/status-manager.svelte";
@@ -128,7 +129,12 @@
           <button class="drag-handle" aria-label="Drag to reorder" title="Drag to reorder">
             <Fa icon={faGripLines} />
           </button>
-          <div class="fav-info">
+          <div
+            class="fav-info"
+            role="button"
+            tabindex="0"
+            onclick={() => (location.hash = `#/playlist?id=${fav.id}`)}
+          >
             {#if fav.thumbnailUrl}
               <img class="fav-thumb" src={fav.thumbnailUrl} alt="" />
             {:else}
@@ -156,6 +162,9 @@
             >
               <Fa icon={faArrowDown} />
             </SimpleButton>
+            <a class="fav-edit" href="#/playlist?id={fav.id}" title="Edit">
+              <Fa icon={faPencil} />
+            </a>
             <button
               class="fav-remove"
               onclick={() => toggle(fav.id)}
@@ -205,6 +214,11 @@
     background: var(--hover-color);
     border-radius: 8px;
     border: 1px solid var(--border-color);
+    transition: background-color 0.15s ease;
+  }
+
+  .favorite-item:hover {
+    background: var(--hover-color);
   }
 
   .drag-handle {
@@ -228,6 +242,7 @@
     gap: 12px;
     flex: 1;
     min-width: 0;
+    cursor: pointer;
   }
 
   .fav-thumb {
@@ -275,6 +290,26 @@
     min-width: 32px;
     min-height: 32px;
     padding: 4px;
+  }
+
+  .fav-edit {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    min-height: 32px;
+    padding: 4px;
+    border-radius: 6px;
+    color: var(--text-muted);
+    text-decoration: none;
+    transition:
+      background-color 0.15s ease,
+      color 0.15s ease;
+  }
+
+  .fav-edit:hover {
+    background: var(--border-color);
+    color: var(--text-color);
   }
 
   .fav-remove {
