@@ -204,8 +204,14 @@
               <div
                 class="thumb-container"
                 role="button"
-                tabindex="-1"
+                tabindex="0"
                 onclick={() => (location.hash = `#/playlist?id=${fav.id}`)}
+                onkeydown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    location.hash = `#/playlist?id=${fav.id}`;
+                  }
+                }}
               >
                 {#if fav.thumbnailUrl}
                   <img class="thumb" src={fav.thumbnailUrl} alt="" loading="lazy" />
@@ -221,8 +227,14 @@
               <div
                 class="row-content"
                 role="button"
-                tabindex="-1"
+                tabindex="0"
                 onclick={() => (location.hash = `#/playlist?id=${fav.id}`)}
+                onkeydown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    location.hash = `#/playlist?id=${fav.id}`;
+                  }
+                }}
               >
                 <div class="row-title-line">
                   <span class="row-title">{fav.title}</span>
@@ -314,63 +326,15 @@
     border: 0;
   }
 
-  .btn.pin-toggle {
-    color: var(--color-brand-primary, #3b82f6);
-  }
-
-  .btn.pin-toggle .filled svg {
-    color: var(--color-brand-primary, #3b82f6);
-  }
-
   .empty-favorites {
     text-align: center;
     padding: 40px 20px;
     color: var(--text-muted);
   }
 
-  .empty-icon {
-    font-size: 48px;
-    color: var(--color-brand-warning);
-    margin-bottom: 16px;
-  }
-
   .hint {
     font-size: 14px;
     margin-top: 8px;
-  }
-
-  .add-more-section {
-    margin-top: 16px;
-  }
-
-  .search-sort-bar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 16px;
-    flex-wrap: wrap;
-  }
-
-  .search-box {
-    flex: 1;
-    min-width: 200px;
-  }
-
-  .search-box input {
-    width: 100%;
-    padding: 8px 12px;
-    border-radius: 8px;
-    border: 1px solid var(--border-color);
-    background: var(--hover-color);
-    color: var(--text-color);
-    font-size: 14px;
-  }
-
-  .select-label {
-    color: var(--text-muted);
-    font-size: 13px;
-    white-space: nowrap;
   }
 
   .thumb-container {
@@ -516,11 +480,5 @@
     50% {
       opacity: 1;
     }
-  }
-
-  .loading {
-    padding: 20px;
-    text-align: center;
-    color: var(--text-muted);
   }
 </style>
