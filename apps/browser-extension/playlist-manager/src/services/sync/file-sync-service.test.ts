@@ -68,8 +68,10 @@ describe("FileSyncService", () => {
     expect(result.pushed).toBe(false);
     expect(result.error).toContain("refusing to replace");
     const stored = await service.download(syncKey);
-    expect(stored?.revision).toBe(8);
-    expect(stored?.payload.playlists).toEqual([{ id: "remote" }]);
+    expect(stored.status).toBe("ok");
+    if (stored.status !== "ok") return;
+    expect(stored.snapshot.revision).toBe(8);
+    expect(stored.snapshot.payload.playlists).toEqual([{ id: "remote" }]);
   });
 
   it("does not overwrite a snapshot with an equal revision", async () => {
@@ -87,6 +89,8 @@ describe("FileSyncService", () => {
 
     expect(result.pushed).toBe(false);
     const stored = await service.download(syncKey);
-    expect(stored?.payload.playlists).toEqual([{ id: "first" }]);
+    expect(stored.status).toBe("ok");
+    if (stored.status !== "ok") return;
+    expect(stored.snapshot.payload.playlists).toEqual([{ id: "first" }]);
   });
 });

@@ -18,9 +18,11 @@ import {
   RELAY_SUPABASE_ANON_KEY,
   type SyncConfig,
   type SyncBackend,
+  type DownloadResult,
 } from "./sync/sync-config.js";
 import type { SyncSnapshot } from "./sync/snapshot-codec.js";
 import { selectSyncableSettings } from "./sync/settings-selector.js";
+import { applyRemote } from "./sync/apply-remote.js";
 import { toast } from "../stores/toast.js";
 
 const DEBOUNCE_MS = 5000;
@@ -126,38 +128,6 @@ async function backupLocal(): Promise<void> {
   }
 }
 
-/** Apply a pulled snapshot's categories that are selected; returns the applied names. */
-async function applyRemote(
-  payload: Record<string, unknown>,
-  selection: Selection
-): Promise<string[]> {
-  const applied: string[] = [];
-  if (selection.playlists && Array.isArray(payload.playlists)) {
-    const { librarySnapshot, mutateLibrary } = await import("../../../shared/storage-client.js");
-    const local = await librarySnapshot();
-    await mutateLibrary({
-      type: "replace",
-      playlists: payload.playlists,
-      expectedRevision: local.revision,
-    });
-    applied.push("playlists");
-  }
-  if (selection.settings && payload.settings && typeof payload.settings === "object") {
-    const safeSettings = selectSyncableSettings(payload.settings);
-    for (const [key, value] of Object.entries(safeSettings)) {
-      if (typeof (window as any).storeObject === "function") {
-        await (window as any).storeObject(key, value);
-      }
-    }
-    if (Object.keys(safeSettings).length > 0) applied.push("settings");
-  }
-  if (selection.history && payload.history) {
-    await extBrowser().storage.local.set({ local_yt_history: payload.history });
-    applied.push("history");
-  }
-  return applied;
-}
-
 /** Debounced trigger called after any local playlist change. */
 export function scheduleSync(): void {
   if (syncTimer) clearTimeout(syncTimer);
@@ -197,39 +167,87 @@ async function performSync(options: { push?: boolean } = {}): Promise<void> {
 
     // Read every enabled backend and take the newest snapshot (mirror: any may win).
     let newestRemote: SyncSnapshot | null = null;
+    const readErrors: string[] = [];
     for (const transport of transports) {
-      const remote = await transport.download(config.syncKey!);
-      if (remote && (!newestRemote || remote.revision > newestRemote.revision)) {
-        newestRemote = remote;
+      const result = await transport.download(config.syncKey!);
+      if (result.status === "ok") {
+        if (!newestRemote || result.snapshot.revision > newestRemote.revision) {
+          newestRemote = result.snapshot;
+        }
+      } else if (result.status !== "missing") {
+        const msg =
+          "message" in result ? result.message : `conflict (${result.branches.length} branches)`;
+        readErrors.push(`${result.status}: ${msg}`);
       }
     }
     const remoteRev = newestRemote?.revision ?? 0;
     const localRev = typeof config.syncRevision === "number" ? config.syncRevision : 0;
+
+    // Surface distinct read failures instead of silently reporting "Already up to date."
+    if (readErrors.length > 0 && !newestRemote) {
+      config.lastError = readErrors.join("; ");
+      config.lastSyncSummary = `Sync failed: ${readErrors.join("; ")}`;
+      config.lastSyncedAt = Date.now();
+      await saveSyncConfig(config);
+      isSyncing = false;
+      return;
+    }
 
     let applied: string[] = [];
 
     if (newestRemote && remoteRev > localRev) {
       // Another device wrote newer data — adopt it (LWW: newer wins).
       await backupLocal();
-      applied = await applyRemote(newestRemote.payload, selection);
-      config.syncRevision = remoteRev;
-      const devices = new Set(config.knownDevices ?? []);
-      devices.add(await getOrCreateDeviceId());
-      if (newestRemote.deviceId) devices.add(newestRemote.deviceId);
-      config.knownDevices = [...devices];
-      config.lastError = null;
-      config.lastSyncSummary = `Pulled ${applied.join(", ") || "data"} from another device.`;
+      const pullResult = await applyRemote(newestRemote.payload, selection);
+      applied = pullResult.applied;
+      const pullFailed = pullResult.failed;
+
+      // Only advance the sync revision when every intended category applied.
+      if (pullFailed.length === 0) {
+        const devices = new Set(config.knownDevices ?? []);
+        devices.add(await getOrCreateDeviceId());
+        if (newestRemote.deviceId) devices.add(newestRemote.deviceId);
+        config.knownDevices = [...devices];
+        config.syncRevision = remoteRev;
+        config.lastError = null;
+        config.lastSyncSummary = `Pulled ${applied.join(", ") || "data"} from another device.`;
+      } else {
+        config.lastError = `Partial sync: ${pullFailed.join("; ")}`;
+        config.lastSyncSummary = `Sync partially applied: ${pullFailed.join("; ")}`;
+        // Do NOT advance syncRevision — retry on next sync.
+      }
     } else if (push) {
       // We are at least as new — push with a fresh Lamport timestamp to every backend.
       const source = await collectSource();
+      // R2: non-destructive category merge. Categories disabled locally are preserved
+      // from the newest remote snapshot instead of being dropped (which would erase
+      // another device's data). Explicit deletion still propagates (empty value).
+      const remotePayload =
+        newestRemote && typeof newestRemote.payload === "object" && newestRemote.payload
+          ? (newestRemote.payload as Record<string, unknown>)
+          : {};
+      const mergedSource: Record<string, unknown> = { ...source };
+      const pushSelection: Selection = { ...selection };
+      if (!selection.playlists && remotePayload.playlists !== undefined) {
+        mergedSource.playlists = remotePayload.playlists;
+        pushSelection.playlists = true;
+      }
+      if (!selection.settings && remotePayload.settings !== undefined) {
+        mergedSource.settings = remotePayload.settings;
+        pushSelection.settings = true;
+      }
+      if (!selection.history && remotePayload.history !== undefined) {
+        mergedSource.history = remotePayload.history;
+        pushSelection.history = true;
+      }
       const newRev = Math.max(localRev, remoteRev) + 1;
       let pushError: string | undefined;
       let uploadConflict = false;
       for (const transport of transports) {
         const result = await transport.upload(
           config.syncKey!,
-          source as any,
-          selection as any,
+          mergedSource as any,
+          pushSelection as any,
           newRev
         );
         if (result.error && !pushError) pushError = result.error;

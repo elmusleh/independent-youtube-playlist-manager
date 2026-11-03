@@ -10,6 +10,8 @@
  * URL + anon key.
  */
 
+import type { SyncSnapshot } from "./snapshot-codec.js";
+
 export type SyncBackend = "relay" | "supabase-byo" | "file";
 
 export type SyncContentSelection = {
@@ -17,6 +19,16 @@ export type SyncContentSelection = {
   settings: boolean;
   history: boolean;
 };
+
+export type DownloadStatus = "ok" | "missing" | "permission" | "corrupt" | "decrypt" | "conflict";
+
+export type DownloadResult =
+  | { status: "ok"; snapshot: SyncSnapshot }
+  | { status: "missing" }
+  | { status: "permission"; message: string }
+  | { status: "corrupt"; message: string }
+  | { status: "decrypt"; message: string }
+  | { status: "conflict"; branches: SyncSnapshot[] };
 
 export type SyncConfig = {
   syncKey: string | null;
@@ -65,8 +77,8 @@ export const DEFAULT_SYNC_CONFIG: SyncConfig = {
  * (`address text primary key`, `blob text`, `revision bigint`, `device_id text`,
  * `updated_at timestamptz`) and paste the URL + anon key here.
  */
-export const RELAY_SUPABASE_URL = "https://placeholder.supabase.co";
-export const RELAY_SUPABASE_ANON_KEY = "placeholder-anon-key";
+export const RELAY_SUPABASE_URL = "https://qvwitlpnetwthyhrobca.supabase.co";
+export const RELAY_SUPABASE_ANON_KEY = "sb_publishable_HV50FQtJrkoNcKLsFk5BHQ_KUU2GeKb";
 
 /** True when the hosted relay has real credentials (not the placeholder). */
 export function isRelayConfigured(): boolean {

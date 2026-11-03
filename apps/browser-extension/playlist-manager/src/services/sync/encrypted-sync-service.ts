@@ -13,6 +13,7 @@
 
 import { createAnonClient } from "../supabase-client";
 import { RELAY_SUPABASE_URL, RELAY_SUPABASE_ANON_KEY } from "./sync-config";
+import type { DownloadResult } from "./sync-config";
 import { deriveEncryptionKey, deriveStorageAddress } from "./key-derivation";
 import { encryptSnapshot, decryptSnapshot } from "./encryption-service";
 import { createSnapshot, encodeSnapshot, decodeSnapshot, isNewerRevision } from "./snapshot-codec";
@@ -142,7 +143,7 @@ export class EncryptedSyncService {
    * Fetch, decrypt and decode the remote snapshot for this sync key.
    * Returns null when no snapshot exists yet (first device / fresh key).
    */
-  async download(syncKey: string): Promise<SyncSnapshot | null> {
+  async download(syncKey: string): Promise<DownloadResult> {
     try {
       const client = this.getClient();
       const address = await deriveStorageAddress(syncKey);
@@ -153,16 +154,41 @@ export class EncryptedSyncService {
         .select("blob, revision")
         .eq("address", address)
         .maybeSingle();
-      if (error) throw error;
-      if (!data || !data.blob) return null;
+      if (error) {
+        // Distinguish permission/auth errors from other failures.
+        const msg = error?.message || String(error);
+        if (/permission|rls|not allowed|401|403/i.test(msg)) {
+          return { status: "permission", message: msg };
+        }
+        throw error;
+      }
+      if (!data || !data.blob) return { status: "missing" };
 
-      const encrypted = fromBase64(data.blob);
-      const plaintext = await decryptSnapshot(key, encrypted);
-      return decodeSnapshot(plaintext);
+      let plaintext: Uint8Array;
+      try {
+        const encrypted = fromBase64(data.blob);
+        plaintext = await decryptSnapshot(key, encrypted);
+      } catch (err: any) {
+        return { status: "decrypt", message: err?.message || String(err) };
+      }
+      try {
+        const snapshot = decodeSnapshot(plaintext);
+        return { status: "ok", snapshot };
+      } catch (err: any) {
+        return { status: "corrupt", message: err?.message || String(err) };
+      }
     } catch (err: any) {
-      // A wrong key or tampered blob surfaces as a decryption error — never crash sync.
-      console.warn("[ENCRYPTED-SYNC] download failed:", err?.message || err);
-      return null;
+      const msg = err?.message || String(err);
+      console.warn("[ENCRYPTED-SYNC] download failed:", msg);
+      if (/permission|rls|not allowed|401|403/i.test(msg)) {
+        return { status: "permission", message: msg };
+      }
+      if (/corrupt|invalid|decode/i.test(msg)) {
+        return { status: "corrupt", message: msg };
+      }
+      // Unknown failure — treat as corrupt rather than "missing" so we don't
+      // silently report "Already up to date."
+      return { status: "corrupt", message: msg };
     }
   }
 
@@ -177,7 +203,8 @@ export class EncryptedSyncService {
     localRevision: number
   ): Promise<EncryptedSyncResult> {
     const uploadResult = await this.upload(syncKey, source, selection, localRevision);
-    const remote = await this.download(syncKey);
+    const remoteResult = await this.download(syncKey);
+    const remote = remoteResult.status === "ok" ? remoteResult.snapshot : null;
 
     let pulled = false;
     if (remote && isNewerRevision(remote.revision, localRevision)) {

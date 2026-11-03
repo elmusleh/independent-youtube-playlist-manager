@@ -54,9 +54,10 @@ describe("EncryptedSyncService", () => {
     expect(up.pushed).toBe(true);
 
     const remote = await service.download(key);
-    expect(remote).not.toBeNull();
-    expect(remote!.revision).toBe(1);
-    expect((remote!.payload as any).playlists).toEqual(source.playlists);
+    expect(remote.status).toBe("ok");
+    if (remote.status !== "ok") return;
+    expect(remote.snapshot.revision).toBe(1);
+    expect((remote.snapshot.payload as any).playlists).toEqual(source.playlists);
   });
 
   it("refuses to overwrite a newer remote revision", async () => {
@@ -74,8 +75,10 @@ describe("EncryptedSyncService", () => {
     expect(updated.pushed).toBe(false);
 
     const remote = await a.download(key);
-    expect(remote!.revision).toBe(5);
-    expect((remote!.payload as any).playlists).toEqual([{ id: "p1" }]);
+    expect(remote.status).toBe("ok");
+    if (remote.status !== "ok") return;
+    expect(remote.snapshot.revision).toBe(5);
+    expect((remote.snapshot.payload as any).playlists).toEqual([{ id: "p1" }]);
   });
 
   it("reports a rejected equal-revision write as a conflict", async () => {
@@ -101,7 +104,7 @@ describe("EncryptedSyncService", () => {
     const key = generateSyncKey();
     const service = new EncryptedSyncService("device-x");
     const remote = await service.download(key);
-    expect(remote).toBeNull();
+    expect(remote.status).toBe("missing");
   });
 
   it("fails to decrypt with a different key", async () => {
@@ -111,6 +114,6 @@ describe("EncryptedSyncService", () => {
     await service.upload(keyA, { playlists: [{ id: "secret" }] }, { playlists: true }, 1);
 
     const remote = await service.download(keyB);
-    expect(remote).toBeNull();
+    expect(remote.status).toBe("missing");
   });
 });

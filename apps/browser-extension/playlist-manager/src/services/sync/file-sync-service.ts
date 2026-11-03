@@ -19,6 +19,7 @@ import { encryptSnapshot, decryptSnapshot } from "./encryption-service";
 import { createSnapshot, encodeSnapshot, decodeSnapshot, isNewerRevision } from "./snapshot-codec";
 import { selectSyncContent, type SyncSource, type SyncSelection } from "./content-selector";
 import type { SyncSnapshot } from "./snapshot-codec";
+import type { DownloadResult } from "./sync-config";
 import type { EncryptedSyncResult } from "./encrypted-sync-service";
 
 const FILE_PREFIX = "iypm-sync-";
@@ -158,13 +159,51 @@ export class FileSyncService {
   }
 
   /** Read, decrypt and decode whatever snapshot arrived in the folder (or null). */
-  async download(syncKey: string): Promise<SyncSnapshot | null> {
+  async download(syncKey: string): Promise<DownloadResult> {
+    const address = await deriveStorageAddress(syncKey);
+    const key = await deriveEncryptionKey(syncKey);
+
+    let fileHandle: FileSystemFileHandle;
     try {
-      return await this.readSnapshot(syncKey);
+      fileHandle = await this.directory.getFileHandle(this.fileName(address));
     } catch (err: any) {
-      // A wrong key or tampered/corrupt file — never crash sync.
-      console.warn("[FILE-SYNC] download failed:", err?.message || err);
-      return null;
+      if (err && typeof err === "object" && "name" in err && err.name === "NotFoundError") {
+        return { status: "missing" };
+      }
+      const msg = err?.message || String(err);
+      console.warn("[FILE-SYNC] download failed:", msg);
+      if (/permission|notallowed|access|denied/i.test(msg)) {
+        return { status: "permission", message: msg };
+      }
+      return { status: "corrupt", message: msg };
+    }
+
+    try {
+      const file = await fileHandle.getFile();
+      const encrypted = new Uint8Array(await file.arrayBuffer());
+      let plaintext: Uint8Array;
+      try {
+        plaintext = await decryptSnapshot(key, encrypted);
+      } catch (err: any) {
+        const msg = err?.message || String(err);
+        console.warn("[FILE-SYNC] download failed:", msg);
+        return { status: "decrypt", message: msg };
+      }
+      try {
+        const snapshot = decodeSnapshot(plaintext);
+        return { status: "ok", snapshot };
+      } catch (err: any) {
+        const msg = err?.message || String(err);
+        console.warn("[FILE-SYNC] download failed:", msg);
+        return { status: "corrupt", message: msg };
+      }
+    } catch (err: any) {
+      const msg = err?.message || String(err);
+      console.warn("[FILE-SYNC] download failed:", msg);
+      if (/permission|notallowed|access|denied/i.test(msg)) {
+        return { status: "permission", message: msg };
+      }
+      return { status: "corrupt", message: msg };
     }
   }
 
@@ -176,7 +215,8 @@ export class FileSyncService {
     localRevision: number
   ): Promise<EncryptedSyncResult> {
     const uploadResult = await this.upload(syncKey, source, selection, localRevision);
-    const remote = await this.download(syncKey);
+    const remoteResult = await this.download(syncKey);
+    const remote = remoteResult.status === "ok" ? remoteResult.snapshot : null;
 
     let pulled = false;
     if (remote && isNewerRevision(remote.revision, localRevision)) {
