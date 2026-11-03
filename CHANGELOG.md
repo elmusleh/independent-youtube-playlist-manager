@@ -44,6 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Refreshed the playlist-manager toolchain and runtime packages (including Rollup 4, TypeScript 6, and Font Awesome 7); added the CSS module declaration required by TypeScript 6.
 - Removed the unused `Card.svelte` component; the settings cards now render from the single
   global `.card` style, eliminating the global/scoped `.card` ambiguity.
 - Added Playwright visual-regression baselines for the primary views (Settings, Saved,
