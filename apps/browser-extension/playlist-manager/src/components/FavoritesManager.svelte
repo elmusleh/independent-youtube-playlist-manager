@@ -2,7 +2,12 @@
   import { push } from "svelte-spa-router";
   import SimpleButton from "./SimpleButton.svelte";
   import Fa from "svelte-fa";
-  import { faStar, faGripLines } from "@fortawesome/free-solid-svg-icons";
+  import {
+    faThumbTack,
+    faArrowUp,
+    faArrowDown,
+    faGripLines,
+  } from "@fortawesome/free-solid-svg-icons";
   import type { Settings } from "../types/model";
   import { StatusManager } from "../services/status-manager.svelte";
   import { logger } from "../services/logger";
@@ -103,7 +108,7 @@
 
 <!-- Pinned Favorites -->
 <section class="card">
-  <h3><Fa icon={faStar} /> Pinned Favorites</h3>
+  <h3><Fa icon={faThumbTack} /> Pinned Favorites</h3>
   <p class="sub-text">
     These playlists appear in the sidebar for quick access. Drag to reorder; click the star to
     unpin.
@@ -112,7 +117,7 @@
     <p class="loading">Loading playlists...</p>
   {:else if playlists.length === 0}
     <div class="empty-favorites">
-      <Fa icon={faStar} class="empty-icon" />
+      <Fa icon={faThumbTack} class="empty-icon" />
       <p>No favorites pinned yet.</p>
       <p class="hint">Star a playlist in Saved or Manage to pin it here.</p>
     </div>
@@ -127,7 +132,7 @@
             {#if fav.thumbnailUrl}
               <img class="fav-thumb" src={fav.thumbnailUrl} alt="" />
             {:else}
-              <div class="fav-thumb placeholder"><Fa icon={faStar} /></div>
+              <div class="fav-thumb placeholder"><Fa icon={faThumbTack} /></div>
             {/if}
             <div class="fav-details">
               <span class="fav-title">{fav.title}</span>
@@ -141,7 +146,7 @@
               disabled={playlists[0]?.id === fav.id}
               title="Move up"
             >
-              <Fa icon={faStar} class="move-up" />
+              <Fa icon={faArrowUp} />
             </SimpleButton>
             <SimpleButton
               secondary
@@ -149,16 +154,16 @@
               disabled={playlists[playlists.length - 1]?.id === fav.id}
               title="Move down"
             >
-              <Fa icon={faStar} class="move-down" />
+              <Fa icon={faArrowDown} />
             </SimpleButton>
             <button
               class="fav-remove"
               onclick={() => toggle(fav.id)}
-              aria-label="Remove from favorites"
-              title="Remove from favorites"
+              aria-label="Unpin from sidebar"
+              title="Unpin from sidebar"
             >
               <span class:filled={true}>
-                <Fa icon={faStar} />
+                <Fa icon={faThumbTack} />
               </span>
             </button>
           </div>
@@ -275,7 +280,7 @@
   .fav-remove {
     background: none;
     border: none;
-    color: var(--color-brand-warning);
+    color: var(--color-brand-primary, #3b82f6);
     cursor: pointer;
     padding: 6px;
     border-radius: 6px;
@@ -286,7 +291,7 @@
   }
 
   .fav-remove:hover {
-    background-color: rgba(var(--color-brand-warning-rgb, 255, 193, 7), 0.15);
+    background-color: rgba(59, 130, 246, 0.15);
   }
 
   .fav-remove :global(svg.filled) {
