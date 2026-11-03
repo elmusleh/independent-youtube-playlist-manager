@@ -5,7 +5,9 @@
 - Skipped (superseded by `next` via PR #85): feat/sync-ui, feat/device-pairing, chore/cleanup-update, docs/handoff-update.
 - Dependabot: 0 open alerts (minimatch fixed to 11.0.4, deepmerge dismissed as no-fix).
 - `npm run check` ✅, `npm run build` ✅, bundle budget raised to 220 KiB.
-- `next` at `2c7f30b`, pushed to origin.
+- `next` at `4e56c4d`, pushed to origin.
+- Applied codebase recommendations: a11y fixes, non_reactive fixes, unused CSS removal, type:module, middleware→proxy migration.
+- Session record: `.ai-sync/sessions/2026-11-03-cleanup-recommendations.md`.
 
 ### Lessons learned — branch hygiene
 
