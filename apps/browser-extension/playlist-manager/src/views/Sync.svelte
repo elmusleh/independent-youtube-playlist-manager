@@ -94,9 +94,11 @@
   const hasSyncKey = $derived(!!config.syncKey);
 
   function hintFor(c: SyncConfig): string | null {
-    if (!c.syncKey) return "Enter a sync key to begin. Generate one on your first device, or paste a key from another device.";
-    if (c.backends.length === 0) return "You have a key, but no sync backend is enabled. Turn on \"IYPM hosted\" below.";
-    if (!lastSyncedAt) return "Key and backend ready. Click \"Sync now\" to upload your data.";
+    if (!c.syncKey)
+      return "Enter a sync key to begin. Generate one on your first device, or paste a key from another device.";
+    if (c.backends.length === 0)
+      return 'You have a key, but no sync backend is enabled. Turn on "IYPM hosted" below.';
+    if (!lastSyncedAt) return 'Key and backend ready. Click "Sync now" to upload your data.';
     return null;
   }
   const setupHint = $derived(hintFor(config));
@@ -348,7 +350,7 @@
           secondary
           onclick={syncNow}
           disabled={isSyncing || !syncIsOn}
-          class="sync-now-btn"
+          className="sync-now-btn"
         >
           <span class:spin={isSyncing}><Fa icon={isSyncing ? faSpinner : faArrowsRotate} /></span>
           {isSyncing ? "Syncing…" : "Sync now"}
@@ -413,7 +415,7 @@
             <p class="key-hint">
               <Fa icon={faInfoCircle} /> This key is set. Paste it into other devices to link them.
             </p>
-            <SimpleButton secondary class="danger" onclick={removeKey}>
+            <SimpleButton secondary className="danger" onclick={removeKey}>
               <Fa icon={faTrash} /> Remove key from this device
             </SimpleButton>
           </div>
