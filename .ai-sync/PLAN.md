@@ -189,7 +189,45 @@ headed acceptance, and CM-R9 actual bundle dependency inventory. Task/constraint
 `.ai-sync/sessions/2026-10-31-evidence-contracts-task.md`. Tests/build/audits stay with
 Hermes; orchestration runtime, release preparation and remote publication stay separate.
 
-## Recommendations for codebase improvement (2026-11-03)
+## File splitting plan (future sessions)
+
+The following files exceed the 350-line limit and need splitting. Each should be a dedicated session.
+
+### storage-service.ts (1230 lines)
+
+- **Split strategy**: Extract into 3 modules:
+  - `cache-service.ts` — persistent cache (PERSISTENT_CACHE_KEY, getCacheTTL, isFresh, bustCache)
+  - `playlist-crud.ts` — local playlist CRUD (saveLocalPlaylist, removeLocalPlaylist, getLocalPlaylists)
+  - `settings-service.ts` — settings management (invalidateSettingsCache, migrateSettings, _cachedSettings)
+- **Risk**: Side-effect registration pattern (imported for side effects in main.ts). Must preserve window.* assignments.
+- **Verification**: Run full test suite + build after split.
+
+### youtube-api.ts (1770 lines)
+
+- **Split strategy**: Extract into 3 modules:
+  - `innertube-client.ts` — multi-client Innertube engine (MWEB, WEB, TVHTML5)
+  - `oembed-scraper.ts` — oEmbed and embed page scraping
+  - `api-quota.ts` — YouTube Data API v3 batch queries
+- **Risk**: Complex internal dependency chain. Must verify compiled bundle includes all modules.
+- **Verification**: Run `npm run build` and check dist/ output.
+
+### Manage.svelte (2137 lines)
+
+- **Split strategy**: Extract sub-components:
+  - `PlaylistList.svelte` — playlist list with search/filter
+  - `PlaylistDetail.svelte` — single playlist detail view
+  - `BulkActions.svelte` — bulk delete/move operations
+- **Risk**: Heavy prop drilling and event handlers. Must preserve reactivity.
+- **Verification**: Svelte-check + manual UI testing.
+
+### PlaylistEditor.svelte (1930 lines)
+
+- **Split strategy**: Extract sub-components:
+  - `VideoList.svelte` — video list with drag-and-drop
+  - `VideoEditor.svelte` — single video edit form
+  - `PlaylistHeader.svelte` — playlist title/description editing
+- **Risk**: Complex state management with autosave debounce.
+- **Verification**: Svelte-check + manual UI testing.
 
 ### Immediate (before release)
 

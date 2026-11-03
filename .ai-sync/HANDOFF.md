@@ -5,8 +5,10 @@
 - Skipped (superseded by `next` via PR #85): feat/sync-ui, feat/device-pairing, chore/cleanup-update, docs/handoff-update.
 - Dependabot: 0 open alerts (minimatch fixed to 11.0.4, deepmerge dismissed as no-fix).
 - `npm run check` ✅, `npm run build` ✅, bundle budget raised to 220 KiB.
-- `next` at `4e56c4d`, pushed to origin.
-- Applied codebase recommendations: a11y fixes, non_reactive fixes, unused CSS removal, type:module, middleware→proxy migration.
+- `next` at `cc6b2d3`, pushed to origin.
+- Applied: test coverage for menu-state + mutation-queue, fixed latent bugs (getDefaultQuickAddSettings, DestinationType, destinationMode return, buildDestinationLabel null safety, getPlaylistsRevision named export).
+- Added CI automation: stale-branch-cleanup.yml, updated auto-merge-patches.yml for minor updates.
+- Documented file splitting plan in PLAN.md.
 - Session record: `.ai-sync/sessions/2026-11-03-cleanup-recommendations.md`.
 
 ### Lessons learned — branch hygiene
