@@ -5,6 +5,7 @@
     faClockRotateLeft,
     faStar,
     faThumbTack,
+    faChevronRight,
     faUsers,
     faClock,
     faLink,
@@ -196,6 +197,15 @@
       <hr class="nav-divider" />
 
       {#if favorites.length > 0}
+        <a
+          href="#/favorites"
+          class="favorite-section-header"
+          class:active={isActive("/favorites", router.location, router.querystring || "")}
+        >
+          <Fa icon={faThumbTack} fw />
+          <span>Pinned</span>
+          <Fa icon={faChevronRight} fw />
+        </a>
         {#each favorites.slice(0, MAX_VISIBLE_FAVORITES) as fav (fav.id)}
           <a
             href="#/playlist?id={fav.id}"
@@ -206,15 +216,6 @@
             <span class="favorite-nav-title" title={fav.title}>{fav.title}</span>
           </a>
         {/each}
-        {#if favorites.length > MAX_VISIBLE_FAVORITES}
-          <a
-            href="#/favorites"
-            class:active={isActive("/favorites", router.location, router.querystring || "")}
-          >
-            <Fa icon={faThumbTack} fw />
-            <span>All favorites ({favorites.length})</span>
-          </a>
-        {/if}
         <hr class="nav-divider" />
       {/if}
 
@@ -365,6 +366,16 @@
           <hr class="nav-divider" />
 
           {#if favorites.length > 0}
+            <a
+              href="#/favorites"
+              onclick={handleNavClick}
+              class="favorite-section-header"
+              class:active={isActive("/favorites", router.location, router.querystring || "")}
+            >
+              <Fa icon={faThumbTack} fw />
+              <span>Pinned</span>
+              <Fa icon={faChevronRight} fw />
+            </a>
             {#each favorites.slice(0, MAX_VISIBLE_FAVORITES) as fav (fav.id)}
               <a
                 href="#/playlist?id={fav.id}"
@@ -376,16 +387,6 @@
                 <span class="favorite-nav-title" title={fav.title}>{fav.title}</span>
               </a>
             {/each}
-            {#if favorites.length > MAX_VISIBLE_FAVORITES}
-              <a
-                href="#/favorites"
-                onclick={handleNavClick}
-                class:active={isActive("/favorites", router.location, router.querystring || "")}
-              >
-                <Fa icon={faThumbTack} fw />
-                <span>All favorites ({favorites.length})</span>
-              </a>
-            {/if}
             <hr class="nav-divider" />
           {/if}
 
@@ -625,6 +626,38 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  .favorite-section-header {
+    padding: 0 16px;
+    height: 44px;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-color);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: all 0.15s ease;
+    border-radius: 12px;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+
+  .favorite-section-header:hover {
+    background-color: var(--hover-color);
+  }
+
+  .favorite-section-header.active {
+    background-color: var(--active-bg-color);
+    color: var(--active-text-color);
+  }
+
+  .favorite-section-header :global(svg:last-child) {
+    margin-left: auto;
+    width: 14px !important;
+    height: 14px !important;
+    min-width: 14px;
   }
 
   .nav-divider {
