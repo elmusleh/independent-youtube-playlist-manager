@@ -19,6 +19,7 @@ import {
   type SyncConfig,
   type SyncBackend,
   type DownloadResult,
+  type SyncTimestamps,
 } from "./sync/sync-config.js";
 import type { SyncSnapshot } from "./sync/snapshot-codec.js";
 import { selectSyncableSettings } from "./sync/settings-selector.js";
@@ -31,6 +32,19 @@ const POLL_MS = 5 * 60 * 1000;
 let syncTimer: ReturnType<typeof setTimeout> | null = null;
 let pollTimer: ReturnType<typeof setInterval> | null = null;
 let isSyncing = false;
+
+/** Callback for sync progress updates (used by UI). */
+type ProgressCallback = (stage: string, detail?: string) => void;
+let progressCallback: ProgressCallback | null = null;
+
+/** Register a callback to receive sync progress updates. */
+export function onSyncProgress(cb: ProgressCallback | null): void {
+  progressCallback = cb;
+}
+
+function notifyProgress(stage: string, detail?: string): void {
+  if (progressCallback) progressCallback(stage, detail);
+}
 
 type Transport = EncryptedSyncService | FileSyncService;
 type Selection = {
@@ -168,6 +182,7 @@ async function performSync(options: { push?: boolean } = {}): Promise<void> {
     // Read every enabled backend and take the newest snapshot (mirror: any may win).
     let newestRemote: SyncSnapshot | null = null;
     const readErrors: string[] = [];
+    notifyProgress("reading", "Checking remote backends…");
     for (const transport of transports) {
       const result = await transport.download(config.syncKey!);
       if (result.status === "ok") {
@@ -190,6 +205,7 @@ async function performSync(options: { push?: boolean } = {}): Promise<void> {
       config.lastSyncedAt = Date.now();
       await saveSyncConfig(config);
       isSyncing = false;
+      notifyProgress("error", config.lastSyncSummary);
       return;
     }
 
@@ -197,10 +213,17 @@ async function performSync(options: { push?: boolean } = {}): Promise<void> {
 
     if (newestRemote && remoteRev > localRev) {
       // Another device wrote newer data — adopt it (LWW: newer wins).
+      notifyProgress("pulling", "Downloading latest data…");
       await backupLocal();
       const pullResult = await applyRemote(newestRemote.payload, selection);
       applied = pullResult.applied;
       const pullFailed = pullResult.failed;
+
+      // Update per-category timestamps for categories that succeeded.
+      const now = Date.now();
+      if (applied.includes("playlists")) config.categoryTimestamps.playlists = now;
+      if (applied.includes("settings")) config.categoryTimestamps.settings = now;
+      if (applied.includes("history")) config.categoryTimestamps.history = now;
 
       // Only advance the sync revision when every intended category applied.
       if (pullFailed.length === 0) {
@@ -211,13 +234,16 @@ async function performSync(options: { push?: boolean } = {}): Promise<void> {
         config.syncRevision = remoteRev;
         config.lastError = null;
         config.lastSyncSummary = `Pulled ${applied.join(", ") || "data"} from another device.`;
+        notifyProgress("success", config.lastSyncSummary);
       } else {
         config.lastError = `Partial sync: ${pullFailed.join("; ")}`;
         config.lastSyncSummary = `Sync partially applied: ${pullFailed.join("; ")}`;
         // Do NOT advance syncRevision — retry on next sync.
+        notifyProgress("partial", config.lastSyncSummary);
       }
     } else if (push) {
       // We are at least as new — push with a fresh Lamport timestamp to every backend.
+      notifyProgress("preparing", "Preparing local changes…");
       const source = await collectSource();
       // R2: non-destructive category merge. Categories disabled locally are preserved
       // from the newest remote snapshot instead of being dropped (which would erase
@@ -243,6 +269,7 @@ async function performSync(options: { push?: boolean } = {}): Promise<void> {
       const newRev = Math.max(localRev, remoteRev) + 1;
       let pushError: string | undefined;
       let uploadConflict = false;
+      notifyProgress("pushing", "Uploading to backends…");
       for (const transport of transports) {
         const result = await transport.upload(
           config.syncKey!,
@@ -256,6 +283,7 @@ async function performSync(options: { push?: boolean } = {}): Promise<void> {
       if (pushError) {
         config.lastError = pushError;
         config.lastSyncSummary = `Sync failed: ${pushError}`;
+        notifyProgress("error", config.lastSyncSummary);
       } else if (uploadConflict) {
         // Another device wrote newer data during our push — pull it instead of
         // surfacing an error. This makes sync silent and self-healing.
@@ -263,6 +291,10 @@ async function performSync(options: { push?: boolean } = {}): Promise<void> {
           await backupLocal();
           const pullResult = await applyRemote(newestRemote.payload, selection);
           const pullFailed = pullResult.failed;
+          const now = Date.now();
+          if (pullResult.applied.includes("playlists")) config.categoryTimestamps.playlists = now;
+          if (pullResult.applied.includes("settings")) config.categoryTimestamps.settings = now;
+          if (pullResult.applied.includes("history")) config.categoryTimestamps.history = now;
           if (pullFailed.length === 0) {
             const devices = new Set(config.knownDevices ?? []);
             devices.add(await getOrCreateDeviceId());
@@ -271,9 +303,11 @@ async function performSync(options: { push?: boolean } = {}): Promise<void> {
             config.syncRevision = remoteRev;
             config.lastError = null;
             config.lastSyncSummary = `Pulled ${pullResult.applied.join(", ") || "data"} from another device.`;
+            notifyProgress("success", config.lastSyncSummary);
           } else {
             config.lastError = `Partial sync: ${pullFailed.join("; ")}`;
             config.lastSyncSummary = `Sync partially applied: ${pullFailed.join("; ")}`;
+            notifyProgress("partial", config.lastSyncSummary);
           }
         } else {
           // No newer snapshot identified — likely an equal-revision tie.
@@ -281,15 +315,22 @@ async function performSync(options: { push?: boolean } = {}): Promise<void> {
           config.lastError =
             "Another device wrote at the same moment. Click Sync now to reconcile.";
           config.lastSyncSummary = "Sync conflict detected. Click Sync now to reconcile.";
+          notifyProgress("conflict", config.lastSyncSummary);
         }
       } else {
         config.syncRevision = newRev;
         config.lastError = null;
         config.lastSyncSummary = "Synced your changes.";
+        const now = Date.now();
+        if (selection.playlists) config.categoryTimestamps.playlists = now;
+        if (selection.settings) config.categoryTimestamps.settings = now;
+        if (selection.history) config.categoryTimestamps.history = now;
+        notifyProgress("success", config.lastSyncSummary);
       }
     } else {
       config.lastError = null;
       config.lastSyncSummary = "Already up to date.";
+      notifyProgress("success", config.lastSyncSummary);
     }
 
     config.lastSyncedAt = Date.now();
@@ -306,8 +347,10 @@ async function performSync(options: { push?: boolean } = {}): Promise<void> {
       // Config write is secondary; the sync error is already surfaced.
     }
     console.warn("[AUTO-SYNC] exception:", e);
+    notifyProgress("error", config2.lastSyncSummary);
   } finally {
     isSyncing = false;
+    notifyProgress("idle", "");
   }
 }
 
@@ -319,6 +362,7 @@ export async function getSyncStatus(): Promise<{
   hasKey: boolean;
   backends: string[];
   knownDevices: number;
+  categoryTimestamps: SyncTimestamps;
 }> {
   const config = await loadSyncConfig();
   return {
@@ -329,6 +373,11 @@ export async function getSyncStatus(): Promise<{
     hasKey: !!config.syncKey,
     backends: config.backends ?? [],
     knownDevices: config.knownDevices?.length ?? 0,
+    categoryTimestamps: config.categoryTimestamps ?? {
+      playlists: null,
+      settings: null,
+      history: null,
+    },
   };
 }
 

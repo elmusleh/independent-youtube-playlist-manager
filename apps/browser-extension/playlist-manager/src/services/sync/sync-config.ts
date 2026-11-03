@@ -30,6 +30,13 @@ export type DownloadResult =
   | { status: "decrypt"; message: string }
   | { status: "conflict"; branches: SyncSnapshot[] };
 
+/** Per-category sync timestamps for granular status display. */
+export type SyncTimestamps = {
+  playlists: number | null;
+  settings: number | null;
+  history: number | null;
+};
+
 export type SyncConfig = {
   syncKey: string | null;
   /** Enabled sync backends (more than one = mirror to each). */
@@ -50,6 +57,8 @@ export type SyncConfig = {
    * two devices must never tie, or neither will pull the other's data.
    */
   syncRevision: number;
+  /** Per-category last successful sync timestamps. */
+  categoryTimestamps: SyncTimestamps;
 };
 
 const KEY = "yph_sync_config";
@@ -66,6 +75,7 @@ export const DEFAULT_SYNC_CONFIG: SyncConfig = {
   lastSyncSummary: null,
   knownDevices: [],
   syncRevision: 0,
+  categoryTimestamps: { playlists: null, settings: null, history: null },
 };
 
 /**
@@ -147,6 +157,12 @@ export async function loadSyncConfig(): Promise<SyncConfig> {
       : stored.backend
         ? [stored.backend]
         : [];
+    // Ensure categoryTimestamps exists (migration from older configs).
+    const categoryTimestamps = stored.categoryTimestamps ?? {
+      playlists: stored.lastSyncedAt ?? null,
+      settings: null,
+      history: null,
+    };
     return {
       ...DEFAULT_SYNC_CONFIG,
       ...stored,
@@ -154,6 +170,7 @@ export async function loadSyncConfig(): Promise<SyncConfig> {
       content,
       knownDevices: Array.isArray(stored.knownDevices) ? stored.knownDevices : [],
       syncRevision: typeof stored.syncRevision === "number" ? stored.syncRevision : 0,
+      categoryTimestamps,
     };
   } catch {
     return structuredClone(DEFAULT_SYNC_CONFIG);
