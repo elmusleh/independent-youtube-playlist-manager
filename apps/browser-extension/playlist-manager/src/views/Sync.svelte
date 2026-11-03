@@ -639,8 +639,8 @@
   }
 
   .banner-main {
-    flex: 1;
-    min-width: 280px;
+    flex: 1 1 280px;
+    min-width: 0;
   }
 
   .status-icon-wrapper {
@@ -751,7 +751,7 @@
   }
 
   .sync-now-btn {
-    min-width: 140px;
+    min-width: 0;
   }
 
   .fa-spinner.spin {
@@ -840,8 +840,8 @@
   }
 
   .key-value {
-    flex: 1;
-    min-width: 200px;
+    flex: 1 1 200px;
+    min-width: 0;
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     font-size: 0.875rem;
     padding: 0.5rem 0.75rem;
@@ -865,8 +865,8 @@
   }
 
   .key-input {
-    flex: 1;
-    min-width: 220px;
+    flex: 1 1 220px;
+    min-width: 0;
     padding: 0.5rem 0.75rem;
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     font-size: 0.875rem;
