@@ -63,6 +63,19 @@ error | offline | paused`), single-flight guard, exponential backoff, status per
 - Devices adapter added (`services/sync/adapters/devices.ts`).
 - `storage.onChanged` triggers already wired (debounced push).
 
+### Phase 4 — Sync Center UI (DONE)
+
+- `Sync.svelte` split into `components/sync/*`: `SyncHero`, `SyncCounters`,
+  `SyncKeyCard`, `SyncContents`, `SyncActivity`, `SyncAdvanced`.
+- `SyncStatusIndicator.svelte` (header) driven by `yph_sync_status` with a badge
+  when changes are waiting or a run failed.
+
+### Phase 5 — Extras (DONE)
+
+- Pairing link: "Copy pairing link" button + auto-import on mount.
+- Realtime nudge: `services/sync/realtime-nudge.ts` subscribes to broadcast channel.
+- Key rotation: "Rotate key (advanced)" flow.
+
 ### Bug fixes (discovered during this work)
 
 - Service worker did not load at all: `background/index.js` imported
@@ -91,19 +104,23 @@ error | offline | paused`), single-flight guard, exponential backoff, status per
 - `SyncStatusIndicator.svelte` (header) driven by `yph_sync_status` with a badge
   when changes are waiting or a run failed (DONE).
 
-### Phase 5 — Extras (optional, remaining)
+### Phase 5 — Extras (optional, DONE)
 
-- QR / pairing link (needs a small portal page + content-script handoff for
-  Firefox Android).
-- Supabase Realtime _broadcast_ nudge while a page is open (no data, only
-  "pull now").
-- Key rotation that moves data to a new space.
+- Pairing link (`26a9dfb`): "Copy pairing link" button in `SyncKeyCard` (base64url
+  key in `#/sync?join=...`); `Sync.svelte` imports & validates on mount, saves key,
+  shows toast.
+- Realtime nudge (`161fbf6`): `services/sync/realtime-nudge.ts` subscribes to
+  `sync-<space>` broadcast channel (handles `nudge`/`sync-nudge`), debounced,
+  triggers `pullNow()`; wired in `Sync.svelte` with cleanup.
+- Key rotation (`4a3b60e`): "Rotate key (advanced)" button → confirm dialog →
+  `rotate-key.ts` generates new key, pushes all data to new space, updates config,
+  deletes old space; refreshes UI + resubscribes.
 
-### Backend / ops (remaining)
+### Backend / ops (owner action remaining)
 
 - Run `docs/sync-relay-v2.sql` on the hosted Supabase project (`qvwitlpnetwthyhrobca`).
 - Drop the v1 `relay_snapshots` table after migration.
-- Update `PRIVACY_POLICY.md` (device name + platform stored encrypted).
+- `PRIVACY_POLICY.md` updated to document encrypted v2 sync.
 
 ## Test status
 
