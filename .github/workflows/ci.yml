@@ -43,9 +43,15 @@ jobs:
         run: |
           echo "Starting Docker Compose..."
           docker compose -f docker-compose.test.yml up -d --wait
-          echo "Docker Compose up completed, checking container status..."
-          docker compose -f docker-compose.test.yml ps
+          echo "Docker Compose up completed"
         timeout-minutes: 15
+
+      - name: Verify containers are running
+        run: |
+          echo "Checking container status..."
+          docker compose -f docker-compose.test.yml ps
+          docker compose -f docker-compose.test.yml ps --format json | jq -r '.[] | select(.State != "running") | .Name' | grep -q . && exit 1 || echo "All containers running"
+        timeout-minutes: 2
 
       - name: Verify Postgres health
         run: |
