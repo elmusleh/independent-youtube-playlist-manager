@@ -881,3 +881,15 @@ writes. `.husky/pre-commit` was modified by a concurrent process (a commit attem
 - Engine: conflict pull/merge/retry, claim rejection abort, authoritative playlist snapshot, tombstone de-duplication.
 - Tests: `npm run check` ✅, `npm run build` ✅, sync suites 135 passed, relay E2E 16 passed.
 - PR #88 still BLOCKED (review threads need resolution); no push/merge/production migration performed.
+
+## 2026-11-04 — Sync v2 CI fully green (branch `feat/sync-hardening`)
+
+- Commit: `5f135e5` — "fix: create authenticated role for test relay fixture"
+- All required PR #88 checks now pass:
+  - Quality & Security (Lint, Format, Audit, Unit Tests) ✅
+  - Extension CI (Svelte Diagnostics & Manifest Validation) ✅
+  - Web & Extension E2E Integration (Typecheck, Build, E2E) ✅
+  - Build & Bundle Inventory ✅
+  - All analysis/dependency/codeql/audit checks ✅
+- Root cause of Docker fixture failure: `authenticated` role missing in `test-relay-roles.sql`; added and granted schema usage.
+- No human code-review findings on PR (only auto-generated bot comments).
