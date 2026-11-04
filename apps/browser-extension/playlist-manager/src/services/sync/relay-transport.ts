@@ -142,6 +142,12 @@ export async function pushAll(
   records: RelayRecord[],
   onProgress?: (done: number, total: number) => void
 ): Promise<PushResult[]> {
+  // Client-side guard: reject oversized payloads before sending (M4).
+  for (const r of records) {
+    if (r.payload.length > 150_000) {
+      throw new Error(`Payload too large: ${r.payload.length} bytes (max 150000)`);
+    }
+  }
   const results: PushResult[] = [];
   for (let i = 0; i < records.length; i += BATCH_SIZE) {
     const batch = records.slice(i, i + BATCH_SIZE);
