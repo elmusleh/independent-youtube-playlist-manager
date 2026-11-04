@@ -4,10 +4,9 @@
  * Each device is its own record; merge is per-device LWW by lastSeen.
  */
 
-import { getShadow, setShadow, isDirty } from "../shadow-store";
-import type { RelayRecord } from "../relay-transport";
-import { computeRecordId } from "../keys";
-import { deriveKeys } from "../keys";
+import { getShadow, setShadow, isDirty, deleteShadow } from "../shadow-store";
+import type { DirtyCandidate } from "./types";
+import { computeRecordId, deriveKeys } from "../keys";
 import { encryptRecord, decryptRecord, RECORD_VERSION } from "../record-codec";
 import { getHlc } from "../hlc";
 import type { RecordEnvelope, EncryptedRecord } from "../record-codec";
@@ -30,7 +29,7 @@ export type AdapterContext = {
   hlcState?: { lastHlc: any };
 };
 
-export async function collectDirtyDevices(ctx: AdapterContext): Promise<RelayRecord[]> {
+export async function collectDirtyDevices(ctx: AdapterContext): Promise<DirtyCandidate[]> {
   const device: DeviceRecord = {
     deviceId: ctx.localDeviceId,
     platform: ctx.platform,
@@ -52,13 +51,19 @@ export async function collectDirtyDevices(ctx: AdapterContext): Promise<RelayRec
       data: device,
     };
     const encrypted = await encryptRecord(envelope, keys);
-    await setShadow("devices", ctx.localDeviceId, device, version, ctx.localDeviceId);
     return [
       {
+        record: {
+          collection: "devices",
+          rid,
+          version,
+          payload: JSON.stringify(encrypted),
+          deleted: false,
+        },
         collection: "devices",
-        rid,
+        recordId: ctx.localDeviceId,
+        value: device,
         version,
-        payload: JSON.stringify(encrypted),
         deleted: false,
       },
     ];
@@ -74,15 +79,47 @@ export async function applyRemoteDevices(
   if (!remote || remote.length === 0) return { applied: 0, failed: [] };
   const local = (await ctx.librarySnapshot()).devices ?? [];
   const keys = await deriveKeys(ctx.syncKey);
+  const failed: string[] = [];
   const remoteDevices: DeviceRecord[] = [];
+  const remoteVersions = new Map<string, number>();
+  const remoteDeletes = new Map<string, number>();
   for (const r of remote) {
-    if (r.deleted) continue;
     try {
       const encrypted = JSON.parse(r.payload) as EncryptedRecord;
+      if (
+        encrypted.collection !== "devices" ||
+        encrypted.id !== r.rid ||
+        encrypted.hlc !== r.version ||
+        encrypted.deleted !== r.deleted
+      ) {
+        throw new Error("record metadata does not match relay envelope");
+      }
       const envelope = await decryptRecord(encrypted, keys);
-      if (envelope?.data) remoteDevices.push(envelope.data as DeviceRecord);
-    } catch {
-      // Skip undecryptable records
+      if (envelope.collection !== "devices" || envelope.deleted !== r.deleted) {
+        throw new Error("invalid device envelope");
+      }
+      const device = envelope.data as DeviceRecord | null;
+      if (
+        !device ||
+        typeof device.deviceId !== "string" ||
+        !device.deviceId ||
+        !Number.isFinite(device.lastSeen)
+      ) {
+        throw new Error("device envelope is missing a valid deviceId or lastSeen");
+      }
+      if ((await computeRecordId(ctx.syncKey, "devices", device.deviceId)) !== r.rid) {
+        throw new Error("device id does not match relay record id");
+      }
+      if (r.deleted) {
+        remoteDeletes.set(device.deviceId, r.version);
+        continue;
+      }
+      const shadow = await getShadow("devices", device.deviceId);
+      if (shadow && r.version <= shadow.remoteVersion) continue;
+      remoteDevices.push(device);
+      remoteVersions.set(device.deviceId, r.version);
+    } catch (error) {
+      failed.push(`devices ${r.rid}: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -91,20 +128,56 @@ export async function applyRemoteDevices(
     const existing = merged.get(d.deviceId);
     if (!existing || d.lastSeen > existing.lastSeen) merged.set(d.deviceId, d);
   }
+
+  const locallyEditedDeletes = new Set<string>();
+  const appliedDeletes = new Set<string>();
+  for (const [deviceId, version] of remoteDeletes) {
+    const shadow = await getShadow("devices", deviceId);
+    if (shadow && version <= shadow.remoteVersion) continue;
+    const localDevice = merged.get(deviceId);
+    if (
+      localDevice &&
+      (deviceId === ctx.localDeviceId || (await isDirty("devices", deviceId, localDevice)))
+    ) {
+      // Keep a concurrent local device record and let the next pass publish it again.
+      locallyEditedDeletes.add(deviceId);
+    } else {
+      merged.delete(deviceId);
+      appliedDeletes.add(deviceId);
+    }
+  }
   const list = [...merged.values()];
 
-  const failed: string[] = [];
   try {
     await ctx.saveDevices(list);
   } catch (e) {
     failed.push(`devices: ${e instanceof Error ? e.message : String(e)}`);
+    return { applied: 0, failed };
   }
 
-  // Only advance shadow when the write succeeded.
-  if (failed.length === 0) {
-    for (const d of list) {
-      await setShadow("devices", d.deviceId, d, d.lastSeen, ctx.localDeviceId);
+  try {
+    for (const device of remoteDevices) {
+      await setShadow(
+        "devices",
+        device.deviceId,
+        device,
+        remoteVersions.get(device.deviceId) ?? 0,
+        ctx.localDeviceId
+      );
     }
+    for (const deviceId of locallyEditedDeletes) {
+      await setShadow(
+        "devices",
+        deviceId,
+        null,
+        remoteDeletes.get(deviceId) ?? 0,
+        ctx.localDeviceId,
+        true
+      );
+    }
+    for (const deviceId of appliedDeletes) await deleteShadow("devices", deviceId);
+  } catch (error) {
+    failed.push(`devices shadow update: ${error instanceof Error ? error.message : String(error)}`);
   }
 
   return { applied: list.length, failed };

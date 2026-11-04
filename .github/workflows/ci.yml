@@ -39,6 +39,33 @@ jobs:
       - name: Run Full Quality Check (lint + format + test + svelte-check)
         run: npm run check
 
+      - name: Start isolated sync relay fixture
+        run: docker compose -f docker-compose.test.yml up -d --wait
+
+      - name: Wait for PostgREST
+        run: |
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:3312/ >/dev/null; then
+              exit 0
+            fi
+            sleep 2
+          done
+          docker compose -f docker-compose.test.yml logs
+          exit 1
+
+      - name: Simulate legacy relay table grants in the isolated fixture
+        run: docker compose -f docker-compose.test.yml exec -T pg psql -U postgres -v ON_ERROR_STOP=1 -c 'GRANT ALL ON TABLE public.sync_spaces, public.sync_records, public.sync_rate_limit TO PUBLIC, anon, authenticated'
+
+      - name: Apply relay hardening migration to the isolated fixture
+        run: docker compose -f docker-compose.test.yml exec -T pg psql -U postgres -v ON_ERROR_STOP=1 < docs/migrations/0002_rate_limit_and_push_validation.sql
+
+      - name: Run real sync relay E2E tests
+        run: npm run test:sync:relay
+
+      - name: Stop sync relay fixture
+        if: always()
+        run: docker compose -f docker-compose.test.yml down -v
+
       - name: Orchestration safety harnesses
         run: |
           set -euo pipefail

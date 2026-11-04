@@ -1,17 +1,19 @@
 # docker-compose.test.yml — provisions Postgres + PostgREST for E2E sync tests
-# Usage: docker compose -f docker-compose.test.yml up -d
-#        npx vitest run --config vitest.config.mjs src/services/sync/e2e-relay.test.ts
-#        docker compose -f docker-compose.test.yml down
-version: "3.8"
-
+# Usage: docker compose -f docker-compose.test.yml up -d --wait
+#        npm run test:sync:relay
+#        docker compose -f docker-compose.test.yml down -v
 services:
   pg:
-    image: postgres:16-alpine
+    image: postgres:16-alpine@sha256:0cefaabd882e42bcb2a2f3dc56d3ce4770560ba62fd7f197f1a2e008fd5731ab # PostgreSQL 16.15
     environment:
       POSTGRES_PASSWORD: audit
       POSTGRES_HOST_AUTH_METHOD: trust
     ports:
       - "127.0.0.1:3311:5432"
+    volumes:
+      - ./packages/build-tools/test-relay-roles.sql:/docker-entrypoint-initdb.d/00-roles.sql:ro
+      - ./docs/sync-relay-v2.sql:/docker-entrypoint-initdb.d/10-sync-relay.sql:ro
+      - ./packages/build-tools/test-relay-helpers.sql:/docker-entrypoint-initdb.d/20-test-helpers.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 2s
@@ -19,7 +21,7 @@ services:
       retries: 10
 
   postgrest:
-    image: postgrest/postgrest:latest
+    image: postgrest/postgrest:latest@sha256:1347d7552b88f17832912c06afbf7c43209af6eeeb60834b04aae12c9bd9d5cc # PostgREST 16.5
     ports:
       - "127.0.0.1:3312:3000"
     environment:
@@ -30,14 +32,3 @@ services:
     depends_on:
       pg:
         condition: service_healthy
-    # Apply schema on startup
-    entrypoint: ["/bin/sh", "-c"]
-    command:
-      - |
-        echo "Waiting for Postgres..."
-        until pg_isready -h pg -U postgres; do sleep 1; done
-        echo "Applying schema..."
-        PGPASSWORD=audit psql -h pg -U postgres -v ON_ERROR_STOP=1 -f /tmp/relay.sql || true
-        exec postgrest
-    volumes:
-      - ./docs/sync-relay-v2.sql:/tmp/relay.sql:ro

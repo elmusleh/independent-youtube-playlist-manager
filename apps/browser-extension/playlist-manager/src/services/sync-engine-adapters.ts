@@ -7,8 +7,10 @@ import { collectDirtyPlaylists, applyRemotePlaylists } from "./sync/adapters/pla
 import { collectDirtyHistory, applyRemoteHistory } from "./sync/adapters/history";
 import { collectDirtySettings, applyRemoteSettings } from "./sync/adapters/settings";
 import { collectDirtyDevices, applyRemoteDevices } from "./sync/adapters/devices";
-import type { RelayRecord } from "./sync/relay-transport";
-import { pullAll, pushAll } from "./sync/relay-transport";
+import { deleteShadow, setShadow } from "./sync/shadow-store";
+import { librarySnapshot as readLibrarySnapshot } from "../../../shared/storage-client.js";
+import type { PushResult, RelayRecord } from "./sync/relay-transport";
+import type { DirtyCandidate } from "./sync/adapters/types";
 
 export type AdapterPassContext = {
   syncKey: string;
@@ -26,16 +28,95 @@ export type AdapterPassResult = {
   failed: string[];
   appliedCount: number;
   allDirty: RelayRecord[];
+  dirtyCandidates: DirtyCandidate[];
   maxSeq: number;
+  cursorBlocked: boolean;
 };
+
+export async function acknowledgePushedCandidates(
+  candidates: DirtyCandidate[],
+  results: PushResult[],
+  localDeviceId: string
+): Promise<string[]> {
+  const expectedKeys = candidates.map(
+    (candidate) => `${candidate.record.collection}|${candidate.record.rid}`
+  );
+  const expectedSet = new Set(expectedKeys);
+  const resultCounts = new Map<string, number>();
+  for (const result of results) {
+    const key = `${result.collection}|${result.rid}`;
+    resultCounts.set(key, (resultCounts.get(key) ?? 0) + 1);
+  }
+
+  const failed: string[] = [];
+
+  // Reject duplicate relay results for any record.
+  for (const [key, count] of resultCounts) {
+    if (count > 1) {
+      failed.push(`${key}: duplicate relay result (expected exactly one)`);
+    }
+  }
+  // Reject relay results that do not correspond to a pushed candidate.
+  for (const result of results) {
+    const key = `${result.collection}|${result.rid}`;
+    if (!expectedSet.has(key)) {
+      failed.push(`${key}: unexpected relay result`);
+    }
+  }
+  // Reject pushed candidates that have no matching relay result.
+  for (const key of expectedKeys) {
+    if (!resultCounts.has(key)) {
+      failed.push(`${key}: missing relay result`);
+    }
+  }
+
+  if (failed.length > 0) {
+    return failed;
+  }
+
+  const resultByRecord = new Map(
+    results.map((result) => [`${result.collection}|${result.rid}`, result])
+  );
+
+  for (const candidate of candidates) {
+    const result = resultByRecord.get(`${candidate.record.collection}|${candidate.record.rid}`)!;
+    if (result.status !== "ok") {
+      failed.push(
+        `${candidate.collection}/${candidate.recordId}: ${result.status}${result.message ? ` (${result.message})` : ""}`
+      );
+      continue;
+    }
+
+    try {
+      if (candidate.deleted) {
+        await deleteShadow(candidate.collection, candidate.recordId);
+      } else {
+        await setShadow(
+          candidate.collection,
+          candidate.recordId,
+          candidate.value,
+          candidate.version,
+          localDeviceId
+        );
+      }
+    } catch (error) {
+      failed.push(
+        `${candidate.collection}/${candidate.recordId}: shadow acknowledgement failed: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+  }
+
+  return failed;
+}
 
 export async function runAdapterPass(ctx: AdapterPassContext): Promise<AdapterPassResult> {
   const failed: string[] = [];
+  const dirtyCandidates: DirtyCandidate[] = [];
   let appliedCount = 0;
 
   const librarySnapshot = async () => {
     const w = (globalThis as any).window;
-    const playlists = w?.getPlaylists ? await w.getPlaylists() : [];
+    const snapshot = await readLibrarySnapshot();
     const settings = w?.getSettings ? await w.getSettings() : {};
     const historyObj = await (async () => {
       const b = (globalThis as any).browser || (globalThis as any).chrome;
@@ -45,14 +126,12 @@ export async function runAdapterPass(ctx: AdapterPassContext): Promise<AdapterPa
       }
       return {};
     })();
-    // Read library revision for expectedRevision in mutateLibrary
-    const b = (globalThis as any).browser || (globalThis as any).chrome;
-    let revision = 0;
-    if (b?.storage?.local) {
-      const stored = await b.storage.local.get("yph_library_revision");
-      revision = stored?.yph_library_revision ?? 0;
-    }
-    return { playlists, settings, history: historyObj ?? {}, revision };
+    return {
+      playlists: snapshot.playlists,
+      settings,
+      history: historyObj ?? {},
+      revision: snapshot.revision,
+    };
   };
   const mutateLibrary = async (op: any) => {
     const w = (globalThis as any).window;
@@ -64,10 +143,34 @@ export async function runAdapterPass(ctx: AdapterPassContext): Promise<AdapterPa
     const b = (globalThis as any).browser || (globalThis as any).chrome;
     return b?.runtime?.sendMessage({ cmd: "mutate-library", operation: op });
   };
-  const saveSettings = async (s: Record<string, unknown>) => {
+  const saveSettings = async (s: Record<string, unknown>, deletedKeys: string[] = []) => {
     const w = (globalThis as any).window;
     if (w?.storeObject) {
       for (const [k, v] of Object.entries(s)) await w.storeObject(k, v);
+    } else {
+      const b = (globalThis as any).browser || (globalThis as any).chrome;
+      if (b?.storage?.sync?.set) {
+        try {
+          await b.storage.sync.set(s);
+        } catch {
+          await b.storage.local?.set(s);
+        }
+      } else {
+        await b?.storage?.local?.set(s);
+      }
+    }
+    for (const key of deletedKeys) {
+      if (w?.removeObject) {
+        await w.removeObject(key);
+        continue;
+      }
+      const b = (globalThis as any).browser || (globalThis as any).chrome;
+      try {
+        await b?.storage?.sync?.remove?.(key);
+      } catch {
+        // Local removal is still required when sync storage is unavailable.
+      }
+      await b?.storage?.local?.remove?.(key);
     }
   };
   const saveHistory = async (entries: unknown[]) => {
@@ -101,7 +204,6 @@ export async function runAdapterPass(ctx: AdapterPassContext): Promise<AdapterPa
       },
       mutateLibrary,
     };
-    const dirtyPlaylists = await collectDirtyPlaylists(playlistCtx as any);
     const remotePlaylists = (incomingByCollection.get("playlists") ?? []).map((r: any) => ({
       rid: r.rid,
       payload: r.payload,
@@ -112,7 +214,8 @@ export async function runAdapterPass(ctx: AdapterPassContext): Promise<AdapterPa
     appliedCount += pr.applied;
     failed.push(...pr.failed);
 
-    allDirty.push(...dirtyPlaylists);
+    const dirtyPlaylists = await collectDirtyPlaylists(playlistCtx as any);
+    dirtyCandidates.push(...dirtyPlaylists);
   }
 
   // History
@@ -122,7 +225,6 @@ export async function runAdapterPass(ctx: AdapterPassContext): Promise<AdapterPa
       librarySnapshot: async () => ({ history: (await librarySnapshot()).history }),
       saveHistory,
     };
-    const dirtyHistory = await collectDirtyHistory(historyCtx as any);
     const remoteHistory = (incomingByCollection.get("history") ?? []).map((r: any) => ({
       rid: r.rid,
       payload: r.payload,
@@ -133,7 +235,8 @@ export async function runAdapterPass(ctx: AdapterPassContext): Promise<AdapterPa
     appliedCount += hr.applied;
     failed.push(...hr.failed);
 
-    allDirty.push(...dirtyHistory);
+    const dirtyHistory = await collectDirtyHistory(historyCtx as any);
+    dirtyCandidates.push(...dirtyHistory);
   }
 
   // Settings
@@ -143,7 +246,6 @@ export async function runAdapterPass(ctx: AdapterPassContext): Promise<AdapterPa
       librarySnapshot: async () => ({ settings: (await librarySnapshot()).settings }),
       saveSettings,
     };
-    const dirtySettings = await collectDirtySettings(settingsCtx as any);
     const remoteSettings = (incomingByCollection.get("settings") ?? []).map((r: any) => ({
       rid: r.rid,
       payload: r.payload,
@@ -154,19 +256,27 @@ export async function runAdapterPass(ctx: AdapterPassContext): Promise<AdapterPa
     appliedCount += sr.applied;
     failed.push(...sr.failed);
 
-    allDirty.push(...dirtySettings);
+    const dirtySettings = await collectDirtySettings(settingsCtx as any);
+    dirtyCandidates.push(...dirtySettings);
   }
 
   // Devices (always sync)
   const devicesCtx = {
     ...ctxBase,
     platform: (globalThis as any).navigator?.platform ?? "unknown",
-    librarySnapshot: async () => ({ devices: [] }),
+    librarySnapshot: async () => {
+      const stored = await ctx.storage.get("yph_sync_devices");
+      const devices = Array.isArray(stored?.yph_sync_devices)
+        ? stored.yph_sync_devices
+        : Array.isArray(stored)
+          ? stored
+          : [];
+      return { devices };
+    },
     saveDevices: async (d: any) => {
       await ctx.storage.set({ yph_sync_devices: d });
     },
   };
-  const dirtyDevices = await collectDirtyDevices(devicesCtx as any);
   const remoteDevices = (incomingByCollection.get("devices") ?? []).map((r: any) => ({
     rid: r.rid,
     payload: r.payload,
@@ -177,10 +287,25 @@ export async function runAdapterPass(ctx: AdapterPassContext): Promise<AdapterPa
   appliedCount += dr.applied;
   failed.push(...dr.failed);
 
-  allDirty.push(...dirtyDevices);
+  const dirtyDevices = await collectDirtyDevices(devicesCtx as any);
+  dirtyCandidates.push(...dirtyDevices);
 
   const maxSeq =
     ctx.incoming.length > 0 ? Math.max(...ctx.incoming.map((r: any) => r.seq)) : ctx.sinceSeq;
+  const cursorBlocked = ctx.incoming.some((record: any) => {
+    if (record.collection === "devices") return false;
+    return (
+      content[record.collection as "playlists" | "history" | "settings"] !== true &&
+      !(record.collection === "playlists" && content.playlists !== false)
+    );
+  });
 
-  return { failed, appliedCount, allDirty, maxSeq };
+  return {
+    failed,
+    appliedCount,
+    allDirty: dirtyCandidates.map((candidate) => candidate.record),
+    dirtyCandidates,
+    maxSeq,
+    cursorBlocked,
+  };
 }

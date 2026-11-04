@@ -4,11 +4,16 @@
  * Each video's history entry is its own record; merge is per-video LWW.
  */
 
-import { mergeHistory } from "../merge/history";
-import { getShadow, setShadow, isDirty } from "../shadow-store";
-import type { RelayRecord } from "../relay-transport";
-import { computeRecordId } from "../keys";
-import { deriveKeys } from "../keys";
+import { mergeHistory, type HistoryEntry } from "../merge/history";
+import {
+  getShadow,
+  setShadow,
+  isDirty,
+  getShadowsByCollection,
+  deleteShadow,
+} from "../shadow-store";
+import type { DirtyCandidate } from "./types";
+import { computeRecordId, deriveKeys } from "../keys";
 import { encryptRecord, decryptRecord, RECORD_VERSION } from "../record-codec";
 import { getHlc } from "../hlc";
 import type { RecordEnvelope, EncryptedRecord } from "../record-codec";
@@ -23,10 +28,10 @@ export type AdapterContext = {
   hlcState?: { lastHlc: any };
 };
 
-export async function collectDirtyHistory(ctx: AdapterContext): Promise<RelayRecord[]> {
+export async function collectDirtyHistory(ctx: AdapterContext): Promise<DirtyCandidate[]> {
   const { history } = await ctx.librarySnapshot();
   const keys = await deriveKeys(ctx.syncKey);
-  const dirty: RelayRecord[] = [];
+  const dirty: DirtyCandidate[] = [];
   let lastHlc: any = ctx.hlcState?.lastHlc;
   for (const [videoId, entry] of Object.entries(history)) {
     if (await isDirty("history", videoId, entry)) {
@@ -44,13 +49,19 @@ export async function collectDirtyHistory(ctx: AdapterContext): Promise<RelayRec
       };
       const encrypted = await encryptRecord(envelope, keys);
       dirty.push({
+        record: {
+          collection: "history",
+          rid,
+          version,
+          payload: JSON.stringify(encrypted),
+          deleted: false,
+        },
         collection: "history",
-        rid,
+        recordId: videoId,
+        value: entry,
         version,
-        payload: JSON.stringify(encrypted),
         deleted: false,
       });
-      await setShadow("history", videoId, entry, version, ctx.localDeviceId);
     }
   }
   // Deletion tombstones: detect locally deleted history entries
@@ -58,6 +69,8 @@ export async function collectDirtyHistory(ctx: AdapterContext): Promise<RelayRec
   const shadows = await getShadowsByCollection("history");
   for (const shadow of shadows) {
     if (localIds.has(shadow.recordId)) continue;
+    // An acknowledged deletion has already been propagated; do not re-emit it.
+    if (shadow.deleted) continue;
     const baseCopy = shadow.baseCopy;
     if (!baseCopy) continue;
     const rid = await computeRecordId(ctx.syncKey, "history", shadow.recordId);
@@ -74,13 +87,19 @@ export async function collectDirtyHistory(ctx: AdapterContext): Promise<RelayRec
     };
     const encrypted = await encryptRecord(envelope, keys);
     dirty.push({
+      record: {
+        collection: "history",
+        rid,
+        version,
+        payload: JSON.stringify(encrypted),
+        deleted: true,
+      },
       collection: "history",
-      rid,
+      recordId: shadow.recordId,
+      value: baseCopy,
       version,
-      payload: JSON.stringify(encrypted),
       deleted: true,
     });
-    await setShadow("history", shadow.recordId, baseCopy, version, ctx.localDeviceId);
   }
 
   if (ctx.hlcState) ctx.hlcState.lastHlc = lastHlc;
@@ -95,61 +114,108 @@ export async function applyRemoteHistory(
   if (!remote || remote.length === 0) return { applied: 0, failed: [] };
   const { history: localObj } = await ctx.librarySnapshot();
   const keys = await deriveKeys(ctx.syncKey);
-  const local = Object.values(localObj) as any[];
-  const baseCopies: any[] = [];
-  for (const v of local) {
-    const base = await getShadow("history", v.videoId);
-    if (base?.baseCopy) baseCopies.push(base.baseCopy);
+  const local = Object.values(localObj) as HistoryEntry[];
+  const baseCopies: HistoryEntry[] = [];
+  for (const entry of local) {
+    const base = await getShadow("history", entry.videoId);
+    if (base?.baseCopy) baseCopies.push(base.baseCopy as HistoryEntry);
   }
 
-  const remoteEntries: any[] = [];
+  const failed: string[] = [];
+  const remoteEntries: HistoryEntry[] = [];
+  const remoteVersions = new Map<string, number>();
+  const remoteDeletes = new Map<string, number>();
   for (const r of remote) {
-    if (r.deleted) {
-      try {
-        const encrypted = JSON.parse(r.payload) as EncryptedRecord;
-        const envelope = await decryptRecord(encrypted, keys);
-        if (envelope?.data) {
-          const videoId = (envelope.data as any).videoId ?? (envelope.data as any).id;
-          if (videoId) {
-            const b = (globalThis as any).browser || (globalThis as any).chrome;
-            if (b?.storage?.local) {
-              const stored = await b.storage.local.get("local_yt_history");
-              const obj = stored?.local_yt_history ?? {};
-              delete obj[videoId];
-              await b.storage.local.set({ local_yt_history: obj });
-            }
-            await deleteShadow("history", videoId);
-          }
-        }
-      } catch {
-        // Skip undecryptable records
-      }
-      continue;
-    }
     try {
       const encrypted = JSON.parse(r.payload) as EncryptedRecord;
+      if (
+        encrypted.collection !== "history" ||
+        encrypted.id !== r.rid ||
+        encrypted.hlc !== r.version ||
+        encrypted.deleted !== r.deleted
+      ) {
+        throw new Error("record metadata does not match relay envelope");
+      }
       const envelope = await decryptRecord(encrypted, keys);
-      if (envelope?.data) remoteEntries.push(envelope.data);
-    } catch {
-      // Skip undecryptable records
+      if (envelope.collection !== "history" || envelope.deleted !== r.deleted) {
+        throw new Error("invalid history envelope");
+      }
+      const data = envelope.data as HistoryEntry | null;
+      const videoId = data?.videoId;
+      if (typeof videoId !== "string" || !videoId) {
+        throw new Error("history envelope is missing videoId");
+      }
+      if ((await computeRecordId(ctx.syncKey, "history", videoId)) !== r.rid) {
+        throw new Error("history video id does not match relay record id");
+      }
+      if (r.deleted) {
+        remoteDeletes.set(videoId, r.version);
+      } else {
+        if (!Number.isFinite(data?.lastWatchedAt)) {
+          throw new Error("history envelope has an invalid lastWatchedAt");
+        }
+        const shadow = await getShadow("history", videoId);
+        if (shadow && r.version <= shadow.remoteVersion) continue;
+        remoteEntries.push(data);
+        remoteVersions.set(videoId, r.version);
+      }
+    } catch (error) {
+      failed.push(`history ${r.rid}: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
   const { merged } = mergeHistory(local, remoteEntries, baseCopies);
+  const mergedById = new Map(merged.map((entry) => [entry.videoId, entry]));
+  const locallyEditedDeletes = new Set<string>();
+  const appliedDeletes = new Set<string>();
+  const localById = new Map(local.map((entry) => [entry.videoId, entry]));
 
-  const failed: string[] = [];
-  try {
-    await ctx.saveHistory(merged);
-  } catch (e) {
-    failed.push(`history: ${e instanceof Error ? e.message : String(e)}`);
-  }
-
-  // Only advance shadow when the write succeeded.
-  if (failed.length === 0) {
-    for (const e of merged) {
-      await setShadow("history", e.videoId, e, e.lastWatchedAt, ctx.localDeviceId);
+  for (const [videoId, version] of remoteDeletes) {
+    const shadow = await getShadow("history", videoId);
+    if (shadow && version <= shadow.remoteVersion) continue;
+    const localEntry = localById.get(videoId);
+    if (localEntry && (await isDirty("history", videoId, localEntry))) {
+      // Preserve concurrent local work and keep it dirty against the remote tombstone.
+      mergedById.set(videoId, localEntry);
+      locallyEditedDeletes.add(videoId);
+    } else {
+      mergedById.delete(videoId);
+      appliedDeletes.add(videoId);
     }
   }
 
-  return { applied: merged.length, failed };
+  const finalHistory = [...mergedById.values()].sort((a, b) => b.lastWatchedAt - a.lastWatchedAt);
+  try {
+    await ctx.saveHistory(finalHistory);
+  } catch (e) {
+    failed.push(`history: ${e instanceof Error ? e.message : String(e)}`);
+    return { applied: 0, failed };
+  }
+
+  try {
+    for (const entry of remoteEntries) {
+      await setShadow(
+        "history",
+        entry.videoId,
+        entry,
+        remoteVersions.get(entry.videoId) ?? 0,
+        ctx.localDeviceId
+      );
+    }
+    for (const videoId of locallyEditedDeletes) {
+      await setShadow(
+        "history",
+        videoId,
+        null,
+        remoteDeletes.get(videoId) ?? 0,
+        ctx.localDeviceId,
+        true
+      );
+    }
+    for (const videoId of appliedDeletes) await deleteShadow("history", videoId);
+  } catch (error) {
+    failed.push(`history shadow update: ${error instanceof Error ? error.message : String(error)}`);
+  }
+
+  return { applied: finalHistory.length, failed };
 }

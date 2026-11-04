@@ -12,6 +12,14 @@ const DB_NAME = "yph_sync_shadow_v1";
 const STORE_NAME = "shadow";
 const DB_VERSION = 1;
 
+function waitForTransaction(tx: IDBTransaction): Promise<void> {
+  return new Promise((resolve, reject) => {
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error ?? new Error("IndexedDB transaction failed"));
+    tx.onabort = () => reject(tx.error ?? new Error("IndexedDB transaction aborted"));
+  });
+}
+
 export type ShadowRecord = {
   /** Composite key: `${collection}|${recordId}` */
   key: string;
@@ -25,6 +33,8 @@ export type ShadowRecord = {
   remoteVersion: number;
   /** Local device ID that last modified this record. */
   localDeviceId: string;
+  /** True when the last acknowledged remote baseline is a deletion. */
+  deleted?: boolean;
   /** When this shadow entry was last updated. */
   updatedAt: number;
 };
@@ -101,7 +111,8 @@ export async function setShadow(
   recordId: string,
   baseCopy: unknown,
   remoteVersion: number,
-  localDeviceId: string
+  localDeviceId: string,
+  deleted = false
 ): Promise<void> {
   const db = await openDb();
   const baseHash = computeHash(baseCopy);
@@ -114,16 +125,13 @@ export async function setShadow(
     baseCopy,
     remoteVersion,
     localDeviceId,
+    deleted,
     updatedAt: Date.now(),
   };
 
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_NAME, "readwrite");
-    const store = tx.objectStore(STORE_NAME);
-    const request = store.put(record);
-    request.onsuccess = () => resolve();
-    request.onerror = () => reject(request.error);
-  });
+  const tx = db.transaction(STORE_NAME, "readwrite");
+  tx.objectStore(STORE_NAME).put(record);
+  return waitForTransaction(tx);
 }
 
 /**
@@ -132,13 +140,9 @@ export async function setShadow(
 export async function deleteShadow(collection: string, recordId: string): Promise<void> {
   const db = await openDb();
   const key = `${collection}|${recordId}`;
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_NAME, "readwrite");
-    const store = tx.objectStore(STORE_NAME);
-    const request = store.delete(key);
-    request.onsuccess = () => resolve();
-    request.onerror = () => reject(request.error);
-  });
+  const tx = db.transaction(STORE_NAME, "readwrite");
+  tx.objectStore(STORE_NAME).delete(key);
+  return waitForTransaction(tx);
 }
 
 /**
@@ -152,6 +156,7 @@ export async function isDirty(
 ): Promise<boolean> {
   const shadow = await getShadow(collection, recordId);
   if (!shadow) return true; // No shadow = new record = dirty
+  if (shadow.deleted) return true;
   const currentHash = computeHash(currentCopy);
   return currentHash !== shadow.baseHash;
 }
@@ -206,13 +211,9 @@ export async function getAllBaseCopies(collection: string): Promise<Map<string, 
  */
 export async function clearAllShadows(): Promise<void> {
   const db = await openDb();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_NAME, "readwrite");
-    const store = tx.objectStore(STORE_NAME);
-    const request = store.clear();
-    request.onsuccess = () => resolve();
-    request.onerror = () => reject(request.error);
-  });
+  const tx = db.transaction(STORE_NAME, "readwrite");
+  tx.objectStore(STORE_NAME).clear();
+  return waitForTransaction(tx);
 }
 
 /**
@@ -301,8 +302,5 @@ export async function initializeFromLocal(
     });
   }
 
-  return new Promise((resolve, reject) => {
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error);
-  });
+  return waitForTransaction(tx);
 }

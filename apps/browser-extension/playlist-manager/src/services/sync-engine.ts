@@ -6,11 +6,12 @@
  * The UI reads status from `yph_sync_status` via storage.onChanged.
  */
 
-import { isRelayConfigured, loadSyncConfig, getOrCreateDeviceId } from "./sync/sync-config";
+import { isRelayConfigured, getOrCreateDeviceId } from "./sync/sync-config";
 import { runAdapterPass } from "./sync-engine-adapters";
-import { deriveKeys, computeStorageAddress, computeAuthToken } from "./sync/keys";
-import type { RelayRecord } from "./sync/relay-transport";
-import { claimSpace, pullAll, pushAll } from "./sync/relay-transport";
+import { pushCandidatesWithConflictResolution } from "./sync-engine-push";
+import { registerSyncEngine } from "./sync-engine-registration";
+import { computeStorageAddress, computeAuthToken } from "./sync/keys";
+import { claimSpace, pullAll } from "./sync/relay-transport";
 
 export type SyncPhase = "idle" | "pulling" | "merging" | "pushing" | "error" | "offline" | "paused";
 
@@ -65,95 +66,6 @@ export function getStatus(): SyncStatus {
   return { ...status };
 }
 
-// ---------------------------------------------------------------------------
-// Registration: expose on window and wire alarms / triggers (browser only).
-// ---------------------------------------------------------------------------
-
-const browserObj = (globalThis as any).browser || (globalThis as any).chrome;
-
-if (browserObj?.runtime) {
-  // Expose for the legacy alarm handler and UI messaging.
-  (globalThis as any).window = (globalThis as any).window || globalThis;
-  (globalThis as any).window.syncEngine = {
-    runOnce,
-    scheduleRun,
-    pause,
-    resume,
-    getStatus,
-    triggerSync: runOnce,
-  };
-
-  // Configure periodic alarm from sync config (interval 0 = manual only).
-  async function refreshPeriodicAlarm(): Promise<void> {
-    try {
-      browserObj.alarms?.clear?.("yph-sync-periodic");
-    } catch {
-      /* ignore */
-    }
-    try {
-      const cfg = await loadSyncConfig();
-      const interval = typeof cfg?.syncIntervalMinutes === "number" ? cfg.syncIntervalMinutes : 0;
-      const enabled = !!cfg?.syncKey && Array.isArray(cfg?.backends) && cfg.backends.length > 0;
-      if (interval > 0 && enabled) {
-        browserObj.alarms?.create?.("yph-sync-periodic", { periodInMinutes: interval });
-      }
-    } catch {
-      /* ignore */
-    }
-  }
-  refreshPeriodicAlarm().catch(() => {});
-
-  // Run once on startup.
-  browserObj.runtime.onStartup?.addListener?.(() => {
-    runOnce().catch(() => {});
-  });
-
-  // Debounced push on storage change.
-  let debounceTimer: ReturnType<typeof setTimeout> | null = null;
-  browserObj.storage?.onChanged?.addListener?.((changes: any, area: string) => {
-    if (area !== "local") return;
-    // Ignore change events that fire while a sync pass is in flight (self-trigger).
-    if (isRunning) return;
-    // Our own status writes must never re-trigger a sync pass (H3).
-    if (changes?.yph_sync_status) return;
-    if (area === "local" && changes?.yph_sync_config) {
-      refreshPeriodicAlarm().catch(() => {});
-    }
-    if (debounceTimer) clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(() => {
-      debounceTimer = null;
-      runOnce().catch(() => {});
-    }, 3_000);
-  });
-
-  // Alarm handler for the periodic sync.
-  browserObj.alarms?.onAlarm?.addListener?.((alarm: any) => {
-    if (alarm?.name === "yph-sync-periodic") {
-      runOnce().catch(() => {});
-    }
-  });
-
-  // Message commands for the UI.
-  browserObj.runtime.onMessage.addListener((request: any, _sender: any, sendResponse: any) => {
-    if (request?.cmd === "sync-now") {
-      runOnce()
-        .then((s) => sendResponse(s))
-        .catch((e) => sendResponse({ phase: "error", lastError: String(e) }));
-      return true;
-    }
-    if (request?.cmd === "sync-pause") {
-      pause();
-      sendResponse(getStatus());
-      return false;
-    }
-    if (request?.cmd === "sync-status") {
-      sendResponse(getStatus());
-      return false;
-    }
-    return undefined;
-  });
-}
-
 export async function runOnce(): Promise<SyncStatus> {
   if (isRunning) return getStatus();
   isRunning = true;
@@ -199,28 +111,6 @@ export async function runOnce(): Promise<SyncStatus> {
     const space = await computeStorageAddress(syncKey);
     const authHash = await computeAuthToken(syncKey, space);
 
-    // Save a restore point before syncing (best-effort)
-    try {
-      const { saveRestorePoint } = await import("./sync/status-store");
-      const w = (globalThis as any).window;
-      const playlists = w?.getPlaylists ? await w.getPlaylists() : [];
-      const settings = w?.getSettings ? await w.getSettings() : {};
-      const b = (globalThis as any).browser || (globalThis as any).chrome;
-      let history = {};
-      if (b?.storage?.local) {
-        const stored = await b.storage.local.get("local_yt_history");
-        history = stored?.local_yt_history ?? {};
-      }
-      await saveRestorePoint({
-        at: Date.now(),
-        reason: "pre-sync",
-        playlists,
-        settings,
-        history,
-      });
-    } catch {
-      // best-effort
-    }
     const relayConfig = {
       url:
         (backends.includes("supabase-byo") && cfg?.supabaseUrl) ||
@@ -232,7 +122,9 @@ export async function runOnce(): Promise<SyncStatus> {
         "sb_publishable_HV50FQtJrkoNcKLsFk5BHQ_KUU2GeKb",
     };
 
-    await claimSpace(relayConfig, space, authHash);
+    const claimed = await claimSpace(relayConfig, space, authHash);
+    if (!claimed)
+      throw new Error("Relay space claim was rejected; check the sync key or pairing setup.");
 
     const localDeviceId = await getOrCreateDeviceId();
 
@@ -259,21 +151,48 @@ export async function runOnce(): Promise<SyncStatus> {
     phase = "pushing";
     await persistStatus();
 
+    let additionalIncomingCount = 0;
+    let didPushSuccessfully = false;
     if (result.allDirty.length > 0) {
-      await pushAll(relayConfig, space, authHash, result.allDirty);
+      const pushOutcome = await pushCandidatesWithConflictResolution(
+        {
+          syncKey,
+          localDeviceId,
+          relayConfig,
+          space,
+          authHash,
+          incoming: [],
+          sinceSeq,
+          storage,
+          cfg,
+        },
+        result
+      );
+      result.failed.push(...pushOutcome.failed);
+      result.appliedCount += pushOutcome.appliedCount;
+      result.maxSeq = Math.max(result.maxSeq, pushOutcome.maxSeq);
+      result.cursorBlocked ||= pushOutcome.cursorBlocked;
+      additionalIncomingCount = pushOutcome.pulledCount;
+      didPushSuccessfully = pushOutcome.didPushSuccessfully;
       // Notify peers via Realtime broadcast (best-effort, no data).
-      try {
-        const { broadcastSyncNudge } = await import("./sync/realtime-nudge");
-        await broadcastSyncNudge(syncKey, { url: relayConfig.url, anonKey: relayConfig.anonKey });
-      } catch {
-        /* best-effort */
+      if (didPushSuccessfully) {
+        try {
+          const { broadcastSyncNudge } = await import("./sync/realtime-nudge");
+          await broadcastSyncNudge(syncKey, { url: relayConfig.url, anonKey: relayConfig.anonKey });
+        } catch {
+          /* best-effort */
+        }
       }
     }
 
-    if (incoming.length > 0 && result.failed.length === 0) {
+    if (
+      (incoming.length > 0 || additionalIncomingCount > 0) &&
+      result.failed.length === 0 &&
+      !result.cursorBlocked
+    ) {
       cfg.lastSeq = result.maxSeq;
       await storage.set({ yph_sync_config: cfg });
-    } else if (incoming.length > 0 && result.failed.length > 0) {
+    } else if ((incoming.length > 0 || additionalIncomingCount > 0) && result.failed.length > 0) {
       // Keep lastSeq unchanged so failed records are re-pulled next run.
       status.lastError = result.failed.join("; ");
     }
@@ -282,7 +201,9 @@ export async function runOnce(): Promise<SyncStatus> {
     status.lastError = result.failed.length ? result.failed.join("; ") : null;
     status.lastSummary = result.failed.length
       ? `Partial: ${result.failed.join("; ")}`
-      : `Synced ${result.appliedCount} records`;
+      : result.cursorBlocked
+        ? `Synced ${result.appliedCount} records; cursor held while a collection is disabled`
+        : `Synced ${result.appliedCount} records`;
     status.lastRunAt = Date.now();
     status.pendingCount = 0;
     status.failedCount = result.failed.length;
@@ -318,3 +239,12 @@ export function resume(): void {
   if (phase === "paused") phase = "idle";
   scheduleRun(0);
 }
+
+registerSyncEngine({
+  runOnce,
+  scheduleRun,
+  pause,
+  resume,
+  getStatus,
+  isRunning: () => isRunning,
+});
