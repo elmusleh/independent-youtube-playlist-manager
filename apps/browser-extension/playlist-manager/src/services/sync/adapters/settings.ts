@@ -53,6 +53,36 @@ export async function collectDirtySettings(ctx: AdapterContext): Promise<RelayRe
       await setShadow("settings", key, value, version, ctx.localDeviceId);
     }
   }
+  // Deletion tombstones: detect locally deleted settings
+  const localKeys = new Set(Object.keys(settings));
+  const shadows = await getShadowsByCollection("settings");
+  for (const shadow of shadows) {
+    if (localKeys.has(shadow.recordId)) continue;
+    const baseCopy = shadow.baseCopy;
+    if (!baseCopy) continue;
+    const rid = await computeRecordId(ctx.syncKey, "settings", shadow.recordId);
+    const hlc = await getHlc(ctx.syncKey, lastHlc);
+    lastHlc = hlc;
+    const version = hlc.value;
+    const envelope: RecordEnvelope = {
+      v: RECORD_VERSION,
+      collection: "settings",
+      id: rid,
+      hlc: version,
+      deleted: true,
+      data: baseCopy,
+    };
+    const encrypted = await encryptRecord(envelope, keys);
+    dirty.push({
+      collection: "settings",
+      rid,
+      version,
+      payload: JSON.stringify(encrypted),
+      deleted: true,
+    });
+    await setShadow("settings", shadow.recordId, baseCopy, version, ctx.localDeviceId);
+  }
+
   if (ctx.hlcState) ctx.hlcState.lastHlc = lastHlc;
   return dirty;
 }
@@ -71,9 +101,22 @@ export async function applyRemoteSettings(
     if (base?.baseCopy !== undefined) baseCopies[key] = base.baseCopy;
   }
 
+  const deletedKeys = new Set<string>();
   const remoteObj: Record<string, unknown> = {};
   for (const r of remote) {
-    if (r.deleted) continue;
+    if (r.deleted) {
+      try {
+        const encrypted = JSON.parse(r.payload) as EncryptedRecord;
+        const envelope = await decryptRecord(encrypted, keys);
+        if (envelope?.data?.key) {
+          deletedKeys.add(envelope.data.key);
+          await deleteShadow("settings", envelope.data.key);
+        }
+      } catch {
+        // Skip undecryptable records
+      }
+      continue;
+    }
     try {
       const encrypted = JSON.parse(r.payload) as EncryptedRecord;
       const envelope = await decryptRecord(encrypted, keys);
@@ -87,6 +130,10 @@ export async function applyRemoteSettings(
   }
 
   const { merged } = mergeSettings(local, remoteObj, baseCopies);
+  // Remove deleted keys
+  for (const key of deletedKeys) {
+    delete merged[key];
+  }
 
   const failed: string[] = [];
   let appliedOk = true;

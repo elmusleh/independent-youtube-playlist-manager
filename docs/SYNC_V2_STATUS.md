@@ -89,15 +89,15 @@ error | offline | paused`), single-flight guard, exponential backoff, status per
 
 ## What still needs to be done
 
-- **Relay SQL + encryption**: verified against live Postgres 16 (7/7 E2E pass).
+- **Relay SQL + encryption**: verified against live Postgres 16 (9/9 E2E pass).
 - **Engine + adapters**: NOT verified end-to-end. No test runs `runOnce` or the adapters.
-  The three tautological test files (integration, cursor-regression, round-trip)
-  were removed; real coverage is in `e2e-relay.test.ts` (relay SQL only).
+- **Deletion tombstones**: IMPLEMENTED. Local deletions now emit `deleted: true`
+  tombstones and remote tombstones are applied (playlists/history/settings).
+- **status-store.ts**: WIRED into `runOnce()` (restore points saved pre-sync).
 - **Live payload cap**: migration `docs/migrations/0001_payload_cap.sql` must be
-  applied to the production database (the `CREATE TABLE IF NOT EXISTS` in
-  `sync-relay-v2.sql` does not add it on an existing table).
+  applied to the production database.
 - **Manual device verification**: real Chrome/Firefox/Fenix round-trip still needed.
-- **svelte-check**: 3 errors in `e2e-relay.test.ts` fixed via `/// <reference types="node" />`.
+- **E2E CI**: `docker-compose.test.yml` added for Postgres + PostgREST provisioning.
 
 ### Phase 3 follow-up (adapter wiring) — DONE
 

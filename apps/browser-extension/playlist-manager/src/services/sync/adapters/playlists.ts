@@ -6,7 +6,14 @@
  */
 
 import { mergePlaylists } from "../merge/playlists";
-import { getShadow, setShadow, computeHash, isDirty } from "../shadow-store";
+import {
+  getShadow,
+  setShadow,
+  computeHash,
+  isDirty,
+  getShadowsByCollection,
+  deleteShadow,
+} from "../shadow-store";
 import type { RelayRecord } from "../relay-transport";
 import { deriveKeys, computeRecordId } from "../keys";
 import { encryptRecord, decryptRecord, RECORD_VERSION } from "../record-codec";
@@ -64,6 +71,37 @@ export async function collectDirtyPlaylists(ctx: AdapterContext): Promise<RelayR
       await setShadow("playlists", p.id, p, version, ctx.localDeviceId);
     }
   }
+  // Deletion tombstones: detect locally deleted playlists
+  const localIds = new Set(playlists.map((p: any) => p.id));
+  const shadows = await getShadowsByCollection("playlists");
+  for (const shadow of shadows) {
+    if (localIds.has(shadow.recordId)) continue; // still exists
+    // This playlist was deleted locally — emit a tombstone
+    const baseCopy = shadow.baseCopy as any;
+    if (!baseCopy) continue;
+    const rid = await computeRecordId(ctx.syncKey, "playlists", shadow.recordId);
+    const hlc = await getHlc(ctx.syncKey, lastHlc);
+    lastHlc = hlc;
+    const version = hlc.value;
+    const envelope: RecordEnvelope = {
+      v: RECORD_VERSION,
+      collection: "playlists",
+      id: rid,
+      hlc: version,
+      deleted: true,
+      data: baseCopy,
+    };
+    const encrypted = await encryptRecord(envelope, keys);
+    dirty.push({
+      collection: "playlists",
+      rid,
+      version,
+      payload: JSON.stringify(encrypted),
+      deleted: true,
+    });
+    await setShadow("playlists", shadow.recordId, baseCopy, version, ctx.localDeviceId);
+  }
+
   if (ctx.hlcState) ctx.hlcState.lastHlc = lastHlc;
   return dirty;
 }
@@ -82,9 +120,19 @@ export async function applyRemotePlaylists(
     if (base?.baseCopy) baseCopies.set(p.id, base.baseCopy);
   }
 
+  const deletedIds = new Set<string>();
   const remotePlaylists: any[] = [];
   for (const r of remote) {
-    if (r.deleted) continue;
+    if (r.deleted) {
+      try {
+        const encrypted = JSON.parse(r.payload) as EncryptedRecord;
+        const envelope = await decryptRecord(encrypted, keys);
+        if (envelope?.data?.id) deletedIds.add(envelope.data.id);
+      } catch {
+        // Skip undecryptable records
+      }
+      continue;
+    }
     try {
       const encrypted = JSON.parse(r.payload) as EncryptedRecord;
       const envelope = await decryptRecord(encrypted, keys);
@@ -94,8 +142,11 @@ export async function applyRemotePlaylists(
     }
   }
 
-  const base = [...baseCopies.values()];
-  const { merged } = mergePlaylists(local, remotePlaylists, base);
+  // Filter out deleted playlists from local before merge
+  const filteredLocal = local.filter((p: any) => !deletedIds.has(p.id));
+  const base = [...baseCopies.values()].filter((b: any) => !deletedIds.has(b?.id));
+
+  const { merged } = mergePlaylists(filteredLocal, remotePlaylists, base);
 
   const failed: string[] = [];
   let appliedOk = true;
@@ -121,6 +172,10 @@ export async function applyRemotePlaylists(
           Date.now(),
         ctx.localDeviceId
       );
+    }
+    // Clean up shadow records for deleted playlists
+    for (const id of deletedIds) {
+      await deleteShadow("playlists", id);
     }
   }
 

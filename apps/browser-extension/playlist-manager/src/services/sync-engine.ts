@@ -198,6 +198,29 @@ export async function runOnce(): Promise<SyncStatus> {
 
     const space = await computeStorageAddress(syncKey);
     const authHash = await computeAuthToken(syncKey, space);
+
+    // Save a restore point before syncing (best-effort)
+    try {
+      const { saveRestorePoint } = await import("./sync/status-store");
+      const w = (globalThis as any).window;
+      const playlists = w?.getPlaylists ? await w.getPlaylists() : [];
+      const settings = w?.getSettings ? await w.getSettings() : {};
+      const b = (globalThis as any).browser || (globalThis as any).chrome;
+      let history = {};
+      if (b?.storage?.local) {
+        const stored = await b.storage.local.get("local_yt_history");
+        history = stored?.local_yt_history ?? {};
+      }
+      await saveRestorePoint({
+        at: Date.now(),
+        reason: "pre-sync",
+        playlists,
+        settings,
+        history,
+      });
+    } catch {
+      // best-effort
+    }
     const relayConfig = {
       url:
         (backends.includes("supabase-byo") && cfg?.supabaseUrl) ||

@@ -53,6 +53,36 @@ export async function collectDirtyHistory(ctx: AdapterContext): Promise<RelayRec
       await setShadow("history", videoId, entry, version, ctx.localDeviceId);
     }
   }
+  // Deletion tombstones: detect locally deleted history entries
+  const localIds = new Set(Object.keys(history));
+  const shadows = await getShadowsByCollection("history");
+  for (const shadow of shadows) {
+    if (localIds.has(shadow.recordId)) continue;
+    const baseCopy = shadow.baseCopy;
+    if (!baseCopy) continue;
+    const rid = await computeRecordId(ctx.syncKey, "history", shadow.recordId);
+    const hlc = await getHlc(ctx.syncKey, lastHlc);
+    lastHlc = hlc;
+    const version = hlc.value;
+    const envelope: RecordEnvelope = {
+      v: RECORD_VERSION,
+      collection: "history",
+      id: rid,
+      hlc: version,
+      deleted: true,
+      data: baseCopy,
+    };
+    const encrypted = await encryptRecord(envelope, keys);
+    dirty.push({
+      collection: "history",
+      rid,
+      version,
+      payload: JSON.stringify(encrypted),
+      deleted: true,
+    });
+    await setShadow("history", shadow.recordId, baseCopy, version, ctx.localDeviceId);
+  }
+
   if (ctx.hlcState) ctx.hlcState.lastHlc = lastHlc;
   return dirty;
 }
@@ -74,7 +104,28 @@ export async function applyRemoteHistory(
 
   const remoteEntries: any[] = [];
   for (const r of remote) {
-    if (r.deleted) continue;
+    if (r.deleted) {
+      try {
+        const encrypted = JSON.parse(r.payload) as EncryptedRecord;
+        const envelope = await decryptRecord(encrypted, keys);
+        if (envelope?.data) {
+          const videoId = (envelope.data as any).videoId ?? (envelope.data as any).id;
+          if (videoId) {
+            const b = (globalThis as any).browser || (globalThis as any).chrome;
+            if (b?.storage?.local) {
+              const stored = await b.storage.local.get("local_yt_history");
+              const obj = stored?.local_yt_history ?? {};
+              delete obj[videoId];
+              await b.storage.local.set({ local_yt_history: obj });
+            }
+            await deleteShadow("history", videoId);
+          }
+        }
+      } catch {
+        // Skip undecryptable records
+      }
+      continue;
+    }
     try {
       const encrypted = JSON.parse(r.payload) as EncryptedRecord;
       const envelope = await decryptRecord(encrypted, keys);
