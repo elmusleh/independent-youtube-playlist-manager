@@ -57,6 +57,8 @@ export async function applyRemoteSettings(
   ctx: AdapterContext,
   remote: Array<{ rid: string; payload: string; deleted: boolean; version: number }>
 ): Promise<{ applied: number; failed: string[] }> {
+  // Nothing to apply from an empty remote; leave local settings untouched.
+  if (!remote || remote.length === 0) return { applied: 0, failed: [] };
   const { settings: local } = await ctx.librarySnapshot();
   const keys = await deriveKeys(ctx.syncKey);
   const baseCopies: Record<string, unknown> = {};
