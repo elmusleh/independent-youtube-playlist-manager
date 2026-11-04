@@ -70,6 +70,8 @@ export type SyncConfig = {
   legacyV2AcknowledgedAt: number | null;
   /** Legacy relay cursor retained for the active v2 engine. */
   lastSeq?: number;
+  /** Per-collection relay cursors for independent progress tracking. */
+  lastSeqByCollection?: Record<string, number>;
   /** Per-category last successful sync timestamps. */
   categoryTimestamps: SyncTimestamps;
 };

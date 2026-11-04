@@ -19,6 +19,7 @@ export async function rotateSyncKey(): Promise<string> {
   const newKey = generateSyncKey();
   config.syncKey = newKey;
   config.lastSeq = 0; // force a full push to the new space
+  config.lastSeqByCollection = {}; // reset per-collection cursors
   config.lastSyncedAt = null;
   config.lastSyncSummary = "Sync key rotated; the old remote space is retained.";
   config.lastError = null;

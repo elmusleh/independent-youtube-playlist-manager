@@ -172,7 +172,10 @@ export async function runOnce(): Promise<SyncStatus> {
 
     phase = "pulling";
     await persistStatus();
-    const sinceSeq = cfg?.lastSeq ?? 0;
+    const lastSeqByCollection = cfg?.lastSeqByCollection ?? {};
+    const sinceSeq = Object.keys(lastSeqByCollection).length > 0
+      ? Math.min(...Object.values(lastSeqByCollection))
+      : (cfg?.lastSeq ?? 0);
     const incoming = await pullAll(relayConfig, space, authHash, sinceSeq);
 
     phase = "merging";
@@ -234,7 +237,17 @@ export async function runOnce(): Promise<SyncStatus> {
       result.failed.length === 0 &&
       !result.cursorBlocked
     ) {
-      cfg.lastSeq = result.maxSeq;
+      const maxSeqByCollection: Record<string, number> = { ...lastSeqByCollection };
+      // Advance cursor for each collection that had incoming records
+      const collectionsSeen = new Set(incoming.map((r: any) => r.collection));
+      for (const coll of collectionsSeen) {
+        const collMax = Math.max(...incoming.filter((r: any) => r.collection === coll).map((r: any) => r.seq));
+        if (!maxSeqByCollection[coll] || collMax > maxSeqByCollection[coll]) {
+          maxSeqByCollection[coll] = collMax;
+        }
+      }
+      cfg.lastSeqByCollection = maxSeqByCollection;
+      cfg.lastSeq = result.maxSeq; // keep legacy in sync
     } else if ((incoming.length > 0 || additionalIncomingCount > 0) && result.failed.length > 0) {
       // Keep lastSeq unchanged so failed records are re-pulled next run.
       status.lastError = result.failed.join("; ");
