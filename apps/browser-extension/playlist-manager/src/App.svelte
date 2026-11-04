@@ -142,10 +142,9 @@
   mobileLayout.addEventListener("change", handleLayoutChange);
 
   import { onDestroy, onMount } from "svelte";
-  import { pullNow, startPolling } from "./services/sync-manager";
   onMount(() => {
-    startPolling();
-    pullNow().catch((error) => console.warn("[AUTO-SYNC] pull on open failed:", error));
+    // Polling is handled by the background sync engine (sync-engine.ts).
+    // No v1 sync-manager dependency.
   });
   onDestroy(() => {
     mobileLayout.removeEventListener("change", handleLayoutChange);

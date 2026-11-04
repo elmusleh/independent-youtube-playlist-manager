@@ -8,6 +8,9 @@ import { mergeHistory } from "../merge/history";
 import { getShadow, setShadow, isDirty } from "../shadow-store";
 import type { RelayRecord } from "../relay-transport";
 import { computeRecordId } from "../keys";
+import { deriveKeys } from "../keys";
+import { encryptRecord, decryptRecord, RECORD_VERSION } from "../record-codec";
+import type { RecordEnvelope, EncryptedRecord } from "../record-codec";
 
 export type AdapterContext = {
   syncKey: string;
@@ -19,15 +22,26 @@ export type AdapterContext = {
 
 export async function collectDirtyHistory(ctx: AdapterContext): Promise<RelayRecord[]> {
   const { history } = await ctx.librarySnapshot();
+  const keys = await deriveKeys(ctx.syncKey);
   const dirty: RelayRecord[] = [];
   for (const [videoId, entry] of Object.entries(history)) {
     if (await isDirty("history", videoId, entry)) {
       const rid = await computeRecordId(ctx.syncKey, "history", videoId);
+      const version = (entry as any)?.lastWatchedAt ?? Date.now();
+      const envelope: RecordEnvelope = {
+        v: RECORD_VERSION,
+        collection: "history",
+        id: rid,
+        hlc: version,
+        deleted: false,
+        data: entry,
+      };
+      const encrypted = await encryptRecord(envelope, keys);
       dirty.push({
         collection: "history",
         rid,
-        version: (entry as any)?.lastWatchedAt ?? Date.now(),
-        payload: JSON.stringify(entry),
+        version,
+        payload: JSON.stringify(encrypted),
         deleted: false,
       });
     }
@@ -40,6 +54,7 @@ export async function applyRemoteHistory(
   remote: Array<{ rid: string; payload: string; deleted: boolean; version: number }>
 ): Promise<{ applied: number; failed: string[] }> {
   const { history: localObj } = await ctx.librarySnapshot();
+  const keys = await deriveKeys(ctx.syncKey);
   const local = Object.values(localObj) as any[];
   const baseCopies: any[] = [];
   for (const v of local) {
@@ -47,16 +62,17 @@ export async function applyRemoteHistory(
     if (base?.baseCopy) baseCopies.push(base.baseCopy);
   }
 
-  const remoteEntries = remote
-    .filter((r) => !r.deleted)
-    .map((r) => {
-      try {
-        return JSON.parse(r.payload);
-      } catch {
-        return null;
-      }
-    })
-    .filter(Boolean);
+  const remoteEntries: any[] = [];
+  for (const r of remote) {
+    if (r.deleted) continue;
+    try {
+      const encrypted = JSON.parse(r.payload) as EncryptedRecord;
+      const envelope = await decryptRecord(encrypted, keys);
+      if (envelope?.data) remoteEntries.push(envelope.data);
+    } catch {
+      // Skip undecryptable records
+    }
+  }
 
   const { merged } = mergeHistory(local, remoteEntries, baseCopies);
 
@@ -67,8 +83,11 @@ export async function applyRemoteHistory(
     failed.push(`history: ${e instanceof Error ? e.message : String(e)}`);
   }
 
-  for (const e of merged) {
-    await setShadow("history", e.videoId, e, e.lastWatchedAt, ctx.localDeviceId);
+  // Only advance shadow when the write succeeded.
+  if (failed.length === 0) {
+    for (const e of merged) {
+      await setShadow("history", e.videoId, e, e.lastWatchedAt, ctx.localDeviceId);
+    }
   }
 
   return { applied: merged.length, failed };

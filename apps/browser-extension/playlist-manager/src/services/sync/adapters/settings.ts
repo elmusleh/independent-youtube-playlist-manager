@@ -8,6 +8,9 @@ import { mergeSettings, isSyncableSetting } from "../merge/settings";
 import { getShadow, setShadow, isDirty } from "../shadow-store";
 import type { RelayRecord } from "../relay-transport";
 import { computeRecordId } from "../keys";
+import { deriveKeys } from "../keys";
+import { encryptRecord, decryptRecord, RECORD_VERSION } from "../record-codec";
+import type { RecordEnvelope, EncryptedRecord } from "../record-codec";
 
 export type AdapterContext = {
   syncKey: string;
@@ -18,16 +21,27 @@ export type AdapterContext = {
 
 export async function collectDirtySettings(ctx: AdapterContext): Promise<RelayRecord[]> {
   const { settings } = await ctx.librarySnapshot();
+  const keys = await deriveKeys(ctx.syncKey);
   const dirty: RelayRecord[] = [];
   for (const [key, value] of Object.entries(settings)) {
     if (!isSyncableSetting(key)) continue;
     if (await isDirty("settings", key, value)) {
       const rid = await computeRecordId(ctx.syncKey, "settings", key);
+      const version = Date.now();
+      const envelope: RecordEnvelope = {
+        v: RECORD_VERSION,
+        collection: "settings",
+        id: rid,
+        hlc: version,
+        deleted: false,
+        data: { key, value },
+      };
+      const encrypted = await encryptRecord(envelope, keys);
       dirty.push({
         collection: "settings",
         rid,
-        version: Date.now(),
-        payload: JSON.stringify({ key, value }),
+        version,
+        payload: JSON.stringify(encrypted),
         deleted: false,
       });
     }
@@ -40,6 +54,7 @@ export async function applyRemoteSettings(
   remote: Array<{ rid: string; payload: string; deleted: boolean; version: number }>
 ): Promise<{ applied: number; failed: string[] }> {
   const { settings: local } = await ctx.librarySnapshot();
+  const keys = await deriveKeys(ctx.syncKey);
   const baseCopies: Record<string, unknown> = {};
   for (const key of Object.keys(local)) {
     const base = await getShadow("settings", key);
@@ -50,7 +65,9 @@ export async function applyRemoteSettings(
   for (const r of remote) {
     if (r.deleted) continue;
     try {
-      const parsed = JSON.parse(r.payload);
+      const encrypted = JSON.parse(r.payload) as EncryptedRecord;
+      const envelope = await decryptRecord(encrypted, keys);
+      const parsed = envelope?.data as { key: string; value: unknown } | undefined;
       if (parsed && typeof parsed === "object" && "key" in parsed) {
         remoteObj[parsed.key] = parsed.value;
       }

@@ -145,7 +145,11 @@ export async function computeAuthToken(
   const authTokenKey = await deriveAuthTokenKey(syncKey, subtle);
   const data = encoder.encode(`${space}|auth`);
   const sig = await subtle.sign("HMAC", authTokenKey, data);
-  return [...new Uint8Array(sig)].map((b) => b.toString(16).padStart(2, "0")).join("");
+  const hmac = [...new Uint8Array(sig)].map((b) => b.toString(16).padStart(2, "0")).join("");
+  // Store a hash of the token, not the token itself, so a database read
+  // does not yield a usable credential.
+  const digest = await subtle.digest("SHA-256", encoder.encode(hmac));
+  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
 /**

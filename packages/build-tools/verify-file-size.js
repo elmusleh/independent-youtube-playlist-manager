@@ -46,8 +46,7 @@ const legacyAllowlist = new Set([
   "apps/browser-extension/playlist-manager/src/services/backup-service.ts",
   "apps/browser-extension/playlist-manager/src/services/youtube-auth.ts",
 
-  "apps/browser-extension/playlist-manager/src/services/sync-manager.ts",
-
+  // (removed: sync-manager.ts deleted with v1 retirement)
   "apps/browser-extension/playlist-manager/src/views/Shortcuts.svelte",
   "apps/browser-extension/playlist-manager/src/components/editor/EditorToolbar.svelte",
   "apps/browser-extension/playlist-manager/src/services/supabase-sync.ts",
@@ -56,12 +55,12 @@ const legacyAllowlist = new Set([
   // Deleted in the UI refactor (#31); kept here so this gate stays green on either
   // merge order and disappears once that lands.
   "apps/browser-extension/playlist-manager/src/views/Saved-refactored.svelte",
-
-  // Sync view: comprehensive sync status, per-category timestamps, progress
-  // tracking, activity log, and key management. Split if it grows further.
   "apps/browser-extension/playlist-manager/src/views/Sync.svelte",
 
   // Orchestration coordinator modules (change: orchestrate-parallel-implementations).
+  // Accepted debt: lock/journal and Git-primitive helpers should move into their own
+  // modules; recorded as a follow-up rather than splitting during feature work.
+  "apps/browser-extension/playlist-manager/src/components/editor/EditorToolbar.svelte",
   // Accepted debt: lock/journal and Git-primitive helpers should move into their own
   // modules; recorded as a follow-up rather than splitting during feature work.
 ]);

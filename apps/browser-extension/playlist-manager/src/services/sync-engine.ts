@@ -111,6 +111,9 @@ if (browserObj?.runtime) {
   // Debounced push on storage change.
   let debounceTimer: ReturnType<typeof setTimeout> | null = null;
   browserObj.storage?.onChanged?.addListener?.((changes: any, area: string) => {
+    if (area !== "local") return;
+    // Our own status writes must never re-trigger a sync pass (H3).
+    if (changes?.yph_sync_status) return;
     if (area === "local" && changes?.yph_sync_config) {
       refreshPeriodicAlarm().catch(() => {});
     }
@@ -160,7 +163,7 @@ export async function runOnce(): Promise<SyncStatus> {
       (globalThis as any).browser?.storage?.local || (globalThis as any).chrome?.storage?.local;
     if (!storage) throw new Error("storage unavailable");
 
-    const cfg = (await storage.get("yph_sync_config")) ?? {};
+    const cfg = (await getStorage()?.get("yph_sync_config")) ?? {};
     const syncKey = cfg?.syncKey;
     const backends = Array.isArray(cfg?.backends) ? cfg.backends : [];
 
@@ -200,7 +203,7 @@ export async function runOnce(): Promise<SyncStatus> {
 
     await claimSpace(relayConfig, space, authHash);
 
-    const localDeviceId = (await storage.get("yph_sync_device_id")) || "unknown";
+    const localDeviceId = (await getStorage()?.get("yph_sync_device_id")) || "unknown";
 
     phase = "pulling";
     await persistStatus();
@@ -227,11 +230,21 @@ export async function runOnce(): Promise<SyncStatus> {
 
     if (result.allDirty.length > 0) {
       await pushAll(relayConfig, space, authHash, result.allDirty);
+      // Notify peers via Realtime broadcast (best-effort, no data).
+      try {
+        const { broadcastSyncNudge } = await import("./sync/realtime-nudge");
+        await broadcastSyncNudge(syncKey, { url: relayConfig.url, anonKey: relayConfig.anonKey });
+      } catch {
+        /* best-effort */
+      }
     }
 
-    if (incoming.length > 0) {
+    if (incoming.length > 0 && result.failed.length === 0) {
       cfg.lastSeq = result.maxSeq;
       await storage.set({ yph_sync_config: cfg });
+    } else if (incoming.length > 0 && result.failed.length > 0) {
+      // Keep lastSeq unchanged so failed records are re-pulled next run.
+      status.lastError = result.failed.join("; ");
     }
 
     phase = "idle";

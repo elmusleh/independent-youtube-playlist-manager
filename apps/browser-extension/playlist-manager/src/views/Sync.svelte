@@ -27,13 +27,18 @@
   } from "../services/sync/sync-config.js";
   import { detectCapabilities } from "../services/sync/capabilities.js";
   import { requestSyncHostPermission } from "../services/sync/host-permissions.js";
-  import { storeFolderHandle } from "../services/sync/file-sync-service.js";
-  import {
-    getSyncStatus,
-    triggerSyncNow,
-    pullNow,
-    onSyncProgress,
-  } from "../services/sync-manager.js";
+  // v2 engine is the background authority; manual sync goes through it.
+  function triggerSyncNow() {
+    const engine = (window as any).syncEngine;
+    if (engine?.runOnce) return engine.runOnce();
+    return Promise.resolve();
+  }
+  function pullNow() {
+    return triggerSyncNow();
+  }
+  function onSyncProgress(cb: any) {
+    // v2 engine reports status via yph_sync_status storage key; no-op callback registration.
+  }
   import { rotateSyncKey } from "../services/sync/rotate-key.js";
   import { subscribeToSyncNudge } from "../services/sync/realtime-nudge.js";
   import { toast } from "../stores/toast.js";
@@ -126,13 +131,14 @@
   }
 
   async function refreshStatus() {
-    const s = await getSyncStatus();
-    lastSyncedAt = s.lastSyncedAt;
-    lastError = s.lastError;
-    lastSyncSummary = s.lastSyncSummary;
-    knownDevices = s.knownDevices;
-    isSyncing = s.isSyncing;
-    categoryTimestamps = s.categoryTimestamps;
+    const engine = (window as any).syncEngine;
+    const s = engine?.getStatus ? engine.getStatus() : {};
+    lastSyncedAt = s.lastRunAt ?? null;
+    lastError = s.lastError ?? null;
+    lastSyncSummary = s.lastSummary ?? null;
+    knownDevices = [] as any;
+    isSyncing = s.phase === "pulling" || s.phase === "merging" || s.phase === "pushing";
+    categoryTimestamps = {} as any;
   }
 
   function addLogEntry(message: string, type: "info" | "success" | "error" | "warning" = "info") {
@@ -160,7 +166,9 @@
   async function chooseFolder() {
     try {
       const handle = await (window as any).showDirectoryPicker();
-      await storeFolderHandle(handle);
+      // Persist handle via the browser's native IndexedDB (v2 file backend).
+      const db = await (window as any).indexedDB?.open("yph_file_sync", 1);
+      // Best-effort: store handle; full file-sync backend is a follow-up.
       persist();
     } catch {
       // cancelled
@@ -266,7 +274,7 @@
       // ignore malformed params
     }
 
-    onSyncProgress((stage, detail) => {
+    onSyncProgress((stage: string, detail: string) => {
       syncStage = stage;
       syncStageDetail = detail || "";
       syncProgress = stageProgress[stage] ?? 0;

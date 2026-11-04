@@ -31,8 +31,7 @@ const ALLOWED_SYNC_KEYS = new Set([
   "customPipedInstances",
   "metadataPageSize",
   "maxVisibleFavorites",
-  "syncKey", // this is the sync key itself
-  // Add more as needed
+  // Note: syncKey is NOT synced — it is the credential itself.
 ]);
 
 /**

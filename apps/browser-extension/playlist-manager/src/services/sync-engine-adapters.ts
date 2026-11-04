@@ -37,12 +37,23 @@ export async function runAdapterPass(ctx: AdapterPassContext): Promise<AdapterPa
     const w = (globalThis as any).window;
     const playlists = w?.getPlaylists ? await w.getPlaylists() : [];
     const settings = w?.getSettings ? await w.getSettings() : {};
-    const historyObj = w?.getSyncSnapshot ? await w.getSyncSnapshot("history") : {};
+    const historyObj = await (async () => {
+      const b = (globalThis as any).browser || (globalThis as any).chrome;
+      if (b?.storage?.local) {
+        const stored = await b.storage.local.get("local_yt_history");
+        return stored?.local_yt_history ?? {};
+      }
+      return {};
+    })();
     return { playlists, settings, history: historyObj ?? {} };
   };
   const mutateLibrary = async (op: any) => {
     const w = (globalThis as any).window;
     if (w?.mutateLibrary) return w.mutateLibrary(op);
+    // In the service worker, library-mutations.js exposes the function as
+    // globalThis.yphMutateLibrary (it must not message itself). Prefer that.
+    const local = (globalThis as any).yphMutateLibrary;
+    if (typeof local === "function") return local(op);
     const b = (globalThis as any).browser || (globalThis as any).chrome;
     return b?.runtime?.sendMessage({ cmd: "mutate-library", operation: op });
   };

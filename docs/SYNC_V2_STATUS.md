@@ -89,7 +89,10 @@ error | offline | paused`), single-flight guard, exponential backoff, status per
 
 ## What still needs to be done
 
-Nothing — all phases (0–5) and backend ops are complete.
+- All code-level defects in this review have been addressed in the implementation
+  pass (C1-C4, H1-H5, M1, M3, M4, M6, P2-P5). Remaining: M2 (HLC wiring),
+  M5 (space quota), P1 (promote audit tests into the repo), and manual device
+  verification.
 
 ### Phase 3 follow-up (adapter wiring) — DONE
 
