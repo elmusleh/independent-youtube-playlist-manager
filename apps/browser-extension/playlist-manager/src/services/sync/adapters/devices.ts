@@ -33,7 +33,7 @@ export async function collectDirtyDevices(ctx: AdapterContext): Promise<RelayRec
     deviceId: ctx.localDeviceId,
     platform: ctx.platform,
     userAgent: (globalThis as any).navigator?.userAgent ?? "unknown",
-    lastSeen: Date.now(),
+    lastSeen: Math.floor(Date.now() / 3_600_000) * 3_600_000, // coarse hourly bucket (M3)
   };
   const keys = await deriveKeys(ctx.syncKey);
   if (await isDirty("devices", ctx.localDeviceId, device)) {
