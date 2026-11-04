@@ -16,8 +16,6 @@
   import EditorSettings from "../components/EditorSettings.svelte";
   import MetadataSettings from "../components/MetadataSettings.svelte";
   import IntegrationSettings from "../components/IntegrationSettings.svelte";
-  import StorageSettings from "../components/StorageSettings.svelte";
-  import BackupSettings from "../components/BackupSettings.svelte";
   import YouTubeAdvancedSettings from "../components/YouTubeAdvancedSettings.svelte";
 
   const browser = (window as any).browser || (window as any).chrome;
@@ -111,8 +109,6 @@
         <EditorSettings {settings} {save} />
         <MetadataSettings {settings} {save} />
         <IntegrationSettings {settings} {save} />
-        <StorageSettings />
-        <BackupSettings />
       </div>
     {:else}
       <div class="loading-state">

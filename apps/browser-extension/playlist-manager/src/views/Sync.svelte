@@ -18,6 +18,8 @@
   import SyncScheduleCard from "../components/sync/SyncScheduleCard.svelte";
   import SyncOfflineCard from "../components/sync/SyncOfflineCard.svelte";
   import SyncLegacyWarning from "../components/sync/SyncLegacyWarning.svelte";
+  import StorageSettings from "../components/StorageSettings.svelte";
+  import BackupSettings from "../components/BackupSettings.svelte";
   import {
     loadSyncConfig,
     saveSyncConfig,
@@ -439,6 +441,8 @@
 
       <!-- Sync Advanced -->
       <SyncAdvanced />
+      <StorageSettings />
+      <BackupSettings />
     </div>
   </div>
 </main>
