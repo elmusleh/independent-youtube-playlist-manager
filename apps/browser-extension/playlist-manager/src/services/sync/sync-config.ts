@@ -46,6 +46,9 @@ export type SyncConfig = {
   /** User-supplied Supabase endpoint for the "supabase-byo" backend. */
   supabaseUrl: string;
   supabaseKey: string;
+  /** Legacy persisted relay endpoint fields, retained for config compatibility. */
+  relayUrl?: string;
+  relayAnonKey?: string;
   content: SyncContentSelection;
   lastSyncedAt: number | null;
   lastError: string | null;
@@ -59,6 +62,14 @@ export type SyncConfig = {
    * two devices must never tie, or neither will pull the other's data.
    */
   syncRevision: number;
+  /** Current shape version for this stored configuration. */
+  syncConfigVersion: 2;
+  /** Relay record protocol this device has successfully used, or null when unverified. */
+  syncProtocolVersion: 2 | null;
+  /** Explicit user acknowledgement for an unverified/legacy relay configuration. */
+  legacyV2AcknowledgedAt: number | null;
+  /** Legacy relay cursor retained for the active v2 engine. */
+  lastSeq?: number;
   /** Per-category last successful sync timestamps. */
   categoryTimestamps: SyncTimestamps;
 };
@@ -78,17 +89,19 @@ export const DEFAULT_SYNC_CONFIG: SyncConfig = {
   lastSyncSummary: null,
   knownDevices: [],
   syncRevision: 0,
+  syncConfigVersion: 2,
+  syncProtocolVersion: null,
+  legacyV2AcknowledgedAt: null,
   categoryTimestamps: { playlists: null, settings: null, history: null },
 };
 
 /**
- * The developer-hosted relay endpoint. Replace these two placeholders with the real
- * Supabase project URL + anon key before the "easy / recommended" backend can function.
- * The relay is zero-knowledge: it stores only ciphertext keyed by a SHA-256 address.
+ * The developer-hosted v2 relay endpoint. Replace these two placeholders with the real
+ * Supabase project URL + anon key before the recommended backend can function.
+ * The relay is zero-knowledge: it stores only encrypted v2 records keyed by a SHA-256 address.
  *
- * TODO(owner): provision a Supabase project with a `relay_snapshots` table
- * (`address text primary key`, `payload text`, `revision bigint`, `device_id text`,
- * `updated_at timestamptz`) and paste the URL + anon key here.
+ * TODO(owner): configure the v2 RPC/schema from `docs/sync-relay-v2.sql` and the guarded
+ * migrations. Do not provision the legacy `relay_snapshots` table for a v2 client.
  */
 export const RELAY_SUPABASE_URL = "https://qvwitlpnetwthyhrobca.supabase.co";
 export const RELAY_SUPABASE_ANON_KEY = "sb_publishable_HV50FQtJrkoNcKLsFk5BHQ_KUU2GeKb";
@@ -143,42 +156,55 @@ export async function getOrCreateDeviceId(): Promise<string> {
   return id;
 }
 
+export function migrateSyncConfig(stored: unknown): SyncConfig {
+  if (!stored || typeof stored !== "object" || Array.isArray(stored)) {
+    return structuredClone(DEFAULT_SYNC_CONFIG);
+  }
+
+  const source = stored as Partial<SyncConfig> & { backend?: SyncBackend | null };
+  const content = { ...DEFAULT_SYNC_CONFIG.content, ...(source.content ?? {}) };
+  const requestedBackends = Array.isArray(source.backends)
+    ? source.backends
+    : source.backend
+      ? [source.backend]
+      : [];
+  const backends = requestedBackends.filter((backend): backend is SyncBackend =>
+    ["relay", "supabase-byo", "file"].includes(backend)
+  );
+  const categoryTimestamps = source.categoryTimestamps ?? {
+    playlists: source.lastSyncedAt ?? null,
+    settings: null,
+    history: null,
+  };
+  const acknowledgement = source.legacyV2AcknowledgedAt;
+
+  return {
+    ...DEFAULT_SYNC_CONFIG,
+    ...source,
+    syncConfigVersion: 2,
+    syncProtocolVersion: source.syncProtocolVersion === 2 ? 2 : null,
+    legacyV2AcknowledgedAt:
+      typeof acknowledgement === "number" &&
+      Number.isSafeInteger(acknowledgement) &&
+      acknowledgement > 0
+        ? acknowledgement
+        : null,
+    backends,
+    content,
+    knownDevices: Array.isArray(source.knownDevices) ? source.knownDevices : [],
+    syncRevision: typeof source.syncRevision === "number" ? source.syncRevision : 0,
+    categoryTimestamps,
+    syncIntervalMinutes:
+      typeof source.syncIntervalMinutes === "number"
+        ? source.syncIntervalMinutes
+        : DEFAULT_SYNC_CONFIG.syncIntervalMinutes,
+  };
+}
+
 export async function loadSyncConfig(): Promise<SyncConfig> {
   try {
-    const stored = (await storageArea().get(KEY)) as
-      | (Partial<SyncConfig> & {
-          backend?: SyncBackend | null;
-        })
-      | null;
-    if (!stored) return structuredClone(DEFAULT_SYNC_CONFIG);
-    // Deep-merge the nested `content` object so a config saved by an older build
-    // (missing settings/history) never loses the user's new toggles.
-    const content = { ...DEFAULT_SYNC_CONFIG.content, ...(stored.content ?? {}) };
-    // Migrate the old single `backend` field to the new `backends` array.
-    const backends = Array.isArray(stored.backends)
-      ? stored.backends
-      : stored.backend
-        ? [stored.backend]
-        : [];
-    // Ensure categoryTimestamps exists (migration from older configs).
-    const categoryTimestamps = stored.categoryTimestamps ?? {
-      playlists: stored.lastSyncedAt ?? null,
-      settings: null,
-      history: null,
-    };
-    return {
-      ...DEFAULT_SYNC_CONFIG,
-      ...stored,
-      backends,
-      content,
-      knownDevices: Array.isArray(stored.knownDevices) ? stored.knownDevices : [],
-      syncRevision: typeof stored.syncRevision === "number" ? stored.syncRevision : 0,
-      categoryTimestamps,
-      syncIntervalMinutes:
-        typeof stored.syncIntervalMinutes === "number"
-          ? stored.syncIntervalMinutes
-          : DEFAULT_SYNC_CONFIG.syncIntervalMinutes,
-    };
+    const stored = await storageArea().get(KEY);
+    return migrateSyncConfig(stored);
   } catch {
     return structuredClone(DEFAULT_SYNC_CONFIG);
   }
@@ -189,5 +215,6 @@ export async function saveSyncConfig(config: SyncConfig): Promise<void> {
   // structured-clone (DataCloneError: Proxy object could not be cloned).
   // Serialize to a plain object before handing it to storage.
   const plain = JSON.parse(JSON.stringify(config)) as SyncConfig;
+  plain.syncConfigVersion = 2;
   await storageArea().set(KEY, plain);
 }
