@@ -6,7 +6,7 @@
  * The UI reads status from `yph_sync_status` via storage.onChanged.
  */
 
-import { isRelayConfigured } from "./sync/sync-config";
+import { isRelayConfigured, loadSyncConfig } from "./sync/sync-config";
 import { runAdapterPass } from "./sync-engine-adapters";
 import { deriveKeys, computeStorageAddress, computeAuthToken } from "./sync/keys";
 import type { RelayRecord } from "./sync/relay-transport";
@@ -83,12 +83,25 @@ if (browserObj?.runtime) {
     triggerSync: runOnce,
   };
 
-  // Periodic pull every 5 minutes.
-  try {
-    browserObj.alarms?.create?.("yph-sync-periodic", { periodInMinutes: 5 });
-  } catch {
-    /* ignore */
+  // Configure periodic alarm from sync config (interval 0 = manual only).
+  async function refreshPeriodicAlarm(): Promise<void> {
+    try {
+      browserObj.alarms?.clear?.("yph-sync-periodic");
+    } catch {
+      /* ignore */
+    }
+    try {
+      const cfg = await loadSyncConfig();
+      const interval = typeof cfg?.syncIntervalMinutes === "number" ? cfg.syncIntervalMinutes : 0;
+      const enabled = !!cfg?.syncKey && Array.isArray(cfg?.backends) && cfg.backends.length > 0;
+      if (interval > 0 && enabled) {
+        browserObj.alarms?.create?.("yph-sync-periodic", { periodInMinutes: interval });
+      }
+    } catch {
+      /* ignore */
+    }
   }
+  refreshPeriodicAlarm().catch(() => {});
 
   // Run once on startup.
   browserObj.runtime.onStartup?.addListener?.(() => {
@@ -97,7 +110,10 @@ if (browserObj?.runtime) {
 
   // Debounced push on storage change.
   let debounceTimer: ReturnType<typeof setTimeout> | null = null;
-  browserObj.storage?.onChanged?.addListener?.(() => {
+  browserObj.storage?.onChanged?.addListener?.((changes: any, area: string) => {
+    if (area === "local" && changes?.yph_sync_config) {
+      refreshPeriodicAlarm().catch(() => {});
+    }
     if (debounceTimer) clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => {
       debounceTimer = null;
@@ -140,7 +156,25 @@ export async function runOnce(): Promise<SyncStatus> {
   await persistStatus();
 
   try {
-    if (!isRelayConfigured()) {
+    const storage =
+      (globalThis as any).browser?.storage?.local || (globalThis as any).chrome?.storage?.local;
+    if (!storage) throw new Error("storage unavailable");
+
+    const cfg = (await storage.get("yph_sync_config")) ?? {};
+    const syncKey = cfg?.syncKey;
+    const backends = Array.isArray(cfg?.backends) ? cfg.backends : [];
+
+    if (!syncKey || backends.length === 0) {
+      phase = "idle";
+      status.lastError = null;
+      status.lastSummary =
+        backends.length === 0 ? "Offline mode (sync disabled)" : "No sync key configured";
+      status.lastRunAt = Date.now();
+      await persistStatus();
+      return getStatus();
+    }
+
+    if (!isRelayConfigured() && backends.includes("relay") && backends.length === 1) {
       phase = "idle";
       status.lastSummary = "No backend configured";
       status.lastRunAt = Date.now();
@@ -148,15 +182,10 @@ export async function runOnce(): Promise<SyncStatus> {
       return getStatus();
     }
 
-    const storage =
-      (globalThis as any).browser?.storage?.local || (globalThis as any).chrome?.storage?.local;
-    if (!storage) throw new Error("storage unavailable");
-
-    const cfg = (await storage.get("yph_sync_config")) ?? {};
-    const syncKey = cfg?.syncKey;
-    if (!syncKey) {
+    if (!isRelayConfigured() && !backends.includes("relay")) {
+      // non-relay backends handled elsewhere; nothing to do here
       phase = "idle";
-      status.lastSummary = "No sync key configured";
+      status.lastSummary = "No backend configured";
       status.lastRunAt = Date.now();
       await persistStatus();
       return getStatus();
