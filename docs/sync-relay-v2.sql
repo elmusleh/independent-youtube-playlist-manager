@@ -7,6 +7,33 @@
 -- Tables
 -- ---------------------------------------------------------------------------
 
+-- Rate limiting: track per-space request counts
+create table if not exists public.sync_rate_limit (
+  space text not null,
+  window_start timestamptz not null default date_trunc('minute', now()),
+  request_count int not null default 1,
+  primary key (space, window_start)
+);
+
+-- Function to check and increment rate limit
+create or replace function public.check_rate_limit(p_space text)
+returns boolean
+language plpgsql
+security definer
+as $$
+declare
+  v_count int;
+begin
+  insert into public.sync_rate_limit (space, window_start, request_count)
+  values (p_space, date_trunc('minute', now()), 1)
+  on conflict (space, window_start) do update
+  set request_count = sync_rate_limit.request_count + 1
+  returning request_count into v_count;
+
+  return v_count <= 100;
+end;
+$$;
+
 create table if not exists public.sync_spaces (
   space text primary key,            -- SHA-256 address derived from the sync key
   auth_hash text not null,           -- SHA-256 of the key-derived auth token
