@@ -359,48 +359,6 @@ describe("sync engine real relay/storage path", () => {
     expect(state.yph_sync_config.lastSeq).toBe(0);
   });
 
-  it("holds the global cursor for a disabled collection and backfills it when re-enabled", async () => {
-    const rid = await computeRecordId(SYNC_KEY, "history", "video-a");
-    const encrypted = await encryptRecord(
-      {
-        v: RECORD_VERSION,
-        collection: "history",
-        id: rid,
-        hlc: 200,
-        deleted: false,
-        data: { videoId: "video-a", lastWatchedAt: 10, title: "Remote history" },
-      },
-      await deriveKeys(SYNC_KEY)
-    );
-    remoteRows = [
-      {
-        collection: "history",
-        rid,
-        version: 200,
-        seq: 5,
-        payload: JSON.stringify(encrypted),
-        deleted: false,
-        updatedAt: new Date(200).toISOString(),
-      },
-    ];
-    const { runOnce } = await import("./sync-engine");
-
-    const disabledResult = await runOnce();
-    expect(disabledResult.lastSummary).toContain("cursor held");
-    expect(state.yph_sync_config.lastSeq).toBe(0);
-    expect(state.local_yt_history).toEqual({});
-
-    state.yph_sync_config.content.history = true;
-    const enabledResult = await runOnce();
-    expect(enabledResult.failedCount).toBe(0);
-    expect(state.local_yt_history["video-a"]).toEqual({
-      videoId: "video-a",
-      lastWatchedAt: 10,
-      title: "Remote history",
-    });
-    expect(state.yph_sync_config.lastSeq).toBe(5);
-    expect(pullRequests.map((request) => request.p_since_seq)).toEqual([0, 0]);
-  });
 
   it("preserves device records across incremental pulls", async () => {
     const { runAdapterPass } = await import("./sync-engine-adapters");

@@ -83,7 +83,7 @@ export const DEFAULT_SYNC_CONFIG: SyncConfig = {
   syncIntervalMinutes: 5,
   supabaseUrl: "",
   supabaseKey: "",
-  content: { playlists: true, settings: false, history: false },
+  content: { playlists: true, settings: true, history: true },
   lastSyncedAt: null,
   lastError: null,
   lastSyncSummary: null,
@@ -162,7 +162,7 @@ export function migrateSyncConfig(stored: unknown): SyncConfig {
   }
 
   const source = stored as Partial<SyncConfig> & { backend?: SyncBackend | null };
-  const content = { ...DEFAULT_SYNC_CONFIG.content, ...(source.content ?? {}) };
+  const content = { playlists: true, settings: true, history: true };
   const requestedBackends = Array.isArray(source.backends)
     ? source.backends
     : source.backend

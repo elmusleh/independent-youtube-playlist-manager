@@ -274,11 +274,6 @@
     });
   }
 
-  function toggleContent(key: "playlists" | "settings" | "history") {
-    config.content[key] = !config.content[key];
-    persist();
-  }
-
   function formatWhen(ts: number | null): string {
     if (!ts) return "Never";
     const diff = Date.now() - ts;
@@ -433,14 +428,7 @@
       <SyncActivity entries={syncLogEntries} />
 
       <!-- What to Sync with Per-Category Status -->
-      <SyncContents
-        {config}
-        {categoryTimestamps}
-        {isSyncing}
-        {syncStage}
-        onToggleContent={toggleContent}
-        {formatWhen}
-      />
+      <SyncContents {config} {categoryTimestamps} {isSyncing} {syncStage} {formatWhen} />
 
       <!-- Sync Schedule -->
       <SyncScheduleCard {config} onPersist={persist} onLog={addLogEntry} />

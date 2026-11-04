@@ -14,7 +14,6 @@
     categoryTimestamps,
     isSyncing,
     syncStage,
-    onToggleContent,
     formatWhen,
   }: {
     config: SyncConfig;
@@ -25,7 +24,6 @@
     };
     isSyncing: boolean;
     syncStage: string;
-    onToggleContent: (key: "playlists" | "settings" | "history") => void;
     formatWhen: (ts: number | null) => string;
   } = $props();
 </script>
@@ -33,107 +31,72 @@
 <!-- What to Sync with Per-Category Status -->
 <section class="card">
   <h3><Fa icon={faDatabase} /> What to Sync</h3>
-  <p class="sub-text">
-    Choose which data categories travel between devices. Each shows its own last sync time.
-  </p>
+  <p class="sub-text">All categories sync automatically. Each shows its own last sync time.</p>
 
-  <div class="sync-category" class:enabled={config.content.playlists}>
+  <div class="sync-category enabled">
     <div class="category-header">
       <div class="category-info">
         <Fa icon={faDatabase} class="cat-icon" />
         <div>
-          <label>
-            <input
-              type="checkbox"
-              checked={config.content.playlists}
-              onchange={() => onToggleContent("playlists")}
-            />
-            <span>Playlists</span>
-          </label>
+          <span class="category-name">Playlists</span>
           <span class="sub-text">Your saved and local playlists</span>
         </div>
       </div>
       <div class="category-status">
-        {#if config.content.playlists}
-          {#if categoryTimestamps.playlists}
-            <span class="synced-at"
-              ><Fa icon={faClock} /> {formatWhen(categoryTimestamps.playlists)}</span
-            >
-          {:else if isSyncing && (syncStage === "pulling" || syncStage === "pushing")}
-            <span class="syncing-now"><Fa icon={faSpinner} class="spin" /> Syncing…</span>
-          {:else}
-            <span class="never-synced">Never synced</span>
-          {/if}
+        {#if categoryTimestamps.playlists}
+          <span class="synced-at"
+            ><Fa icon={faClock} /> {formatWhen(categoryTimestamps.playlists)}</span
+          >
+        {:else if isSyncing && (syncStage === "pulling" || syncStage === "pushing")}
+          <span class="syncing-now"><Fa icon={faSpinner} class="spin" /> Syncing…</span>
         {:else}
-          <span class="disabled">Disabled</span>
+          <span class="never-synced">Never synced</span>
         {/if}
       </div>
     </div>
   </div>
 
-  <div class="sync-category" class:enabled={config.content.settings}>
+  <div class="sync-category enabled">
     <div class="category-header">
       <div class="category-info">
         <Fa icon={faCog} class="cat-icon" />
         <div>
-          <label>
-            <input
-              type="checkbox"
-              checked={config.content.settings}
-              onchange={() => onToggleContent("settings")}
-            />
-            <span>Settings</span>
-          </label>
+          <span class="category-name">Settings</span>
           <span class="sub-text">Preferences, theme, layout, etc.</span>
         </div>
       </div>
       <div class="category-status">
-        {#if config.content.settings}
-          {#if categoryTimestamps.settings}
-            <span class="synced-at"
-              ><Fa icon={faClock} /> {formatWhen(categoryTimestamps.settings)}</span
-            >
-          {:else if isSyncing && (syncStage === "pulling" || syncStage === "pushing")}
-            <span class="syncing-now"><Fa icon={faSpinner} class="spin" /> Syncing…</span>
-          {:else}
-            <span class="never-synced">Never synced</span>
-          {/if}
+        {#if categoryTimestamps.settings}
+          <span class="synced-at"
+            ><Fa icon={faClock} /> {formatWhen(categoryTimestamps.settings)}</span
+          >
+        {:else if isSyncing && (syncStage === "pulling" || syncStage === "pushing")}
+          <span class="syncing-now"><Fa icon={faSpinner} class="spin" /> Syncing…</span>
         {:else}
-          <span class="disabled">Disabled</span>
+          <span class="never-synced">Never synced</span>
         {/if}
       </div>
     </div>
   </div>
 
-  <div class="sync-category" class:enabled={config.content.history}>
+  <div class="sync-category enabled">
     <div class="category-header">
       <div class="category-info">
         <Fa icon={faHistory} class="cat-icon" />
         <div>
-          <label>
-            <input
-              type="checkbox"
-              checked={config.content.history}
-              onchange={() => onToggleContent("history")}
-            />
-            <span>Watch History</span>
-          </label>
+          <span class="category-name">Watch History</span>
           <span class="sub-text">What you've watched on each device</span>
         </div>
       </div>
       <div class="category-status">
-        {#if config.content.history}
-          {#if categoryTimestamps.history}
-            <span class="synced-at"
-              ><Fa icon={faClock} /> {formatWhen(categoryTimestamps.history)}</span
-            >
-          {:else if isSyncing && (syncStage === "pulling" || syncStage === "pushing")}
-            <span class="syncing-now"><Fa icon={faSpinner} class="spin" /> Syncing…</span>
-          {:else}
-            <span class="never-synced">Never synced</span>
-          {/if}
+        {#if categoryTimestamps.history}
+          <span class="synced-at"
+            ><Fa icon={faClock} /> {formatWhen(categoryTimestamps.history)}</span
+          >
+        {:else if isSyncing && (syncStage === "pulling" || syncStage === "pushing")}
+          <span class="syncing-now"><Fa icon={faSpinner} class="spin" /> Syncing…</span>
         {:else}
-          <span class="disabled">Disabled</span>
+          <span class="never-synced">Never synced</span>
         {/if}
       </div>
     </div>
@@ -176,18 +139,9 @@
     background: var(--muted, #f3f4f6);
     color: var(--accent, #3b82f6);
   }
-  .category-info label {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    cursor: pointer;
+  .category-name {
     font-weight: 500;
     color: var(--foreground, #111);
-  }
-  .category-info label input[type="checkbox"] {
-    width: 18px;
-    height: 18px;
-    accent-color: var(--accent, #3b82f6);
   }
   .category-info .sub-text {
     margin: 0.15rem 0 0;
@@ -217,10 +171,6 @@
   }
   .never-synced {
     color: var(--muted-foreground, #9ca3af);
-  }
-  .disabled {
-    color: var(--muted-foreground, #9ca3af);
-    font-style: italic;
   }
   :global(.fa-spinner.spin) {
     animation: spin 1s linear infinite;
