@@ -43,6 +43,9 @@
   font-weight: 700;
 }
 
+/* LAYOUT: cards use CSS multi-column masonry (NOT CSS Grid).
+   Grid's default align-items: stretch makes cards equal-height "cubes" with empty space.
+   Keep column-count so each card keeps its own content height. See UI_DESIGN_GUIDELINES.md §5. */
 .settings-grid {
   column-count: 1;
   column-gap: 24px;

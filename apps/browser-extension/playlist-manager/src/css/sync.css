@@ -307,3 +307,19 @@
   color: var(--text-muted, var(--text-secondary));
   opacity: 0.6;
 }
+
+/* Sync Key card promoted to a full-width block above the grid. */
+.sync-key-top {
+  margin-bottom: 24px;
+}
+
+/* Data portability subheading spanning all masonry columns. */
+.sync-page .data-portability-heading {
+  column-span: all;
+  margin: 8px 0 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-muted, var(--text-secondary));
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}

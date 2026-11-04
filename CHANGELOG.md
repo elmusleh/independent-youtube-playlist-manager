@@ -18,6 +18,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Cross-device sync UI with device pairing, capability-aware backend selection, encrypted
   file and Supabase transports, and explicit conflict reporting when a backend rejects stale
   writes. Custom HTTPS Supabase hosts are requested only when the user starts a sync.
+- Moved "Local Storage" and "Database Backup & Portable Restore" cards from the Settings page to
+  the Sync page; Sync Key card promoted to a full-width block at the top of Sync. Sync page now
+  shares the masonry card layout with Settings.
 - Pin frequently used playlists for quick access; the pinned list is managed separately from
   the full Saved and Manage views and migrates existing single-favorite settings.
 - Automated beta releases: every merge to `next` now builds the extension and cuts a

@@ -142,5 +142,6 @@ test.describe("YPH WebExtension E2E Tests (Chromium)", () => {
     // A section that renders regardless of auth state — the old assertions looked for
     // a marketing string and a YouTube-only field that the settings view no longer shows.
     await expect(page.getByRole("heading", { name: "Local Storage" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Database Backup & Portable Restore" })).toBeVisible();
   });
 });

@@ -51,3 +51,12 @@ justify-content: center` inside a fixed-width wrapper (e.g. `.icon-box`,
 Settings cards use `.settings-grid` (CSS multi-column, `column-count: 2`,
 `break-inside: avoid`). Order cards in the markup for the desired
 column-major reading order; don't rely on the browser to rebalance.
+
+**Do not** switch `.settings-grid` to CSS Grid (`display: grid` /
+`grid-template-columns`) — Grid's default `align-items: stretch` makes cards
+grow to the tallest sibling in each row, producing empty space / "cube"
+cards. A previous regression (`ead2907`) did exactly this and had to be
+reverted. If a grid layout is ever truly needed, set `align-items: start`
+(and `grid-auto-rows: auto`) explicitly, and update this guideline + visual
+baselines in the same change. Keep `.settings-grid` defined only in
+`settings.css`; never override it unscoped from `sync.css` or elsewhere.
