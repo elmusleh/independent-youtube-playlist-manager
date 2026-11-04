@@ -142,8 +142,13 @@ export async function pushAll(
   records: RelayRecord[],
   onProgress?: (done: number, total: number) => void
 ): Promise<PushResult[]> {
-  // Client-side guard: reject oversized payloads before sending (M4).
+  // Client-side guard: reject far-future versions before sending (BUG-4).
+  const now = Date.now();
+  const maxFuture = now + 86_400_000; // 24 hours
   for (const r of records) {
+    if (r.version > maxFuture) {
+      throw new Error(`Version too far in future: ${r.version} (max ${maxFuture})`);
+    }
     if (r.payload.length > 150_000) {
       throw new Error(`Payload too large: ${r.payload.length} bytes (max 150000)`);
     }
