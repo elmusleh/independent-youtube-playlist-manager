@@ -259,6 +259,17 @@
       const params = new URLSearchParams(location.hash.split("?")[1] || "");
       const join = params.get("join");
       if (join) {
+        // Warn the user that the key is in the URL (M6).
+        const ok = confirm(
+          "Import sync key from this pairing link?\n\n" +
+            "Warning: the sync key travels in the URL. Anyone who sees this " +
+            "link (browser history, screenshots) can access your synced data. " +
+            "Only proceed if you trust the source of this link."
+        );
+        if (!ok) {
+          history.replaceState(null, "", location.hash.split("?")[0] || "#/sync");
+          return;
+        }
         const padded =
           join.replace(/-/g, "+").replace(/_/g, "/") + "===".slice((join.length + 3) % 4);
         const decoded = atob(padded);
