@@ -1,3 +1,118 @@
+## 2026-11-04 — Trusted gateway rate limiting folded into PR #88
+
+- Merged `fix/sync-ip-ratelimit` into `feat/sync-hardening` and pushed; PR #88 head is now `056aec6`.
+- Added `docs/migrations/0003_trusted_ip_rate_limit.sql`: per-client-IP 250 req/5min bucket in a
+  private schema, sync-RPC-only scope, fail-closed when no trusted IP, PostgREST `db_pre_request`.
+- Updated `packages/build-tools/test-relay-roles.sql`, `docker-compose.test.yml`, CI, and relay E2E
+  (18/18 pass locally with migrations 0002 + 0003).
+- `npm run check`, `npm run build`, `npm run test:sync:relay`, `npm run test:extension` all pass.
+- CI on PR #88 is pending; mergeStateStatus BLOCKED until checks + review conversation resolve.
+- Remaining NO-GO gates (owner/manual): verify hosted Supabase gateway owns `X-Forwarded-For`,
+  apply migrations 0002 + 0003 on hosted project and smoke-test; manual Chrome/Firefox/Fenix
+  multi-device round-trip (offline/retry, conflicts, deletion, disabled collections, SW
+  restart, key rotation).
+
+## 2026-11-04 — Sync hardening audit follow-up
+
+A local follow-up branch `fix/sync-hardening-audit` was created from `feat/sync-hardening`
+while PR #88 is open. It intentionally changes only the relay fixture role setup and sync
+release-status documentation; coordinate before moving these edits onto the PR branch. PR #88
+is still OPEN and BLOCKED. No push, publication, or hosted-project change was made.
+
+- `packages/build-tools/test-relay-roles.sql` now provisions both `anon` and `authenticated`,
+  which the hardening migration and CI setup require.
+- `docs/SYNC_V2_STATUS.md` now explicitly gates public launch on trusted gateway-level rate
+  limiting and distinguishes local E2E evidence from hosted-relay verification.
+- Verified `npm run check` (82 files / 757 tests; 0 Svelte errors, 1 existing warning),
+  `npm run build`, `npm run test:sync:relay` (16/16 against local Postgres + PostgREST),
+  `npm run test:extension` (102 route/viewport checks, 11 interaction groups, popup + Edge
+  package checks), and `git diff --check`.
+- External release blockers remain: enforce trusted client/IP rate limits at the relay gateway,
+  verify migration `0002` on hosted Supabase, and perform manual multi-device browser checks.
+
+## 2026-11-03 — Sync v2 Phase 1: Protocol Core completed (on `feat/sync-hardening`)
+
+### Completed Work
+
+- **keys.ts**: HKDF-SHA256 derives three independent keys (encryption, record-id HMAC, auth-token HMAC) from the 20-char Crockford base32 sync key
+- **fingerprint.ts** + **fingerprint-emoji.ts** + **fingerprint-words.ts**: Human-friendly key verification (4-symbol emoji + word fingerprint) for device pairing
+- **record-codec.ts**: AES-256-GCM record envelopes with AAD binding (`collection|recordId`) preventing ciphertext slot confusion
+- **hlc.ts**: Hybrid Logical Clock (48-bit wall time + 16-bit counter + 16-bit device hash) for causality + total ordering
+- **merge/playlists.ts**: 3-way merge — title LWW, video add/remove merge, delete-vs-edit → edit wins
+- **merge/history.ts**: Per-video LWW with tombstones (`lastWatchedAt` wins)
+- **merge/settings.ts**: Per-key LWW with allowlist for syncable settings
+- **shadow-store.ts**: IndexedDB tracking base copy hash, remote version, local device ID for dirty detection
+- **Sync.svelte**: Fixed TypeScript errors (`class` → `className` on SimpleButton)
+
+### Files Changed (key)
+
+- `apps/browser-extension/playlist-manager/src/services/sync/keys.ts`
+- `apps/browser-extension/playlist-manager/src/services/sync/fingerprint.ts`
+- `apps/browser-extension/playlist-manager/src/services/sync/fingerprint-emoji.ts`
+- `apps/browser-extension/playlist-manager/src/services/sync/fingerprint-words.ts`
+- `apps/browser-extension/playlist-manager/src/services/sync/record-codec.ts`
+- `apps/browser-extension/playlist-manager/src/services/sync/hlc.ts`
+- `apps/browser-extension/playlist-manager/src/services/sync/merge/playlists.ts`
+- `apps/browser-extension/playlist-manager/src/services/sync/merge/history.ts`
+- `apps/browser-extension/playlist-manager/src/services/sync/merge/settings.ts`
+- `apps/browser-extension/playlist-manager/src/services/sync/shadow-store.ts`
+- `apps/browser-extension/playlist-manager/src/views/Sync.svelte`
+
+### Build Status
+
+- `npm run check` ✅ (lint, format, 680 tests, contracts, file-size, svelte-check, CSS bundle, Vercel config, tooling versions)
+- `npm run build` ✅ (Chrome/Firefox/Edge packages, all bundle budgets pass)
+- All new files under 350-line limit
+
+### Next Steps
+
+- Phase 2: Relay v2 schema (`sync-relay-v2.sql`), `relay-transport.ts`, `fake-relay.ts`
+- Phase 3: Background sync engine (`sync-engine.ts`, adapters, `status-store.ts`)
+- Phase 4: Sync Center UI (split `Sync.svelte` into components)
+- Phase 5: Optional extras (QR pairing, Realtime nudge, key rotation)
+
+## 2026-11-03 — Sync v2 Phases 0–3 (branch `feat/sync-hardening`)
+
+Full status: `docs/SYNC_V2_STATUS.md`.
+
+- Phase 0 hotfix shipped (polling on app open, relay SQL aligned, key validation).
+- Phase 1 protocol core committed + unit-tested (keys, codec, HLC, merge, shadow store).
+- Phase 2 relay v2 SQL + fetch transport + fake relay committed.
+- Phase 3 background engine skeleton + wiring + status-store + playlists adapter committed.
+- Bug fixes: service worker imports, Sync overflow at 320px, agent-lock stale release.
+- Test gate green: `npm run check` 0 errors, `npm run test:extension` exit 0.
+
+Remaining: Phase 3 adapter wiring (history/settings/devices), Phase 4 UI split, Phase 5 extras.
+
+## 2026-11-03 — Sync v2 Phase 0 hotfix (branch `feat/sync-hardening`)
+
+- Branch `feat/sync-hardening` was `a86413b` when this pass started. Two commits from another
+  session landed during the pass (`f51feeb` Phase 1 core, `8fab611` docs); Phase 0 is
+  `5ca6a94` on top of them. The Antigravity diagnosis
+  (`fb04c92`) is partly stale: at HEAD, `setupHint` is defined, keys are validated as 20
+  Crockford characters, and "Generate key" is wired. Re-check each claim against the
+  current tree before acting on it.
+- Phase 0 changes: polling moved from the Sync view into `App.svelte` (`startPolling` on
+  mount plus a new `pullNow()` in `sync-manager.ts`); `relay_snapshots(payload)` aligned in
+  `docs/sync-relay.sql` and `docs/SYNC_RELAY_SETUP.md`; `className` fix on "Sync now";
+  one key-acceptance test. CHANGELOG `[Unreleased]` updated.
+- Evidence: `npm run check` exit 0 (70 files / 681 tests, before and after the change);
+  `npm run build` exit 0 (budgets pass); real-extension smoke test loads `#/sync` with
+  all three backend labels and zero page errors.
+- **Not green:** `npm run test:extension` exits 1 at `/playlist-builder` ("Loading playlist
+  builder…", no `.playlist-video`). Reproduced on the baseline without this pass's
+  App.svelte change, so it is pre-existing. The suite never reaches its Sync interaction
+  check. Investigate before relying on that gate.
+- Playwright Chromium (`chromium-1234`) installed locally to run the extension suite.
+- **Phase 1 is committed (`f51feeb`) but unproven:** `services/sync/` modules (`keys.ts`,
+  `hlc.ts`, `record-codec.ts`, `fingerprint*.ts`, `shadow-store.ts`, `merge/*.ts`) have no
+  unit tests and are not wired into any engine. The "completed" wording in `PROGRESS.md`
+  overstates this. Add tests before wiring them in.
+- Lock: the stale Antigravity lock (pid dead) was taken over by `opencode`. Release it at
+  the end of the session.
+- Still open for v2: relay RLS is still `using (true)` (Phase 2 RPC relay); polling
+  runs only while the editor is open (Phase 3 background engine).
+
 ## 2026-11-03 — Branch cleanup and merge integration (final)
 
 - All safe/superseded branches deleted (local + remote). Only `main` and `next` remain.
@@ -790,3 +905,23 @@ writes. `.husky/pre-commit` was modified by a concurrent process (a commit attem
 - No commit, push, store submission, tag, or remote action performed. The Edge
   draft in Partner Center still holds the old 1.1.1 package; upload the rebuilt
   1.2.1 ZIP and click Continue.
+
+## 2026-11-04 — Sync v2 hardening committed (branch `feat/sync-hardening`)
+
+- Commit: `b6467d3` — "feat(sync): harden sync v2 adapters, relay security, and test coverage"
+- Relay: atomic upsert, RLS + revoked direct table access, rate-limit/claim hardening, CI fixture with pinned images.
+- Engine: conflict pull/merge/retry, claim rejection abort, authoritative playlist snapshot, tombstone de-duplication.
+- Tests: `npm run check` ✅, `npm run build` ✅, sync suites 135 passed, relay E2E 16 passed.
+- PR #88 still BLOCKED (review threads need resolution); no push/merge/production migration performed.
+
+## 2026-11-04 — Sync v2 CI fully green (branch `feat/sync-hardening`)
+
+- Commit: `5f135e5` — "fix: create authenticated role for test relay fixture"
+- All required PR #88 checks now pass:
+  - Quality & Security (Lint, Format, Audit, Unit Tests) ✅
+  - Extension CI (Svelte Diagnostics & Manifest Validation) ✅
+  - Web & Extension E2E Integration (Typecheck, Build, E2E) ✅
+  - Build & Bundle Inventory ✅
+  - All analysis/dependency/codeql/audit checks ✅
+- Root cause of Docker fixture failure: `authenticated` role missing in `test-relay-roles.sql`; added and granted schema usage.
+- No human code-review findings on PR (only auto-generated bot comments).

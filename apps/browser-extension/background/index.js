@@ -8,3 +8,4 @@ import "../editor/utils.js";
 import "../editor/video-service.js";
 import "../editor/supabase-sync.js";
 import "./background.js";
+import "../editor/sync-engine.js"; // registers the background sync engine side effects

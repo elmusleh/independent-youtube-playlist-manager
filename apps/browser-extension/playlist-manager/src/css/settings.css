@@ -44,8 +44,9 @@
 }
 
 .settings-grid {
-  column-count: 1;
-  column-gap: 24px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
   width: 100%;
   max-width: 100%;
   overflow: hidden;
@@ -53,7 +54,7 @@
 
 @media (min-width: 768px) {
   .settings-grid {
-    column-count: 2;
+    grid-template-columns: 1fr 1fr;
   }
 }
 
@@ -62,7 +63,7 @@
   flex-direction: column;
   width: 100%;
   break-inside: avoid;
-  margin-bottom: 24px;
+  margin-bottom: 0;
   background: var(--background-color);
   border: 1px solid var(--border-color);
   border-radius: 16px;

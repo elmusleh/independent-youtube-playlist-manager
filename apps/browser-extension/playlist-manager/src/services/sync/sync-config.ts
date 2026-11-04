@@ -10,6 +10,8 @@
  * URL + anon key.
  */
 
+import type { SyncSnapshot } from "./snapshot-codec.js";
+
 export type SyncBackend = "relay" | "supabase-byo" | "file";
 
 export type SyncContentSelection = {
@@ -18,10 +20,29 @@ export type SyncContentSelection = {
   history: boolean;
 };
 
+export type DownloadStatus = "ok" | "missing" | "permission" | "corrupt" | "decrypt" | "conflict";
+
+export type DownloadResult =
+  | { status: "ok"; snapshot: SyncSnapshot }
+  | { status: "missing" }
+  | { status: "permission"; message: string }
+  | { status: "corrupt"; message: string }
+  | { status: "decrypt"; message: string }
+  | { status: "conflict"; branches: SyncSnapshot[] };
+
+/** Per-category sync timestamps for granular status display. */
+export type SyncTimestamps = {
+  playlists: number | null;
+  settings: number | null;
+  history: number | null;
+};
+
 export type SyncConfig = {
   syncKey: string | null;
   /** Enabled sync backends (more than one = mirror to each). */
   backends: SyncBackend[];
+  /** Periodic sync interval in minutes. 0 = manual only. */
+  syncIntervalMinutes: number;
   /** User-supplied Supabase endpoint for the "supabase-byo" backend. */
   supabaseUrl: string;
   supabaseKey: string;
@@ -38,6 +59,8 @@ export type SyncConfig = {
    * two devices must never tie, or neither will pull the other's data.
    */
   syncRevision: number;
+  /** Per-category last successful sync timestamps. */
+  categoryTimestamps: SyncTimestamps;
 };
 
 const KEY = "yph_sync_config";
@@ -46,6 +69,7 @@ const DEVICE_ID_KEY = "yph_sync_device_id";
 export const DEFAULT_SYNC_CONFIG: SyncConfig = {
   syncKey: null,
   backends: [],
+  syncIntervalMinutes: 5,
   supabaseUrl: "",
   supabaseKey: "",
   content: { playlists: true, settings: false, history: false },
@@ -54,6 +78,7 @@ export const DEFAULT_SYNC_CONFIG: SyncConfig = {
   lastSyncSummary: null,
   knownDevices: [],
   syncRevision: 0,
+  categoryTimestamps: { playlists: null, settings: null, history: null },
 };
 
 /**
@@ -61,12 +86,12 @@ export const DEFAULT_SYNC_CONFIG: SyncConfig = {
  * Supabase project URL + anon key before the "easy / recommended" backend can function.
  * The relay is zero-knowledge: it stores only ciphertext keyed by a SHA-256 address.
  *
- * TODO(owner): provision a Supabase project with a `sync_snapshots` table
- * (`address text primary key`, `blob text`, `revision bigint`, `device_id text`,
+ * TODO(owner): provision a Supabase project with a `relay_snapshots` table
+ * (`address text primary key`, `payload text`, `revision bigint`, `device_id text`,
  * `updated_at timestamptz`) and paste the URL + anon key here.
  */
-export const RELAY_SUPABASE_URL = "https://placeholder.supabase.co";
-export const RELAY_SUPABASE_ANON_KEY = "placeholder-anon-key";
+export const RELAY_SUPABASE_URL = "https://qvwitlpnetwthyhrobca.supabase.co";
+export const RELAY_SUPABASE_ANON_KEY = "sb_publishable_HV50FQtJrkoNcKLsFk5BHQ_KUU2GeKb";
 
 /** True when the hosted relay has real credentials (not the placeholder). */
 export function isRelayConfigured(): boolean {
@@ -135,6 +160,12 @@ export async function loadSyncConfig(): Promise<SyncConfig> {
       : stored.backend
         ? [stored.backend]
         : [];
+    // Ensure categoryTimestamps exists (migration from older configs).
+    const categoryTimestamps = stored.categoryTimestamps ?? {
+      playlists: stored.lastSyncedAt ?? null,
+      settings: null,
+      history: null,
+    };
     return {
       ...DEFAULT_SYNC_CONFIG,
       ...stored,
@@ -142,6 +173,11 @@ export async function loadSyncConfig(): Promise<SyncConfig> {
       content,
       knownDevices: Array.isArray(stored.knownDevices) ? stored.knownDevices : [],
       syncRevision: typeof stored.syncRevision === "number" ? stored.syncRevision : 0,
+      categoryTimestamps,
+      syncIntervalMinutes:
+        typeof stored.syncIntervalMinutes === "number"
+          ? stored.syncIntervalMinutes
+          : DEFAULT_SYNC_CONFIG.syncIntervalMinutes,
     };
   } catch {
     return structuredClone(DEFAULT_SYNC_CONFIG);

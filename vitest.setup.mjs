@@ -1,3 +1,4 @@
+import "fake-indexeddb/auto";
 // Make git-spawning tests hermetic. When the suite runs inside a `git commit`
 // pre-commit hook, git exports `GIT_INDEX_FILE` (= `.git/index`) — and possibly
 // `GIT_DIR` / `GIT_WORKTREE` / `GIT_COMMON_DIR` — to the hook and every subprocess it

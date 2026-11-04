@@ -76,6 +76,16 @@
   --text-color: var(--color-text-primary);
   --border-color: var(--color-border-primary);
   --hover-color: var(--color-bg-hover);
+
+  /* Sync view / modern UI aliases */
+  --card: var(--color-bg-secondary);
+  --accent: var(--color-brand-primary);
+  --foreground: var(--color-text-primary);
+  --muted-foreground: var(--color-text-muted);
+  --muted: var(--color-bg-tertiary);
+  --success: var(--color-brand-success);
+  --danger: var(--color-brand-danger);
+  --warning: var(--color-brand-warning);
 }
 
 /* ============================================================================

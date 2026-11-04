@@ -1,118 +1,223 @@
 <script lang="ts">
   import Fa from "svelte-fa";
   import {
-    faKey,
     faShieldHalved,
     faCopy,
-    faCheck,
-    faArrowsRotate,
+    faTrash,
+    faKey,
+    faInfoCircle,
     faCircleExclamation,
+    faLink,
+    faArrowsRotate,
   } from "@fortawesome/free-solid-svg-icons";
   import SimpleButton from "../SimpleButton.svelte";
   import {
     generateSyncKey,
-    formatSyncKey,
     isValidSyncKey,
-    normalizeSyncKey,
+    formatSyncKey,
+    SYNC_KEY_SYMBOLS,
   } from "../../services/sync/sync-key.js";
+  import { isRelayConfigured } from "../../services/sync/sync-config.js";
   import type { SyncConfig } from "../../services/sync/sync-config.js";
+  import { requestConfirm } from "../../stores/confirmation";
 
-  let { config, onPersist }: { config: SyncConfig; onPersist: () => void } = $props();
+  let {
+    config,
+    onPersist,
+    onLog,
+    onRotate,
+  }: {
+    config: SyncConfig;
+    onPersist: () => void | Promise<void>;
+    onLog: (message: string, type?: "info" | "success" | "error" | "warning") => void;
+    onRotate?: () => void | Promise<void>;
+  } = $props();
 
-  let inputKey = $state("");
-  let copied = $state(false);
-  let error = $state("");
+  let keyInput = $state("");
+  let keyError = $state<string | null>(null);
 
-  function generate() {
-    config.syncKey = generateSyncKey();
-    inputKey = "";
-    copied = false;
-    error = "";
-    onPersist();
-  }
+  const hasSyncKey = $derived(!!config.syncKey);
 
-  function saveEntered() {
-    const normalized = normalizeSyncKey(inputKey);
-    if (!isValidSyncKey(normalized)) {
-      error = "That is not a valid sync key. A key looks like ABCDE-FGHJK-MNPQR-STVWX.";
-      return;
-    }
-    config.syncKey = formatSyncKey(normalized);
-    inputKey = "";
-    error = "";
-    copied = false;
-    onPersist();
-  }
-
-  async function copyKey() {
-    try {
-      await navigator.clipboard.writeText(config.syncKey ?? "");
-      copied = true;
-      setTimeout(() => (copied = false), 2000);
-    } catch {
-      error = "Could not copy. Select and copy the key manually.";
+  function handleKeySave() {
+    if (isValidSyncKey(keyInput)) {
+      config.syncKey = formatSyncKey(keyInput);
+      keyInput = "";
+      keyError = null;
+      onPersist();
+      onLog("Sync key saved", "success");
+    } else {
+      keyError = `A sync key has ${SYNC_KEY_SYMBOLS} letters/digits, e.g. ABCDE-FGHJK-MNPQR-STVWX.`;
+      onLog(keyError, "error");
     }
   }
 
-  function clearKey() {
+  function handleGenerateKey() {
+    requestConfirm({
+      title: "Create a new sync key?",
+      message:
+        "Only do this on your FIRST device. Every other device must paste this same key — a second generated key creates a separate, unconnected sync space.",
+      color: "primary",
+      confirmLabel: "Create key",
+      onConfirm: () => {
+        config.syncKey = generateSyncKey();
+        if (config.backends.length === 0 && isRelayConfigured()) config.backends = ["relay"];
+        keyError = null;
+        onPersist();
+        onLog("New sync key created — copy it to your other devices", "success");
+      },
+    });
+  }
+
+  function copyKey() {
+    navigator.clipboard.writeText(config.syncKey!).then(
+      () => onLog("Sync key copied to clipboard", "success"),
+      () => onLog("Could not copy — select manually", "error")
+    );
+  }
+
+  function base64UrlEncode(value: string): string {
+    return btoa(value).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+  }
+
+  function copyPairingLink() {
+    if (!config.syncKey) return;
+    const encoded = base64UrlEncode(config.syncKey);
+    const url = `${window.location.origin}/#/sync?join=${encoded}`;
+    navigator.clipboard.writeText(url).then(
+      () => onLog("Pairing link copied to clipboard", "success"),
+      () => onLog("Could not copy pairing link — select manually", "error")
+    );
+  }
+
+  function removeKey() {
     config.syncKey = null;
-    error = "";
     onPersist();
+    onLog("Sync key removed from this device", "warning");
   }
 </script>
 
-<section class="card">
-  <h3><Fa icon={faShieldHalved} /> Your sync key</h3>
+<!-- Sync Key Section -->
+<section class="card sync-key-section">
+  <h3><Fa icon={faShieldHalved} /> Sync Key</h3>
   <p class="sub-text">
-    Pairing = using the <strong>same key</strong> on every device. Generate one here, or paste the
-    key from another device — including your phone. No account, no separate code. Keep it secret:
-    <strong>lose the key and your data cannot be recovered.</strong>
+    One key links every device. <strong>Generate once</strong> on your first device, then paste the
+    <strong>same key</strong>
+    on all others.
+    <span class="warning">Keep it secret — losing it means synced data cannot be recovered.</span>
   </p>
-  {#if config.syncKey}
-    <div class="key-display">
-      <code class="key-value">{config.syncKey}</code>
-      <div class="key-actions">
-        <SimpleButton secondary onclick={copyKey}>
-          <Fa icon={copied ? faCheck : faCopy} />
-          {copied ? "Copied" : "Copy"}
+
+  {#if hasSyncKey}
+    <div class="key-display-wrapper">
+      <div class="key-display">
+        <div class="key-value-container">
+          <code class="key-value">{config.syncKey}</code>
+          <SimpleButton secondary onclick={copyKey}>
+            <Fa icon={faCopy} /> Copy
+          </SimpleButton>
+          <SimpleButton secondary onclick={copyPairingLink}>
+            <Fa icon={faLink} /> Copy pairing link
+          </SimpleButton>
+        </div>
+      </div>
+      <p class="key-hint">
+        <Fa icon={faInfoCircle} /> This key is set. Paste it into other devices to link them.
+      </p>
+      <SimpleButton secondary className="danger" onclick={removeKey}>
+        <Fa icon={faTrash} /> Remove key from this device
+      </SimpleButton>
+      {#if onRotate}
+        <SimpleButton secondary onclick={() => onRotate?.()}>
+          <Fa icon={faArrowsRotate} /> Rotate key (advanced)
         </SimpleButton>
-        <SimpleButton secondary onclick={generate}>
-          <Fa icon={faArrowsRotate} /> New key
+      {/if}
+    </div>
+  {:else}
+    <div class="key-input-wrapper">
+      <div class="key-input-group">
+        <input
+          type="text"
+          bind:value={keyInput}
+          placeholder="Paste sync key here (e.g. ABCDE-FGHJK-MNPQR-STVWX)"
+          class="key-input"
+          onkeydown={(e) => {
+            if (e.key === "Enter") handleKeySave();
+          }}
+        />
+        <SimpleButton primary onclick={handleKeySave}>
+          <Fa icon={faKey} /> Save Key
         </SimpleButton>
       </div>
-    </div>
-    <div class="field">
-      <input
-        type="text"
-        bind:value={inputKey}
-        placeholder="Paste a key from another device…"
-        aria-label="Sync key"
-      />
-      <SimpleButton primary onclick={saveEntered}>
-        <Fa icon={faCheck} /> Use this key
+      {#if keyError}
+        <p class="error-text" role="alert">{keyError}</p>
+      {/if}
+      <p class="sub-text">
+        First device? Create a key here, then paste the same key on every other device.
+      </p>
+      <SimpleButton secondary onclick={handleGenerateKey}>
+        <Fa icon={faShieldHalved} /> Create a new sync key
       </SimpleButton>
     </div>
-    <button type="button" class="link-btn" onclick={clearKey}>Remove key</button>
-  {:else}
-    <div class="key-actions">
-      <SimpleButton primary onclick={generate}>
-        <Fa icon={faKey} /> Generate a key
-      </SimpleButton>
-    </div>
-    <div class="field">
-      <label for="enter-key">…or paste a key from another device</label>
-      <input
-        id="enter-key"
-        type="text"
-        bind:value={inputKey}
-        placeholder="ABCDE-FGHJK-MNPQR-STVWX"
-      />
-      <SimpleButton secondary onclick={saveEntered}>
-        <Fa icon={faCheck} /> Pair with this key
-      </SimpleButton>
-    </div>
-  {/if}
-  {#if error}
-    <p class="sync-error"><Fa icon={faCircleExclamation} /> {error}</p>
   {/if}
 </section>
+
+<style>
+  .sync-key-section .key-display {
+    margin-top: 1rem;
+  }
+  .key-value-container {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.5rem;
+  }
+  .key-value {
+    flex: 1 1 200px;
+    min-width: 0;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.875rem;
+    padding: 0.5rem 0.75rem;
+    background: var(--muted, #f3f4f6);
+    border-radius: 6px;
+    border: 1px solid var(--border, #e0e0e0);
+    letter-spacing: 0.02em;
+  }
+  .key-hint {
+    margin: 0.5rem 0 0;
+    font-size: 0.8rem;
+    color: var(--muted-foreground, #6b7280);
+  }
+  .key-input-group {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-top: 1rem;
+  }
+  .key-input {
+    flex: 1 1 220px;
+    min-width: 0;
+    padding: 0.5rem 0.75rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.875rem;
+    border: 1px solid var(--border, #d1d5db);
+    border-radius: 6px;
+    background: var(--card, #fff);
+    color: var(--foreground, #111);
+  }
+  .key-input:focus {
+    outline: none;
+    border-color: var(--accent, #3b82f6);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+  }
+  :global(.danger) {
+    color: var(--danger, #ef4444);
+    border-color: var(--danger, #ef4444);
+  }
+  :global(.danger:hover) {
+    background: rgba(239, 68, 68, 0.1);
+  }
+  .error-text {
+    color: var(--danger, #ef4444);
+    font-weight: 500;
+  }
+</style>

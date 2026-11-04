@@ -43,6 +43,7 @@ The extension is fully functional offline for editing and managing playlists. Wh
 - **YouTube / Google** (`youtube.com`): Innertube player endpoint, embed pages, and the public oEmbed API for zero-quota metadata lookups; the YouTube Data API v3 when you sign in or provide your own API key; and normal video playback links.
 - **Piped / Invidious instances** (optional fallback tier): Public privacy-frontend instances (e.g., `pipedapi.kavin.rocks`, `invidious.privacydev.net`) or custom instances you configure, used only as a metadata fallback. This tier can be disabled entirely in Settings.
 - **Supabase (optional cloud sync):** When you configure a project and sign in, account credentials and tokens are exchanged with that project. Cloud sync transmits playlist names, video IDs, ordering and video metadata. The shared video catalog can expose public video metadata to other users of that configured project. Local watch-progress logs are not uploaded by this sync service.
+- **Encrypted cross-device sync (v2, optional):** When you enable encrypted sync with a sync key, your playlists, settings, watch history, and device presence (device name + platform) are encrypted on-device with AES-256-GCM before upload. The relay (Supabase) stores only opaque encrypted records keyed by a derived storage address; it cannot read your data. Device names and platforms are part of the encrypted payload. No plaintext data leaves your device.
 
 Each metadata engine (Innertube, embed scraping, oEmbed, Piped/Invidious) can be individually toggled off in Settings.
 

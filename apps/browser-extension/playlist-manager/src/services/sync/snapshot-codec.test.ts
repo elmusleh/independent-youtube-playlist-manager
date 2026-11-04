@@ -54,7 +54,7 @@ describe("snapshot codec", () => {
 
   it("rejects an unknown schema version", () => {
     const bytes = new TextEncoder().encode(JSON.stringify({ ...valid(), schemaVersion: 99 }));
-    expect(() => decodeSnapshot(bytes)).toThrow(/Unsupported sync snapshot version 99/);
+    expect(() => decodeSnapshot(bytes)).toThrow(/newer than supported/);
   });
 
   it("rejects a missing revision, device id, timestamp or payload", () => {

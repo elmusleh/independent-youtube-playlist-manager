@@ -5,6 +5,11 @@
  * and a timestamp. Conflicts are resolved by comparing `revision` alone — that is only
  * sound if the field is validated on the way in, so decoding is strict: a payload that
  * does not match the envelope is rejected before it can reach local data.
+ *
+ * Versioning policy (forward-compatible, backward-migrating):
+ *   - Accept any version <= SNAPSHOT_SCHEMA_VERSION and migrate in-memory.
+ *   - Reject only versions *newer* than current ("upgrade your app first").
+ *   - Migration must be purely additive — never drop fields.
  */
 
 export const SNAPSHOT_SCHEMA_VERSION = 1;
@@ -72,17 +77,41 @@ export function decodeSnapshot(bytes: Uint8Array): SyncSnapshot {
   return validateSnapshot(parsed);
 }
 
+/**
+ * Migrate an older snapshot envelope to the current schema version.
+ * Add a case here whenever SNAPSHOT_SCHEMA_VERSION is bumped.
+ * Migration must be purely additive — never drop fields.
+ */
+function migrateSnapshot(candidate: SyncSnapshot, fromVersion: number): SyncSnapshot {
+  let current: SyncSnapshot = { ...candidate };
+  // Example for a future bump from 1 -> 2:
+  // if (fromVersion < 2) {
+  //   current = { ...current, schemaVersion: 2, payload: { ...current.payload, newField: defaultValue } };
+  //   fromVersion = 2;
+  // }
+  current.schemaVersion = SNAPSHOT_SCHEMA_VERSION;
+  return current;
+}
+
 function validateSnapshot(value: unknown): SyncSnapshot {
   if (!value || typeof value !== "object") {
     throw new SyncSnapshotError("The sync snapshot is empty.");
   }
   const candidate = value as Partial<SyncSnapshot>;
 
-  if (candidate.schemaVersion !== SNAPSHOT_SCHEMA_VERSION) {
+  // --- Schema version handling (forward-compatible, backward-migrating) ---
+  if (typeof candidate.schemaVersion !== "number" || !Number.isInteger(candidate.schemaVersion)) {
+    throw new SyncSnapshotError("The sync snapshot has no valid schema version.");
+  }
+  if (candidate.schemaVersion > SNAPSHOT_SCHEMA_VERSION) {
     throw new SyncSnapshotError(
-      `Unsupported sync snapshot version ${String(candidate.schemaVersion)}; expected ${SNAPSHOT_SCHEMA_VERSION}.`
+      `Sync snapshot version ${candidate.schemaVersion} is newer than supported (${SNAPSHOT_SCHEMA_VERSION}). Please upgrade the app.`
     );
   }
+  if (candidate.schemaVersion < 1) {
+    throw new SyncSnapshotError("The sync snapshot has an invalid schema version.");
+  }
+
   if (!Number.isInteger(candidate.revision) || (candidate.revision as number) < 0) {
     throw new SyncSnapshotError("The sync snapshot has no valid revision.");
   }
@@ -100,13 +129,19 @@ function validateSnapshot(value: unknown): SyncSnapshot {
     throw new SyncSnapshotError("The sync snapshot has no payload object.");
   }
 
-  return {
+  const base: SyncSnapshot = {
     schemaVersion: candidate.schemaVersion,
     revision: candidate.revision as number,
     deviceId: candidate.deviceId,
     updatedAt: candidate.updatedAt,
     payload: candidate.payload as Record<string, unknown>,
   };
+
+  // Migrate older envelopes to the current version in-memory.
+  if (base.schemaVersion < SNAPSHOT_SCHEMA_VERSION) {
+    return migrateSnapshot(base, base.schemaVersion);
+  }
+  return base;
 }
 
 /** True when `remote` should replace `local` (strictly newer wins; ties keep local). */

@@ -132,8 +132,14 @@ export function validateBackupSchema(json: any): {
   }
 
   const schemaVersion = typeof json.schemaVersion === "number" ? json.schemaVersion : 1;
-  if (![1, CURRENT_SCHEMA_VERSION].includes(schemaVersion)) {
+  // Accept any version <= CURRENT (migrate in-memory). Reject only newer versions
+  // ("upgrade your app first") and clearly invalid versions.
+  if (!Number.isInteger(schemaVersion) || schemaVersion < 1) {
     errors.push(`Unsupported backup schema version ${schemaVersion}.`);
+  } else if (schemaVersion > CURRENT_SCHEMA_VERSION) {
+    errors.push(
+      `Backup schema version ${schemaVersion} is newer than supported (${CURRENT_SCHEMA_VERSION}). Please upgrade the app.`
+    );
   }
   if (!json.data || typeof json.data !== "object" || Array.isArray(json.data)) {
     errors.push('Missing "data" container in backup payload.');

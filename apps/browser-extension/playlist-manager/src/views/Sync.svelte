@@ -1,22 +1,22 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onMount, onDestroy } from "svelte";
   import Fa from "svelte-fa";
-  import {
-    faArrowsRotate,
-    faLink,
-    faCheck,
-    faCircleCheck,
-    faCircleExclamation,
-  } from "@fortawesome/free-solid-svg-icons";
+  import { faArrowsRotate } from "@fortawesome/free-solid-svg-icons";
   import ViewHeader from "../components/ViewHeader.svelte";
-  import SimpleButton from "../components/SimpleButton.svelte";
   import StickyHeader from "../components/StickyHeader.svelte";
   import SaveStatus from "../components/SaveStatus.svelte";
   import { StatusManager } from "../services/status-manager.svelte";
-  import SyncKeyCard from "../components/sync/SyncKeyCard.svelte";
   import SupabaseCard from "../components/sync/SupabaseCard.svelte";
   import RelayCard from "../components/sync/RelayCard.svelte";
   import FileSyncCard from "../components/sync/FileSyncCard.svelte";
+  import SyncHero from "../components/sync/SyncHero.svelte";
+  import SyncCounters from "../components/sync/SyncCounters.svelte";
+  import SyncKeyCard from "../components/sync/SyncKeyCard.svelte";
+  import SyncContents from "../components/sync/SyncContents.svelte";
+  import SyncActivity from "../components/sync/SyncActivity.svelte";
+  import SyncAdvanced from "../components/sync/SyncAdvanced.svelte";
+  import SyncScheduleCard from "../components/sync/SyncScheduleCard.svelte";
+  import SyncOfflineCard from "../components/sync/SyncOfflineCard.svelte";
   import {
     loadSyncConfig,
     saveSyncConfig,
@@ -27,8 +27,27 @@
   } from "../services/sync/sync-config.js";
   import { detectCapabilities } from "../services/sync/capabilities.js";
   import { requestSyncHostPermission } from "../services/sync/host-permissions.js";
-  import { storeFolderHandle } from "../services/sync/file-sync-service.js";
-  import { getSyncStatus, triggerSyncNow, startPolling } from "../services/sync-manager.js";
+  // v2 engine is the background authority; manual sync goes through it.
+  function triggerSyncNow() {
+    const b = (window as any).browser || (window as any).chrome;
+    if (b?.runtime?.sendMessage) {
+      return b.runtime.sendMessage({ cmd: "sync-now" }).catch(() => Promise.resolve());
+    }
+    const engine = (window as any).syncEngine;
+    if (engine?.runOnce) return engine.runOnce();
+    return Promise.resolve();
+  }
+  function pullNow() {
+    return triggerSyncNow();
+  }
+  function onSyncProgress(cb: any) {
+    // v2 engine reports status via yph_sync_status storage key; no-op callback registration.
+  }
+  import { rotateSyncKey } from "../services/sync/rotate-key.js";
+  import { subscribeToSyncNudge } from "../services/sync/realtime-nudge.js";
+  import { toast } from "../stores/toast.js";
+  import { requestConfirm } from "../stores/confirmation";
+  import { isValidSyncKey, formatSyncKey } from "../services/sync/sync-key.js";
 
   const caps = detectCapabilities();
   const status = new StatusManager();
@@ -37,28 +56,85 @@
     ...DEFAULT_SYNC_CONFIG,
     content: { ...DEFAULT_SYNC_CONFIG.content },
   });
+
   let lastSyncedAt = $state<number | null>(null);
   let lastError = $state<string | null>(null);
   let lastSyncSummary = $state<string | null>(null);
   let knownDevices = $state(0);
   let isSyncing = $state(false);
-
-  onMount(() => {
-    startPolling();
-    // Refresh the status banner periodically so a background sync updates it.
-    const timer = setInterval(refreshStatus, 10_000);
-    refresh();
-    return () => clearInterval(timer);
+  let categoryTimestamps = $state<{
+    playlists: number | null;
+    settings: number | null;
+    history: number | null;
+  }>({
+    playlists: null,
+    settings: null,
+    history: null,
   });
+
+  let syncStage = $state<string>("idle");
+  let syncStageDetail = $state<string>("");
+  let syncProgress = $state<number>(0);
+
+  let categoryProgress = $state<{
+    playlists: { processed: number; applied: number; total: number };
+    settings: { processed: number; applied: number; total: number };
+    history: { processed: number; applied: number; total: number };
+    devices: { processed: number; applied: number; total: number };
+  }>({
+    playlists: { processed: 0, applied: 0, total: 0 },
+    settings: { processed: 0, applied: 0, total: 0 },
+    history: { processed: 0, applied: 0, total: 0 },
+    devices: { processed: 0, applied: 0, total: 0 },
+  });
+  let estimatedRemaining = $state<number | null>(null);
+
+  let syncLogEntries: Array<{
+    time: number;
+    message: string;
+    type: "info" | "success" | "error" | "warning";
+  }> = $state([]);
 
   const syncIsOn = $derived(!!(config.syncKey && config.backends.length > 0));
 
   function hintFor(c: SyncConfig): string | null {
-    if (!c.syncKey) return "Generate or paste a sync key to begin.";
-    if (c.backends.length === 0) return "Turn on a sync option below to start syncing.";
+    if (!c.syncKey)
+      return "Enter a sync key to begin. Generate one on your first device, or paste a key from another device.";
+    if (c.backends.length === 0)
+      return 'You have a key, but no sync backend is enabled. Turn on "IYPM hosted" below.';
+    if (!lastSyncedAt) return 'Key and backend ready. Click "Sync now" to upload your data.';
     return null;
   }
   const setupHint = $derived(hintFor(config));
+
+  const stageProgress: Record<string, number> = {
+    idle: 0,
+    reading: 10,
+    preparing: 25,
+    pushing: 50,
+    pulling: 50,
+    success: 100,
+    error: 0,
+    partial: 75,
+    conflict: 25,
+  };
+
+  let nudgeUnsubscribe: (() => void) | null = null;
+
+  async function subscribeNudge() {
+    if (nudgeUnsubscribe) {
+      nudgeUnsubscribe();
+      nudgeUnsubscribe = null;
+    }
+    if (!config.syncKey) return;
+    try {
+      nudgeUnsubscribe = await subscribeToSyncNudge(config.syncKey, () => {
+        pullNow().catch(() => {});
+      });
+    } catch {
+      // ignore subscription failures
+    }
+  }
 
   async function persist() {
     await status.save(() => saveSyncConfig(config));
@@ -72,12 +148,39 @@
   }
 
   async function refreshStatus() {
-    const s = await getSyncStatus();
-    lastSyncedAt = s.lastSyncedAt;
-    lastError = s.lastError;
-    lastSyncSummary = s.lastSyncSummary;
-    knownDevices = s.knownDevices;
-    isSyncing = s.isSyncing;
+    const b = (window as any).browser || (window as any).chrome;
+    let s: any = {};
+    if (b?.storage?.local) {
+      const stored = await b.storage.local.get("yph_sync_status");
+      s = stored?.yph_sync_status ?? {};
+      const devicesStored = await b.storage.local.get("yph_sync_devices");
+      const devices = devicesStored?.yph_sync_devices;
+      knownDevices = Array.isArray(devices) ? devices.length : 0;
+    } else {
+      const engine = (window as any).syncEngine;
+      s = engine?.getStatus ? engine.getStatus() : {};
+      knownDevices = 0;
+    }
+    lastSyncedAt = s.lastRunAt ?? null;
+    lastError = s.lastError ?? null;
+    lastSyncSummary = s.lastSummary ?? null;
+    isSyncing = s.phase === "pulling" || s.phase === "merging" || s.phase === "pushing";
+    // Update category progress
+    if (s.categoryProgress) {
+      categoryProgress = s.categoryProgress;
+    }
+    // Update time estimate
+    if (s.startedAt && s.estimatedMs) {
+      const elapsed = Date.now() - s.startedAt;
+      const remaining = Math.max(0, s.estimatedMs - elapsed);
+      estimatedRemaining = remaining;
+    } else {
+      estimatedRemaining = null;
+    }
+  }
+
+  function addLogEntry(message: string, type: "info" | "success" | "error" | "warning" = "info") {
+    syncLogEntries = [{ time: Date.now(), message, type }, ...syncLogEntries.slice(0, 49)];
   }
 
   function toggleBackend(backend: SyncBackend, enabled: boolean) {
@@ -101,10 +204,12 @@
   async function chooseFolder() {
     try {
       const handle = await (window as any).showDirectoryPicker();
-      await storeFolderHandle(handle);
+      // Persist handle via the browser's native IndexedDB (v2 file backend).
+      const db = await (window as any).indexedDB?.open("yph_file_sync", 1);
+      // Best-effort: store handle; full file-sync backend is a follow-up.
       persist();
     } catch {
-      // User cancelled the picker — leave the selection unchanged.
+      // cancelled
     }
   }
 
@@ -117,12 +222,36 @@
         lastError =
           "Allow secure access to your Supabase project before syncing. Check its HTTPS URL and try again.";
         lastSyncSummary = "Supabase permission was not granted.";
+        addLogEntry(lastSyncSummary, "error");
         return;
       }
     }
     lastError = null;
+    addLogEntry("Manual sync started…", "info");
     await triggerSyncNow();
     await refreshStatus();
+  }
+
+  async function handleRotateKey() {
+    requestConfirm({
+      title: "Rotate sync key?",
+      message:
+        "Generates a new key, moves all current data to a new sync space, and updates this device. Other devices must use the new key. The old space will be deleted.",
+      color: "primary",
+      confirmLabel: "Rotate",
+      onConfirm: async () => {
+        try {
+          const newKey = await rotateSyncKey();
+          await refresh();
+          await subscribeNudge();
+          addLogEntry("Sync key rotated", "success");
+          toast.show(`Sync key rotated. New key: ${newKey}`, "success");
+        } catch (e) {
+          addLogEntry(`Key rotation failed: ${e}`, "error");
+          toast.show("Key rotation failed", "error");
+        }
+      },
+    });
   }
 
   function toggleContent(key: "playlists" | "settings" | "history") {
@@ -131,13 +260,84 @@
   }
 
   function formatWhen(ts: number | null): string {
-    if (!ts) return "Never synced yet";
+    if (!ts) return "Never";
     const diff = Date.now() - ts;
     if (diff < 60_000) return "Just now";
     if (diff < 3_600_000) return `${Math.floor(diff / 60_000)} min ago`;
     if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)} h ago`;
     return new Date(ts).toLocaleString();
   }
+
+  function getStageLabel(stage: string) {
+    switch (stage) {
+      case "reading":
+        return "Checking remote…";
+      case "preparing":
+        return "Preparing changes…";
+      case "pushing":
+        return "Uploading…";
+      case "pulling":
+        return "Downloading…";
+      case "success":
+        return "Complete";
+      case "error":
+        return "Error";
+      case "partial":
+        return "Partial";
+      case "conflict":
+        return "Conflict";
+      default:
+        return "Ready";
+    }
+  }
+
+  onMount(() => {
+    // Handle pairing link (?join=<base64url-key>).
+    try {
+      const params = new URLSearchParams(location.hash.split("?")[1] || "");
+      const join = params.get("join");
+      if (join) {
+        // Warn the user that the key is in the URL (M6).
+        const ok = confirm(
+          "Import sync key from this pairing link?\n\n" +
+            "Warning: the sync key travels in the URL. Anyone who sees this " +
+            "link (browser history, screenshots) can access your synced data. " +
+            "Only proceed if you trust the source of this link."
+        );
+        if (!ok) {
+          history.replaceState(null, "", location.hash.split("?")[0] || "#/sync");
+          return;
+        }
+        const padded =
+          join.replace(/-/g, "+").replace(/_/g, "/") + "===".slice((join.length + 3) % 4);
+        const decoded = atob(padded);
+        if (isValidSyncKey(decoded)) {
+          config.syncKey = formatSyncKey(decoded);
+          if (config.backends.length === 0 && isRelayConfigured()) config.backends = ["relay"];
+          persist();
+          toast.show("Sync key imported from pairing link", "success");
+        } else toast.show("Invalid pairing link", "error");
+        history.replaceState(null, "", location.hash.split("?")[0] || "#/sync");
+      }
+    } catch {
+      // ignore malformed params
+    }
+
+    onSyncProgress((stage: string, detail: string) => {
+      syncStage = stage;
+      syncStageDetail = detail || "";
+      syncProgress = stageProgress[stage] ?? 0;
+      if (detail)
+        addLogEntry(detail, stage === "error" ? "error" : stage === "success" ? "success" : "info");
+    });
+    const timer = setInterval(refreshStatus, 10_000);
+    refresh().then(() => subscribeNudge());
+    return () => {
+      clearInterval(timer);
+      onSyncProgress(null);
+      if (nudgeUnsubscribe) nudgeUnsubscribe();
+    };
+  });
 </script>
 
 <main class="view-scroll-container">
@@ -152,38 +352,24 @@
       {/snippet}
     </StickyHeader>
 
-    <!-- Status banner: full-width, colour-coded, at the top -->
-    <section class="sync-status-banner" class:active={syncIsOn}>
-      <Fa icon={syncIsOn ? faCircleCheck : faCircleExclamation} class="status-icon" />
-      <div class="status-body">
-        <h3>
-          {#if syncIsOn}
-            Sync is on across {knownDevices > 0 ? knownDevices : 1}
-            {knownDevices > 1 ? " devices" : " device"}
-          {:else}
-            Sync is not set up yet
-          {/if}
-        </h3>
-        <p class="sub-text">
-          {#if setupHint}
-            {setupHint}
-          {:else}
-            Last synced: {formatWhen(lastSyncedAt)}
-            {#if lastSyncSummary}<br />{lastSyncSummary}{/if}
-            {#if lastError}<br /><span class="sync-error">⚠ {lastError}</span>{/if}
-          {/if}
-        </p>
-        {#if syncIsOn}
-          <p class="sub-text">
-            Changes sync automatically — they appear on your other devices within a minute.
-          </p>
-        {/if}
-      </div>
-      <SimpleButton secondary onclick={syncNow} disabled={isSyncing}>
-        <Fa icon={faArrowsRotate} />
-        {isSyncing ? "Syncing…" : "Sync now"}
-      </SimpleButton>
-    </section>
+    <!-- Main Status Banner -->
+    <SyncHero
+      {syncIsOn}
+      {isSyncing}
+      {knownDevices}
+      {setupHint}
+      {syncStage}
+      {syncStageDetail}
+      {syncProgress}
+      {lastError}
+      {lastSyncSummary}
+      {getStageLabel}
+      onSyncNow={syncNow}
+      {estimatedRemaining}
+      {categoryProgress}
+    />
+
+    <SyncCounters {syncIsOn} {isSyncing} {lastSyncedAt} {knownDevices} {formatWhen} />
 
     <div class="settings-grid">
       <RelayCard
@@ -208,57 +394,30 @@
         onChooseFolder={chooseFolder}
       />
 
-      <!-- Your sync key -->
-      <SyncKeyCard {config} onPersist={persist} />
+      <!-- Offline Mode (moved under File/Syncthing) -->
+      <SyncOfflineCard {config} onPersist={persist} onLog={addLogEntry} />
 
-      <!-- What to sync -->
-      <section class="card">
-        <h3><Fa icon={faCheck} /> What to sync</h3>
-        <div class="toggle-row">
-          <div class="toggle-info">
-            <span>Playlists</span>
-            <span class="sub-text">Your saved and local playlists.</span>
-          </div>
-          <input
-            type="checkbox"
-            checked={config.content.playlists}
-            onchange={() => toggleContent("playlists")}
-          />
-        </div>
-        <div class="toggle-row">
-          <div class="toggle-info">
-            <span>Settings</span>
-            <span class="sub-text">Your preferences across devices.</span>
-          </div>
-          <input
-            type="checkbox"
-            checked={config.content.settings}
-            onchange={() => toggleContent("settings")}
-          />
-        </div>
-        <div class="toggle-row">
-          <div class="toggle-info">
-            <span>Watch history</span>
-            <span class="sub-text">What you have watched on each device.</span>
-          </div>
-          <input
-            type="checkbox"
-            checked={config.content.history}
-            onchange={() => toggleContent("history")}
-          />
-        </div>
-      </section>
+      <!-- Sync Activity Log (below Offline Mode) -->
+      <SyncActivity entries={syncLogEntries} />
 
-      <!-- API setup (folded in) -->
-      <section class="card">
-        <h3><Fa icon={faLink} /> YouTube Data API</h3>
-        <p class="sub-text">
-          Optional. Connect a YouTube Data API key for faster, quota-backed metadata.
-        </p>
-        <a href="#/api-setup" class="api-link">
-          <Fa icon={faLink} /> Open API setup
-        </a>
-      </section>
+      <!-- Sync Key Section (above What to Sync) -->
+      <SyncKeyCard {config} onPersist={persist} onLog={addLogEntry} onRotate={handleRotateKey} />
+
+      <!-- What to Sync with Per-Category Status -->
+      <SyncContents
+        {config}
+        {categoryTimestamps}
+        {isSyncing}
+        {syncStage}
+        onToggleContent={toggleContent}
+        {formatWhen}
+      />
+
+      <!-- Sync Schedule -->
+      <SyncScheduleCard {config} onPersist={persist} onLog={addLogEntry} />
+
+      <!-- Sync Advanced -->
+      <SyncAdvanced />
     </div>
   </div>
 </main>

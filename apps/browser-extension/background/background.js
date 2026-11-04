@@ -3,7 +3,8 @@ import { permittedUI } from "./message-access.js";
 import { parseYouTubeVideoId } from "../shared/tab-selection.js";
 /* eslint-disable no-console */
 import { isAndroid, playlistBuilderId, updateBadge } from "./utils.js";
-import { buildContextMenus, refreshMenu } from "./context-menus.js";
+console.log("[Background] Module loaded, registering onMessage listener");
+import { buildContextMenus } from "./context-menus.js";
 import {
   saveHistory,
   getHistory,
@@ -14,7 +15,7 @@ import {
 } from "./history.js";
 import "./sync.js"; // registers alarms.onAlarm listener as side effect
 import "./capture-controller.js"; // registers message handlers as side effect
-import { enqueuePlaylistMutation, getPlaylistsRevision } from "./capture-controller.js";
+import { enqueuePlaylistMutation, getPlaylistsRevision } from "./mutation-queue.js";
 
 // ---------------------------------------------------------------------------
 // init — run on install and every service worker restart
@@ -88,6 +89,7 @@ if (browser.commands?.onCommand) {
 // ---------------------------------------------------------------------------
 
 browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  console.log("[Background] onMessage received:", request?.cmd);
   if (["create-playlist", "update-settings"].includes(request?.cmd) && !permittedUI(sender)) {
     sendResponse({ error: "This page cannot change playlist settings or create playlists." });
     return false;
@@ -96,9 +98,19 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
     window.logSystemEvent("INFO", `Background: Received message: ${request.cmd}`);
 
   if (request.cmd === "get-playlist-builder") {
+    console.log("[Background] Handling get-playlist-builder");
     (async () => {
-      const items = await browser.storage.local.get(playlistBuilderId);
-      sendResponse(items[playlistBuilderId] || []);
+      try {
+        if (window.logSystemEvent) {
+          window.logSystemEvent("INFO", "Background: Received get-playlist-builder message");
+        }
+        const items = await browser.storage.local.get(playlistBuilderId);
+        console.log("[Background] Got playlist builder items:", items[playlistBuilderId] || []);
+        sendResponse(items[playlistBuilderId] || []);
+      } catch (error) {
+        console.error("[Background] get-playlist-builder error:", error);
+        sendResponse([]);
+      }
     })();
     return true;
   } else if (["clear-playlist-builder", "update-playlist-builder"].includes(request.cmd)) {

@@ -62,8 +62,26 @@ export async function getDb(): Promise<IDBDatabase> {
 
       request.onupgradeneeded = (event: IDBVersionChangeEvent) => {
         const db = (event.target as IDBOpenDBRequest).result;
+        const oldVersion = event.oldVersion;
+        const newVersion = event.newVersion ?? DB_VERSION;
+
+        // --- Migration registry: add a case here when DB_VERSION is bumped ---
+        // Each migration must be purely additive — never drop stores or wipe data.
+        // Example for a future bump from 1 -> 2:
+        // if (oldVersion < 2) {
+        //   if (!db.objectStoreNames.contains("new_store")) {
+        //     db.createObjectStore("new_store");
+        //   }
+        //   // migrate data from old store to new store if needed
+        // }
+
         if (!db.objectStoreNames.contains(STORE_NAME)) {
           db.createObjectStore(STORE_NAME);
+        }
+
+        // Log migration for diagnostics
+        if (oldVersion !== newVersion) {
+          console.info(`[DB-SERVICE] IndexedDB migrated from v${oldVersion} to v${newVersion}`);
         }
       };
 

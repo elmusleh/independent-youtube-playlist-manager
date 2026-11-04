@@ -1,3 +1,15 @@
+## 2026-11-04 — Sync hardening audit follow-up
+
+- Follow-up branch: `fix/sync-hardening-audit`, based on `feat/sync-hardening` while PR #88 is open.
+- Scope: `packages/build-tools/test-relay-roles.sql` and `docs/SYNC_V2_STATUS.md` only.
+- Coordinate before moving the follow-up onto PR #88; no push or hosted-project change was made.
+- Remaining public-release gate: trusted gateway-level per-client/IP rate limiting plus hosted migration verification and manual multi-device checks.
+
+## Sync v2 — encrypted cross-device sync (in progress on `feat/sync-hardening`)
+
+Full status: `docs/SYNC_V2_STATUS.md`. Phases 0–3 done; Phase 3 follow-up (adapter wiring),
+Phase 4 (UI split), Phase 5 (extras) remaining.
+
 ## 2026-11-03 — Dependency modernization plan (completed)
 
 - Goal: update all dependencies to latest compatible versions and fix resulting issues.

@@ -1207,7 +1207,7 @@ function notifyPlaylistsChanged() {
     browser.runtime.sendMessage({ cmd: "update-saved-playlists" }).catch(() => {});
   }
   // Schedule auto-sync after local changes (debounced)
-  import("./sync-manager.js").then((m) => m.scheduleSync()).catch(() => {});
+  // v1 sync-manager removed; sync is handled by the background engine.
 }
 
 window.invalidateCacheAndNotify = () => {

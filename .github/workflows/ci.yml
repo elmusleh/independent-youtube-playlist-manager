@@ -39,6 +39,69 @@ jobs:
       - name: Run Full Quality Check (lint + format + test + svelte-check)
         run: npm run check
 
+      - name: Pull Docker images
+        run: |
+          echo "Pulling Postgres image..."
+          docker pull postgres:16-alpine@sha256:0cefaabd882e42bcb2a2f3dc56d3ce4770560ba62fd7f197f1a2e008fd5731ab
+          echo "Pulling PostgREST image..."
+          docker pull postgrest/postgrest:latest@sha256:1347d7552b88f17832912c06afbf7c43209af6eeeb60834b04aae12c9bd9d5cc
+        timeout-minutes: 10
+
+      - name: Start isolated sync relay fixture
+        run: |
+          echo "Starting Docker Compose..."
+          docker compose -f docker-compose.test.yml up -d
+          echo "Docker Compose up started"
+        timeout-minutes: 3
+
+      - name: Wait for Postgres to be healthy
+        run: |
+          echo "Waiting for Postgres healthcheck..."
+          for attempt in $(seq 1 60); do
+            if docker compose -f docker-compose.test.yml exec -T pg pg_isready -U postgres >/dev/null 2>&1; then
+              echo "Postgres is healthy"
+              exit 0
+            fi
+            echo "Attempt $attempt: Postgres not ready yet, waiting..."
+            sleep 2
+          done
+          echo "Postgres healthcheck timed out"
+          docker compose -f docker-compose.test.yml logs pg
+          exit 1
+        timeout-minutes: 5
+
+      - name: Wait for PostgREST
+        run: |
+          echo "Waiting for PostgREST..."
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:3312/ >/dev/null; then
+              echo "PostgREST is ready"
+              exit 0
+            fi
+            echo "Attempt $attempt: PostgREST not ready yet, waiting..."
+            sleep 2
+          done
+          echo "PostgREST timed out"
+          docker compose -f docker-compose.test.yml logs postgrest
+          exit 1
+        timeout-minutes: 3
+
+      - name: Simulate legacy relay table grants in the isolated fixture
+        run: docker compose -f docker-compose.test.yml exec -T pg psql -U postgres -v ON_ERROR_STOP=1 -c 'GRANT ALL ON TABLE public.sync_spaces, public.sync_records, public.sync_rate_limit TO PUBLIC, anon, authenticated'
+
+      - name: Apply relay hardening migration to the isolated fixture
+        run: docker compose -f docker-compose.test.yml exec -T pg psql -U postgres -v ON_ERROR_STOP=1 < docs/migrations/0002_rate_limit_and_push_validation.sql
+
+      - name: Apply trusted client IP rate limiting to the isolated fixture
+        run: docker compose -f docker-compose.test.yml exec -T pg psql -U postgres -v ON_ERROR_STOP=1 < docs/migrations/0003_trusted_ip_rate_limit.sql
+
+      - name: Run real sync relay E2E tests
+        run: npm run test:sync:relay
+
+      - name: Stop sync relay fixture
+        if: always()
+        run: docker compose -f docker-compose.test.yml down -v
+
       - name: Orchestration safety harnesses
         run: |
           set -euo pipefail
@@ -125,6 +188,9 @@ jobs:
 
       - name: Build Extension (Chrome, Firefox & Edge Bundles)
         run: npm run build
+
+      - name: Pack Edge Store ZIP
+        run: npm run pack:edge
 
       - name: Install Web Dependencies
         run: npm --prefix apps/web-portal ci

@@ -141,7 +141,11 @@
   const mobileLayout = window.matchMedia("(max-width: 768px)");
   mobileLayout.addEventListener("change", handleLayoutChange);
 
-  import { onDestroy } from "svelte";
+  import { onDestroy, onMount } from "svelte";
+  onMount(() => {
+    // Polling is handled by the background sync engine (sync-engine.ts).
+    // No v1 sync-manager dependency.
+  });
   onDestroy(() => {
     mobileLayout.removeEventListener("change", handleLayoutChange);
   });

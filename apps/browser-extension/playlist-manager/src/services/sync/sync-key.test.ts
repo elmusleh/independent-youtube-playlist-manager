@@ -53,6 +53,11 @@ describe("sync key", () => {
     expect(() => assertValidSyncKey("nope")).toThrow(/20 characters/);
   });
 
+  it("accepts a key typed in lowercase or with handwritten O, I and L glyphs", () => {
+    expect(isValidSyncKey("abcde-fghjk-mnpqr-stv0o")).toBe(true);
+    expect(isValidSyncKey("ilo1l-0ilo1-00000-00000")).toBe(true);
+  });
+
   it("returns the canonical form from assertValidSyncKey", () => {
     expect(assertValidSyncKey("abcde fghjk mnpqr stvwx")).toBe("ABCDEFGHJKMNPQRSTVWX");
   });

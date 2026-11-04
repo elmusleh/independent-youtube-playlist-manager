@@ -58,6 +58,10 @@ async function main() {
           throw new Error(`${route}: ${await page.locator("body").innerText()}`, { cause: error });
         }
       }
+      if (route === "/manage") {
+        // Wait for Manage view content (playlist list or empty state) to ensure data is loaded
+        await page.locator(".playlist-list, .empty-state").first().waitFor();
+      }
     };
     await visit("/saved");
     await page.evaluate(() => window.getPlaylists());
@@ -262,7 +266,7 @@ async function main() {
     const syncBody = await page.locator("body").innerText();
     for (const label of [
       "IYPM hosted (Beta)",
-      "Beta · coming soon",
+      "Zero setup",
       "Your own Supabase project",
       "File / Syncthing",
     ]) {

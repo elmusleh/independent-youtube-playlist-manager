@@ -1,3 +1,37 @@
+## Sync hardening audit follow-up — local fixes verified 2026-11-04
+
+- [x] Relay test fixture creates the `anon` and `authenticated` roles used by the hardening migration.
+- [x] Postgres/PostgREST relay suite passes 16/16 after applying migration `0002`.
+- [ ] Public-launch rate limiting at a trusted gateway is not configured or verified.
+- [ ] Hosted migration `0002` and manual Chrome/Firefox/Fenix multi-device sync remain unverified.
+
+## Sync v2 Phase 0: hotfix — done on `feat/sync-hardening` (2026-11-03)
+
+- [x] Sync view: `setupHint`, 20-character key validation and "Generate key" present at HEAD (re-verified)
+- [x] "Sync now" uses `className` (SimpleButton prop)
+- [x] Polling starts in `App.svelte` on mount; one `pullNow()` on open
+- [x] `docs/sync-relay.sql` and `docs/SYNC_RELAY_SETUP.md` use `relay_snapshots(payload)`
+- [x] Key-acceptance test for lowercase and O/I/L input
+- [ ] `npm run test:extension` green (blocked: `/playlist-builder` fails on baseline too)
+- [ ] Owner runs the relay SQL on the hosted Supabase project, if the table is not already `relay_snapshots`
+
+## Sync v2 Phase 1: Protocol Core — committed (`f51feeb`), no unit tests, not wired (correction 2026-11-03)
+
+The modules are committed, but the earlier "completed" wording is too strong. Add unit
+tests (HKDF/codec tamper, HLC, merge matrix, shadow store) before treating Phase 1 as done.
+The checklist below is the author's list of modules.
+
+- [x] `keys.ts`: HKDF-SHA256 derives encryption/record-id/auth keys from 20-char sync key
+- [x] `fingerprint.ts` + `fingerprint-emoji.ts` + `fingerprint-words.ts`: human-friendly key verification (emoji/word)
+- [x] `record-codec.ts`: AES-256-GCM record envelopes with AAD binding (`collection|recordId`)
+- [x] `hlc.ts`: Hybrid Logical Clock for causality tracking + conflict resolution
+- [x] `merge/playlists.ts`: 3-way merge (title LWW, video add/remove merge, delete-vs-edit conflict)
+- [x] `merge/history.ts`: per-video LWW with tombstones
+- [x] `merge/settings.ts`: per-key LWW with allowlist
+- [x] `shadow-store.ts`: IndexedDB base-copy tracking for dirty detection
+- [x] Fixed `Sync.svelte` TypeScript errors (`class` → `className`)
+- [x] All files under 350 lines; `npm run check` + `npm run build` pass
+
 ## Dependency modernization (2026-11-03)
 
 - [x] Safe reconciliation: rescue branch `rescue/local-next-16eb3e4`, local `next` reset to `origin/next`.
@@ -443,3 +477,23 @@ Suggested next steps (new, not scheduled):
 - [x] Search/pagination/drag reorder (later simplified: search removed)
 - [x] Configurable sidebar pinned limit in settings
 - [x] Build/test verification
+
+## Sync v2 Phase 1: tests added (2026-11-03, commit 8a8a259)
+
+- [x] Unit tests: keys, record-codec, fingerprint, HLC, merge (playlists/history/settings), shadow-store
+- [x] Fixed HLC overflow (tuple comparison)
+- [x] deriveKeys validates sync key
+- [x] agent-lock CLI clears stale markers without --force
+- [ ] Phase 2: relay v2 SQL + transport (not started)
+- [ ] Phase 3: background engine (not started)
+- [ ] Phase 4: Sync Center UI split (not started)
+
+## Sync v2 Phase 2-3 (2026-11-03)
+
+- [x] Phase 2: relay v2 SQL (sync_spaces, sync_records, RPCs) + fetch transport + fake relay
+- [x] Phase 3: background sync engine skeleton (state machine, backoff, rollup entry, wired into SW)
+- [ ] Phase 3 follow-up: per-collection adapters (playlists/history/settings/devices) + status-store + storage.onChanged triggers
+- [ ] Phase 3 follow-up: wire runOnce to per-collection adapters (history/settings/devices); add storage.onChanged triggers
+- [ ] Phase 4: Sync Center UI split (Sync.svelte -> components/sync/*)
+- [ ] Phase 5: extras (QR, Realtime nudge, key rotation)
+- [ ] Run relay v2 SQL on hosted Supabase project (qvwitlpnetwthyhrobca)

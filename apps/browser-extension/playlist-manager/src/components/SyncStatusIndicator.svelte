@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onMount, onDestroy } from "svelte";
   import Fa from "svelte-fa";
   import { faCloud, faArrowsRotate, faHardDrive } from "@fortawesome/free-solid-svg-icons";
   import { faYoutube } from "@fortawesome/free-brands-svg-icons";
@@ -12,6 +13,48 @@
     size?: "sm" | "md" | "lg";
     showText?: boolean;
   } = $props();
+
+  // Device-sync status driven by the `yph_sync_status` storage key.
+  let pendingCount = $state(0);
+  let failed = $state(false);
+
+  function readSyncStatus() {
+    const b = (globalThis as any).browser || (globalThis as any).chrome;
+    if (!b?.storage?.local) return;
+    b.storage.local.get("yph_sync_status", (res: any) => {
+      const s = res?.yph_sync_status;
+      if (!s) return;
+      pendingCount = typeof s.pendingCount === "number" ? s.pendingCount : 0;
+      failed =
+        s.phase === "error" ||
+        (typeof s.failedCount === "number" && s.failedCount > 0) ||
+        !!s.lastError;
+    });
+  }
+
+  function handleChange(changes: any, area: string) {
+    if (area !== "local") return;
+    if (changes?.yph_sync_status) {
+      const s = changes.yph_sync_status.newValue;
+      if (!s) return;
+      pendingCount = typeof s.pendingCount === "number" ? s.pendingCount : 0;
+      failed =
+        s.phase === "error" ||
+        (typeof s.failedCount === "number" && s.failedCount > 0) ||
+        !!s.lastError;
+    }
+  }
+
+  onMount(() => {
+    readSyncStatus();
+    const b = (globalThis as any).browser || (globalThis as any).chrome;
+    b?.storage?.onChanged?.addListener?.(handleChange);
+  });
+
+  onDestroy(() => {
+    const b = (globalThis as any).browser || (globalThis as any).chrome;
+    b?.storage?.onChanged?.removeListener?.(handleChange);
+  });
 
   const statusMap = {
     local: {
@@ -58,11 +101,21 @@
   {#if showText}
     <span class="status-text">{current.text}</span>
   {/if}
+  {#if pendingCount > 0 || failed}
+    <span
+      class="sync-badge"
+      class:failed
+      title={failed ? "Last sync run failed" : `${pendingCount} change(s) waiting`}
+    >
+      {failed ? "!" : pendingCount > 9 ? "9+" : pendingCount}
+    </span>
+  {/if}
 </div>
 
 <style>
   .sync-indicator {
     display: inline-flex;
+    position: relative;
     align-items: center;
     justify-content: center;
     gap: var(--space-2);
@@ -167,6 +220,27 @@
     .size-md.has-text {
       height: var(--touch-target-comfortable);
     }
+  }
+
+  .sync-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    border-radius: 999px;
+    background: var(--color-brand-primary, #3b82f6);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+  }
+  .sync-badge.failed {
+    background: var(--color-brand-danger, #ef4444);
   }
 
   /* Reduced motion */

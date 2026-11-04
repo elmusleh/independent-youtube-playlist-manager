@@ -47,6 +47,7 @@
 
   let allPlaylists: YtPlaylistInfoExtended[] = $state([]);
   let loading = $state(true);
+  let initialLoadDone = $state(false);
   let syncing = $state(false);
   let signedIn = $state(false);
   let errorMessage = $state("");
@@ -567,6 +568,7 @@
     } finally {
       loading = false;
       syncing = false;
+      initialLoadDone = true;
     }
   }
 
@@ -607,7 +609,12 @@
 
     if (area !== "local") return;
 
-    const relevantKeys = ["yt_playlist_cache_v1", "saved_playlists"];
+    const relevantKeys = [
+      "yt_playlist_cache_v1",
+      "saved_playlists",
+      "yph_local_playlists",
+      "yph_library_revision",
+    ];
     const hasPlaylistChanges = Object.keys(changes).some(
       (key) => relevantKeys.includes(key) || key.startsWith("playlist_")
     );
@@ -1383,13 +1390,7 @@
       {/snippet}
     </StickyHeader>
 
-    {#if loading}
-      <div class="skeleton-grid">
-        {#each Array(6) as _}
-          <SkeletonCard />
-        {/each}
-      </div>
-    {:else if filteredPlaylists.length === 0}
+    {#if filteredPlaylists.length === 0}
       <div class="empty-state">
         <Fa icon={faBoxArchive} size="3x" />
         <p>
@@ -1398,6 +1399,12 @@
         {#if !$manageSearch}
           <SimpleButton onclick={() => push("/new")} primary>Create New Playlist</SimpleButton>
         {/if}
+      </div>
+    {:else if loading && !initialLoadDone}
+      <div class="skeleton-grid">
+        {#each Array(6) as _}
+          <SkeletonCard />
+        {/each}
       </div>
     {:else}
       <div class="list-container">
