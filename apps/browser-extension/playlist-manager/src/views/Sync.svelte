@@ -12,7 +12,6 @@
   import SyncHero from "../components/sync/SyncHero.svelte";
   import SyncCounters from "../components/sync/SyncCounters.svelte";
   import SyncKeyCard from "../components/sync/SyncKeyCard.svelte";
-  import SyncContents from "../components/sync/SyncContents.svelte";
   import SyncActivity from "../components/sync/SyncActivity.svelte";
   import SyncAdvanced from "../components/sync/SyncAdvanced.svelte";
   import SyncScheduleCard from "../components/sync/SyncScheduleCard.svelte";
@@ -424,9 +423,6 @@
 
       <!-- Sync Activity Log (below Offline Mode) -->
       <SyncActivity entries={syncLogEntries} />
-
-      <!-- What to Sync with Per-Category Status -->
-      <SyncContents {config} {categoryTimestamps} {isSyncing} {syncStage} {formatWhen} />
 
       <!-- Sync Schedule -->
       <SyncScheduleCard {config} onPersist={persist} onLog={addLogEntry} />
