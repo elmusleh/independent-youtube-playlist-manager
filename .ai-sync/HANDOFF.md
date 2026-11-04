@@ -1,3 +1,17 @@
+## 2026-11-04 — Trusted gateway rate limiting folded into PR #88
+
+- Merged `fix/sync-ip-ratelimit` into `feat/sync-hardening` and pushed; PR #88 head is now `056aec6`.
+- Added `docs/migrations/0003_trusted_ip_rate_limit.sql`: per-client-IP 250 req/5min bucket in a
+  private schema, sync-RPC-only scope, fail-closed when no trusted IP, PostgREST `db_pre_request`.
+- Updated `packages/build-tools/test-relay-roles.sql`, `docker-compose.test.yml`, CI, and relay E2E
+  (18/18 pass locally with migrations 0002 + 0003).
+- `npm run check`, `npm run build`, `npm run test:sync:relay`, `npm run test:extension` all pass.
+- CI on PR #88 is pending; mergeStateStatus BLOCKED until checks + review conversation resolve.
+- Remaining NO-GO gates (owner/manual): verify hosted Supabase gateway owns `X-Forwarded-For`,
+  apply migrations 0002 + 0003 on hosted project and smoke-test; manual Chrome/Firefox/Fenix
+  multi-device round-trip (offline/retry, conflicts, deletion, disabled collections, SW
+  restart, key rotation).
+
 ## 2026-11-04 — Sync hardening audit follow-up
 
 A local follow-up branch `fix/sync-hardening-audit` was created from `feat/sync-hardening`
