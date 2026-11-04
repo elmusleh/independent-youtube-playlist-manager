@@ -30,7 +30,7 @@
 
 <!-- What to Sync with Per-Category Status -->
 <section class="card">
-  <h3><Fa icon={faDatabase} /> What to Sync</h3>
+  <h3><Fa icon={faDatabase} /> Sync status</h3>
   <p class="sub-text">All categories sync automatically. Each shows its own last sync time.</p>
 
   <div class="sync-category enabled">
@@ -105,7 +105,7 @@
 
 <style>
   .sync-category {
-    padding: 0.75rem 0;
+    padding: 0.5rem 0;
     border-top: 1px solid var(--border, #e5e7eb);
   }
   .sync-category:first-child {
@@ -128,6 +128,11 @@
     gap: 0.75rem;
     flex: 1;
     min-width: 200px;
+  }
+  .category-info > div {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
   }
   :global(.cat-icon) {
     display: flex;
