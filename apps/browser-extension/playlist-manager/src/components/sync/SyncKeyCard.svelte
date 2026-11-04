@@ -7,9 +7,8 @@
     faKey,
     faInfoCircle,
     faCircleExclamation,
-    faLink,
     faArrowsRotate,
-  } from "@fortawesome/free-solid-svg-icons";
+    } from "@fortawesome/free-solid-svg-icons";
   import SimpleButton from "../SimpleButton.svelte";
   import {
     generateSyncKey,
@@ -80,20 +79,6 @@
     );
   }
 
-  function base64UrlEncode(value: string): string {
-    return btoa(value).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
-  }
-
-  function copyPairingLink() {
-    if (!config.syncKey) return;
-    const encoded = base64UrlEncode(config.syncKey);
-    const url = `${window.location.origin}/#/sync?join=${encoded}`;
-    navigator.clipboard.writeText(url).then(
-      () => onLog("Pairing link copied to clipboard", "success"),
-      () => onLog("Could not copy pairing link — select manually", "error")
-    );
-  }
-
   function removeKey() {
     config.syncKey = null;
     config.syncProtocolVersion = null;
@@ -120,13 +105,6 @@
           <code class="key-value">{config.syncKey}</code>
           <SimpleButton secondary onclick={copyKey}>
             <Fa icon={faCopy} /> Copy
-          </SimpleButton>
-          <SimpleButton
-            secondary
-            title="Copies a link you can open on another device to auto-import this key"
-            onclick={copyPairingLink}
-          >
-            <Fa icon={faLink} /> Copy pairing link
           </SimpleButton>
         </div>
       </div>

@@ -50,7 +50,6 @@
   import { subscribeToSyncNudge } from "../services/sync/realtime-nudge.js";
   import { toast } from "../stores/toast.js";
   import { requestConfirm } from "../stores/confirmation";
-  import { isValidSyncKey, formatSyncKey } from "../services/sync/sync-key.js";
 
   const caps = detectCapabilities();
   const status = new StatusManager();
@@ -303,39 +302,6 @@
   }
 
   onMount(() => {
-    // Handle pairing link (?join=<base64url-key>).
-    try {
-      const params = new URLSearchParams(location.hash.split("?")[1] || "");
-      const join = params.get("join");
-      if (join) {
-        // Warn the user that the key is in the URL (M6).
-        const ok = confirm(
-          "Import sync key from this pairing link?\n\n" +
-            "Warning: the sync key travels in the URL. Anyone who sees this " +
-            "link (browser history, screenshots) can access your synced data. " +
-            "Only proceed if you trust the source of this link."
-        );
-        if (!ok) {
-          history.replaceState(null, "", location.hash.split("?")[0] || "#/sync");
-          return;
-        }
-        const padded =
-          join.replace(/-/g, "+").replace(/_/g, "/") + "===".slice((join.length + 3) % 4);
-        const decoded = atob(padded);
-        if (isValidSyncKey(decoded)) {
-          config.syncKey = formatSyncKey(decoded);
-          config.syncProtocolVersion = null;
-          config.legacyV2AcknowledgedAt = null;
-          if (config.backends.length === 0 && isRelayConfigured()) config.backends = ["relay"];
-          persist();
-          toast.show("Sync key imported from pairing link", "success");
-        } else toast.show("Invalid pairing link", "error");
-        history.replaceState(null, "", location.hash.split("?")[0] || "#/sync");
-      }
-    } catch {
-      // ignore malformed params
-    }
-
     onSyncProgress((stage: string, detail: string) => {
       syncStage = stage;
       syncStageDetail = detail || "";
