@@ -127,6 +127,58 @@ describe("E2E: real client + real SQL", () => {
     expect(honest[0].status).toBe("ok");
   });
 
+  it("second device: data created on device A is visible on device B", async () => {
+    const { space, auth } = newSpace();
+    await rt.claimSpace(CFG, space, auth);
+    const rid = hex(32);
+    // Device A pushes a playlist
+    await rt.pushAll(CFG, space, auth, [
+      {
+        collection: "playlists",
+        rid,
+        version: 100,
+        payload: JSON.stringify({ name: "My Playlist" }),
+        deleted: false,
+      },
+    ]);
+    // Device B pulls (sinceSeq=0)
+    const pulled = await rt.pullAll(CFG, space, auth, 0);
+    expect(pulled.length).toBe(1);
+    expect(JSON.parse(pulled[0].payload).name).toBe("My Playlist");
+  });
+
+  it("second device: edit on device B propagates back to device A", async () => {
+    const { space, auth } = newSpace();
+    await rt.claimSpace(CFG, space, auth);
+    const rid = hex(32);
+    // Device A pushes
+    await rt.pushAll(CFG, space, auth, [
+      {
+        collection: "playlists",
+        rid,
+        version: 100,
+        payload: JSON.stringify({ name: "Original" }),
+        deleted: false,
+      },
+    ]);
+    const firstPull = await rt.pullAll(CFG, space, auth, 0);
+    const cursor = Math.max(...firstPull.map((r: any) => r.seq));
+    // Device B edits (new version, new seq)
+    await rt.pushAll(CFG, space, auth, [
+      {
+        collection: "playlists",
+        rid,
+        version: 200,
+        payload: JSON.stringify({ name: "Renamed" }),
+        deleted: false,
+      },
+    ]);
+    // Device A pulls since cursor
+    const second = await rt.pullAll(CFG, space, auth, cursor);
+    expect(second.length).toBe(1);
+    expect(JSON.parse(second[0].payload).name).toBe("Renamed");
+  });
+
   it("payload cap: 2MB payload is rejected", async () => {
     const { space, auth } = newSpace();
     await rt.claimSpace(CFG, space, auth);
