@@ -25,7 +25,7 @@
   <div class="backend-card-header">
     <Fa icon={faFolderOpen} />
     <div class="backend-card-title">
-      <h3>File / Syncthing</h3>
+      <h3>File sync (Syncthing)</h3>
       <span class="sub-text">
         {supported ? "Chrome / Edge desktop only" : "Not on this browser"}
       </span>
@@ -41,7 +41,7 @@
     {/if}
   </div>
   <p class="sub-text">
-    No cloud — a file in a folder you control. {!supported
+    No cloud — a file in a folder you control (sync transport). {!supported
       ? caps.fileNote
       : "Uses a folder you pick + the free Syncthing app."}
   </p>
