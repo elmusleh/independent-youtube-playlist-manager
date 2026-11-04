@@ -36,31 +36,19 @@ it is never repeated. After each implementation, append the new suggestions
 9. Enable GitHub Discussions for feature requests; keep Issues for bugs. Priority
    50% (Nice to have) [Professionalism].
 
-10. Remove the GitHub stars fetch from the web-portal landing page for
-    consistency with the extension (no outbound GitHub API call). Priority 60%
-    (Nice to have) [Professionalism]. What: drop the stars state/effect and the
-    star badge in apps/web-portal/src/app/page.tsx. Why: keeps both surfaces
-    consistent and removes a network request. How: delete the useState/useEffect
-    fetch and the Star badge span; remove unused Star import.
-11. Fix the 5 pre-existing Prettier formatting violations so `npm run check`
-    passes cleanly. Priority 50% (Nice to have) [Best practices]. What: run
-    `npx prettier --write` on StorageSettings.svelte, SyncKeyCard.svelte,
-    sync-engine.integration.test.ts, extension.spec.ts, SYNC_V2_STATUS.md.
-    Why: unblocks the pre-commit hook for all contributors. How: one command,
-    then commit.
-12. Resolve the SyncHero.svelte 353-line file-size gate (limit 350). Priority
+10. Resolve the SyncHero.svelte 353-line file-size gate (limit 350). Priority
     40% (Nice to have) [Best practices]. What: split or allowlist the file.
     Why: `verify-file-size.js` currently fails. How: extract a sub-component or
     add exact path to allowlist if legacy.
-13. Add a test asserting the extension makes no outbound request to
+11. Add a test asserting the extension makes no outbound request to
     api.github.com. Priority 60% (High value) [Testing]. What: extend
     verify-extension or add a unit test checking no fetch to GitHub. Why: guards
     against re-introducing the removed request. How: add assertion in
     packages/build-tools/verify-extension.js network audit.
-14. Update PRIVACY_POLICY.md to state the extension makes no GitHub API call.
-    Priority 40% (Nice to have) [Professionalism]. What: one sentence in the
-    network/data section. Why: transparency. How: edit docs/PRIVACY_POLICY.md.
 
 ## Done
 
-(none yet — ledger started 2026-11-01)
+1. Fix the 5 pre-existing Prettier formatting violations so `npm run check`
+   passes cleanly. [done] 2026-11-04
+2. Update PRIVACY_POLICY.md to state the extension makes no GitHub API call.
+   [done] 2026-11-04
