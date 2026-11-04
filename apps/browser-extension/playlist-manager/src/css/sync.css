@@ -1,12 +1,22 @@
 /* Sync view — shared styles for the cross-device sync feature. Imported in main.ts. */
 
-/* Match the Settings page width/layout. */
 .sync-page {
-  /* inherit .view-body padding; no extra max-width */
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 1rem;
 }
 
-/* Use the same masonry grid as Settings (settings.css defines .settings-grid). */
-/* (no override here) */
+.settings-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 720px) {
+  .settings-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
 .sync-page input[type="text"] {
   padding: 0 16px;
   border: 1px solid var(--border-color);
