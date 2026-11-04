@@ -112,6 +112,8 @@ if (browserObj?.runtime) {
   let debounceTimer: ReturnType<typeof setTimeout> | null = null;
   browserObj.storage?.onChanged?.addListener?.((changes: any, area: string) => {
     if (area !== "local") return;
+    // Ignore change events that fire while a sync pass is in flight (self-trigger).
+    if (isRunning) return;
     // Our own status writes must never re-trigger a sync pass (H3).
     if (changes?.yph_sync_status) return;
     if (area === "local" && changes?.yph_sync_config) {
