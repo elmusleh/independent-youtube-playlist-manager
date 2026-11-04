@@ -79,6 +79,17 @@
     );
   }
 
+  function handleRemoveKey() {
+    requestConfirm({
+      title: "Remove sync key from this device?",
+      message:
+        "This device will stop syncing. Your data stays locally, but you will need the key again to reconnect.",
+      color: "danger",
+      confirmLabel: "Remove",
+      onConfirm: removeKey,
+    });
+  }
+
   function removeKey() {
     config.syncKey = null;
     config.syncProtocolVersion = null;
@@ -111,7 +122,7 @@
       <p class="key-hint">
         <Fa icon={faInfoCircle} /> This key is set. Paste it into other devices to link them.
       </p>
-      <SimpleButton secondary className="danger" onclick={removeKey}>
+      <SimpleButton secondary className="danger" onclick={handleRemoveKey}>
         <Fa icon={faTrash} /> Remove key from this device
       </SimpleButton>
       {#if onRotate}

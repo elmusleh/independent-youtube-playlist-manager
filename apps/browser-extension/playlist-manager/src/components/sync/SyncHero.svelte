@@ -181,6 +181,9 @@
   .banner-main {
     flex: 1 1 280px;
     min-width: 0;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
   }
   .status-icon-wrapper {
     display: inline-flex;
