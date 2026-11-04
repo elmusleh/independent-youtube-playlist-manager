@@ -105,8 +105,8 @@ export const DEFAULT_SYNC_CONFIG: SyncConfig = {
  * TODO(owner): configure the v2 RPC/schema from `docs/sync-relay-v2.sql` and the guarded
  * migrations. Do not provision the legacy `relay_snapshots` table for a v2 client.
  */
-export const RELAY_SUPABASE_URL = "https://qvwitlpnetwthyhrobca.supabase.co";
-export const RELAY_SUPABASE_ANON_KEY = "sb_publishable_HV50FQtJrkoNcKLsFk5BHQ_KUU2GeKb";
+export const RELAY_SUPABASE_URL = "https://pfydngsbcmuhsqqjbcte.supabase.co";
+export const RELAY_SUPABASE_ANON_KEY = "sb_publishable_pKwO4ShF2yR1cufZA-2jfw_QsENS9vN";
 
 /** True when the hosted relay has real credentials (not the placeholder). */
 export function isRelayConfigured(): boolean {

@@ -62,7 +62,13 @@ The Supabase MCP server (`https://mcp.supabase.com/mcp`) is **enabled** in
 **This project's Supabase instance:** `independent-youtube-playlist-manager`
 (project ref: `pfydngsbcmuhsqqjbcte`, region: eu-west-1, status: ACTIVE_HEALTHY).
 
-**Agent instructions:**
+**Sync relay:** This project (`pfydngsbcmuhsqqjbcte`) hosts the sync relay.
+Tables: `sync_spaces`, `sync_records`, `sync_rate_limit`. RPCs: `sync_claim`,
+`sync_pull`, `sync_push`, `sync_delete_space`. Migration `0004_fix_seq_default.sql`
+applied (seq = DEFAULT for GENERATED ALWAYS identity column).
+
+**Other projects (do NOT use for extension sync):** `mawqiei.net`
+(ref: `qvwitlpnetwthyhrobca`), `go-fish` (ref: `moiajtcnyimeqllextxn`, INACTIVE).
 
 - At session start, verify the Supabase MCP tools are loaded (search for "supabase"
   tools). If present, use them directly to run SQL, inspect schema, manage RLS, etc.

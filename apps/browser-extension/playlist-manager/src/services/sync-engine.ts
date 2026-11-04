@@ -157,11 +157,11 @@ export async function runOnce(): Promise<SyncStatus> {
       url:
         (backends.includes("supabase-byo") && cfg?.supabaseUrl) ||
         cfg?.relayUrl ||
-        "https://qvwitlpnetwthyhrobca.supabase.co",
+        "https://pfydngsbcmuhsqqjbcte.supabase.co",
       anonKey:
         (backends.includes("supabase-byo") && cfg?.supabaseKey) ||
         cfg?.relayAnonKey ||
-        "sb_publishable_HV50FQtJrkoNcKLsFk5BHQ_KUU2GeKb",
+        "sb_publishable_pKwO4ShF2yR1cufZA-2jfw_QsENS9vN",
     };
 
     const claimed = await claimSpace(relayConfig, space, authHash);

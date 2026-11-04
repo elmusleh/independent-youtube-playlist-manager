@@ -191,7 +191,7 @@ export async function runAdapterPass(ctx: AdapterPassContext): Promise<AdapterPa
   const hlcState = { lastHlc: undefined as any };
   const ctxBase = { syncKey: ctx.syncKey, localDeviceId: ctx.localDeviceId, hlcState };
 
-  const content = ctx.cfg?.content ?? { playlists: true, settings: false, history: false };
+  const content = ctx.cfg?.content ?? { playlists: true, settings: true, history: true };
 
   // Playlists
   if (content.playlists !== false) {

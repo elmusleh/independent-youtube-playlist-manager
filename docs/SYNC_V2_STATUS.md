@@ -163,7 +163,7 @@ error | offline | paused`), single-flight guard, exponential backoff, status per
 
 ### Backend / ops (DONE)
 
-- `docs/sync-relay-v2.sql` applied to hosted Supabase (`qvwitlpnetwthyhrobca`):
+- `docs/sync-relay-v2.sql` applied to hosted Supabase (`pfydngsbcmuhsqqjbcte`):
   tables `sync_spaces`, `sync_records`, RLS enabled, RPCs `sync_claim`,
   `sync_pull`, `sync_push`, `sync_delete_space` — all verified.
 - A read-only endpoint probe returns 404 for `relay_snapshots`; whether it previously held user rows or a recoverable Supabase backup exists is unknown.

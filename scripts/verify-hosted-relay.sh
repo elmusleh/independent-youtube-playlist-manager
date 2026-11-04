@@ -3,8 +3,8 @@
 # Tests: (1) migration is applied, (2) gateway XFF ownership, (3) rate limit works.
 set -euo pipefail
 
-ANON="sb_publishable_HV50FQtJrkoNcKLsFk5BHQ_KUU2GeKb"
-URL="https://qvwitlpnetwthyhrobca.supabase.co"
+ANON="sb_publishable_pKwO4ShF2yR1cufZA-2jfw_QsENS9vN"
+URL="https://pfydngsbcmuhsqqjbcte.supabase.co"
 
 echo "=== Test 1: Migration 0003 applied? ==="
 SPACE=$(python3 -c "print('a'*64)")
