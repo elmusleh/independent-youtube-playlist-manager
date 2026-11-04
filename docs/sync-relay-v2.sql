@@ -148,6 +148,18 @@ begin
     incoming_payload := rec->>'payload';
     incoming_deleted := coalesce((rec->>'deleted')::boolean, false);
 
+    -- Reject far-future versions to prevent a single bad device from
+    -- permanently freezing a record for all other devices (BUG-4).
+    if incoming_version > (extract(epoch from now()) * 1000)::bigint + 86400000 then
+      results := results || jsonb_build_array(jsonb_build_object(
+        'collection', incoming_collection,
+        'rid', incoming_rid,
+        'status', 'error',
+        'message', 'version too far in future'
+      ));
+      continue;
+    end if;
+
     if incoming_collection is null or incoming_rid is null or incoming_payload is null then
       results := results || jsonb_build_array(jsonb_build_object(
         'collection', incoming_collection,
