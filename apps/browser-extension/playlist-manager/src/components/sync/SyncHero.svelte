@@ -24,6 +24,7 @@
     onSyncNow,
     estimatedRemaining,
     categoryProgress,
+    logEntries = [],
   }: {
     syncIsOn: boolean;
     isSyncing: boolean;
@@ -43,7 +44,14 @@
       history: { processed: number; applied: number; total: number };
       devices: { processed: number; applied: number; total: number };
     };
+    logEntries?: { time: number; message: string; type: string }[];
   } = $props();
+
+  let showLog = $state(false);
+  const recentLogs = $derived((logEntries ?? []).slice(-5).reverse());
+  const latestLog = $derived(
+    logEntries && logEntries.length ? logEntries[logEntries.length - 1] : null
+  );
 </script>
 
 <!-- Main Status Banner -->
@@ -84,6 +92,21 @@
           Ready to sync. Click "Sync now" to begin.
         {/if}
       </p>
+      {#if latestLog && !isSyncing}
+        <p class="latest-log">{latestLog.message}</p>
+      {/if}
+      {#if logEntries && logEntries.length > 0}
+        <button type="button" class="log-toggle" onclick={() => (showLog = !showLog)}>
+          {showLog ? "Hide" : "Show"} recent activity
+        </button>
+        {#if showLog}
+          <div class="recent-log">
+            {#each recentLogs as entry (entry.time + entry.message)}
+              <div class="log-line type-{entry.type}">{entry.message}</div>
+            {/each}
+          </div>
+        {/if}
+      {/if}
       {#if isSyncing && syncProgress > 0 && syncProgress < 100}
         <div class="progress-bar-container">
           <div class="progress-bar" style="width: {syncProgress}%"></div>
@@ -280,6 +303,46 @@
   }
   .banner-actions {
     flex-shrink: 0;
+  }
+  .latest-log {
+    margin: 0.35rem 0 0;
+    font-size: 0.8rem;
+    color: var(--muted-foreground, #6b7280);
+  }
+  .log-toggle {
+    background: none;
+    border: none;
+    padding: 0;
+    margin-top: 0.35rem;
+    font-size: 0.75rem;
+    color: var(--primary-color);
+    cursor: pointer;
+  }
+  .log-toggle:hover {
+    text-decoration: underline;
+  }
+  .recent-log {
+    margin-top: 0.35rem;
+    max-height: 120px;
+    overflow-y: auto;
+    font-size: 0.75rem;
+    border: 1px solid var(--border, #e5e7eb);
+    border-radius: 6px;
+    padding: 0.25rem 0.5rem;
+    background: var(--bg-secondary, #f9fafb);
+  }
+  .log-line {
+    padding: 0.15rem 0;
+    color: var(--text-color);
+  }
+  .log-line.type-success {
+    color: var(--success, #10b981);
+  }
+  .log-line.type-error {
+    color: var(--danger, #ef4444);
+  }
+  .log-line.type-warning {
+    color: var(--warning, #f59e0b);
   }
   :global(.sync-now-btn) {
     min-width: 0;

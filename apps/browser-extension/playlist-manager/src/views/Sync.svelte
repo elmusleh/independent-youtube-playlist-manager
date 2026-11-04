@@ -12,7 +12,6 @@
   import SyncHero from "../components/sync/SyncHero.svelte";
   import SyncCounters from "../components/sync/SyncCounters.svelte";
   import SyncKeyCard from "../components/sync/SyncKeyCard.svelte";
-  import SyncActivity from "../components/sync/SyncActivity.svelte";
   import SyncAdvanced from "../components/sync/SyncAdvanced.svelte";
   import SyncScheduleCard from "../components/sync/SyncScheduleCard.svelte";
   import SyncOfflineCard from "../components/sync/SyncOfflineCard.svelte";
@@ -389,6 +388,7 @@
       onSyncNow={syncNow}
       {estimatedRemaining}
       {categoryProgress}
+      logEntries={syncLogEntries}
     />
 
     <SyncCounters {syncIsOn} {isSyncing} {lastSyncedAt} {knownDevices} {formatWhen} />
@@ -420,9 +420,6 @@
 
       <!-- Offline Mode (moved under File/Syncthing) -->
       <SyncOfflineCard {config} onPersist={persist} onLog={addLogEntry} />
-
-      <!-- Sync Activity Log (below Offline Mode) -->
-      <SyncActivity entries={syncLogEntries} />
 
       <!-- Sync Schedule -->
       <SyncScheduleCard {config} onPersist={persist} onLog={addLogEntry} />
