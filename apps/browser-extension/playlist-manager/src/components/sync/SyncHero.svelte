@@ -45,7 +45,6 @@
       devices: { processed: number; applied: number; total: number };
     };
   } = $props();
-
 </script>
 
 <!-- Main Status Banner -->

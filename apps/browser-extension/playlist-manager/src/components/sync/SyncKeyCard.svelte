@@ -8,7 +8,7 @@
     faInfoCircle,
     faCircleExclamation,
     faArrowsRotate,
-    } from "@fortawesome/free-solid-svg-icons";
+  } from "@fortawesome/free-solid-svg-icons";
   import SimpleButton from "../SimpleButton.svelte";
   import {
     generateSyncKey,
