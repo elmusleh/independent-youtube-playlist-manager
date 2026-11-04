@@ -401,12 +401,9 @@
 
     <SyncCounters {syncIsOn} {isSyncing} {lastSyncedAt} {knownDevices} {formatWhen} />
 
-    <!-- Sync Key (full-width, required to sync) -->
-    <div class="sync-key-top">
-      <SyncKeyCard {config} onPersist={persist} onLog={addLogEntry} onRotate={handleRotateKey} />
-    </div>
-
     <div class="settings-grid">
+      <!-- Sync Key (top-left; required to sync) -->
+      <SyncKeyCard {config} onPersist={persist} onLog={addLogEntry} onRotate={handleRotateKey} />
       <RelayCard
         enabled={config.backends.includes("relay")}
         ready={isRelayConfigured()}

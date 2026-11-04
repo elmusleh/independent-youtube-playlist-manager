@@ -134,7 +134,7 @@
       </SimpleButton>
       {#if onRotate}
         <SimpleButton secondary onclick={() => onRotate?.()}>
-          <Fa icon={faArrowsRotate} /> Rotate key (advanced)
+          <Fa icon={faArrowsRotate} /> Rotate sync key
         </SimpleButton>
       {/if}
     </div>
