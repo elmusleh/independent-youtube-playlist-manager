@@ -314,7 +314,7 @@ begin
         payload = excluded.payload,
         deleted = excluded.deleted,
         updated_at = now(),
-        seq = nextval(pg_get_serial_sequence('public.sync_records', 'seq'))
+        seq = DEFAULT
     where excluded.version > current_record.version
     returning version into cur_version;
 
