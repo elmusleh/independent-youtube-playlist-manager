@@ -10,6 +10,7 @@ import type { RelayRecord } from "../relay-transport";
 import { computeRecordId } from "../keys";
 import { deriveKeys } from "../keys";
 import { encryptRecord, decryptRecord, RECORD_VERSION } from "../record-codec";
+import { getHlc } from "../hlc";
 import type { RecordEnvelope, EncryptedRecord } from "../record-codec";
 
 export type AdapterContext = {
@@ -23,11 +24,14 @@ export async function collectDirtySettings(ctx: AdapterContext): Promise<RelayRe
   const { settings } = await ctx.librarySnapshot();
   const keys = await deriveKeys(ctx.syncKey);
   const dirty: RelayRecord[] = [];
+  let lastHlc: any = undefined;
   for (const [key, value] of Object.entries(settings)) {
     if (!isSyncableSetting(key)) continue;
     if (await isDirty("settings", key, value)) {
       const rid = await computeRecordId(ctx.syncKey, "settings", key);
-      const version = Date.now();
+      const hlc = await getHlc(ctx.syncKey, lastHlc);
+      lastHlc = hlc;
+      const version = hlc.value;
       const envelope: RecordEnvelope = {
         v: RECORD_VERSION,
         collection: "settings",

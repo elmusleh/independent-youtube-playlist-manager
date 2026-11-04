@@ -10,6 +10,7 @@ import { getShadow, setShadow, computeHash, isDirty } from "../shadow-store";
 import type { RelayRecord } from "../relay-transport";
 import { deriveKeys, computeRecordId } from "../keys";
 import { encryptRecord, decryptRecord, RECORD_VERSION } from "../record-codec";
+import { getHlc } from "../hlc";
 import type { RecordEnvelope, EncryptedRecord } from "../record-codec";
 
 export type PlaylistRecordData = {
@@ -34,12 +35,13 @@ export async function collectDirtyPlaylists(ctx: AdapterContext): Promise<RelayR
   const { playlists } = await ctx.librarySnapshot();
   const keys = await deriveKeys(ctx.syncKey);
   const dirty: RelayRecord[] = [];
+  let lastHlc: any = undefined;
   for (const p of playlists) {
     if (await isDirty("playlists", p.id, p)) {
       const rid = await computeRecordId(ctx.syncKey, "playlists", p.id);
-      const version =
-        (typeof p.updatedAt === "number" ? p.updatedAt : Date.parse(String(p.updatedAt))) ||
-        Date.now();
+      const hlc = await getHlc(ctx.syncKey, lastHlc);
+      lastHlc = hlc;
+      const version = hlc.value;
       const envelope: RecordEnvelope = {
         v: RECORD_VERSION,
         collection: "playlists",

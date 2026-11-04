@@ -9,6 +9,7 @@ import type { RelayRecord } from "../relay-transport";
 import { computeRecordId } from "../keys";
 import { deriveKeys } from "../keys";
 import { encryptRecord, decryptRecord, RECORD_VERSION } from "../record-codec";
+import { getHlc } from "../hlc";
 import type { RecordEnvelope, EncryptedRecord } from "../record-codec";
 
 export type DeviceRecord = {
@@ -37,7 +38,8 @@ export async function collectDirtyDevices(ctx: AdapterContext): Promise<RelayRec
   const keys = await deriveKeys(ctx.syncKey);
   if (await isDirty("devices", ctx.localDeviceId, device)) {
     const rid = await computeRecordId(ctx.syncKey, "devices", ctx.localDeviceId);
-    const version = device.lastSeen;
+    const hlc = await getHlc(ctx.syncKey);
+    const version = hlc.value;
     const envelope: RecordEnvelope = {
       v: RECORD_VERSION,
       collection: "devices",
