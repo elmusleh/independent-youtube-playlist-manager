@@ -16,6 +16,7 @@ module.exports = {
   ],
   ROUTES: [
     { id: "settings", hash: "/settings", ready: ".settings-grid > .card", shot: ".settings-grid" },
+    { id: "sync", hash: "/sync", ready: ".settings-grid > .card", shot: ".settings-grid" },
     { id: "saved", hash: "/saved", ready: ".playlist-card", shot: ".playlist-grid" },
     { id: "manage", hash: "/manage", ready: ".row-content", shot: ".list-container" },
     { id: "history", hash: "/history", ready: ".history-item", shot: ".history-container" },
