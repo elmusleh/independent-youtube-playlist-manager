@@ -1,4 +1,5 @@
 import { loadSyncConfig } from "./sync/sync-config";
+import { needsV2RelayAcknowledgement } from "./sync/sync-config-compatibility";
 import type { SyncStatus } from "./sync-engine";
 
 type SyncEngineHandlers = {
@@ -34,7 +35,11 @@ export function registerSyncEngine(handlers: SyncEngineHandlers): void {
     try {
       const cfg = await loadSyncConfig();
       const interval = typeof cfg?.syncIntervalMinutes === "number" ? cfg.syncIntervalMinutes : 0;
-      const enabled = !!cfg?.syncKey && Array.isArray(cfg?.backends) && cfg.backends.length > 0;
+      const enabled =
+        !!cfg?.syncKey &&
+        Array.isArray(cfg?.backends) &&
+        cfg.backends.length > 0 &&
+        !needsV2RelayAcknowledgement(cfg);
       if (interval > 0 && enabled) {
         browserObj.alarms?.create?.("yph-sync-periodic", { periodInMinutes: interval });
       }

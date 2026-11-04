@@ -1,8 +1,9 @@
 -- Trusted-client-IP rate limiting for the encrypted sync relay.
 -- Apply only after docs/migrations/0002_rate_limit_and_push_validation.sql.
--- Supabase's API gateway must overwrite/normalize X-Forwarded-For; verify that
--- behavior on the hosted project before enabling public sync. Never trust a
--- client-controlled forwarding header from an untrusted proxy.
+-- Strategy: prefer cf-connecting-ip (Cloudflare strips & overwrites it with the real
+-- client socket IP, so it cannot be spoofed). Fall back to the LAST hop in
+-- X-Forwarded-For (appended by the gateway). Fail closed if neither is present.
+-- Never trust the first value in X-Forwarded-For (caller-controlled).
 
 create schema if not exists private;
 revoke all on schema private from public;
@@ -27,7 +28,9 @@ set search_path = pg_catalog, private
 as $$
 declare
   v_headers jsonb;
+  v_cf_ip text;
   v_forwarded_for text;
+  v_client_ip_text text;
   v_client_ip inet;
   v_window_start timestamptz;
   v_request_count integer;
@@ -39,15 +42,32 @@ begin
   end if;
 
   v_headers := coalesce(current_setting('request.headers', true)::jsonb, '{}'::jsonb);
-  v_forwarded_for := nullif(trim(split_part(v_headers ->> 'x-forwarded-for', ',', 1)), '');
-  if v_forwarded_for is null then
+
+  -- Prefer cf-connecting-ip: Cloudflare strips and overwrites this header with the
+  -- real client socket IP, so it cannot be spoofed by the caller. Fall back to the
+  -- LAST value in X-Forwarded-For (the hop appended by the gateway), never the
+  -- first value (which the caller controls). Fail closed if neither is available.
+  v_cf_ip := nullif(trim(v_headers ->> 'cf-connecting-ip'), '');
+  v_forwarded_for := nullif(trim(v_headers ->> 'x-forwarded-for'), '');
+
+  if v_cf_ip is not null then
+    v_client_ip_text := v_cf_ip;
+  elsif v_forwarded_for is not null then
+    -- The gateway appends the real client IP to the RIGHT of any caller-supplied
+    -- values, so the trusted hop is the last comma-separated entry.
+    v_client_ip_text := nullif(trim((string_to_array(v_forwarded_for, ','))[array_length(string_to_array(v_forwarded_for, ','), 1)]), '');
+  else
+    v_client_ip_text := null;
+  end if;
+
+  if v_client_ip_text is null then
     raise sqlstate 'PGRST'
       using message = '{"code":"client_ip_unavailable","message":"Sync relay requires a gateway-verified client IP"}',
             detail = '{"status":403,"headers":{}}';
   end if;
 
   begin
-    v_client_ip := v_forwarded_for::inet;
+    v_client_ip := v_client_ip_text::inet;
   exception when invalid_text_representation then
     raise sqlstate 'PGRST'
       using message = '{"code":"client_ip_unavailable","message":"Sync relay requires a gateway-verified client IP"}',

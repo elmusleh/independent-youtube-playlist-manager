@@ -1,44 +1,33 @@
 /**
- * Sync key rotation for v2: generate a new key, push all current data to the new
- * space via the background engine on the next run, and delete the old space.
- *
- * The data push is deferred to the engine (it will collect dirty records against
- * the new key on its next run). Old-space deletion uses the v2 RPC.
+ * Sync key rotation for v2: generate a new key and reset the cursor so the
+ * background engine performs a full push to the new space on its next run.
+ * The previous remote space is deliberately retained until all devices have
+ * moved and the new copy has been independently verified.
  */
-import {
-  loadSyncConfig,
-  saveSyncConfig,
-  RELAY_SUPABASE_URL,
-  RELAY_SUPABASE_ANON_KEY,
-} from "./sync-config.js";
-import { computeStorageAddress, computeAuthToken } from "./keys.js";
+import { loadSyncConfig, saveSyncConfig } from "./sync-config.js";
 import { generateSyncKey } from "./sync-key.js";
-import { deleteSpace } from "./relay-transport.js";
+import {
+  LEGACY_SYNC_RECOVERY_NOTICE,
+  needsV2RelayAcknowledgement,
+} from "./sync-config-compatibility.js";
 
-export async function rotateSyncKey(deleteOldSpace = true): Promise<string> {
+export async function rotateSyncKey(): Promise<string> {
   const config = await loadSyncConfig();
   if (!config.syncKey) throw new Error("No sync key configured");
+  if (needsV2RelayAcknowledgement(config)) throw new Error(LEGACY_SYNC_RECOVERY_NOTICE);
 
-  const oldKey = config.syncKey;
   const newKey = generateSyncKey();
-
   config.syncKey = newKey;
-  (config as any).lastSeq = 0; // force a full push to the new space
+  config.lastSeq = 0; // force a full push to the new space
   config.lastSyncedAt = null;
-  config.lastSyncSummary = "Sync key rotated.";
+  config.lastSyncSummary = "Sync key rotated; the old remote space is retained.";
   config.lastError = null;
+  config.syncConfigVersion = 2;
+  config.syncProtocolVersion = 2;
+  config.legacyV2AcknowledgedAt = null;
   await saveSyncConfig(config);
 
-  if (deleteOldSpace) {
-    try {
-      const relayConfig = { url: RELAY_SUPABASE_URL, anonKey: RELAY_SUPABASE_ANON_KEY };
-      const oldSpace = await computeStorageAddress(oldKey);
-      const oldAuth = await computeAuthToken(oldKey, oldSpace);
-      await deleteSpace(relayConfig, oldSpace, oldAuth);
-    } catch {
-      /* best-effort */
-    }
-  }
-
+  // Keep the previous remote space intact. Deleting it immediately could destroy
+  // unsynced records from another device or data that has not reached this device.
   return newKey;
 }

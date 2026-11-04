@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { validateBackupSchema } from "./backup-service";
+import { validateBackupSchema } from "./backup-format";
 
 describe("validateBackupSchema", () => {
   it("rejects active image content in thumbnail archives before any restore writes", () => {

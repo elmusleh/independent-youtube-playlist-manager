@@ -3,6 +3,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const clearArchivedThumbnails = vi.fn(async () => {});
 const restoreThumbnails = vi.fn(async () => {});
+const dbGetAllMetadata = vi.fn(async () => ({}));
+const dbPutMetadataBatch = vi.fn(async () => {});
+const dbClearMetadata = vi.fn(async () => {});
+let testBrowser: any;
 
 vi.mock("./thumbnail-archive", () => ({
   archivedThumbnails: vi.fn(async () => ({})),
@@ -12,9 +16,9 @@ vi.mock("./thumbnail-archive", () => ({
 }));
 
 vi.mock("./db-service.js", () => ({
-  dbGetAllMetadata: vi.fn(async () => ({})),
-  dbPutMetadataBatch: vi.fn(async () => {}),
-  dbClearMetadata: vi.fn(async () => {}),
+  dbGetAllMetadata,
+  dbPutMetadataBatch,
+  dbClearMetadata,
 }));
 
 function fullBackup(data: Record<string, unknown>) {
@@ -25,8 +29,13 @@ describe("importFullDatabaseBackup thumbnail archive", () => {
   beforeEach(async () => {
     clearArchivedThumbnails.mockClear();
     restoreThumbnails.mockClear();
+    dbGetAllMetadata.mockReset().mockResolvedValue({});
+    dbPutMetadataBatch.mockReset();
+    dbClearMetadata.mockReset();
     vi.resetModules();
-    await libraryFixture();
+    testBrowser = (await libraryFixture()).api;
+    testBrowser.storage.sync = { set: vi.fn(), remove: vi.fn() };
+    testBrowser.storage.local.set.mockClear();
   });
 
   it("clears the archive when an older backup without thumbnails overwrites the database", async () => {
@@ -57,6 +66,23 @@ describe("importFullDatabaseBackup thumbnail archive", () => {
 
     expect(clearArchivedThumbnails).not.toHaveBeenCalled();
     expect(restoreThumbnails).not.toHaveBeenCalled();
+  });
+
+  it("rejects unsupported backup versions before touching any local store", async () => {
+    const { importFullDatabaseBackup } = await import("./backup-service");
+
+    const result = await importFullDatabaseBackup(
+      { format: "yph_full_backup", schemaVersion: 99, data: { playlists: [] } },
+      "overwrite"
+    );
+
+    expect(result.success).toBe(false);
+    expect(dbClearMetadata).not.toHaveBeenCalled();
+    expect(dbPutMetadataBatch).not.toHaveBeenCalled();
+    expect(clearArchivedThumbnails).not.toHaveBeenCalled();
+    expect(restoreThumbnails).not.toHaveBeenCalled();
+    expect(testBrowser.storage.local.set).not.toHaveBeenCalled();
+    expect(testBrowser.storage.sync.set).not.toHaveBeenCalled();
   });
 });
 

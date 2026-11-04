@@ -17,6 +17,7 @@
   import SyncAdvanced from "../components/sync/SyncAdvanced.svelte";
   import SyncScheduleCard from "../components/sync/SyncScheduleCard.svelte";
   import SyncOfflineCard from "../components/sync/SyncOfflineCard.svelte";
+  import SyncLegacyWarning from "../components/sync/SyncLegacyWarning.svelte";
   import {
     loadSyncConfig,
     saveSyncConfig,
@@ -26,6 +27,10 @@
     type SyncBackend,
   } from "../services/sync/sync-config.js";
   import { detectCapabilities } from "../services/sync/capabilities.js";
+  import {
+    LEGACY_SYNC_RECOVERY_NOTICE,
+    needsV2RelayAcknowledgement,
+  } from "../services/sync/sync-config-compatibility.js";
   import { requestSyncHostPermission } from "../services/sync/host-permissions.js";
   // v2 engine is the background authority; manual sync goes through it.
   function triggerSyncNow() {
@@ -214,6 +219,12 @@
   }
 
   async function syncNow() {
+    if (needsV2RelayAcknowledgement(config)) {
+      lastError = LEGACY_SYNC_RECOVERY_NOTICE;
+      lastSyncSummary = "Sync paused until the previous setup is reviewed";
+      addLogEntry(lastSyncSummary, "warning");
+      return;
+    }
     if (config.backends.includes("supabase-byo")) {
       const permissions =
         (globalThis as any).browser?.permissions || (globalThis as any).chrome?.permissions;
@@ -233,10 +244,16 @@
   }
 
   async function handleRotateKey() {
+    if (needsV2RelayAcknowledgement(config)) {
+      lastError = LEGACY_SYNC_RECOVERY_NOTICE;
+      lastSyncSummary = "Review the previous sync setup before rotating its key";
+      addLogEntry(lastSyncSummary, "warning");
+      return;
+    }
     requestConfirm({
       title: "Rotate sync key?",
       message:
-        "Generates a new key, moves all current data to a new sync space, and updates this device. Other devices must use the new key. The old space will be deleted.",
+        "Creates a fresh sync key and sync space from this device's local data. The previous remote space is retained, not deleted, so unsynced data on other devices is not erased. Export backups from every device before rotating, then update each device with the new key.",
       color: "primary",
       confirmLabel: "Rotate",
       onConfirm: async () => {
@@ -313,6 +330,8 @@
         const decoded = atob(padded);
         if (isValidSyncKey(decoded)) {
           config.syncKey = formatSyncKey(decoded);
+          config.syncProtocolVersion = null;
+          config.legacyV2AcknowledgedAt = null;
           if (config.backends.length === 0 && isRelayConfigured()) config.backends = ["relay"];
           persist();
           toast.show("Sync key imported from pairing link", "success");
@@ -351,6 +370,8 @@
         </ViewHeader>
       {/snippet}
     </StickyHeader>
+
+    <SyncLegacyWarning {config} onPersist={persist} onContinue={syncNow} />
 
     <!-- Main Status Banner -->
     <SyncHero

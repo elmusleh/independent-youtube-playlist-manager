@@ -4,13 +4,19 @@ import {
   archivedThumbnails,
   clearArchivedThumbnails,
   restoreThumbnails,
-  validThumbnail,
 } from "./thumbnail-archive";
+import {
+  BACKUP_FORMAT,
+  CURRENT_BACKUP_SCHEMA_VERSION,
+  migrateBackupForImport,
+  validateBackupSchema,
+} from "./backup-format.js";
 import {
   normalizePlaylist,
   normalizeVideoMeta,
   normalizeHistoryRecord,
 } from "./schema-normalizer.js";
+import { selectSyncableSettings } from "./sync/settings-selector.js";
 import type {
   CompleteBackupFile,
   ImportResult,
@@ -19,8 +25,6 @@ import type {
   NormalizedVideoMeta,
 } from "../types/model.js";
 
-const BACKUP_FORMAT = "yph_full_backup";
-const CURRENT_SCHEMA_VERSION = 2;
 const HISTORY_KEY = "local_yt_history";
 
 /**
@@ -33,7 +37,7 @@ export async function exportFullDatabaseBackup(): Promise<CompleteBackupFile> {
   let settings: Settings = {} as Settings;
   try {
     if (typeof window.getSettings === "function") {
-      settings = await window.getSettings();
+      settings = selectSyncableSettings(await window.getSettings()) as Settings;
     }
   } catch (err) {
     console.warn("[BACKUP] Failed to read settings for export:", err);
@@ -83,7 +87,7 @@ export async function exportFullDatabaseBackup(): Promise<CompleteBackupFile> {
 
   const backup: CompleteBackupFile = {
     format: BACKUP_FORMAT,
-    schemaVersion: CURRENT_SCHEMA_VERSION,
+    schemaVersion: CURRENT_BACKUP_SCHEMA_VERSION,
     exportedAt: new Date().toISOString(),
     metadata: {
       appVersion: manifestVersion,
@@ -105,80 +109,6 @@ export async function exportFullDatabaseBackup(): Promise<CompleteBackupFile> {
 }
 
 /**
- * Validates the schema of an incoming backup file
- */
-export function validateBackupSchema(json: any): {
-  valid: boolean;
-  errors: string[];
-  schemaVersion: number;
-} {
-  const errors: string[] = [];
-
-  if (!json || typeof json !== "object") {
-    return {
-      valid: false,
-      errors: ["Invalid backup file: Payload is not a valid JSON object."],
-      schemaVersion: 0,
-    };
-  }
-
-  // Check if this is a legacy playlist array export
-  if (Array.isArray(json)) {
-    return { valid: true, errors: [], schemaVersion: 1 };
-  }
-
-  if (json.format !== BACKUP_FORMAT) {
-    errors.push(`Unrecognized backup format "${json.format}". Expected "${BACKUP_FORMAT}".`);
-  }
-
-  const schemaVersion = typeof json.schemaVersion === "number" ? json.schemaVersion : 1;
-  // Accept any version <= CURRENT (migrate in-memory). Reject only newer versions
-  // ("upgrade your app first") and clearly invalid versions.
-  if (!Number.isInteger(schemaVersion) || schemaVersion < 1) {
-    errors.push(`Unsupported backup schema version ${schemaVersion}.`);
-  } else if (schemaVersion > CURRENT_SCHEMA_VERSION) {
-    errors.push(
-      `Backup schema version ${schemaVersion} is newer than supported (${CURRENT_SCHEMA_VERSION}). Please upgrade the app.`
-    );
-  }
-  if (!json.data || typeof json.data !== "object" || Array.isArray(json.data)) {
-    errors.push('Missing "data" container in backup payload.');
-  } else {
-    if (!Array.isArray(json.data.playlists)) errors.push('Missing or invalid "playlists" array.');
-    for (const name of ["videoMetadata", "history", "settings", "thumbnails"]) {
-      const value = json.data[name];
-      if (value !== undefined && (!value || typeof value !== "object" || Array.isArray(value))) {
-        errors.push(`Invalid "${name}" object.`);
-      }
-    }
-    if (
-      json.data.thumbnails &&
-      Object.entries(json.data.thumbnails).some(
-        ([id, value]) => !/^[\w-]{11}$/.test(id) || !validThumbnail(value)
-      )
-    ) {
-      errors.push("Invalid saved thumbnail image in backup.");
-    }
-  }
-  const playlists = json.data?.playlists;
-  if (
-    Array.isArray(playlists) &&
-    playlists.some(
-      (p: any) =>
-        !p || typeof p !== "object" || (p.videos !== undefined && !Array.isArray(p.videos))
-    )
-  ) {
-    errors.push("Invalid playlist entry in backup.");
-  }
-
-  return {
-    valid: errors.length === 0,
-    errors,
-    schemaVersion,
-  };
-}
-
-/**
  * Imports a complete database backup with schema validation, conflict resolution, and atomic writes
  */
 export async function importFullDatabaseBackup(
@@ -194,6 +124,19 @@ export async function importFullDatabaseBackup(
       importedHistory: 0,
       mode,
       errors: validation.errors,
+    };
+  }
+
+  try {
+    backupJson = migrateBackupForImport(backupJson);
+  } catch (error) {
+    return {
+      success: false,
+      importedPlaylists: 0,
+      importedMetadata: 0,
+      importedHistory: 0,
+      mode,
+      errors: [error instanceof Error ? error.message : String(error)],
     };
   }
 
@@ -339,12 +282,14 @@ export async function importFullDatabaseBackup(
     // 4. Process Settings (if present in backup)
     // -------------------------------------------------------------------------
     if (backupJson.data?.settings && typeof browser !== "undefined") {
-      const incomingSettings = backupJson.data.settings;
+      const incomingSettings = selectSyncableSettings(backupJson.data.settings);
       if (mode === "overwrite") {
         await browser.storage.sync.set(incomingSettings);
       } else {
         const currentSettings =
-          typeof window.getSettings === "function" ? await window.getSettings() : {};
+          typeof window.getSettings === "function"
+            ? selectSyncableSettings(await window.getSettings())
+            : {};
         await browser.storage.sync.set({ ...currentSettings, ...incomingSettings });
       }
     }

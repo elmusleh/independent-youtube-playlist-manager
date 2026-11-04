@@ -41,6 +41,8 @@
   function handleKeySave() {
     if (isValidSyncKey(keyInput)) {
       config.syncKey = formatSyncKey(keyInput);
+      config.syncProtocolVersion = null;
+      config.legacyV2AcknowledgedAt = null;
       keyInput = "";
       keyError = null;
       onPersist();
@@ -60,6 +62,9 @@
       confirmLabel: "Create key",
       onConfirm: () => {
         config.syncKey = generateSyncKey();
+        config.syncConfigVersion = 2;
+        config.syncProtocolVersion = 2;
+        config.legacyV2AcknowledgedAt = null;
         if (config.backends.length === 0 && isRelayConfigured()) config.backends = ["relay"];
         keyError = null;
         onPersist();
@@ -91,6 +96,8 @@
 
   function removeKey() {
     config.syncKey = null;
+    config.syncProtocolVersion = null;
+    config.legacyV2AcknowledgedAt = null;
     onPersist();
     onLog("Sync key removed from this device", "warning");
   }

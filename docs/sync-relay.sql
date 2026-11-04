@@ -1,6 +1,7 @@
--- IYPM sync relay — one-shot schema for Supabase.
--- Run this in the SQL Editor of your Supabase project. It is idempotent.
--- Column names must match encrypted-sync-service.ts (table "relay_snapshots", column "payload").
+-- LEGACY V1 ONLY: single encrypted snapshot relay. Do not use for a v2 client or new
+-- deployment; use sync-relay-v2.sql and the current numbered migrations instead.
+-- The hosted IYPM endpoint currently returns 404 for relay_snapshots; any old rows are
+-- not migrated by this file. See SYNC_RELAY_SETUP.md before making a v1/v2 transition.
 
 create table if not exists public.relay_snapshots (
   address text primary key,

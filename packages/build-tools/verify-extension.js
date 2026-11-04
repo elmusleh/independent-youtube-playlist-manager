@@ -7,6 +7,7 @@ const os = require("node:os");
 const path = require("node:path");
 const { createFixture, seedExtension, routes, sizes } = require("./extension-fixture.js");
 const { verifyPinnedSidebarTruncation } = require("./verify-pinned-sidebar.js");
+const { verifySyncLegacyWarning } = require("./verify-sync-legacy-warning.js");
 
 const root = path.resolve(__dirname, "../..");
 const output = path.join(root, "dist/verification");
@@ -25,6 +26,8 @@ async function main() {
     ],
   });
   const errors = [];
+  const requestUrls = [];
+  context.on("request", (request) => requestUrls.push(request.url()));
   const report = { browser: "Chromium", routeChecks: [], interactions: [] };
   try {
     // External providers are excluded from deterministic UI regression tests.
@@ -273,6 +276,11 @@ async function main() {
       assert(syncBody.includes(label), `Sync view is missing "${label}"`);
     }
     report.interactions.push("Sync view renders all three backend options with capability badges");
+
+    await verifySyncLegacyWarning(page, base, requestUrls);
+    report.interactions.push(
+      "Legacy sync recovery warning blocks relay until explicit backup acknowledgement"
+    );
 
     // Regression guard for the theme desync that shipped in 1.2.1: the persisted
     // setting, the pre-paint local cache and the rendered attribute must agree.

@@ -61,8 +61,9 @@
   {#if expanded}
     <div class="backend-detail">
       <p>
-        <strong>Setup:</strong> 1) create a free project at supabase.com, 2) run the one-time SQL
-        from <em>docs/sync-relay.sql</em>, 3) paste the Project URL and anon key above.
+        <strong>Setup:</strong> create a Supabase project, follow <em>docs/SYNC_RELAY_SETUP.md</em>,
+        and apply the v2 bootstrap/migrations. Do not use the legacy v1 snapshot SQL for a v2
+        client.
       </p>
       <p>
         <strong>Privacy:</strong> you own the server, but it stores ciphertext only — even you can't read

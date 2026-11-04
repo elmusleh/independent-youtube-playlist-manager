@@ -26,6 +26,7 @@ describe("sync engine real relay/storage path", () => {
   let conflictingRemoteRow: RelayRow | null;
   let conflictNextPush: boolean;
   let claimAccepted: boolean;
+  let claimRequests: Array<Record<string, any>>;
 
   beforeEach(async () => {
     vi.resetModules();
@@ -40,6 +41,9 @@ describe("sync engine real relay/storage path", () => {
         relayAnonKey: "test-anon-key",
         content: { playlists: true, settings: false, history: false },
         lastSeq: 0,
+        syncConfigVersion: 2,
+        syncProtocolVersion: 2,
+        legacyV2AcknowledgedAt: null,
       },
       yph_sync_device_id: "device-a",
       local_yt_history: {},
@@ -60,6 +64,7 @@ describe("sync engine real relay/storage path", () => {
     conflictingRemoteRow = null;
     conflictNextPush = false;
     claimAccepted = true;
+    claimRequests = [];
 
     const localStorage = {
       get: async (keys?: string | string[]) => {
@@ -121,7 +126,10 @@ describe("sync engine real relay/storage path", () => {
     vi.stubGlobal("fetch", async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
       const body = init?.body ? JSON.parse(String(init.body)) : {};
-      if (url.endsWith("/sync_claim")) return jsonResponse(claimAccepted);
+      if (url.endsWith("/sync_claim")) {
+        claimRequests.push(body);
+        return jsonResponse(claimAccepted);
+      }
       if (url.endsWith("/sync_pull")) {
         pullRequests.push(body);
         return jsonResponse(remoteRows.filter((row) => row.seq > body.p_since_seq));
@@ -181,6 +189,50 @@ describe("sync engine real relay/storage path", () => {
     expect(encryptedPayload.data).toBeUndefined();
     expect(await isDirty("playlists", "playlist-a", localPlaylists[0])).toBe(false);
     expect((await getShadow("playlists", "playlist-a"))?.baseCopy).toEqual(localPlaylists[0]);
+  });
+
+  it("blocks an unverified legacy relay config before any remote request or local apply", async () => {
+    const legacyConfig = {
+      syncKey: SYNC_KEY,
+      backend: "relay",
+      syncRevision: 4,
+      lastSyncedAt: 1234,
+      lastSeq: 0,
+      content: { playlists: true, settings: false, history: false },
+    };
+    state.yph_sync_config = legacyConfig;
+    const originalPlaylists = structuredClone(localPlaylists);
+
+    const { runOnce } = await import("./sync-engine");
+    const result = await runOnce();
+
+    expect(result.phase).toBe("paused");
+    expect(result.lastError).toMatch(/backup|legacy/i);
+    expect(claimRequests).toHaveLength(0);
+    expect(pullRequests).toHaveLength(0);
+    expect(wirePushes).toHaveLength(0);
+    expect(localPlaylists).toEqual(originalPlaylists);
+    expect(state.yph_sync_config).toEqual(legacyConfig);
+  });
+
+  it("runs an acknowledged legacy config and marks it current only after successful sync", async () => {
+    state.yph_sync_config = {
+      syncKey: SYNC_KEY,
+      backend: "relay",
+      syncRevision: 4,
+      lastSyncedAt: 1234,
+      lastSeq: 0,
+      legacyV2AcknowledgedAt: 2345,
+      content: { playlists: true, settings: false, history: false },
+    };
+
+    const { runOnce } = await import("./sync-engine");
+    const result = await runOnce();
+
+    expect(result.phase).toBe("idle");
+    expect(claimRequests).toHaveLength(1);
+    expect(state.yph_sync_config.syncConfigVersion).toBe(2);
+    expect(state.yph_sync_config.syncProtocolVersion).toBe(2);
   });
 
   it("stops before pulling when the relay rejects the space claim", async () => {
