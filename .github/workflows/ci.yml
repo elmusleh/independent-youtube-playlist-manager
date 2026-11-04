@@ -39,12 +39,20 @@ jobs:
       - name: Run Full Quality Check (lint + format + test + svelte-check)
         run: npm run check
 
+      - name: Pull Docker images
+        run: |
+          echo "Pulling Postgres image..."
+          docker pull postgres:16-alpine@sha256:0cefaabd882e42bcb2a2f3dc56d3ce4770560ba62fd7f197f1a2e008fd5731ab
+          echo "Pulling PostgREST image..."
+          docker pull postgrest/postgrest:latest@sha256:1347d7552b88f17832912c06afbf7c43209af6eeeb60834b04aae12c9bd9d5cc
+        timeout-minutes: 10
+
       - name: Start isolated sync relay fixture
         run: |
           echo "Starting Docker Compose..."
           docker compose -f docker-compose.test.yml up -d
           echo "Docker Compose up started"
-        timeout-minutes: 5
+        timeout-minutes: 3
 
       - name: Wait for Postgres to be healthy
         run: |
