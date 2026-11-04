@@ -92,7 +92,6 @@
   });
   let estimatedRemaining = $state<number | null>(null);
 
-
   const syncIsOn = $derived(!!(config.syncKey && config.backends.length > 0));
 
   function hintFor(c: SyncConfig): string | null {
@@ -253,7 +252,10 @@
       }
     }
     await syncNow();
-    addLogEntry(lastError ? "Connection test failed" : "Connection test succeeded", lastError ? "error" : "success");
+    addLogEntry(
+      lastError ? "Connection test failed" : "Connection test succeeded",
+      lastError ? "error" : "success"
+    );
   }
 
   async function handleRotateKey() {
@@ -376,7 +378,13 @@
 
     <div class="settings-grid">
       <!-- Sync Key (top-left; required to sync) -->
-      <SyncKeyCard {config} onPersist={persist} onLog={addLogEntry} onRotate={handleRotateKey} onTestConnection={testConnection} />
+      <SyncKeyCard
+        {config}
+        onPersist={persist}
+        onLog={addLogEntry}
+        onRotate={handleRotateKey}
+        onTestConnection={testConnection}
+      />
       <RelayCard
         enabled={config.backends.includes("relay")}
         ready={isRelayConfigured()}

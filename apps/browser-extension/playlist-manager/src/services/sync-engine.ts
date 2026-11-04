@@ -173,9 +173,10 @@ export async function runOnce(): Promise<SyncStatus> {
     phase = "pulling";
     await persistStatus();
     const lastSeqByCollection = cfg?.lastSeqByCollection ?? {};
-    const sinceSeq = Object.keys(lastSeqByCollection).length > 0
-      ? Math.min(...Object.values(lastSeqByCollection))
-      : (cfg?.lastSeq ?? 0);
+    const sinceSeq =
+      Object.keys(lastSeqByCollection).length > 0
+        ? Math.min(...Object.values(lastSeqByCollection))
+        : (cfg?.lastSeq ?? 0);
     const incoming = await pullAll(relayConfig, space, authHash, sinceSeq);
 
     phase = "merging";
@@ -241,7 +242,9 @@ export async function runOnce(): Promise<SyncStatus> {
       // Advance cursor for each collection that had incoming records
       const collectionsSeen = new Set(incoming.map((r: any) => r.collection));
       for (const coll of collectionsSeen) {
-        const collMax = Math.max(...incoming.filter((r: any) => r.collection === coll).map((r: any) => r.seq));
+        const collMax = Math.max(
+          ...incoming.filter((r: any) => r.collection === coll).map((r: any) => r.seq)
+        );
         if (!maxSeqByCollection[coll] || collMax > maxSeqByCollection[coll]) {
           maxSeqByCollection[coll] = collMax;
         }
