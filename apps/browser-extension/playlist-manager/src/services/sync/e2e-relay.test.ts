@@ -52,6 +52,7 @@ beforeAll(async () => {
   if (!res.ok) throw new Error(`Relay E2E backend is unavailable: ${PG} returned ${res.status}`);
   vi.stubGlobal("fetch", (input: any, init: any = {}) => {
     const headers = new Headers(init.headers);
+    headers.set("cf-connecting-ip", testClientIp);
     headers.set("X-Forwarded-For", testClientIp);
     return realFetch(String(input).replace("https://fake.supabase.test/rest/v1/", PG + "/"), {
       ...init,
@@ -74,6 +75,7 @@ const directRpc = (fn: string, body: unknown) =>
       "Content-Type": "application/json",
       apikey: JWT,
       Authorization: `Bearer ${JWT}`,
+      "cf-connecting-ip": testClientIp,
       "X-Forwarded-For": testClientIp,
     },
     body: JSON.stringify(body),
