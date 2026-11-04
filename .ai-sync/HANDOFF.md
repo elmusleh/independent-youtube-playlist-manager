@@ -873,3 +873,11 @@ writes. `.husky/pre-commit` was modified by a concurrent process (a commit attem
 - No commit, push, store submission, tag, or remote action performed. The Edge
   draft in Partner Center still holds the old 1.1.1 package; upload the rebuilt
   1.2.1 ZIP and click Continue.
+
+## 2026-11-04 — Sync v2 hardening committed (branch `feat/sync-hardening`)
+
+- Commit: `b6467d3` — "feat(sync): harden sync v2 adapters, relay security, and test coverage"
+- Relay: atomic upsert, RLS + revoked direct table access, rate-limit/claim hardening, CI fixture with pinned images.
+- Engine: conflict pull/merge/retry, claim rejection abort, authoritative playlist snapshot, tombstone de-duplication.
+- Tests: `npm run check` ✅, `npm run build` ✅, sync suites 135 passed, relay E2E 16 passed.
+- PR #88 still BLOCKED (review threads need resolution); no push/merge/production migration performed.
