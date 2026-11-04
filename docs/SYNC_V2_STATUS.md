@@ -1,6 +1,22 @@
 # Sync v2 — Implementation Status
 
-Branch: `feat/sync-hardening`. Last updated: 2026-11-03.
+Branch: `feat/sync-hardening`. Last updated: 2026-11-04.
+
+## Release gate — 2026-11-04 (NO-GO until verified)
+
+**Do not mark the relay ready for public release yet.** The relay applies a service-wide
+limit of 100 new-space claims per minute, but that limit can be evaded over time by claiming
+unique spaces. Trusted per-client/per-IP rate limiting is now implemented in
+`docs/migrations/0003_trusted_ip_rate_limit.sql` (250 requests / 5 minutes per IP, sync-RPC
+only, fail-closed when no trusted IP is available) and is covered by the local relay E2E suite
+(18/18). Before public launch, the hosted gateway must be verified to own `X-Forwarded-For`
+and the migration must be applied and smoke-tested on the hosted project. Never trust
+client-supplied forwarding headers.
+
+Local verification on 2026-11-04: `npm run test:sync:relay` passed 18/18 against the
+repository's Postgres/PostgREST fixture with migrations `0002` and `0003` applied. This does
+not verify that either migration or gateway-level protections are active on the hosted relay.
+Manual Chrome/Firefox/Fenix multi-device verification is still required.
 
 This document supersedes `SYNC_HARDENING_PLAN.md` for the v2 work. The original
 diagnosis lives in the Antigravity implementation plan
@@ -94,10 +110,8 @@ error | offline | paused`), single-flight guard, exponential backoff, status per
 - **Deletion tombstones**: IMPLEMENTED. Local deletions now emit `deleted: true`
   tombstones and remote tombstones are applied (playlists/history/settings).
 - **status-store.ts**: WIRED into `runOnce()` (restore points saved pre-sync).
-- **Live payload cap**: migration `docs/migrations/0001_payload_cap.sql` must be
-  applied to the production database.
-- **Manual device verification**: real Chrome/Firefox/Fenix round-trip still needed.
-- **E2E CI**: `docker-compose.test.yml` added for Postgres + PostgREST provisioning.
+- `docs/migrations/0003_trusted_ip_rate_limit.sql`: trusted gateway client-IP limiter (250 requests / 5 minutes per IP, sync-RPC-only, fail-closed when IP unavailable, PostgREST `db_pre_request`). Hosted gateway must own `X-Forwarded-For`; direct client headers must not be trusted.
+- Local relay E2E now exercises per-IP limits and missing-IP behavior: 18/18 tests pass.
 
 ### Phase 3 follow-up (adapter wiring) — DONE
 
@@ -136,10 +150,12 @@ error | offline | paused`), single-flight guard, exponential backoff, status per
 
 ## Test status
 
-- `npm run check`: exit 0 (78 files / 731 tests).
+- `npm run check`: exit 0 (82 files / 757 tests).
+- `npm run test:sync:relay`: 18/18 with migrations 0002 and 0003.
 - `npm run build`: exit 0 (all budgets pass).
-- `npm run test:extension`: exit 0.
-- `npm run test`: 731 passed.
+- `npm run test:extension`: exit 0 after `npm run pack:edge`.
+- `git diff --check` / formatting passed.
+- Trusted gateway rate limiting is implemented locally but hosted gateway behavior remains unverified.
 
 ## Open questions (from the original plan)
 

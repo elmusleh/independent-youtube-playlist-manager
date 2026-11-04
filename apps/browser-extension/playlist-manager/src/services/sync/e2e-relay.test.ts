@@ -21,7 +21,7 @@
  * This file is excluded from the default unit suite and is run only with the
  * local Postgres/PostgREST fixture or an explicitly configured compatible test server.
  */
-import { describe, it, expect, vi, beforeAll, afterAll } from "vitest";
+import { describe, it, expect, vi, beforeAll, beforeEach, afterAll } from "vitest";
 import { createHmac } from "node:crypto";
 import * as rt from "./relay-transport";
 
@@ -41,13 +41,23 @@ const JWT = makeJwt();
 const CFG = { url: "https://fake.supabase.test", anonKey: JWT };
 
 const realFetch = globalThis.fetch;
+let testClientIp = "198.18.0.1";
+
+beforeEach(() => {
+  testClientIp = `198.18.${Math.floor(Math.random() * 256)}.${Math.floor(Math.random() * 254) + 1}`;
+});
 
 beforeAll(async () => {
   const res = await realFetch(`${PG}/`, { signal: AbortSignal.timeout(3000) });
   if (!res.ok) throw new Error(`Relay E2E backend is unavailable: ${PG} returned ${res.status}`);
-  vi.stubGlobal("fetch", (input: any, init?: any) =>
-    realFetch(String(input).replace("https://fake.supabase.test/rest/v1/", PG + "/"), init)
-  );
+  vi.stubGlobal("fetch", (input: any, init: any = {}) => {
+    const headers = new Headers(init.headers);
+    headers.set("X-Forwarded-For", testClientIp);
+    return realFetch(String(input).replace("https://fake.supabase.test/rest/v1/", PG + "/"), {
+      ...init,
+      headers,
+    });
+  });
 });
 
 afterAll(() => {
@@ -64,6 +74,7 @@ const directRpc = (fn: string, body: unknown) =>
       "Content-Type": "application/json",
       apikey: JWT,
       Authorization: `Bearer ${JWT}`,
+      "X-Forwarded-For": testClientIp,
     },
     body: JSON.stringify(body),
   });
@@ -109,6 +120,48 @@ describe("E2E: real client + real SQL", () => {
     for (const response of responses) {
       expect([401, 403]).toContain(response.status);
     }
+  });
+
+  it("limits sync RPC traffic per gateway client IP across distinct spaces", async () => {
+    const spaces = Array.from({ length: 3 }, newSpace);
+    for (const { space, auth } of spaces) {
+      expect(await rt.claimSpace(CFG, space, auth)).toBe(true);
+    }
+
+    for (let attempt = 0; attempt < 247; attempt++) {
+      const { space, auth } = spaces[attempt % spaces.length];
+      const response = await directRpc("sync_pull", {
+        p_space: space,
+        p_auth_hash: auth,
+        p_since_seq: 0,
+        p_limit: 1,
+      });
+      expect(response.ok).toBe(true);
+    }
+
+    const { space, auth } = spaces[0];
+    const throttled = await directRpc("sync_pull", {
+      p_space: space,
+      p_auth_hash: auth,
+      p_since_seq: 0,
+      p_limit: 1,
+    });
+    expect(throttled.status, await throttled.text()).toBe(429);
+  });
+
+  it("fails closed when the gateway client IP is unavailable", async () => {
+    const { space, auth } = newSpace();
+    const response = await realFetch(`${PG}/rpc/sync_claim`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: JWT,
+        Authorization: `Bearer ${JWT}`,
+      },
+      body: JSON.stringify({ p_space: space, p_auth_hash: auth }),
+    });
+    expect(response.status).toBe(403);
+    expect(await response.text()).toMatch(/gateway-verified client IP/i);
   });
 
   it("invalid auth attempts do not consume the valid space rate limit", async () => {
