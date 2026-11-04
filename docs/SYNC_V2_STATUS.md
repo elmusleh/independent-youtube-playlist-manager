@@ -90,9 +90,9 @@ error | offline | paused`), single-flight guard, exponential backoff, status per
 ## What still needs to be done
 
 - All code-level defects in this review have been addressed in the implementation
-  pass (C1-C4, H1-H5, M1-M6, P2-P5). Remaining: manual device verification.
-  P1 (integration tests) partially addressed with unit-level regression tests;
-  full E2E requires a live backend.
+  pass (C1-C4, H1-H5, M1-M6, P1-P5). Remaining: manual device verification.
+  E2E tests pass against live Postgres backend (5 tests). HLC is now monotonic
+  across adapters via shared hlcState.
 
 ### Phase 3 follow-up (adapter wiring) — DONE
 
