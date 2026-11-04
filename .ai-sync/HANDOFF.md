@@ -1,3 +1,21 @@
+## 2026-11-04 — Sync hardening audit follow-up
+
+A local follow-up branch `fix/sync-hardening-audit` was created from `feat/sync-hardening`
+while PR #88 is open. It intentionally changes only the relay fixture role setup and sync
+release-status documentation; coordinate before moving these edits onto the PR branch. PR #88
+is still OPEN and BLOCKED. No push, publication, or hosted-project change was made.
+
+- `packages/build-tools/test-relay-roles.sql` now provisions both `anon` and `authenticated`,
+  which the hardening migration and CI setup require.
+- `docs/SYNC_V2_STATUS.md` now explicitly gates public launch on trusted gateway-level rate
+  limiting and distinguishes local E2E evidence from hosted-relay verification.
+- Verified `npm run check` (82 files / 757 tests; 0 Svelte errors, 1 existing warning),
+  `npm run build`, `npm run test:sync:relay` (16/16 against local Postgres + PostgREST),
+  `npm run test:extension` (102 route/viewport checks, 11 interaction groups, popup + Edge
+  package checks), and `git diff --check`.
+- External release blockers remain: enforce trusted client/IP rate limits at the relay gateway,
+  verify migration `0002` on hosted Supabase, and perform manual multi-device browser checks.
+
 ## 2026-11-03 — Sync v2 Phase 1: Protocol Core completed (on `feat/sync-hardening`)
 
 ### Completed Work

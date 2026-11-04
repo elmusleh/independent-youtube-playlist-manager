@@ -2,6 +2,21 @@
 
 Branch: `feat/sync-hardening`. Last updated: 2026-11-03.
 
+## Release gate — verified 2026-11-04
+
+**Do not mark the relay ready for public release yet.** The relay applies a service-wide
+limit of 100 new-space claims per minute, but it does not enforce a trusted per-client or
+per-IP limit. That service-wide limit can be evaded over time by claiming unique spaces.
+Before public launch, enforce rate limiting at a trusted gateway using trusted request
+metadata; never trust client-supplied forwarding headers. This requirement is also called
+out in `docs/migrations/0002_rate_limit_and_push_validation.sql` and remains an operations
+gate, not something the local SQL fixture proves.
+
+Local verification on 2026-11-04: `npm run test:sync:relay` passed 16/16 against the
+repository's Postgres/PostgREST fixture with migration `0002` applied. This does not verify
+that migration `0002` or gateway-level protections are active on the hosted relay. Manual
+Chrome/Firefox/Fenix multi-device verification is still required.
+
 This document supersedes `SYNC_HARDENING_PLAN.md` for the v2 work. The original
 diagnosis lives in the Antigravity implementation plan
 (`~/.gemini/antigravity/brain/17ee57d2-9794-466b-bfff-1e542baa6784/implementation_plan.md`).
