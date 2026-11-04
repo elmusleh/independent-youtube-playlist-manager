@@ -353,9 +353,15 @@
         addLogEntry(detail, stage === "error" ? "error" : stage === "success" ? "success" : "info");
     });
     const timer = setInterval(refreshStatus, 10_000);
+    const b = (window as any).browser || (window as any).chrome;
+    const storageListener = (changes: any, area: string) => {
+      if (area === "local" && changes?.yph_sync_status) refreshStatus();
+    };
+    b?.storage?.onChanged?.addListener?.(storageListener);
     refresh().then(() => subscribeNudge());
     return () => {
       clearInterval(timer);
+      b?.storage?.onChanged?.removeListener?.(storageListener);
       onSyncProgress(null);
       if (nudgeUnsubscribe) nudgeUnsubscribe();
     };
@@ -395,6 +401,11 @@
 
     <SyncCounters {syncIsOn} {isSyncing} {lastSyncedAt} {knownDevices} {formatWhen} />
 
+    <!-- Sync Key (full-width, required to sync) -->
+    <div class="sync-key-top">
+      <SyncKeyCard {config} onPersist={persist} onLog={addLogEntry} onRotate={handleRotateKey} />
+    </div>
+
     <div class="settings-grid">
       <RelayCard
         enabled={config.backends.includes("relay")}
@@ -424,9 +435,6 @@
       <!-- Sync Activity Log (below Offline Mode) -->
       <SyncActivity entries={syncLogEntries} />
 
-      <!-- Sync Key Section (above What to Sync) -->
-      <SyncKeyCard {config} onPersist={persist} onLog={addLogEntry} onRotate={handleRotateKey} />
-
       <!-- What to Sync with Per-Category Status -->
       <SyncContents
         {config}
@@ -442,6 +450,8 @@
 
       <!-- Sync Advanced -->
       <SyncAdvanced />
+      <!-- Data portability (local storage + backup) -->
+      <h4 class="data-portability-heading">Data portability</h4>
       <StorageSettings />
       <BackupSettings />
     </div>

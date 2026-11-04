@@ -18,6 +18,7 @@
     SYNC_KEY_SYMBOLS,
   } from "../../services/sync/sync-key.js";
   import { isRelayConfigured } from "../../services/sync/sync-config.js";
+  import { requestSyncHostPermission } from "../../services/sync/host-permissions.js";
   import type { SyncConfig } from "../../services/sync/sync-config.js";
   import { requestConfirm } from "../../stores/confirmation";
 
@@ -47,6 +48,7 @@
       keyError = null;
       onPersist();
       onLog("Sync key saved", "success");
+      requestSyncHostPermission(config).catch(() => {});
     } else {
       keyError = `A sync key has ${SYNC_KEY_SYMBOLS} letters/digits, e.g. ABCDE-FGHJK-MNPQR-STVWX.`;
       onLog(keyError, "error");
@@ -69,6 +71,7 @@
         keyError = null;
         onPersist();
         onLog("New sync key created — copy it to your other devices", "success");
+        requestSyncHostPermission(config).catch(() => {});
       },
     });
   }
