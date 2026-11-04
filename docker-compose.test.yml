@@ -19,6 +19,7 @@ services:
       interval: 2s
       timeout: 5s
       retries: 10
+    shm_size: "256m"
 
   postgrest:
     image: postgrest/postgrest:latest@sha256:1347d7552b88f17832912c06afbf7c43209af6eeeb60834b04aae12c9bd9d5cc # PostgREST 16.5
