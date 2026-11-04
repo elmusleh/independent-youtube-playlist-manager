@@ -1,7 +1,9 @@
 # docker-compose.test.yml — provisions Postgres + PostgREST for E2E sync tests
 # Usage: docker compose -f docker-compose.test.yml up -d --wait
+#        apply migrations 0002 and 0003 with psql before running tests
 #        npm run test:sync:relay
 #        docker compose -f docker-compose.test.yml down -v
+# Override host ports for parallel worktrees with IYPM_RELAY_PG_PORT / IYPM_RELAY_API_PORT.
 services:
   pg:
     image: postgres:16-alpine@sha256:0cefaabd882e42bcb2a2f3dc56d3ce4770560ba62fd7f197f1a2e008fd5731ab # PostgreSQL 16.15
@@ -9,7 +11,7 @@ services:
       POSTGRES_PASSWORD: audit
       POSTGRES_HOST_AUTH_METHOD: trust
     ports:
-      - "127.0.0.1:3311:5432"
+      - "127.0.0.1:${IYPM_RELAY_PG_PORT:-3311}:5432"
     volumes:
       - ./packages/build-tools/test-relay-roles.sql:/docker-entrypoint-initdb.d/00-roles.sql:ro
       - ./docs/sync-relay-v2.sql:/docker-entrypoint-initdb.d/10-sync-relay.sql:ro
@@ -24,9 +26,9 @@ services:
   postgrest:
     image: postgrest/postgrest:latest@sha256:1347d7552b88f17832912c06afbf7c43209af6eeeb60834b04aae12c9bd9d5cc # PostgREST 16.5
     ports:
-      - "127.0.0.1:3312:3000"
+      - "127.0.0.1:${IYPM_RELAY_API_PORT:-3312}:3000"
     environment:
-      PGRST_DB_URI: "postgres://postgres:audit@pg:5432/postgres"
+      PGRST_DB_URI: "postgres://authenticator:audit@pg:5432/postgres"
       PGRST_DB_SCHEMAS: public
       PGRST_DB_ANON_ROLE: anon
       PGRST_JWT_SECRET: "audit-local-jwt-secret-0123456789abcdef0123456789"

@@ -92,6 +92,9 @@ jobs:
       - name: Apply relay hardening migration to the isolated fixture
         run: docker compose -f docker-compose.test.yml exec -T pg psql -U postgres -v ON_ERROR_STOP=1 < docs/migrations/0002_rate_limit_and_push_validation.sql
 
+      - name: Apply trusted client IP rate limiting to the isolated fixture
+        run: docker compose -f docker-compose.test.yml exec -T pg psql -U postgres -v ON_ERROR_STOP=1 < docs/migrations/0003_trusted_ip_rate_limit.sql
+
       - name: Run real sync relay E2E tests
         run: npm run test:sync:relay
 

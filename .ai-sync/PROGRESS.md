@@ -1,3 +1,10 @@
+## Sync hardening audit follow-up — local fixes verified 2026-11-04
+
+- [x] Relay test fixture creates the `anon` and `authenticated` roles used by the hardening migration.
+- [x] Postgres/PostgREST relay suite passes 16/16 after applying migration `0002`.
+- [ ] Public-launch rate limiting at a trusted gateway is not configured or verified.
+- [ ] Hosted migration `0002` and manual Chrome/Firefox/Fenix multi-device sync remain unverified.
+
 ## Sync v2 Phase 0: hotfix — done on `feat/sync-hardening` (2026-11-03)
 
 - [x] Sync view: `setupHint`, 20-character key validation and "Generate key" present at HEAD (re-verified)
