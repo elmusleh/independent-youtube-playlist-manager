@@ -367,7 +367,13 @@
         onChooseFolder={chooseFolder}
       />
 
-      <!-- Sync Key Section -->
+      <!-- Offline Mode (moved under File/Syncthing) -->
+      <SyncOfflineCard {config} onPersist={persist} onLog={addLogEntry} />
+
+      <!-- Sync Activity Log (below Offline Mode) -->
+      <SyncActivity entries={syncLogEntries} />
+
+      <!-- Sync Key Section (above What to Sync) -->
       <SyncKeyCard {config} onPersist={persist} onLog={addLogEntry} onRotate={handleRotateKey} />
 
       <!-- What to Sync with Per-Category Status -->
@@ -380,16 +386,10 @@
         {formatWhen}
       />
 
-      <!-- Sync Activity Log -->
-      <SyncActivity entries={syncLogEntries} />
-
       <!-- Sync Schedule -->
       <SyncScheduleCard {config} onPersist={persist} onLog={addLogEntry} />
 
-      <!-- Offline Mode -->
-      <SyncOfflineCard {config} onPersist={persist} onLog={addLogEntry} />
-
-      <!-- API Setup Link -->
+      <!-- Sync Advanced -->
       <SyncAdvanced />
     </div>
   </div>
