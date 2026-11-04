@@ -26,6 +26,8 @@ export type SyncStatus = {
   lastSummary: string | null;
   pendingCount: number;
   incomingCount: number;
+  pushedCount: number;
+  pulledCount: number;
   failedCount: number;
   /** When the current sync run started (epoch ms). Null when idle. */
   startedAt: number | null;
@@ -55,6 +57,8 @@ let status: SyncStatus = {
   lastSummary: null,
   pendingCount: 0,
   incomingCount: 0,
+  pushedCount: 0,
+  pulledCount: 0,
   failedCount: 0,
   startedAt: null,
   estimatedMs: null,
@@ -254,6 +258,8 @@ export async function runOnce(): Promise<SyncStatus> {
           : "Sync complete (no changes)";
     status.lastRunAt = Date.now();
     status.pendingCount = 0;
+    status.pushedCount = pushedCount;
+    status.pulledCount = incoming.length + additionalIncomingCount;
     status.failedCount = result.failed.length;
     backoffIndex = 0;
   } catch (err) {
