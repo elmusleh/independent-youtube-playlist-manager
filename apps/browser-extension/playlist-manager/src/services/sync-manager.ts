@@ -30,7 +30,6 @@ import { applyRemote } from "./sync/apply-remote.js";
 import { toast } from "../stores/toast.js";
 
 const DEBOUNCE_MS = 5000;
-const POLL_MS = 5 * 60 * 1000;
 
 let syncTimer: ReturnType<typeof setTimeout> | null = null;
 let pollTimer: ReturnType<typeof setInterval> | null = null;
@@ -159,13 +158,50 @@ export function scheduleSync(): void {
 
 /** Periodic pull (all backends) so a newer snapshot arrives without a local edit. */
 export function startPolling(): void {
-  if (pollTimer) return;
-  pollTimer = setInterval(async () => {
-    const config = await loadSyncConfig();
-    if (config.syncKey && config.backends.length > 0) {
-      performSync({ push: false }).catch(() => {});
+  stopPolling();
+  scheduleNextPoll();
+}
+
+function stopPolling(): void {
+  if (pollTimer) {
+    clearTimeout(pollTimer);
+    pollTimer = null;
+  }
+}
+
+function scheduleNextPoll(): void {
+  void (async () => {
+    try {
+      const config = await loadSyncConfig();
+      const minutes =
+        typeof config.syncIntervalMinutes === "number" ? config.syncIntervalMinutes : 0;
+      if (
+        !config.syncKey ||
+        !Array.isArray(config.backends) ||
+        config.backends.length === 0 ||
+        minutes <= 0
+      ) {
+        return;
+      }
+      pollTimer = setTimeout(
+        async () => {
+          pollTimer = null;
+          try {
+            const cfg = await loadSyncConfig();
+            if (cfg.syncKey && Array.isArray(cfg.backends) && cfg.backends.length > 0) {
+              await performSync({ push: false });
+            }
+          } catch {
+            /* ignore */
+          }
+          scheduleNextPoll();
+        },
+        minutes * 60 * 1000
+      );
+    } catch {
+      /* ignore */
     }
-  }, POLL_MS);
+  })();
 }
 
 /** One pull (no upload) so a newer remote snapshot is applied as soon as the app opens. */
@@ -400,3 +436,11 @@ export async function triggerSyncNow(): Promise<void> {
   }
   await performSync();
 }
+
+// Restart polling whenever sync config changes (e.g. interval or backends toggled).
+const _extBrowser = extBrowser();
+_extBrowser?.storage?.onChanged?.addListener?.((changes: any, area: string) => {
+  if (area === "local" && changes?.yph_sync_config) {
+    startPolling();
+  }
+});
