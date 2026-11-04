@@ -29,6 +29,10 @@
   import { requestSyncHostPermission } from "../services/sync/host-permissions.js";
   // v2 engine is the background authority; manual sync goes through it.
   function triggerSyncNow() {
+    const b = (window as any).browser || (window as any).chrome;
+    if (b?.runtime?.sendMessage) {
+      return b.runtime.sendMessage({ cmd: "sync-now" }).catch(() => Promise.resolve());
+    }
     const engine = (window as any).syncEngine;
     if (engine?.runOnce) return engine.runOnce();
     return Promise.resolve();
@@ -131,14 +135,23 @@
   }
 
   async function refreshStatus() {
-    const engine = (window as any).syncEngine;
-    const s = engine?.getStatus ? engine.getStatus() : {};
+    const b = (window as any).browser || (window as any).chrome;
+    let s: any = {};
+    if (b?.storage?.local) {
+      const stored = await b.storage.local.get("yph_sync_status");
+      s = stored?.yph_sync_status ?? {};
+      const devicesStored = await b.storage.local.get("yph_sync_devices");
+      const devices = devicesStored?.yph_sync_devices;
+      knownDevices = Array.isArray(devices) ? devices.length : 0;
+    } else {
+      const engine = (window as any).syncEngine;
+      s = engine?.getStatus ? engine.getStatus() : {};
+      knownDevices = 0;
+    }
     lastSyncedAt = s.lastRunAt ?? null;
     lastError = s.lastError ?? null;
     lastSyncSummary = s.lastSummary ?? null;
-    knownDevices = [] as any;
     isSyncing = s.phase === "pulling" || s.phase === "merging" || s.phase === "pushing";
-    categoryTimestamps = {} as any;
   }
 
   function addLogEntry(message: string, type: "info" | "success" | "error" | "warning" = "info") {

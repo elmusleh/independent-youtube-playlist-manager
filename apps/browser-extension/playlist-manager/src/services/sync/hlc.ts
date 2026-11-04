@@ -23,8 +23,13 @@ async function getDeviceHash(syncKey: string): Promise<number> {
   return cachedDeviceHash;
 }
 
-function toTimestamp(wall: number, counter: number, deviceHash: number): HlcTimestamp {
-  return { value: wall, wall, counter, deviceHash };
+function toTimestamp(
+  wall: number,
+  counter: number,
+  deviceHash: number,
+  value?: number
+): HlcTimestamp {
+  return { value: value ?? wall, wall, counter, deviceHash };
 }
 
 export async function getHlc(syncKey: string, lastHlc?: HlcTimestamp): Promise<HlcTimestamp> {
@@ -32,6 +37,8 @@ export async function getHlc(syncKey: string, lastHlc?: HlcTimestamp): Promise<H
   const wall = Date.now();
 
   let counter = 0;
+  let value = wall;
+
   if (lastHlc) {
     if (wall === lastHlc.wall) {
       counter = lastHlc.counter + 1;
@@ -41,18 +48,23 @@ export async function getHlc(syncKey: string, lastHlc?: HlcTimestamp): Promise<H
         }
         return getHlc(syncKey, lastHlc);
       }
+      // Ensure value is strictly monotonic even within same wall
+      value = Math.max(wall, (lastHlc.value ?? wall) + 1);
     } else if (wall > lastHlc.wall) {
       counter = 0;
+      value = wall;
     } else {
+      // Clock regression: use lastHlc.wall + counter
       counter = lastHlc.counter + 1;
       if (counter > MAX_COUNTER) {
         throw new Error("HLC counter overflow with clock regression");
       }
-      return toTimestamp(lastHlc.wall, counter, deviceHash);
+      value = (lastHlc.value ?? lastHlc.wall) + 1;
+      return toTimestamp(lastHlc.wall, counter, deviceHash, value);
     }
   }
 
-  return toTimestamp(wall, counter, deviceHash);
+  return toTimestamp(wall, counter, deviceHash, value);
 }
 
 export function compareHlc(a: HlcTimestamp | number, b: HlcTimestamp | number): number {

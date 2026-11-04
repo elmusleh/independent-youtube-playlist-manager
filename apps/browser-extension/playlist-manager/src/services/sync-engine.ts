@@ -6,7 +6,7 @@
  * The UI reads status from `yph_sync_status` via storage.onChanged.
  */
 
-import { isRelayConfigured, loadSyncConfig } from "./sync/sync-config";
+import { isRelayConfigured, loadSyncConfig, getOrCreateDeviceId } from "./sync/sync-config";
 import { runAdapterPass } from "./sync-engine-adapters";
 import { deriveKeys, computeStorageAddress, computeAuthToken } from "./sync/keys";
 import type { RelayRecord } from "./sync/relay-transport";
@@ -199,13 +199,19 @@ export async function runOnce(): Promise<SyncStatus> {
     const space = await computeStorageAddress(syncKey);
     const authHash = await computeAuthToken(syncKey, space);
     const relayConfig = {
-      url: cfg?.relayUrl ?? "https://qvwitlpnetwthyhrobca.supabase.co",
-      anonKey: cfg?.relayAnonKey ?? "sb_publishable_HV50FQtJrkoNcKLsFk5BHQ_KUU2GeKb",
+      url:
+        (backends.includes("supabase-byo") && cfg?.supabaseUrl) ||
+        cfg?.relayUrl ||
+        "https://qvwitlpnetwthyhrobca.supabase.co",
+      anonKey:
+        (backends.includes("supabase-byo") && cfg?.supabaseKey) ||
+        cfg?.relayAnonKey ||
+        "sb_publishable_HV50FQtJrkoNcKLsFk5BHQ_KUU2GeKb",
     };
 
     await claimSpace(relayConfig, space, authHash);
 
-    const localDeviceId = (await getStorage()?.get("yph_sync_device_id")) || "unknown";
+    const localDeviceId = await getOrCreateDeviceId();
 
     phase = "pulling";
     await persistStatus();

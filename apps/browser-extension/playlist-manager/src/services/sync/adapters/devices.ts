@@ -52,6 +52,7 @@ export async function collectDirtyDevices(ctx: AdapterContext): Promise<RelayRec
       data: device,
     };
     const encrypted = await encryptRecord(envelope, keys);
+    await setShadow("devices", ctx.localDeviceId, device, version, ctx.localDeviceId);
     return [
       {
         collection: "devices",

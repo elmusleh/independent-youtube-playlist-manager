@@ -50,8 +50,10 @@ export async function collectDirtyHistory(ctx: AdapterContext): Promise<RelayRec
         payload: JSON.stringify(encrypted),
         deleted: false,
       });
+      await setShadow("history", videoId, entry, version, ctx.localDeviceId);
     }
   }
+  if (ctx.hlcState) ctx.hlcState.lastHlc = lastHlc;
   return dirty;
 }
 

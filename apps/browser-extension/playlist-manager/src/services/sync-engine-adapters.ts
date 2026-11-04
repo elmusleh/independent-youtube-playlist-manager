@@ -45,7 +45,14 @@ export async function runAdapterPass(ctx: AdapterPassContext): Promise<AdapterPa
       }
       return {};
     })();
-    return { playlists, settings, history: historyObj ?? {} };
+    // Read library revision for expectedRevision in mutateLibrary
+    const b = (globalThis as any).browser || (globalThis as any).chrome;
+    let revision = 0;
+    if (b?.storage?.local) {
+      const stored = await b.storage.local.get("yph_library_revision");
+      revision = stored?.yph_library_revision ?? 0;
+    }
+    return { playlists, settings, history: historyObj ?? {}, revision };
   };
   const mutateLibrary = async (op: any) => {
     const w = (globalThis as any).window;
@@ -81,61 +88,79 @@ export async function runAdapterPass(ctx: AdapterPassContext): Promise<AdapterPa
   const hlcState = { lastHlc: undefined as any };
   const ctxBase = { syncKey: ctx.syncKey, localDeviceId: ctx.localDeviceId, hlcState };
 
+  const content = ctx.cfg?.content ?? { playlists: true, settings: false, history: false };
+
   // Playlists
-  const playlistCtx = {
-    ...ctxBase,
-    relayConfig: ctx.relayConfig,
-    librarySnapshot: async () => ({ playlists: (await librarySnapshot()).playlists }),
-    mutateLibrary,
-  };
-  const dirtyPlaylists = await collectDirtyPlaylists(playlistCtx as any);
-  const remotePlaylists = (incomingByCollection.get("playlists") ?? []).map((r: any) => ({
-    rid: r.rid,
-    payload: r.payload,
-    deleted: r.deleted,
-    version: r.version,
-  }));
-  const pr = await applyRemotePlaylists(playlistCtx as any, remotePlaylists);
-  appliedCount += pr.applied;
-  failed.push(...pr.failed);
+  if (content.playlists !== false) {
+    const playlistCtx = {
+      ...ctxBase,
+      relayConfig: ctx.relayConfig,
+      librarySnapshot: async () => {
+        const snap = await librarySnapshot();
+        return { playlists: snap.playlists, revision: snap.revision };
+      },
+      mutateLibrary,
+    };
+    const dirtyPlaylists = await collectDirtyPlaylists(playlistCtx as any);
+    const remotePlaylists = (incomingByCollection.get("playlists") ?? []).map((r: any) => ({
+      rid: r.rid,
+      payload: r.payload,
+      deleted: r.deleted,
+      version: r.version,
+    }));
+    const pr = await applyRemotePlaylists(playlistCtx as any, remotePlaylists);
+    appliedCount += pr.applied;
+    failed.push(...pr.failed);
+
+    allDirty.push(...dirtyPlaylists);
+  }
 
   // History
-  const historyCtx = {
-    ...ctxBase,
-    librarySnapshot: async () => ({ history: (await librarySnapshot()).history }),
-    saveHistory,
-  };
-  const dirtyHistory = await collectDirtyHistory(historyCtx as any);
-  const remoteHistory = (incomingByCollection.get("history") ?? []).map((r: any) => ({
-    rid: r.rid,
-    payload: r.payload,
-    deleted: r.deleted,
-    version: r.version,
-  }));
-  const hr = await applyRemoteHistory(historyCtx as any, remoteHistory);
-  appliedCount += hr.applied;
-  failed.push(...hr.failed);
+  if (content.history === true) {
+    const historyCtx = {
+      ...ctxBase,
+      librarySnapshot: async () => ({ history: (await librarySnapshot()).history }),
+      saveHistory,
+    };
+    const dirtyHistory = await collectDirtyHistory(historyCtx as any);
+    const remoteHistory = (incomingByCollection.get("history") ?? []).map((r: any) => ({
+      rid: r.rid,
+      payload: r.payload,
+      deleted: r.deleted,
+      version: r.version,
+    }));
+    const hr = await applyRemoteHistory(historyCtx as any, remoteHistory);
+    appliedCount += hr.applied;
+    failed.push(...hr.failed);
+
+    allDirty.push(...dirtyHistory);
+  }
 
   // Settings
-  const settingsCtx = {
-    ...ctxBase,
-    librarySnapshot: async () => ({ settings: (await librarySnapshot()).settings }),
-    saveSettings,
-  };
-  const dirtySettings = await collectDirtySettings(settingsCtx as any);
-  const remoteSettings = (incomingByCollection.get("settings") ?? []).map((r: any) => ({
-    rid: r.rid,
-    payload: r.payload,
-    deleted: r.deleted,
-    version: r.version,
-  }));
-  const sr = await applyRemoteSettings(settingsCtx as any, remoteSettings);
-  appliedCount += sr.applied;
-  failed.push(...sr.failed);
+  if (content.settings === true) {
+    const settingsCtx = {
+      ...ctxBase,
+      librarySnapshot: async () => ({ settings: (await librarySnapshot()).settings }),
+      saveSettings,
+    };
+    const dirtySettings = await collectDirtySettings(settingsCtx as any);
+    const remoteSettings = (incomingByCollection.get("settings") ?? []).map((r: any) => ({
+      rid: r.rid,
+      payload: r.payload,
+      deleted: r.deleted,
+      version: r.version,
+    }));
+    const sr = await applyRemoteSettings(settingsCtx as any, remoteSettings);
+    appliedCount += sr.applied;
+    failed.push(...sr.failed);
 
-  // Devices
+    allDirty.push(...dirtySettings);
+  }
+
+  // Devices (always sync)
   const devicesCtx = {
     ...ctxBase,
+    platform: (globalThis as any).navigator?.platform ?? "unknown",
     librarySnapshot: async () => ({ devices: [] }),
     saveDevices: async (d: any) => {
       await ctx.storage.set({ yph_sync_devices: d });
@@ -152,12 +177,7 @@ export async function runAdapterPass(ctx: AdapterPassContext): Promise<AdapterPa
   appliedCount += dr.applied;
   failed.push(...dr.failed);
 
-  const allDirty: RelayRecord[] = [
-    ...dirtyPlaylists,
-    ...dirtyHistory,
-    ...dirtySettings,
-    ...dirtyDevices,
-  ];
+  allDirty.push(...dirtyDevices);
 
   const maxSeq =
     ctx.incoming.length > 0 ? Math.max(...ctx.incoming.map((r: any) => r.seq)) : ctx.sinceSeq;

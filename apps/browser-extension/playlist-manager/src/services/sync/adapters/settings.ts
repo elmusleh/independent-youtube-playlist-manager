@@ -50,8 +50,10 @@ export async function collectDirtySettings(ctx: AdapterContext): Promise<RelayRe
         payload: JSON.stringify(encrypted),
         deleted: false,
       });
+      await setShadow("settings", key, value, version, ctx.localDeviceId);
     }
   }
+  if (ctx.hlcState) ctx.hlcState.lastHlc = lastHlc;
   return dirty;
 }
 
@@ -87,14 +89,18 @@ export async function applyRemoteSettings(
   const { merged } = mergeSettings(local, remoteObj, baseCopies);
 
   const failed: string[] = [];
+  let appliedOk = true;
   try {
     await ctx.saveSettings(merged);
   } catch (e) {
+    appliedOk = false;
     failed.push(`settings: ${e instanceof Error ? e.message : String(e)}`);
   }
 
-  for (const [key, value] of Object.entries(merged)) {
-    await setShadow("settings", key, value, Date.now(), ctx.localDeviceId);
+  if (appliedOk) {
+    for (const [key, value] of Object.entries(merged)) {
+      await setShadow("settings", key, value, Date.now(), ctx.localDeviceId);
+    }
   }
 
   return { applied: Object.keys(merged).length, failed };

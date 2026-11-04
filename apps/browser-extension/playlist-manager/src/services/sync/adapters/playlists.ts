@@ -60,8 +60,11 @@ export async function collectDirtyPlaylists(ctx: AdapterContext): Promise<RelayR
         payload: JSON.stringify(encrypted),
         deleted: false,
       });
+      // Update shadow so this record is not re-pushed next cycle
+      await setShadow("playlists", p.id, p, version, ctx.localDeviceId);
     }
   }
+  if (ctx.hlcState) ctx.hlcState.lastHlc = lastHlc;
   return dirty;
 }
 

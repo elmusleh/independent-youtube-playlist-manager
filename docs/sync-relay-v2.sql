@@ -20,6 +20,7 @@ create or replace function public.check_rate_limit(p_space text)
 returns boolean
 language plpgsql
 security definer
+set search_path = public
 as $$
 declare
   v_count int;
@@ -33,6 +34,10 @@ begin
   return v_count <= 100;
 end;
 $$;
+
+-- Revoke direct access from anon
+revoke all on table public.sync_rate_limit from anon;
+revoke execute on function public.check_rate_limit(text) from public, anon;
 
 create table if not exists public.sync_spaces (
   space text primary key,            -- SHA-256 address derived from the sync key
@@ -74,6 +79,9 @@ security definer
 set search_path = public
 as $$
 begin
+  if not public.check_rate_limit(p_space) then
+    raise exception 'rate limit exceeded' using errcode = 'P0001';
+  end if;
   if p_space is null or length(p_space) < 32 then
     raise exception 'invalid space';
   end if;
@@ -121,6 +129,9 @@ security definer
 set search_path = public
 as $$
 begin
+  if not public.check_rate_limit(p_space) then
+    raise exception 'rate limit exceeded' using errcode = 'P0001';
+  end if;
   if not exists (
     select 1 from public.sync_spaces
     where space = p_space and auth_hash = p_auth_hash
@@ -162,6 +173,9 @@ declare
   new_seq bigint;
   status text;
 begin
+  if not public.check_rate_limit(p_space) then
+    raise exception 'rate limit exceeded' using errcode = 'P0001';
+  end if;
   if not exists (
     select 1 from public.sync_spaces
     where space = p_space and auth_hash = p_auth_hash
@@ -243,6 +257,9 @@ security definer
 set search_path = public
 as $$
 begin
+  if not public.check_rate_limit(p_space) then
+    raise exception 'rate limit exceeded' using errcode = 'P0001';
+  end if;
   if not exists (
     select 1 from public.sync_spaces
     where space = p_space and auth_hash = p_auth_hash
