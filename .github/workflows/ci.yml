@@ -42,40 +42,41 @@ jobs:
       - name: Start isolated sync relay fixture
         run: |
           echo "Starting Docker Compose..."
-          docker compose -f docker-compose.test.yml up -d --wait
-          echo "Docker Compose up completed"
-        timeout-minutes: 15
+          docker compose -f docker-compose.test.yml up -d
+          echo "Docker Compose up started"
+        timeout-minutes: 5
 
-      - name: Verify containers are running
+      - name: Wait for Postgres to be healthy
         run: |
-          echo "Checking container status..."
-          docker compose -f docker-compose.test.yml ps
-          docker compose -f docker-compose.test.yml ps --format json | jq -r '.[] | select(.State != "running") | .Name' | grep -q . && exit 1 || echo "All containers running"
-        timeout-minutes: 2
-
-      - name: Verify Postgres health
-        run: |
-          for attempt in $(seq 1 30); do
+          echo "Waiting for Postgres healthcheck..."
+          for attempt in $(seq 1 60); do
             if docker compose -f docker-compose.test.yml exec -T pg pg_isready -U postgres >/dev/null 2>&1; then
+              echo "Postgres is healthy"
               exit 0
             fi
+            echo "Attempt $attempt: Postgres not ready yet, waiting..."
             sleep 2
           done
+          echo "Postgres healthcheck timed out"
           docker compose -f docker-compose.test.yml logs pg
           exit 1
         timeout-minutes: 5
 
       - name: Wait for PostgREST
         run: |
+          echo "Waiting for PostgREST..."
           for attempt in $(seq 1 30); do
             if curl --fail --silent http://127.0.0.1:3312/ >/dev/null; then
+              echo "PostgREST is ready"
               exit 0
             fi
+            echo "Attempt $attempt: PostgREST not ready yet, waiting..."
             sleep 2
           done
-          docker compose -f docker-compose.test.yml logs
+          echo "PostgREST timed out"
+          docker compose -f docker-compose.test.yml logs postgrest
           exit 1
-        timeout-minutes: 5
+        timeout-minutes: 3
 
       - name: Simulate legacy relay table grants in the isolated fixture
         run: docker compose -f docker-compose.test.yml exec -T pg psql -U postgres -v ON_ERROR_STOP=1 -c 'GRANT ALL ON TABLE public.sync_spaces, public.sync_records, public.sync_rate_limit TO PUBLIC, anon, authenticated'
