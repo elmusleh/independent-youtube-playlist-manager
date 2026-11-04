@@ -26,6 +26,8 @@ export type AdapterContext = {
   platform: string;
   saveDevices: (devices: DeviceRecord[]) => Promise<void>;
   librarySnapshot: () => Promise<{ devices: DeviceRecord[] }>;
+  // shared HLC state for monotonicity across adapters
+  hlcState?: { lastHlc: any };
 };
 
 export async function collectDirtyDevices(ctx: AdapterContext): Promise<RelayRecord[]> {
@@ -38,7 +40,8 @@ export async function collectDirtyDevices(ctx: AdapterContext): Promise<RelayRec
   const keys = await deriveKeys(ctx.syncKey);
   if (await isDirty("devices", ctx.localDeviceId, device)) {
     const rid = await computeRecordId(ctx.syncKey, "devices", ctx.localDeviceId);
-    const hlc = await getHlc(ctx.syncKey);
+    const hlc = await getHlc(ctx.syncKey, ctx.hlcState?.lastHlc);
+    if (ctx.hlcState) ctx.hlcState.lastHlc = hlc;
     const version = hlc.value;
     const envelope: RecordEnvelope = {
       v: RECORD_VERSION,

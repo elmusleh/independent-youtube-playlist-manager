@@ -19,13 +19,15 @@ export type AdapterContext = {
   librarySnapshot: () => Promise<{ history: Record<string, unknown> }>;
   // injected: persist merged history back to storage
   saveHistory: (entries: unknown[]) => Promise<void>;
+  // shared HLC state for monotonicity across adapters
+  hlcState?: { lastHlc: any };
 };
 
 export async function collectDirtyHistory(ctx: AdapterContext): Promise<RelayRecord[]> {
   const { history } = await ctx.librarySnapshot();
   const keys = await deriveKeys(ctx.syncKey);
   const dirty: RelayRecord[] = [];
-  let lastHlc: any = undefined;
+  let lastHlc: any = ctx.hlcState?.lastHlc;
   for (const [videoId, entry] of Object.entries(history)) {
     if (await isDirty("history", videoId, entry)) {
       const rid = await computeRecordId(ctx.syncKey, "history", videoId);

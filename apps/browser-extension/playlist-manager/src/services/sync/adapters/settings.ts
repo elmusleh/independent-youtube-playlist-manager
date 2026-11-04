@@ -18,13 +18,15 @@ export type AdapterContext = {
   localDeviceId: string;
   librarySnapshot: () => Promise<{ settings: Record<string, unknown> }>;
   saveSettings: (settings: Record<string, unknown>) => Promise<void>;
+  // shared HLC state for monotonicity across adapters
+  hlcState?: { lastHlc: any };
 };
 
 export async function collectDirtySettings(ctx: AdapterContext): Promise<RelayRecord[]> {
   const { settings } = await ctx.librarySnapshot();
   const keys = await deriveKeys(ctx.syncKey);
   const dirty: RelayRecord[] = [];
-  let lastHlc: any = undefined;
+  let lastHlc: any = ctx.hlcState?.lastHlc;
   for (const [key, value] of Object.entries(settings)) {
     if (!isSyncableSetting(key)) continue;
     if (await isDirty("settings", key, value)) {

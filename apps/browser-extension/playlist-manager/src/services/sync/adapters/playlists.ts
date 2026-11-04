@@ -29,13 +29,15 @@ export type AdapterContext = {
   // injected by the engine
   librarySnapshot: () => Promise<{ playlists: any[]; revision: number }>;
   mutateLibrary: (op: any) => Promise<any>;
+  // shared HLC state for monotonicity across adapters
+  hlcState?: { lastHlc: any };
 };
 
 export async function collectDirtyPlaylists(ctx: AdapterContext): Promise<RelayRecord[]> {
   const { playlists } = await ctx.librarySnapshot();
   const keys = await deriveKeys(ctx.syncKey);
   const dirty: RelayRecord[] = [];
-  let lastHlc: any = undefined;
+  let lastHlc: any = ctx.hlcState?.lastHlc;
   for (const p of playlists) {
     if (await isDirty("playlists", p.id, p)) {
       const rid = await computeRecordId(ctx.syncKey, "playlists", p.id);

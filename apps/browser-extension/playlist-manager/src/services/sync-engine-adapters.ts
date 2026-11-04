@@ -78,7 +78,8 @@ export async function runAdapterPass(ctx: AdapterPassContext): Promise<AdapterPa
     incomingByCollection.get(r.collection)!.push(r);
   }
 
-  const ctxBase = { syncKey: ctx.syncKey, localDeviceId: ctx.localDeviceId };
+  const hlcState = { lastHlc: undefined as any };
+  const ctxBase = { syncKey: ctx.syncKey, localDeviceId: ctx.localDeviceId, hlcState };
 
   // Playlists
   const playlistCtx = {
