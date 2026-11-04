@@ -53,6 +53,28 @@ parallel agent.
 conflict involves `AGENTS.md`, resolve it **before** the merge and flag it to the owner —
 never leave it to mid-merge.
 
+## Supabase MCP access
+
+The Supabase MCP server (`https://mcp.supabase.com/mcp`) is **enabled** in
+`~/.hermes/config.yaml` (auth: oauth, enabled: true). The OAuth token lives at
+`~/.hermes/mcp-tokens/supabase.json` and has `database:read`/`database:write` scope.
+
+**This project's Supabase instance:** `independent-youtube-playlist-manager`
+(project ref: `pfydngsbcmuhsqqjbcte`, region: eu-west-1, status: ACTIVE_HEALTHY).
+
+**Agent instructions:**
+
+- At session start, verify the Supabase MCP tools are loaded (search for "supabase"
+  tools). If present, use them directly to run SQL, inspect schema, manage RLS, etc.
+- If the MCP tools are NOT loaded, check `~/.hermes/config.yaml` for
+  `mcp.servers.supabase.enabled`. If it is `false`, tell the user to set it to
+  `true` and restart the session — do NOT silently fall back without informing them.
+- Fallback (if MCP truly unavailable): use the Supabase Management API with the
+  OAuth token from `~/.hermes/mcp-tokens/supabase.json`:
+  `POST https://api.supabase.com/v1/projects/pfydngsbcmuhsqqjbcte/database/query`
+- Other Supabase projects under the same account: `mawqiei.net`
+  (ref: `qvwitlpnetwthyhrobca`), `go-fish` (ref: `moiajtcnyimeqllextxn`, INACTIVE).
+
 ## UI consistency
 
 - Reuse existing UI patterns and shared components across views for visual and behavioral consistency; prefer extending shared components over bespoke markup.
