@@ -18,20 +18,30 @@ repository's Postgres/PostgREST fixture with migrations `0002` and `0003` applie
 not verify that either migration or gateway-level protections are active on the hosted relay.
 Manual Chrome/Firefox/Fenix multi-device verification is still required.
 
+## Legacy v1 relay recovery — release blocker
+
+The former `relay_snapshots` snapshot table is not present at the hosted endpoint (read-only
+request returned HTTP 404 on 2026-11-04). The v2 `sync_spaces` and `sync_records` tables
+reject direct anon reads (401), as intended. The table's absence does not reveal whether it
+contained user data before removal or whether Supabase PITR can recover it. V1 uses a
+single encrypted snapshot and PBKDF2; v2 uses per-record envelopes and HKDF-derived keys.
+No client-side v1→v2 migration is currently implemented. Do not claim old remote data was
+migrated, and do not mark release 1.3 data-safe for previously synced users until the owner
+checks recoverable backups and approves the recovery path. Existing local data must remain
+untouched while this is unresolved.
+
 This document supersedes `SYNC_HARDENING_PLAN.md` for the v2 work. The original
 diagnosis lives in the Antigravity implementation plan
 (`~/.gemini/antigravity/brain/17ee57d2-9794-466b-bfff-1e542baa6784/implementation_plan.md`).
 
 ## What is done
 
-### Phase 0 — Hotfix (so v1 works today)
+### Phase 0 — Legacy v1 client behavior (hosted availability no longer assumed)
 
-- Sync view: `setupHint` defined, 20-character Crockford key validation, "Generate key" button.
-- "Sync now" button passes its class via `className` (SimpleButton prop).
-- Polling + one pull start when the editor opens (`App.svelte`), not only on the Sync page.
-- `docs/sync-relay.sql` and `docs/SYNC_RELAY_SETUP.md` create `relay_snapshots(payload)`,
-  matching `encrypted-sync-service.ts`.
-- Key-acceptance test for lowercase and handwritten O/I/L input.
+- Historical v1 code used `docs/sync-relay.sql` and `relay_snapshots(payload)`.
+- The current hosted project returns 404 for that table; old clients using the v1 endpoint cannot be assumed to sync today.
+- No migration from a v1 snapshot to v2 records is implemented. Preserve local data and require backup/recovery guidance before enabling v2 for an older configuration.
+- Key acceptance tests cover lowercase input and handwritten O/I/L glyphs.
 
 ### Phase 1 — Protocol core (pure, unit-tested)
 
@@ -145,7 +155,7 @@ error | offline | paused`), single-flight guard, exponential backoff, status per
 - `docs/sync-relay-v2.sql` applied to hosted Supabase (`qvwitlpnetwthyhrobca`):
   tables `sync_spaces`, `sync_records`, RLS enabled, RPCs `sync_claim`,
   `sync_pull`, `sync_push`, `sync_delete_space` — all verified.
-- v1 `relay_snapshots` table dropped.
+- A read-only endpoint probe returns 404 for `relay_snapshots`; whether it previously held user rows or a recoverable Supabase backup exists is unknown.
 - `PRIVACY_POLICY.md` updated to document encrypted v2 sync.
 
 ## Test status

@@ -6,7 +6,11 @@
  * The UI reads status from `yph_sync_status` via storage.onChanged.
  */
 
-import { isRelayConfigured, getOrCreateDeviceId } from "./sync/sync-config";
+import { isRelayConfigured, getOrCreateDeviceId, loadSyncConfig } from "./sync/sync-config";
+import {
+  LEGACY_SYNC_RECOVERY_NOTICE,
+  needsV2RelayAcknowledgement,
+} from "./sync/sync-config-compatibility";
 import { runAdapterPass } from "./sync-engine-adapters";
 import { pushCandidatesWithConflictResolution } from "./sync-engine-push";
 import { registerSyncEngine } from "./sync-engine-registration";
@@ -77,9 +81,9 @@ export async function runOnce(): Promise<SyncStatus> {
       (globalThis as any).browser?.storage?.local || (globalThis as any).chrome?.storage?.local;
     if (!storage) throw new Error("storage unavailable");
 
-    const cfg = (await getStorage()?.get("yph_sync_config")) ?? {};
-    const syncKey = cfg?.syncKey;
-    const backends = Array.isArray(cfg?.backends) ? cfg.backends : [];
+    const cfg = await loadSyncConfig();
+    const syncKey = cfg.syncKey;
+    const backends = cfg.backends;
 
     if (!syncKey || backends.length === 0) {
       phase = "idle";
@@ -87,6 +91,17 @@ export async function runOnce(): Promise<SyncStatus> {
       status.lastSummary =
         backends.length === 0 ? "Offline mode (sync disabled)" : "No sync key configured";
       status.lastRunAt = Date.now();
+      await persistStatus();
+      return getStatus();
+    }
+
+    if (needsV2RelayAcknowledgement(cfg)) {
+      phase = "paused";
+      status.lastError = LEGACY_SYNC_RECOVERY_NOTICE;
+      status.lastSummary = "Sync paused until the previous setup is reviewed";
+      status.lastRunAt = Date.now();
+      status.pendingCount = 0;
+      status.failedCount = 0;
       await persistStatus();
       return getStatus();
     }
@@ -191,10 +206,15 @@ export async function runOnce(): Promise<SyncStatus> {
       !result.cursorBlocked
     ) {
       cfg.lastSeq = result.maxSeq;
-      await storage.set({ yph_sync_config: cfg });
     } else if ((incoming.length > 0 || additionalIncomingCount > 0) && result.failed.length > 0) {
       // Keep lastSeq unchanged so failed records are re-pulled next run.
       status.lastError = result.failed.join("; ");
+    }
+
+    if (result.failed.length === 0 && !result.cursorBlocked) {
+      cfg.syncConfigVersion = 2;
+      cfg.syncProtocolVersion = 2;
+      await storage.set({ yph_sync_config: cfg });
     }
 
     phase = "idle";

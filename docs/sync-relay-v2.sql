@@ -1,8 +1,10 @@
 -- IYPM sync relay v2 — record-level, RPC-only, encrypted.
 -- Bootstrap a new relay with this file. Existing deployments must use numbered migrations;
 -- do not rerun this schema file to apply changes (CREATE TABLE IF NOT EXISTS won't alter tables).
--- Supersedes docs/sync-relay.sql (v1 single-snapshot). v1 table is left in place
--- for one release so older clients can still read; drop it after migration.
+-- Supersedes docs/sync-relay.sql (v1 single-snapshot). This schema does not migrate the v1
+-- table or its payloads. The hosted project currently returns 404 for relay_snapshots;
+-- this does not prove the old table was empty. Do not claim old remote data was migrated.
+-- Verify recoverable database backups and the user-facing migration path before v2 launch.
 
 -- ---------------------------------------------------------------------------
 -- Tables
