@@ -15,6 +15,8 @@
   import SyncContents from "../components/sync/SyncContents.svelte";
   import SyncActivity from "../components/sync/SyncActivity.svelte";
   import SyncAdvanced from "../components/sync/SyncAdvanced.svelte";
+  import SyncScheduleCard from "../components/sync/SyncScheduleCard.svelte";
+  import SyncOfflineCard from "../components/sync/SyncOfflineCard.svelte";
   import {
     loadSyncConfig,
     saveSyncConfig,
@@ -348,6 +350,12 @@
 
       <!-- Sync Activity Log -->
       <SyncActivity entries={syncLogEntries} />
+
+      <!-- Sync Schedule -->
+      <SyncScheduleCard {config} onPersist={persist} onLog={addLogEntry} />
+
+      <!-- Offline Mode -->
+      <SyncOfflineCard {config} onPersist={persist} onLog={addLogEntry} />
 
       <!-- API Setup Link -->
       <SyncAdvanced />

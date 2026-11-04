@@ -21,7 +21,7 @@
     entries: LogEntry[];
   } = $props();
 
-  let showSyncLog = $state(false);
+  let showSyncLog = $state(true);
 </script>
 
 <!-- Sync Activity Log -->
@@ -38,7 +38,7 @@
       {#if entries.length === 0}
         <p class="sub-text empty-log">No sync activity yet. Click "Sync now" to start.</p>
       {:else}
-        {#each entries as entry}
+        {#each entries as entry (entry.time + entry.message)}
           <div class="log-entry type-{entry.type}">
             <Fa
               icon={entry.type === "success"
@@ -49,7 +49,7 @@
                     ? faPauseCircle
                     : faInfoCircle}
             />
-            <span class="log-time">{new Date(entry.time).toLocaleTimeString()}</span>
+            <span class="log-time">{new Date(entry.time).toLocaleString()}</span>
             <span class="log-message">{entry.message}</span>
           </div>
         {/each}
@@ -66,18 +66,18 @@
     margin-bottom: 0.75rem;
   }
   .sync-log {
-    max-height: 300px;
+    max-height: 320px;
     overflow-y: auto;
-    border: 1px solid var(--border, #e5e7eb);
+    border: 1px solid var(--border-color, #e5e7eb);
     border-radius: 8px;
-    background: var(--muted, #f9fafb);
+    background: var(--bg-secondary, #f9fafb);
   }
   .log-entry {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 0.5rem;
     padding: 0.5rem 0.75rem;
-    border-bottom: 1px solid var(--border, #e5e7eb);
+    border-bottom: 1px solid var(--border-color, #e5e7eb);
     font-size: 0.8rem;
   }
   .log-entry:last-child {
@@ -92,13 +92,11 @@
   .log-entry.type-warning .log-message {
     color: var(--warning, #f59e0b);
   }
-  .log-entry.type-info .log-message {
-    color: var(--foreground, #111);
-  }
   .log-time {
     font-variant-numeric: tabular-nums;
-    color: var(--muted-foreground, #9ca3af);
-    min-width: 70px;
+    color: var(--text-muted, #9ca3af);
+    min-width: 150px;
+    font-size: 0.75rem;
   }
   .empty-log {
     padding: 1.5rem;

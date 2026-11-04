@@ -229,7 +229,7 @@ async function performSync(options: { push?: boolean } = {}): Promise<void> {
     // Read every enabled backend and take the newest snapshot (mirror: any may win).
     let newestRemote: SyncSnapshot | null = null;
     const readErrors: string[] = [];
-    notifyProgress("reading", "Checking remote backends…");
+    notifyProgress("reading", "Sync started — checking remote backends…");
     for (const transport of transports) {
       const result = await transport.download(config.syncKey!);
       if (result.status === "ok") {
@@ -252,7 +252,7 @@ async function performSync(options: { push?: boolean } = {}): Promise<void> {
       config.lastSyncedAt = Date.now();
       await saveSyncConfig(config);
       isSyncing = false;
-      notifyProgress("error", config.lastSyncSummary);
+      notifyProgress("error", config.lastSyncSummary + " (will retry)");
       return;
     }
 
@@ -262,6 +262,7 @@ async function performSync(options: { push?: boolean } = {}): Promise<void> {
       // Another device wrote newer data — adopt it (LWW: newer wins).
       notifyProgress("pulling", "Downloading latest data…");
       await backupLocal();
+      notifyProgress("merging", "Merging pulled changes…");
       const pullResult = await applyRemote(newestRemote.payload, selection);
       applied = pullResult.applied;
       const pullFailed = pullResult.failed;
@@ -291,6 +292,7 @@ async function performSync(options: { push?: boolean } = {}): Promise<void> {
     } else if (push) {
       // We are at least as new — push with a fresh Lamport timestamp to every backend.
       notifyProgress("preparing", "Preparing local changes…");
+      notifyProgress("merging", "Merging with remote snapshot…");
       const source = await collectSource();
       // R2: non-destructive category merge. Categories disabled locally are preserved
       // from the newest remote snapshot instead of being dropped (which would erase
@@ -330,7 +332,7 @@ async function performSync(options: { push?: boolean } = {}): Promise<void> {
       if (pushError) {
         config.lastError = pushError;
         config.lastSyncSummary = `Sync failed: ${pushError}`;
-        notifyProgress("error", config.lastSyncSummary);
+        notifyProgress("error", config.lastSyncSummary + " (will retry)");
       } else if (uploadConflict) {
         // Another device wrote newer data during our push — pull it instead of
         // surfacing an error. This makes sync silent and self-healing.
@@ -394,7 +396,7 @@ async function performSync(options: { push?: boolean } = {}): Promise<void> {
       // Config write is secondary; the sync error is already surfaced.
     }
     console.warn("[AUTO-SYNC] exception:", e);
-    notifyProgress("error", config2.lastSyncSummary);
+    notifyProgress("error", config2.lastSyncSummary + " (will retry)");
   } finally {
     isSyncing = false;
     notifyProgress("idle", "");
