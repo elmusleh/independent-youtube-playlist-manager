@@ -1,10 +1,6 @@
 /* Sync view — shared styles for the cross-device sync feature. Imported in main.ts. */
 
-.sync-page {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 1rem;
-}
+/* Width/padding inherited from .view-body (settings.css) so Sync matches Settings. */
 
 .settings-grid {
   display: grid;
