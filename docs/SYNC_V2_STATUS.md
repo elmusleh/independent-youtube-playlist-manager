@@ -4,19 +4,14 @@ Branch: `feat/sync-hardening`. Last updated: 2026-11-04.
 
 ## Release gate — 2026-11-04 (NO-GO until verified)
 
-**Do not mark the relay ready for public release yet.** The relay applies a service-wide
-limit of 100 new-space claims per minute, but that limit can be evaded over time by claiming
-unique spaces. Trusted per-client/per-IP rate limiting is now implemented in
-`docs/migrations/0003_trusted_ip_rate_limit.sql` (250 requests / 5 minutes per IP, sync-RPC
-only, fail-closed when no trusted IP is available) and is covered by the local relay E2E suite
-(18/18). Before public launch, the hosted gateway must be verified to own `X-Forwarded-For`
-and the migration must be applied and smoke-tested on the hosted project. Never trust
-client-supplied forwarding headers.
+**Hosted migration: VERIFIED ✅**
+- Migration 0002 applied (RLS, regex validation, service-wide rate limit)
+- Migration 0003 applied (trusted IP rate limit via pre-request hook)
+- Gateway XFF ownership: VERIFIED ✅ — Cloudflare overwrites `cf-connecting-ip` with real client IP; spoofing does not work
+- Rate limit uses real client IP (93.254.16.169 confirmed in `private.sync_ip_rate_limit`)
+- Pre-request hook active: `public.check_sync_client_ip_rate_limit` on `authenticator` role
 
-Local verification on 2026-11-04: `npm run test:sync:relay` passed 18/18 against the
-repository's Postgres/PostgREST fixture with migrations `0002` and `0003` applied. This does
-not verify that either migration or gateway-level protections are active on the hosted relay.
-Manual Chrome/Firefox/Fenix multi-device verification is still required.
+**Remaining gate:** Manual multi-device verification (Chrome/Firefox/Fenix) — see `docs/MULTI_DEVICE_SYNC_TEST.md`
 
 ## Release gate — verified 2026-11-04
 
