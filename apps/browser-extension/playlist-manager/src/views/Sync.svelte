@@ -435,8 +435,6 @@
 
       <!-- Sync Advanced -->
       <SyncAdvanced />
-      <!-- Data portability (local storage + backup) -->
-      <h4 class="data-portability-heading">Data portability</h4>
       <StorageSettings />
       <BackupSettings />
     </div>

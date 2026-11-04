@@ -312,14 +312,3 @@
 .sync-key-top {
   margin-bottom: 24px;
 }
-
-/* Data portability subheading spanning all masonry columns. */
-.sync-page .data-portability-heading {
-  column-span: all;
-  margin: 8px 0 0;
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--text-muted, var(--text-secondary));
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
