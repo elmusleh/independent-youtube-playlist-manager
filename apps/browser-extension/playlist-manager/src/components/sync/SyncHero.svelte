@@ -24,7 +24,6 @@
     onSyncNow,
     estimatedRemaining,
     categoryProgress,
-    logEntries = [],
   }: {
     syncIsOn: boolean;
     isSyncing: boolean;
@@ -45,14 +44,8 @@
       history: { processed: number; applied: number; total: number };
       devices: { processed: number; applied: number; total: number };
     };
-    logEntries?: { time: number; message: string; type: string }[];
   } = $props();
 
-  let showLog = $state(false);
-  const recentLogs = $derived((logEntries ?? []).slice(-5).reverse());
-  const latestLog = $derived(
-    logEntries && logEntries.length ? logEntries[logEntries.length - 1] : null
-  );
 </script>
 
 <!-- Main Status Banner -->
@@ -93,21 +86,6 @@
           Ready to sync. Click "Sync now" to begin.
         {/if}
       </p>
-      {#if latestLog && !isSyncing}
-        <p class="latest-log">{latestLog.message}</p>
-      {/if}
-      {#if logEntries && logEntries.length > 0}
-        <button type="button" class="log-toggle" onclick={() => (showLog = !showLog)}>
-          {showLog ? "Hide" : "Show"} recent activity
-        </button>
-        {#if showLog}
-          <div class="recent-log">
-            {#each recentLogs as entry (entry.time + entry.message)}
-              <div class="log-line type-{entry.type}">{entry.message}</div>
-            {/each}
-          </div>
-        {/if}
-      {/if}
       {#if isSyncing && syncProgress > 0 && syncProgress < 100}
         <div class="progress-bar-container">
           <div class="progress-bar" style="width: {syncProgress}%"></div>

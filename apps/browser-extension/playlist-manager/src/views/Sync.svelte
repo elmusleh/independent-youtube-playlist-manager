@@ -21,6 +21,7 @@
     saveSyncConfig,
     DEFAULT_SYNC_CONFIG,
     isRelayConfigured,
+    RELAY_SUPABASE_URL,
     type SyncConfig,
     type SyncBackend,
   } from "../services/sync/sync-config.js";
@@ -91,11 +92,6 @@
   });
   let estimatedRemaining = $state<number | null>(null);
 
-  let syncLogEntries: Array<{
-    time: number;
-    message: string;
-    type: "info" | "success" | "error" | "warning";
-  }> = $state([]);
 
   const syncIsOn = $derived(!!(config.syncKey && config.backends.length > 0));
 
@@ -182,7 +178,10 @@
   }
 
   function addLogEntry(message: string, type: "info" | "success" | "error" | "warning" = "info") {
-    syncLogEntries = [{ time: Date.now(), message, type }, ...syncLogEntries.slice(0, 49)];
+    if (window.logSystemEvent) {
+      const level = type === "error" ? "ERROR" : type === "warning" ? "WARN" : "INFO";
+      window.logSystemEvent(level, `[SYNC] ${message}`);
+    }
   }
 
   function toggleBackend(backend: SyncBackend, enabled: boolean) {
@@ -244,7 +243,9 @@
   async function testConnection() {
     addLogEntry("Testing connection…", "info");
     if (config.backends.includes("relay")) {
-      const granted = await requestSyncHostPermission(config);
+      const permissions =
+        (globalThis as any).browser?.permissions || (globalThis as any).chrome?.permissions;
+      const granted = await requestSyncHostPermission(RELAY_SUPABASE_URL, permissions);
       if (!granted) {
         lastError = "Host permission for the relay was not granted.";
         addLogEntry(lastError, "error");
@@ -369,7 +370,6 @@
       onTestConnection={testConnection}
       {estimatedRemaining}
       {categoryProgress}
-      logEntries={syncLogEntries}
     />
 
     <SyncCounters {syncIsOn} {isSyncing} {lastSyncedAt} {knownDevices} {formatWhen} />

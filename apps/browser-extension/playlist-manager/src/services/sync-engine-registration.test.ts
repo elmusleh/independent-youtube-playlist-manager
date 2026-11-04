@@ -10,6 +10,8 @@ const status: SyncStatus = {
   pendingCount: 0,
   incomingCount: 0,
   failedCount: 0,
+  pushedCount: 0,
+  pulledCount: 0,
   startedAt: null,
   estimatedMs: null,
   categoryProgress: {
