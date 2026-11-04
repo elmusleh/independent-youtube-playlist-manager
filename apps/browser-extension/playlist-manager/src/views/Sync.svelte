@@ -243,6 +243,7 @@
     addLogEntry("Manual sync started…", "info");
     await triggerSyncNow();
     await refreshStatus();
+    addLogEntry(lastSyncSummary || "Sync finished", lastError ? "error" : "success");
   }
 
   async function handleRotateKey() {

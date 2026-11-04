@@ -191,6 +191,7 @@ export async function runOnce(): Promise<SyncStatus> {
 
     let additionalIncomingCount = 0;
     let didPushSuccessfully = false;
+    let pushedCount = 0;
     if (result.allDirty.length > 0) {
       const pushOutcome = await pushCandidatesWithConflictResolution(
         {
@@ -212,6 +213,7 @@ export async function runOnce(): Promise<SyncStatus> {
       result.cursorBlocked ||= pushOutcome.cursorBlocked;
       additionalIncomingCount = pushOutcome.pulledCount;
       didPushSuccessfully = pushOutcome.didPushSuccessfully;
+      pushedCount = pushOutcome.pushedCount;
       // Notify peers via Realtime broadcast (best-effort, no data).
       if (didPushSuccessfully) {
         try {
@@ -241,12 +243,15 @@ export async function runOnce(): Promise<SyncStatus> {
     }
 
     phase = "idle";
+    const totalSynced = result.appliedCount + pushedCount;
     status.lastError = result.failed.length ? result.failed.join("; ") : null;
     status.lastSummary = result.failed.length
       ? `Partial: ${result.failed.join("; ")}`
       : result.cursorBlocked
-        ? `Synced ${result.appliedCount} records; cursor held while a collection is disabled`
-        : `Synced ${result.appliedCount} records`;
+        ? `Synced ${totalSynced} records; cursor held while a collection is disabled`
+        : totalSynced > 0
+          ? `Synced ${totalSynced} records`
+          : "Sync complete (no changes)";
     status.lastRunAt = Date.now();
     status.pendingCount = 0;
     status.failedCount = result.failed.length;

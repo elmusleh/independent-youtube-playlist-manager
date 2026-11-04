@@ -14,6 +14,7 @@ export type PushResolution = {
   cursorBlocked: boolean;
   didPushSuccessfully: boolean;
   pulledCount: number;
+  pushedCount: number;
 };
 
 const recordKey = (record: { collection: string; rid: string }) =>
@@ -30,6 +31,7 @@ export async function pushCandidatesWithConflictResolution(
     cursorBlocked: false,
     didPushSuccessfully: false,
     pulledCount: 0,
+    pushedCount: 0,
   };
   if (!initial.allDirty.length) return outcome;
 
@@ -40,6 +42,7 @@ export async function pushCandidatesWithConflictResolution(
     initial.allDirty
   );
   outcome.didPushSuccessfully = pushResults.some((result) => result.status === "ok");
+  outcome.pushedCount += pushResults.filter((result) => result.status === "ok").length;
 
   const conflicts = pushResults.filter((result) => result.status === "conflict");
   const conflictKeys = new Set(conflicts.map(recordKey));
@@ -132,6 +135,7 @@ export async function pushCandidatesWithConflictResolution(
       pushableRetryCandidates.map((candidate) => candidate.record)
     );
     outcome.didPushSuccessfully ||= retryResults.some((result) => result.status === "ok");
+    outcome.pushedCount += retryResults.filter((result) => result.status === "ok").length;
     outcome.failed.push(
       ...(await acknowledgePushedCandidates(
         pushableRetryCandidates,
