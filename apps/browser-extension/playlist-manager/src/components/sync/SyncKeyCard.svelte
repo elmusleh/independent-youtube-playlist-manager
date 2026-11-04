@@ -121,7 +121,11 @@
           <SimpleButton secondary onclick={copyKey}>
             <Fa icon={faCopy} /> Copy
           </SimpleButton>
-          <SimpleButton secondary title="Copies a link you can open on another device to auto-import this key" onclick={copyPairingLink}>
+          <SimpleButton
+            secondary
+            title="Copies a link you can open on another device to auto-import this key"
+            onclick={copyPairingLink}
+          >
             <Fa icon={faLink} /> Copy pairing link
           </SimpleButton>
         </div>
@@ -133,7 +137,11 @@
         <Fa icon={faTrash} /> Remove key from this device
       </SimpleButton>
       {#if onRotate}
-        <SimpleButton secondary title="Creates a new sync key and space from this device; the previous remote space is kept" onclick={() => onRotate?.()}>
+        <SimpleButton
+          secondary
+          title="Creates a new sync key and space from this device; the previous remote space is kept"
+          onclick={() => onRotate?.()}
+        >
           <Fa icon={faArrowsRotate} /> Rotate sync key
         </SimpleButton>
       {/if}

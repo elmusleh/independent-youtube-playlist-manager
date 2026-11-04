@@ -359,7 +359,6 @@ describe("sync engine real relay/storage path", () => {
     expect(state.yph_sync_config.lastSeq).toBe(0);
   });
 
-
   it("preserves device records across incremental pulls", async () => {
     const { runAdapterPass } = await import("./sync-engine-adapters");
     const storage = {

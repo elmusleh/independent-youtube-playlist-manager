@@ -1,6 +1,12 @@
 <script lang="ts">
   import Fa from "svelte-fa";
-  import { faHdd, faInfoCircle, faFolderOpen, faChevronDown, faChevronUp } from "@fortawesome/free-solid-svg-icons";
+  import {
+    faHdd,
+    faInfoCircle,
+    faFolderOpen,
+    faChevronDown,
+    faChevronUp,
+  } from "@fortawesome/free-solid-svg-icons";
   import SimpleButton from "./SimpleButton.svelte";
   import { storageManager } from "../services/storage-manager.js";
 
@@ -110,14 +116,14 @@
   {#if expanded}
     <div class="backend-detail">
       <p>
-        <strong>Local Storage</strong> changes where the extension keeps its live
-        database (<code>extension_data.json</code>) instead of browser storage.
-        It is <strong>not</strong> cross-device sync by itself.
+        <strong>Local Storage</strong> changes where the extension keeps its live database (<code
+          >extension_data.json</code
+        >) instead of browser storage. It is <strong>not</strong> cross-device sync by itself.
       </p>
       <p>
-        <strong>File sync (Syncthing)</strong> is a separate sync backend that writes
-        an encrypted snapshot file into a folder for transport between devices. You can
-        use Syncthing/Dropbox to replicate that folder.
+        <strong>File sync (Syncthing)</strong> is a separate sync backend that writes an encrypted snapshot
+        file into a folder for transport between devices. You can use Syncthing/Dropbox to replicate that
+        folder.
       </p>
     </div>
   {/if}

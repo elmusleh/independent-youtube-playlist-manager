@@ -5,6 +5,7 @@ Branch: `feat/sync-hardening`. Last updated: 2026-11-04.
 ## Release gate — 2026-11-04 (NO-GO until verified)
 
 **Hosted migration: VERIFIED ✅**
+
 - Migration 0002 applied (RLS, regex validation, service-wide rate limit)
 - Migration 0003 applied (trusted IP rate limit via pre-request hook)
 - Gateway XFF ownership: VERIFIED ✅ — Cloudflare overwrites `cf-connecting-ip` with real client IP; spoofing does not work
