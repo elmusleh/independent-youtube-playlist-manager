@@ -10,6 +10,14 @@ const status: SyncStatus = {
   pendingCount: 0,
   incomingCount: 0,
   failedCount: 0,
+  startedAt: null,
+  estimatedMs: null,
+  categoryProgress: {
+    playlists: { processed: 0, applied: 0, total: 0 },
+    settings: { processed: 0, applied: 0, total: 0 },
+    history: { processed: 0, applied: 0, total: 0 },
+    devices: { processed: 0, applied: 0, total: 0 },
+  },
 };
 
 afterEach(() => {

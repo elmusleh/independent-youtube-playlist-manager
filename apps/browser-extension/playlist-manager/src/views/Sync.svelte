@@ -76,6 +76,19 @@
   let syncStageDetail = $state<string>("");
   let syncProgress = $state<number>(0);
 
+  let categoryProgress = $state<{
+    playlists: { processed: number; applied: number; total: number };
+    settings: { processed: number; applied: number; total: number };
+    history: { processed: number; applied: number; total: number };
+    devices: { processed: number; applied: number; total: number };
+  }>({
+    playlists: { processed: 0, applied: 0, total: 0 },
+    settings: { processed: 0, applied: 0, total: 0 },
+    history: { processed: 0, applied: 0, total: 0 },
+    devices: { processed: 0, applied: 0, total: 0 },
+  });
+  let estimatedRemaining = $state<number | null>(null);
+
   let syncLogEntries: Array<{
     time: number;
     message: string;
@@ -152,6 +165,18 @@
     lastError = s.lastError ?? null;
     lastSyncSummary = s.lastSummary ?? null;
     isSyncing = s.phase === "pulling" || s.phase === "merging" || s.phase === "pushing";
+    // Update category progress
+    if (s.categoryProgress) {
+      categoryProgress = s.categoryProgress;
+    }
+    // Update time estimate
+    if (s.startedAt && s.estimatedMs) {
+      const elapsed = Date.now() - s.startedAt;
+      const remaining = Math.max(0, s.estimatedMs - elapsed);
+      estimatedRemaining = remaining;
+    } else {
+      estimatedRemaining = null;
+    }
   }
 
   function addLogEntry(message: string, type: "info" | "success" | "error" | "warning" = "info") {
@@ -340,6 +365,8 @@
       {lastSyncSummary}
       {getStageLabel}
       onSyncNow={syncNow}
+      {estimatedRemaining}
+      {categoryProgress}
     />
 
     <SyncCounters {syncIsOn} {isSyncing} {lastSyncedAt} {knownDevices} {formatWhen} />

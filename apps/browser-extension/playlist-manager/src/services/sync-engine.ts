@@ -23,6 +23,17 @@ export type SyncStatus = {
   pendingCount: number;
   incomingCount: number;
   failedCount: number;
+  /** When the current sync run started (epoch ms). Null when idle. */
+  startedAt: number | null;
+  /** Estimated total duration in ms based on previous runs. Null on first run. */
+  estimatedMs: number | null;
+  /** Per-category counts: { processed, applied, total } for the current run. */
+  categoryProgress: {
+    playlists: { processed: number; applied: number; total: number };
+    settings: { processed: number; applied: number; total: number };
+    history: { processed: number; applied: number; total: number };
+    devices: { processed: number; applied: number; total: number };
+  };
 };
 
 const STATUS_KEY = "yph_sync_status";
@@ -32,6 +43,7 @@ let phase: SyncPhase = "idle";
 let isRunning = false;
 let backoffIndex = 0;
 let backoffTimer: ReturnType<typeof setTimeout> | null = null;
+let lastRunDurationMs = 5000; // default estimate for first run
 let status: SyncStatus = {
   phase: "idle",
   lastRunAt: null,
@@ -40,6 +52,14 @@ let status: SyncStatus = {
   pendingCount: 0,
   incomingCount: 0,
   failedCount: 0,
+  startedAt: null,
+  estimatedMs: null,
+  categoryProgress: {
+    playlists: { processed: 0, applied: 0, total: 0 },
+    settings: { processed: 0, applied: 0, total: 0 },
+    history: { processed: 0, applied: 0, total: 0 },
+    devices: { processed: 0, applied: 0, total: 0 },
+  },
 };
 
 function getStorage(): { get: (k: string) => Promise<any>; set: (o: any) => Promise<void> } | null {
@@ -70,6 +90,9 @@ export async function runOnce(): Promise<SyncStatus> {
   if (isRunning) return getStatus();
   isRunning = true;
   phase = "pulling";
+  const startedAt = Date.now();
+  status.startedAt = startedAt;
+  status.estimatedMs = lastRunDurationMs;
   await persistStatus();
 
   try {
@@ -215,7 +238,10 @@ export async function runOnce(): Promise<SyncStatus> {
     status.lastRunAt = Date.now();
     backoffIndex = Math.min(backoffIndex + 1, BACKOFF_STEPS.length - 1);
   } finally {
+    lastRunDurationMs = Date.now() - startedAt;
     isRunning = false;
+    status.startedAt = null;
+    status.estimatedMs = null;
     await persistStatus();
   }
   return getStatus();

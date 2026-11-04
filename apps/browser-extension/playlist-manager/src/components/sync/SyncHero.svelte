@@ -22,6 +22,8 @@
     lastSyncSummary,
     getStageLabel,
     onSyncNow,
+    estimatedRemaining,
+    categoryProgress,
   }: {
     syncIsOn: boolean;
     isSyncing: boolean;
@@ -34,6 +36,13 @@
     lastSyncSummary: string | null;
     getStageLabel: (stage: string) => string;
     onSyncNow: () => void;
+    estimatedRemaining: number | null;
+    categoryProgress: {
+      playlists: { processed: number; applied: number; total: number };
+      settings: { processed: number; applied: number; total: number };
+      history: { processed: number; applied: number; total: number };
+      devices: { processed: number; applied: number; total: number };
+    };
   } = $props();
 </script>
 
@@ -79,6 +88,26 @@
         <div class="progress-bar-container">
           <div class="progress-bar" style="width: {syncProgress}%"></div>
           <span class="progress-text">{syncProgress}%</span>
+        </div>
+        {#if estimatedRemaining !== null && estimatedRemaining > 0}
+          <p class="time-estimate">
+            Est. {Math.ceil(estimatedRemaining / 1000)}s remaining
+          </p>
+        {/if}
+      {/if}
+      {#if isSyncing}
+        <div class="category-progress">
+          {#each Object.entries(categoryProgress) as [name, counts]}
+            {#if counts.total > 0}
+              <div class="category-row">
+                <span class="category-name">{name}</span>
+                <span class="category-count">{counts.processed}/{counts.total}</span>
+                {#if counts.applied > 0}
+                  <span class="category-applied">({counts.applied} applied)</span>
+                {/if}
+              </div>
+            {/if}
+          {/each}
         </div>
       {/if}
     </div>
@@ -217,6 +246,37 @@
     font-variant-numeric: tabular-nums;
     color: var(--muted-foreground, #6b7280);
     min-width: 3ch;
+  }
+  .time-estimate {
+    margin: 0.25rem 0 0;
+    font-size: 0.75rem;
+    color: var(--muted-foreground, #6b7280);
+    font-variant-numeric: tabular-nums;
+  }
+  .category-progress {
+    margin-top: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  .category-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+    color: var(--muted-foreground, #6b7280);
+  }
+  .category-name {
+    text-transform: capitalize;
+    font-weight: 500;
+    min-width: 5rem;
+  }
+  .category-count {
+    font-variant-numeric: tabular-nums;
+  }
+  .category-applied {
+    color: var(--success, #10b981);
+    font-size: 0.7rem;
   }
   .banner-actions {
     flex-shrink: 0;
