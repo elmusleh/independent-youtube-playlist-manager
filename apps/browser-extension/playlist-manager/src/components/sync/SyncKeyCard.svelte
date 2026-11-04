@@ -25,11 +25,13 @@
     onPersist,
     onLog,
     onRotate,
+    onTestConnection,
   }: {
     config: SyncConfig;
     onPersist: () => void | Promise<void>;
     onLog: (message: string, type?: "info" | "success" | "error" | "warning") => void;
     onRotate?: () => void | Promise<void>;
+    onTestConnection?: () => void | Promise<void>;
   } = $props();
 
   let keyInput = $state("");
@@ -117,6 +119,11 @@
           <SimpleButton secondary onclick={copyKey}>
             <Fa icon={faCopy} /> Copy
           </SimpleButton>
+          {#if onTestConnection}
+            <SimpleButton secondary onclick={() => onTestConnection?.()}>
+              Test connection
+            </SimpleButton>
+          {/if}
         </div>
       </div>
       <p class="key-hint">

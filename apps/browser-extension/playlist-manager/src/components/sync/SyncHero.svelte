@@ -146,9 +146,6 @@
       <span class:spin={isSyncing}><Fa icon={isSyncing ? faSpinner : faArrowsRotate} /></span>
       {isSyncing ? "Syncing…" : "Sync now"}
     </SimpleButton>
-    <SimpleButton secondary onclick={() => onTestConnection?.()} className="test-conn-btn">
-      Test connection
-    </SimpleButton>
   </div>
 </section>
 

@@ -376,7 +376,7 @@
 
     <div class="settings-grid">
       <!-- Sync Key (top-left; required to sync) -->
-      <SyncKeyCard {config} onPersist={persist} onLog={addLogEntry} onRotate={handleRotateKey} />
+      <SyncKeyCard {config} onPersist={persist} onLog={addLogEntry} onRotate={handleRotateKey} onTestConnection={testConnection} />
       <RelayCard
         enabled={config.backends.includes("relay")}
         ready={isRelayConfigured()}
