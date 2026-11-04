@@ -89,6 +89,8 @@ error | offline | paused`), single-flight guard, exponential backoff, status per
 
 ## What still needs to be done
 
+Nothing — all phases (0–5) and backend ops are complete.
+
 ### Phase 3 follow-up (adapter wiring) — DONE
 
 - `runOnce` now pulls via relay-transport, merges per collection (playlists,
@@ -116,10 +118,12 @@ error | offline | paused`), single-flight guard, exponential backoff, status per
   `rotate-key.ts` generates new key, pushes all data to new space, updates config,
   deletes old space; refreshes UI + resubscribes.
 
-### Backend / ops (owner action remaining)
+### Backend / ops (DONE)
 
-- Run `docs/sync-relay-v2.sql` on the hosted Supabase project (`qvwitlpnetwthyhrobca`).
-- Drop the v1 `relay_snapshots` table after migration.
+- `docs/sync-relay-v2.sql` applied to hosted Supabase (`qvwitlpnetwthyhrobca`):
+  tables `sync_spaces`, `sync_records`, RLS enabled, RPCs `sync_claim`,
+  `sync_pull`, `sync_push`, `sync_delete_space` — all verified.
+- v1 `relay_snapshots` table dropped.
 - `PRIVACY_POLICY.md` updated to document encrypted v2 sync.
 
 ## Test status
