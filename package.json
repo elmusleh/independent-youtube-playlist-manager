@@ -29,6 +29,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run --config vitest.config.mjs",
+    "test:sync": "vitest run --config vitest.config.mjs apps/browser-extension/playlist-manager/src/services/sync",
     "test:watch": "vitest --config vitest.config.mjs",
     "test:extension": "node packages/build-tools/verify-extension.js && node packages/build-tools/verify-popup.js && node packages/build-tools/verify-edge-package.js",
     "test:visual": "playwright test --config playwright.visual.config.ts",
