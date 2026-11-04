@@ -25,17 +25,21 @@ a 64-hex-character space ID and a 64-hex-character auth hash.
 ## Data Flow
 
 ### 1. Claim Space
+
 Device calls `sync_claim(space, auth_hash)` to register. If the space
 doesn't exist, it's created. If it exists, the auth hash must match.
 
 ### 2. Pull
+
 Device calls `sync_pull(space, auth_hash, since_seq, limit)` to get
 records with `seq > since_seq`. Returns up to `limit` records ordered
 by `seq`.
 
 ### 3. Push
+
 Device calls `sync_push(space, auth_hash, records)` to upload dirty
 records. Each record has:
+
 - `collection`: "playlists" | "history" | "settings" | "devices"
 - `rid`: unique record ID within the collection
 - `version`: HLC timestamp (numeric)
@@ -43,6 +47,7 @@ records. Each record has:
 - `deleted`: soft-delete flag
 
 ### 4. Cursor Advancement
+
 After a successful pull+apply, the device advances `lastSeq` to the
 max `seq` of applied records. On failure, `lastSeq` stays unchanged
 so failed records are re-pulled.
@@ -54,6 +59,7 @@ The relay stores only opaque ciphertext. The encryption key is derived
 from the sync key using HKDF-SHA256.
 
 ### Envelope Format
+
 ```json
 {
   "v": 2,
@@ -66,6 +72,7 @@ from the sync key using HKDF-SHA256.
 ```
 
 The envelope is then encrypted:
+
 ```json
 {
   "v": 2,

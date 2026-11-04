@@ -15,13 +15,19 @@ const JWT_SECRET = "audit-local-jwt-secret-0123456789abcdef0123456789";
 function makeJwt(): string {
   const crypto = require("node:crypto");
   const header = Buffer.from(JSON.stringify({ alg: "HS256", typ: "JWT" })).toString("base64url");
-  const payload = Buffer.from(JSON.stringify({ role: "anon", exp: Math.floor(Date.now() / 1000) + 3600 })).toString("base64url");
-  const sig = crypto.createHmac("sha256", JWT_SECRET).update(`${header}.${payload}`).digest("base64url");
+  const payload = Buffer.from(
+    JSON.stringify({ role: "anon", exp: Math.floor(Date.now() / 1000) + 3600 })
+  ).toString("base64url");
+  const sig = crypto
+    .createHmac("sha256", JWT_SECRET)
+    .update(`${header}.${payload}`)
+    .digest("base64url");
   return `${header}.${payload}.${sig}`;
 }
 
 const JWT = makeJwt();
-const hex = (n: number) => Array.from({ length: n }, () => Math.floor(Math.random() * 16).toString(16)).join("");
+const hex = (n: number) =>
+  Array.from({ length: n }, () => Math.floor(Math.random() * 16).toString(16)).join("");
 
 async function bench(n: number) {
   const space = hex(64);
@@ -60,7 +66,9 @@ async function bench(n: number) {
   });
   const pullMs = performance.now() - t1;
 
-  console.log(`n=${n}: push=${pushMs.toFixed(1)}ms (${(n / (pushMs / 1000)).toFixed(0)} rec/s), pull=${pullMs.toFixed(1)}ms (${(n / (pullMs / 1000)).toFixed(0)} rec/s)`);
+  console.log(
+    `n=${n}: push=${pushMs.toFixed(1)}ms (${(n / (pushMs / 1000)).toFixed(0)} rec/s), pull=${pullMs.toFixed(1)}ms (${(n / (pullMs / 1000)).toFixed(0)} rec/s)`
+  );
 }
 
 async function main() {
