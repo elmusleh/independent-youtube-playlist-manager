@@ -41,6 +41,8 @@ export type SyncConfig = {
   syncKey: string | null;
   /** Enabled sync backends (more than one = mirror to each). */
   backends: SyncBackend[];
+  /** Periodic sync interval in minutes. 0 = manual only. */
+  syncIntervalMinutes: number;
   /** User-supplied Supabase endpoint for the "supabase-byo" backend. */
   supabaseUrl: string;
   supabaseKey: string;
@@ -67,6 +69,7 @@ const DEVICE_ID_KEY = "yph_sync_device_id";
 export const DEFAULT_SYNC_CONFIG: SyncConfig = {
   syncKey: null,
   backends: [],
+  syncIntervalMinutes: 5,
   supabaseUrl: "",
   supabaseKey: "",
   content: { playlists: true, settings: false, history: false },
@@ -171,6 +174,10 @@ export async function loadSyncConfig(): Promise<SyncConfig> {
       knownDevices: Array.isArray(stored.knownDevices) ? stored.knownDevices : [],
       syncRevision: typeof stored.syncRevision === "number" ? stored.syncRevision : 0,
       categoryTimestamps,
+      syncIntervalMinutes:
+        typeof stored.syncIntervalMinutes === "number"
+          ? stored.syncIntervalMinutes
+          : DEFAULT_SYNC_CONFIG.syncIntervalMinutes,
     };
   } catch {
     return structuredClone(DEFAULT_SYNC_CONFIG);
