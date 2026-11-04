@@ -53,6 +53,11 @@ begin
     raise exception 'invalid auth hash';
   end if;
 
+  -- Simple guard: reject new spaces beyond a sane cap.
+  if (select count(*) from public.sync_spaces) >= 100000 then
+    raise exception 'space cap reached';
+  end if;
+
   insert into public.sync_spaces (space, auth_hash)
   values (p_space, p_auth_hash)
   on conflict (space) do nothing;
