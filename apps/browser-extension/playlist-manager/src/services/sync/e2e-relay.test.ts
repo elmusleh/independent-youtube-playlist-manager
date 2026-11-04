@@ -179,6 +179,65 @@ describe("E2E: real client + real SQL", () => {
     expect(JSON.parse(second[0].payload).name).toBe("Renamed");
   });
 
+  it("conflict resolution: newer version wins (LWW)", async () => {
+    const { space, auth } = newSpace();
+    await rt.claimSpace(CFG, space, auth);
+    const rid = hex(32);
+    // Device A pushes v1
+    await rt.pushAll(CFG, space, auth, [
+      {
+        collection: "playlists",
+        rid,
+        version: 100,
+        payload: JSON.stringify({ name: "v1" }),
+        deleted: false,
+      },
+    ]);
+    // Device B pushes v2 (higher version) — overwrites
+    await rt.pushAll(CFG, space, auth, [
+      {
+        collection: "playlists",
+        rid,
+        version: 200,
+        payload: JSON.stringify({ name: "v2" }),
+        deleted: false,
+      },
+    ]);
+    // Pull should return v2
+    const pulled = await rt.pullAll(CFG, space, auth, 0);
+    expect(pulled.length).toBe(1);
+    expect(JSON.parse(pulled[0].payload).name).toBe("v2");
+  });
+
+  it("conflict resolution: older version is rejected", async () => {
+    const { space, auth } = newSpace();
+    await rt.claimSpace(CFG, space, auth);
+    const rid = hex(32);
+    // Push v2 first
+    await rt.pushAll(CFG, space, auth, [
+      {
+        collection: "playlists",
+        rid,
+        version: 200,
+        payload: JSON.stringify({ name: "v2" }),
+        deleted: false,
+      },
+    ]);
+    // Try to push v1 (older) — should be rejected or ignored
+    const res = await rt.pushAll(CFG, space, auth, [
+      {
+        collection: "playlists",
+        rid,
+        version: 100,
+        payload: JSON.stringify({ name: "v1" }),
+        deleted: false,
+      },
+    ]);
+    // The older version should not overwrite
+    const pulled = await rt.pullAll(CFG, space, auth, 0);
+    expect(JSON.parse(pulled[0].payload).name).toBe("v2");
+  });
+
   it("payload cap: 2MB payload is rejected", async () => {
     const { space, auth } = newSpace();
     await rt.claimSpace(CFG, space, auth);
