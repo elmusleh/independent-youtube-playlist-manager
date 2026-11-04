@@ -1,0 +1,345 @@
+{
+  "schemaVersion": 1,
+  "scope": "Rendered extension JavaScript; CSS, static scripts and portal require separate review",
+  "lockfile": "apps/browser-extension/playlist-manager/package-lock.json",
+  "lockfileSha256": "6485ce73904e60b53902108f1c8fdfcd0e3c02215a309b4cb966ee19b55e5f02",
+  "chunks": [
+    {
+      "file": "chunks/Capture-TAXhJva5.js",
+      "sha256": "d6762768fb09cf133fb422fe749b772828243136e84e5f5c0f6d0b506dfd82ce"
+    },
+    {
+      "file": "chunks/data-consent-CUCbJKlR.js",
+      "sha256": "89891ce9c1ba7eb057f70ce345353e4a5ce7d7d4c15ca735a1b9fdd5e7bfa22b"
+    },
+    {
+      "file": "chunks/db-service-Chr9Rbah.js",
+      "sha256": "2d4e1b467981bed952fd27cd0589ccaabe2be28957a20f5d3a9a89a8c7d9d7ac"
+    },
+    {
+      "file": "chunks/enrichment-service-kePRRPA-.js",
+      "sha256": "4f1e76b4d2ee187b13c9b3e1bebec5f6f7408a45cd85c0c938a121621d98d951"
+    },
+    {
+      "file": "chunks/logger-service-D508XfrZ.js",
+      "sha256": "94fd999892691c2060335c1916d8c29d0771e63e0e300c164fef739260f091da"
+    },
+    {
+      "file": "chunks/main-DX0IYmX1.js",
+      "sha256": "8ffa20efb1e0aa7a9a6230d45335ecf565a9085556a57ed5ca214dddd4dbe1db"
+    },
+    {
+      "file": "chunks/metadata-completeness-Dn5NKDgD.js",
+      "sha256": "b51437ee77a702aa424f94fd6e11629ee857a028a6aced3fca480e46cce837f8"
+    },
+    {
+      "file": "chunks/storage-client-DPIhV0UN.js",
+      "sha256": "8e3054828e84ce50c83e7639959bff8a76576fc3e64655dde193c0896f48f867"
+    },
+    {
+      "file": "chunks/sync-manager-CfT8ZwXq.js",
+      "sha256": "2806cf7f6d76c467210c35f174f7b75fb47a37c2723243b4d620d07aabd218bf"
+    },
+    {
+      "file": "chunks/toast--dkWpM-f.js",
+      "sha256": "1548a665dfee598df475de4dd6c20f3062717d945ed4a8df5bceb2e1f798ac4a"
+    },
+    {
+      "file": "chunks/youtube-api-_1c5uc69.js",
+      "sha256": "77f8eedf12ecaabf2b4d4a66287d78b228315837aaed66676e82c699271c9801"
+    },
+    {
+      "file": "main.js",
+      "sha256": "436103e4e8f39a73fcd83bd61ad29e7d835d87d62e899fc5c85dbae8945adca0"
+    },
+    {
+      "file": "storage-service.js",
+      "sha256": "539b6d36383d54c8d01c165d79f0ca073440d5ce1ed5d062062677830bfd3970"
+    },
+    {
+      "file": "supabase-client.js",
+      "sha256": "52b92d6a61d80ab1a57e4712a4e1ace9303c5aa7d891383e19efad8cbdfb32b6"
+    },
+    {
+      "file": "supabase-sync.js",
+      "sha256": "7e46c787d61f8ac39c189632fb93d30616928756407177bd11f4a39eda5666fb"
+    },
+    {
+      "file": "sync-state-service.js",
+      "sha256": "6bf0bf53253e11a1cfe75236c43feb59a4b135792192fc5bf44966055c94512a"
+    },
+    {
+      "file": "utils.js",
+      "sha256": "c745ea3d37c44cc5c000e7a52adf8513c550e926f554a80892c378543144e7b4"
+    },
+    {
+      "file": "video-service.js",
+      "sha256": "6a57a9569401175abb9184120e3aae8c6fdd78a4b502ffd901f3f125f7de17d9"
+    },
+    {
+      "file": "youtube-api.js",
+      "sha256": "1a76993e249e55cfd74d3782ec9cf3a47f455dc74205097898a913de96733fa5"
+    },
+    {
+      "file": "youtube-auth.js",
+      "sha256": "00e6bef3a398478b8b78b181cb51b6433e093554cd537f3f0cf1b749e4627496"
+    }
+  ],
+  "packages": [
+    {
+      "name": "@fortawesome/free-brands-svg-icons",
+      "version": "7.3.1",
+      "installPath": "apps/browser-extension/playlist-manager/node_modules/@fortawesome/free-brands-svg-icons",
+      "chunks": ["chunks/main-DX0IYmX1.js"],
+      "modules": [
+        "apps/browser-extension/playlist-manager/node_modules/@fortawesome/free-brands-svg-icons/index.mjs"
+      ]
+    },
+    {
+      "name": "@fortawesome/free-regular-svg-icons",
+      "version": "7.3.1",
+      "installPath": "apps/browser-extension/playlist-manager/node_modules/@fortawesome/free-regular-svg-icons",
+      "chunks": ["chunks/main-DX0IYmX1.js"],
+      "modules": [
+        "apps/browser-extension/playlist-manager/node_modules/@fortawesome/free-regular-svg-icons/index.mjs"
+      ]
+    },
+    {
+      "name": "@fortawesome/free-solid-svg-icons",
+      "version": "7.3.1",
+      "installPath": "apps/browser-extension/playlist-manager/node_modules/@fortawesome/free-solid-svg-icons",
+      "chunks": ["chunks/main-DX0IYmX1.js"],
+      "modules": [
+        "apps/browser-extension/playlist-manager/node_modules/@fortawesome/free-solid-svg-icons/index.mjs"
+      ]
+    },
+    {
+      "name": "@supabase/auth-js",
+      "version": "2.118.0",
+      "installPath": "apps/browser-extension/playlist-manager/node_modules/@supabase/auth-js",
+      "chunks": ["supabase-client.js"],
+      "modules": [
+        "apps/browser-extension/playlist-manager/node_modules/@supabase/auth-js/dist/module/AuthClient.js",
+        "apps/browser-extension/playlist-manager/node_modules/@supabase/auth-js/dist/module/GoTrueAdminApi.js",
+        "apps/browser-extension/playlist-manager/node_modules/@supabase/auth-js/dist/module/GoTrueClient.js",
+        "apps/browser-extension/playlist-manager/node_modules/@supabase/auth-js/dist/module/lib/base64url.js",
+        "apps/browser-extension/playlist-manager/node_modules/@supabase/auth-js/dist/module/lib/constants.js",
+        "apps/browser-extension/playlist-manager/node_modules/@supabase/auth-js/dist/module/lib/errors.js",
+        "apps/browser-extension/playlist-manager/node_modules/@supabase/auth-js/dist/module/lib/fetch.js",
+        "apps/browser-extension/playlist-manager/node_modules/@supabase/auth-js/dist/module/lib/helpers.js",
+        "apps/browser-extension/playlist-manager/node_modules/@supabase/auth-js/dist/module/lib/local-storage.js",
+        "apps/browser-extension/playlist-manager/node_modules/@supabase/auth-js/dist/module/lib/locks.js",
+        "apps/browser-extension/playlist-manager/node_modules/@supabase/auth-js/dist/module/lib/polyfills.js",
+        "apps/browser-extension/playlist-manager/node_modules/@supabase/auth-js/dist/module/lib/types.js",
+        "apps/browser-extension/playlist-manager/node_modules/@supabase/auth-js/dist/module/lib/version.js",
+        "apps/browser-extension/playlist-manager/node_modules/@supabase/auth-js/dist/module/lib/web3/ethereum.js",
+        "apps/browser-extension/playlist-manager/node_modules/@supabase/auth-js/dist/module/lib/webauthn.errors.js",
+        "apps/browser-extension/playlist-manager/node_modules/@supabase/auth-js/dist/module/lib/webauthn.js"
+      ]
+    },
+    {
+      "name": "@supabase/functions-js",
+      "version": "2.118.0",
+      "installPath": "apps/browser-extension/playlist-manager/node_modules/@supabase/functions-js",
+      "chunks": ["supabase-client.js"],
+      "modules": [
+        "apps/browser-extension/playlist-manager/node_modules/@supabase/functions-js/dist/module/FunctionsClient.js",
+        "apps/browser-extension/playlist-manager/node_modules/@supabase/functions-js/dist/module/helper.js",
+        "apps/browser-extension/playlist-manager/node_modules/@supabase/functions-js/dist/module/types.js"
+      ]
+    },
+    {
+      "name": "@supabase/phoenix",
+      "version": "0.4.5",
+      "installPath": "apps/browser-extension/playlist-manager/node_modules/@supabase/phoenix",
+      "chunks": ["supabase-client.js"],
+      "modules": [
+        "apps/browser-extension/playlist-manager/node_modules/@supabase/phoenix/priv/static/phoenix.mjs"
+      ]
+    },
+    {
+      "name": "@supabase/postgrest-js",
+      "version": "2.118.0",
+      "installPath": "apps/browser-extension/playlist-manager/node_modules/@supabase/postgrest-js",
+      "chunks": ["supabase-client.js"],
+      "modules": [
+        "apps/browser-extension/playlist-manager/node_modules/@supabase/postgrest-js/dist/index.mjs"
+      ]
+    },
+    {
+      "name": "@supabase/realtime-js",
+      "version": "2.118.0",
+      "installPath": "apps/browser-extension/playlist-manager/node_modules/@supabase/realtime-js",
+      "chunks": ["supabase-client.js"],
+      "modules": [
+        "apps/browser-extension/playlist-manager/node_modules/@supabase/realtime-js/dist/module/RealtimeChannel.js",
+        "apps/browser-extension/playlist-manager/node_modules/@supabase/realtime-js/dist/module/RealtimeClient.js",
+        "apps/browser-extension/playlist-manager/node_modules/@supabase/realtime-js/dist/module/RealtimePostgresFilterBuilder.js",
+        "apps/browser-extension/playlist-manager/node_modules/@supabase/realtime-js/dist/module/RealtimePresence.js",
+        "apps/browser-extension/playlist-manager/node_modules/@supabase/realtime-js/dist/module/lib/constants.js",
+        "apps/browser-extension/playlist-manager/node_modules/@supabase/realtime-js/dist/module/lib/normalizeChannelError.js",
+        "apps/browser-extension/playlist-manager/node_modules/@supabase/realtime-js/dist/module/lib/serializer.js",
+        "apps/browser-extension/playlist-manager/node_modules/@supabase/realtime-js/dist/module/lib/transformers.js",
+        "apps/browser-extension/playlist-manager/node_modules/@supabase/realtime-js/dist/module/lib/version.js",
+        "apps/browser-extension/playlist-manager/node_modules/@supabase/realtime-js/dist/module/lib/websocket-factory.js",
+        "apps/browser-extension/playlist-manager/node_modules/@supabase/realtime-js/dist/module/phoenix/channelAdapter.js",
+        "apps/browser-extension/playlist-manager/node_modules/@supabase/realtime-js/dist/module/phoenix/presenceAdapter.js",
+        "apps/browser-extension/playlist-manager/node_modules/@supabase/realtime-js/dist/module/phoenix/socketAdapter.js"
+      ]
+    },
+    {
+      "name": "@supabase/storage-js",
+      "version": "2.118.0",
+      "installPath": "apps/browser-extension/playlist-manager/node_modules/@supabase/storage-js",
+      "chunks": ["supabase-client.js"],
+      "modules": [
+        "apps/browser-extension/playlist-manager/node_modules/@supabase/storage-js/dist/index.mjs"
+      ]
+    },
+    {
+      "name": "@supabase/supabase-js",
+      "version": "2.118.0",
+      "installPath": "apps/browser-extension/playlist-manager/node_modules/@supabase/supabase-js",
+      "chunks": ["supabase-client.js"],
+      "modules": [
+        "apps/browser-extension/playlist-manager/node_modules/@supabase/supabase-js/dist/index.mjs",
+        "apps/browser-extension/playlist-manager/node_modules/@supabase/supabase-js/dist/tracingRegistry.mjs"
+      ]
+    },
+    {
+      "name": "esm-env",
+      "version": "1.2.2",
+      "installPath": "apps/browser-extension/playlist-manager/node_modules/esm-env",
+      "chunks": ["chunks/toast--dkWpM-f.js"],
+      "modules": ["apps/browser-extension/playlist-manager/node_modules/esm-env/false.js"]
+    },
+    {
+      "name": "iceberg-js",
+      "version": "0.8.1",
+      "installPath": "apps/browser-extension/playlist-manager/node_modules/iceberg-js",
+      "chunks": ["supabase-client.js"],
+      "modules": ["apps/browser-extension/playlist-manager/node_modules/iceberg-js/dist/index.mjs"]
+    },
+    {
+      "name": "idb-keyval",
+      "version": "6.3.0",
+      "installPath": "apps/browser-extension/playlist-manager/node_modules/idb-keyval",
+      "chunks": ["chunks/main-DX0IYmX1.js"],
+      "modules": ["apps/browser-extension/playlist-manager/node_modules/idb-keyval/dist/index.js"]
+    },
+    {
+      "name": "regexparam",
+      "version": "2.0.2",
+      "installPath": "apps/browser-extension/playlist-manager/node_modules/regexparam",
+      "chunks": ["chunks/main-DX0IYmX1.js"],
+      "modules": ["apps/browser-extension/playlist-manager/node_modules/regexparam/dist/index.mjs"]
+    },
+    {
+      "name": "svelte",
+      "version": "5.57.3",
+      "installPath": "apps/browser-extension/playlist-manager/node_modules/svelte",
+      "chunks": ["chunks/main-DX0IYmX1.js", "chunks/toast--dkWpM-f.js"],
+      "modules": [
+        "apps/browser-extension/playlist-manager/node_modules/svelte/src/animate/index.js",
+        "apps/browser-extension/playlist-manager/node_modules/svelte/src/constants.js",
+        "apps/browser-extension/playlist-manager/node_modules/svelte/src/easing/index.js",
+        "apps/browser-extension/playlist-manager/node_modules/svelte/src/index-client.js",
+        "apps/browser-extension/playlist-manager/node_modules/svelte/src/internal/client/constants.js",
+        "apps/browser-extension/playlist-manager/node_modules/svelte/src/internal/client/context.js",
+        "apps/browser-extension/playlist-manager/node_modules/svelte/src/internal/client/dom/blocks/await.js",
+        "apps/browser-extension/playlist-manager/node_modules/svelte/src/internal/client/dom/blocks/boundary.js",
+        "apps/browser-extension/playlist-manager/node_modules/svelte/src/internal/client/dom/blocks/branches.js",
+        "apps/browser-extension/playlist-manager/node_modules/svelte/src/internal/client/dom/blocks/each.js",
+        "apps/browser-extension/playlist-manager/node_modules/svelte/src/internal/client/dom/blocks/if.js",
+        "apps/browser-extension/playlist-manager/node_modules/svelte/src/internal/client/dom/blocks/snippet.js",
+        "apps/browser-extension/playlist-manager/node_modules/svelte/src/internal/client/dom/blocks/svelte-component.js",
+        "apps/browser-extension/playlist-manager/node_modules/svelte/src/internal/client/dom/blocks/svelte-head.js",
+        "apps/browser-extension/playlist-manager/node_modules/svelte/src/internal/client/dom/elements/actions.js",
+        "apps/browser-extension/playlist-manager/node_modules/svelte/src/internal/client/dom/elements/attributes.js",
+        "apps/browser-extension/playlist-manager/node_modules/svelte/src/internal/client/dom/elements/bindings/input.js",
+        "apps/browser-extension/playlist-manager/node_modules/svelte/src/internal/client/dom/elements/bindings/select.js",
+        "apps/browser-extension/playlist-manager/node_modules/svelte/src/internal/client/dom/elements/bindings/shared.js",
+        "apps/browser-extension/playlist-manager/node_modules/svelte/src/internal/client/dom/elements/bindings/size.js",
+        "apps/browser-extension/playlist-manager/node_modules/svelte/src/internal/client/dom/elements/bindings/this.js",
+        "apps/browser-extension/playlist-manager/node_modules/svelte/src/internal/client/dom/elements/class.js",
+        "apps/browser-extension/playlist-manager/node_modules/svelte/src/internal/client/dom/elements/events.js",
+        "apps/browser-extension/playlist-manager/node_modules/svelte/src/internal/client/dom/elements/misc.js",
+        "apps/browser-extension/playlist-manager/node_modules/svelte/src/internal/client/dom/elements/style.js",
+        "apps/browser-extension/playlist-manager/node_modules/svelte/src/internal/client/dom/elements/transitions.js",
+        "apps/browser-extension/playlist-manager/node_modules/svelte/src/internal/client/dom/hydration.js",
+        "apps/browser-extension/playlist-manager/node_modules/svelte/src/internal/client/dom/legacy/lifecycle.js",
+        "apps/browser-extension/playlist-manager/node_modules/svelte/src/internal/client/dom/operations.js",
+        "apps/browser-extension/playlist-manager/node_modules/svelte/src/internal/client/dom/reconciler.js",
+        "apps/browser-extension/playlist-manager/node_modules/svelte/src/internal/client/dom/task.js",
+        "apps/browser-extension/playlist-manager/node_modules/svelte/src/internal/client/dom/template.js",
+        "apps/browser-extension/playlist-manager/node_modules/svelte/src/internal/client/error-handling.js",
+        "apps/browser-extension/playlist-manager/node_modules/svelte/src/internal/client/errors.js",
+        "apps/browser-extension/playlist-manager/node_modules/svelte/src/internal/client/loop.js",
+        "apps/browser-extension/playlist-manager/node_modules/svelte/src/internal/client/proxy.js",
+        "apps/browser-extension/playlist-manager/node_modules/svelte/src/internal/client/reactivity/async.js",
+        "apps/browser-extension/playlist-manager/node_modules/svelte/src/internal/client/reactivity/batch.js",
+        "apps/browser-extension/playlist-manager/node_modules/svelte/src/internal/client/reactivity/deriveds.js",
+        "apps/browser-extension/playlist-manager/node_modules/svelte/src/internal/client/reactivity/effects.js",
+        "apps/browser-extension/playlist-manager/node_modules/svelte/src/internal/client/reactivity/equality.js",
+        "apps/browser-extension/playlist-manager/node_modules/svelte/src/internal/client/reactivity/props.js",
+        "apps/browser-extension/playlist-manager/node_modules/svelte/src/internal/client/reactivity/sources.js",
+        "apps/browser-extension/playlist-manager/node_modules/svelte/src/internal/client/reactivity/status.js",
+        "apps/browser-extension/playlist-manager/node_modules/svelte/src/internal/client/reactivity/store.js",
+        "apps/browser-extension/playlist-manager/node_modules/svelte/src/internal/client/reactivity/utils.js",
+        "apps/browser-extension/playlist-manager/node_modules/svelte/src/internal/client/render.js",
+        "apps/browser-extension/playlist-manager/node_modules/svelte/src/internal/client/runtime.js",
+        "apps/browser-extension/playlist-manager/node_modules/svelte/src/internal/client/timing.js",
+        "apps/browser-extension/playlist-manager/node_modules/svelte/src/internal/client/warnings.js",
+        "apps/browser-extension/playlist-manager/node_modules/svelte/src/internal/disclose-version.js",
+        "apps/browser-extension/playlist-manager/node_modules/svelte/src/internal/flags/index.js",
+        "apps/browser-extension/playlist-manager/node_modules/svelte/src/internal/flags/legacy.js",
+        "apps/browser-extension/playlist-manager/node_modules/svelte/src/internal/shared/attributes.js",
+        "apps/browser-extension/playlist-manager/node_modules/svelte/src/internal/shared/errors.js",
+        "apps/browser-extension/playlist-manager/node_modules/svelte/src/internal/shared/utils.js",
+        "apps/browser-extension/playlist-manager/node_modules/svelte/src/reactivity/create-subscriber.js",
+        "apps/browser-extension/playlist-manager/node_modules/svelte/src/store/shared/index.js",
+        "apps/browser-extension/playlist-manager/node_modules/svelte/src/store/utils.js",
+        "apps/browser-extension/playlist-manager/node_modules/svelte/src/transition/index.js",
+        "apps/browser-extension/playlist-manager/node_modules/svelte/src/utils.js",
+        "apps/browser-extension/playlist-manager/node_modules/svelte/src/version.js"
+      ]
+    },
+    {
+      "name": "svelte-fa",
+      "version": "4.0.4",
+      "installPath": "apps/browser-extension/playlist-manager/node_modules/svelte-fa",
+      "chunks": ["chunks/main-DX0IYmX1.js"],
+      "modules": [
+        "apps/browser-extension/playlist-manager/node_modules/svelte-fa/dist/fa.svelte",
+        "apps/browser-extension/playlist-manager/node_modules/svelte-fa/dist/utils.js"
+      ]
+    },
+    {
+      "name": "svelte-paginate",
+      "version": "0.1.0",
+      "installPath": "apps/browser-extension/playlist-manager/node_modules/svelte-paginate",
+      "chunks": ["chunks/main-DX0IYmX1.js"],
+      "modules": [
+        "apps/browser-extension/playlist-manager/node_modules/svelte-paginate/paginate.js",
+        "apps/browser-extension/playlist-manager/node_modules/svelte-paginate/types.js"
+      ]
+    },
+    {
+      "name": "svelte-spa-router",
+      "version": "5.1.1",
+      "installPath": "apps/browser-extension/playlist-manager/node_modules/svelte-spa-router",
+      "chunks": ["chunks/main-DX0IYmX1.js"],
+      "modules": [
+        "apps/browser-extension/playlist-manager/node_modules/svelte-spa-router/dist/Router.svelte",
+        "apps/browser-extension/playlist-manager/node_modules/svelte-spa-router/dist/wrap.js"
+      ]
+    },
+    {
+      "name": "tslib",
+      "version": "2.9.1",
+      "installPath": "apps/browser-extension/playlist-manager/node_modules/tslib",
+      "chunks": ["supabase-client.js"],
+      "modules": ["apps/browser-extension/playlist-manager/node_modules/tslib/tslib.es6.js"]
+    }
+  ]
+}
