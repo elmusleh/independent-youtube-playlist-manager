@@ -12,7 +12,6 @@
     faComments,
     faEllipsisVertical,
     faKey,
-    faStar,
   } from "@fortawesome/free-solid-svg-icons";
   import Fa from "svelte-fa";
   import { push } from "svelte-spa-router";
@@ -25,7 +24,6 @@
     userProfile = null,
     channelInfo = { title: "User", thumbnail: "", handle: "" },
     missingCredentials = false,
-    githubStars = null,
     onSignOut = () => {},
     onSignIn = () => {},
   }: {
@@ -33,7 +31,6 @@
     userProfile?: { title: string; thumbnail: string; handle?: string } | null;
     channelInfo?: { title: string; thumbnail: string; handle?: string };
     missingCredentials?: boolean;
-    githubStars?: string | null;
     onSignOut?: () => void;
     onSignIn?: () => void;
   } = $props();

@@ -26,25 +26,7 @@
   let loadingAuth = $state(false);
   let channelInfo = $state({ title: "User", thumbnail: "", handle: "" });
   let missingCredentials = $state(false);
-  let githubStars: string | null = $state(sessionStorage.getItem("yph_github_stars"));
   const version = (window as any).browser?.runtime?.getManifest?.().version || "";
-
-  async function fetchGithubStars() {
-    try {
-      if (githubStars) return;
-      const res = await fetch(
-        "https://api.github.com/repos/elmusleh/independent-youtube-playlist-manager"
-      );
-      const data = await res.json();
-      if (data.stargazers_count !== undefined) {
-        let stars = data.stargazers_count;
-        githubStars = stars > 999 ? (stars / 1000).toFixed(1) + "k" : stars.toString();
-        sessionStorage.setItem("yph_github_stars", githubStars || "");
-      }
-    } catch (e) {
-      logger.error("Failed to fetch GitHub stars", e);
-    }
-  }
 
   async function checkCredentials() {
     try {
@@ -145,7 +127,6 @@
   }
 
   async function init() {
-    fetchGithubStars();
     let attempts = 0;
     while (typeof window.isSignedIn !== "function" && attempts < 20) {
       await new Promise((r) => setTimeout(r, 100));
@@ -244,7 +225,6 @@
         {userProfile}
         {channelInfo}
         {missingCredentials}
-        {githubStars}
         onSignOut={handleDropdownSignOut}
         onSignIn={handleDropdownSignIn}
       />

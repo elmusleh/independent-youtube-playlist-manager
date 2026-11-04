@@ -29,8 +29,6 @@
   let settings: Settings | null = $state(null);
   let signedIn = $state(false);
   let gapCount = $state(0);
-  let githubStars: string | null = $state(sessionStorage.getItem("yph_github_stars"));
-
   let favorites: import("../services/favorites").FavoritePlaylistInfo[] = $state([]);
 
   let { drawerOpen = false, onClose = () => {} }: { drawerOpen?: boolean; onClose?: () => void } =
@@ -38,23 +36,6 @@
 
   function handleNavClick() {
     onClose();
-  }
-
-  async function fetchGithubStars() {
-    try {
-      if (githubStars) return;
-      const res = await fetch(
-        "https://api.github.com/repos/elmusleh/independent-youtube-playlist-manager"
-      );
-      const data = await res.json();
-      if (data.stargazers_count !== undefined) {
-        let stars = data.stargazers_count;
-        githubStars = stars > 999 ? (stars / 1000).toFixed(1) + "k" : stars.toString();
-        sessionStorage.setItem("yph_github_stars", githubStars || "");
-      }
-    } catch {
-      // ignore
-    }
   }
 
   async function loadSettings() {
@@ -111,7 +92,6 @@
   loadSettings();
   checkAuth();
   scheduleGapCount();
-  fetchGithubStars();
 
   window.addEventListener("yph-metadata-changed", loadGapCount);
 
@@ -301,9 +281,6 @@
       >
         <Fa icon={faGithub} fw />
         <span>GitHub</span>
-        {#if githubStars}
-          <span class="stars-count"><Fa icon={faStar} class="star-icon" /> {githubStars}</span>
-        {/if}
       </a>
     </div>
   </div>
@@ -481,9 +458,6 @@
           >
             <Fa icon={faGithub} fw />
             <span>GitHub</span>
-            {#if githubStars}
-              <span class="stars-count"><Fa icon={faStar} class="star-icon" /> {githubStars}</span>
-            {/if}
           </a>
         </div>
       </div>
@@ -547,19 +521,6 @@
   .sidebar-footer-link.github-link:hover {
     background-color: var(--sidebar-bg-color);
     border-color: var(--color-brand-primary);
-  }
-
-  :global(.sidebar-footer-link.github-link .star-icon) {
-    color: #f5c518;
-    font-size: 12px;
-  }
-
-  .sidebar-footer-link.github-link .stars-count {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    color: var(--text-muted);
-    font-size: 12px;
   }
 
   .sidebar-footer-link.active {
