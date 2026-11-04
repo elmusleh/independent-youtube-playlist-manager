@@ -241,6 +241,20 @@
     addLogEntry(lastSyncSummary || "Sync finished", lastError ? "error" : "success");
   }
 
+  async function testConnection() {
+    addLogEntry("Testing connection…", "info");
+    if (config.backends.includes("relay")) {
+      const granted = await requestSyncHostPermission(config);
+      if (!granted) {
+        lastError = "Host permission for the relay was not granted.";
+        addLogEntry(lastError, "error");
+        return;
+      }
+    }
+    await syncNow();
+    addLogEntry(lastError ? "Connection test failed" : "Connection test succeeded", lastError ? "error" : "success");
+  }
+
   async function handleRotateKey() {
     if (needsV2RelayAcknowledgement(config)) {
       lastError = LEGACY_SYNC_RECOVERY_NOTICE;
@@ -352,6 +366,7 @@
       {lastSyncSummary}
       {getStageLabel}
       onSyncNow={syncNow}
+      onTestConnection={testConnection}
       {estimatedRemaining}
       {categoryProgress}
       logEntries={syncLogEntries}
