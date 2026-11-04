@@ -134,11 +134,11 @@ test.describe("YPH WebExtension E2E Tests (Chromium)", () => {
 
   test("2. Playlist Editor SPA dashboard loads successfully", async ({ page, extensionId }) => {
     // Navigate to the settings page in the Svelte options UI
-    await page.goto(`chrome-extension://${extensionId}/editor/index.html#/sync`);
+    await page.goto(`chrome-extension://${extensionId}/editor/index.html#/settings`);
 
     // The SPA document loaded at all.
     await expect(page).toHaveTitle("Playlist Manager");
-    await expect(page.getByRole("heading", { name: "Sync", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Settings", exact: true })).toBeVisible();
     // A section that renders regardless of auth state — the old assertions looked for
     // a marketing string and a YouTube-only field that the settings view no longer shows.
     await expect(page.getByRole("heading", { name: "Local Storage" })).toBeVisible();
