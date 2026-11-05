@@ -27,6 +27,10 @@
     clearLocalSyncRuntimeState,
     resetSyncConfigCursors,
   } from "../../services/sync/sync-state-reset.js";
+  import {
+    captureSyncSafetyBackup,
+    serializeSafetyBackupJson,
+  } from "../../services/sync/sync-safety-backup.js";
   import { requestConfirm } from "../../stores/confirmation";
 
   let {
@@ -132,14 +136,40 @@
     );
   }
 
+  function downloadBackupFile(backup: any) {
+    try {
+      const json = serializeSafetyBackupJson(backup);
+      const blob = new Blob([json], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      const datePart = new Date(backup.createdAt).toISOString().slice(0, 19).replace(/[:T]/g, "-");
+      a.href = url;
+      a.download = `iypm-pre-disconnect-backup-${datePart}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch {
+      // non-fatal if browser environment lacks DOM download primitives
+    }
+  }
+
   function handleRemoveKey() {
     requestConfirm({
       title: "Remove sync key from this device?",
       message:
-        "This device will stop syncing. Your data stays locally, but you will need the key again to reconnect.",
+        "This device will stop syncing. A safety snapshot JSON file will be downloaded automatically so you never lose this device's current library state.",
       color: "danger",
-      confirmLabel: "Remove",
-      onConfirm: removeKey,
+      confirmLabel: "Download backup & remove key",
+      onConfirm: async () => {
+        try {
+          const snap = await captureSyncSafetyBackup("Before removing sync key", { force: true });
+          if (snap) downloadBackupFile(snap);
+        } catch {
+          // Proceed with removal even if snapshot capture fails
+        }
+        await removeKey();
+      },
     });
   }
 

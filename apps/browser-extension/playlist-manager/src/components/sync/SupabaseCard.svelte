@@ -122,11 +122,11 @@
       <div class="conn-result" class:ok={testResult.ok} class:err={!testResult.ok}>
         <Fa icon={testResult.ok ? faCircleCheck : faCircleExclamation} />
         <div class="conn-result-body">
-          <strong
-            >{testResult.ok
-              ? "Supabase schema verified"
-              : "Connection / schema check failed"}</strong
-          >
+          <strong>
+            {testResult.ok
+              ? `Supabase schema verified (${testResult.schemaVersion || "v2"})`
+              : "Connection / schema check failed"}
+          </strong>
           <span>{testResult.summary}</span>
         </div>
       </div>

@@ -54,6 +54,7 @@ export type ConnectionCheckResult = {
   totalRecords: number;
   countsByCollection: Record<string, number>;
   summary: string;
+  schemaVersion?: string;
   error?: string;
 };
 
@@ -206,8 +207,8 @@ export async function verifyRelayConnection(
       .join(", ");
     const summary =
       active.length > 0
-        ? `Connected to ${endpointHost} (${latencyMs} ms, space #${spacePrefix}) — ${active.length} encrypted record${active.length === 1 ? "" : "s"} (${breakdown})`
-        : `Connected to ${endpointHost} (${latencyMs} ms, space #${spacePrefix}) — cloud space verified (empty; click "Sync now" to upload)`;
+        ? `Connected to ${endpointHost} (${latencyMs} ms, space #${spacePrefix}, schema v2) — ${active.length} encrypted record${active.length === 1 ? "" : "s"} (${breakdown})`
+        : `Connected to ${endpointHost} (${latencyMs} ms, space #${spacePrefix}, schema v2) — cloud space verified (empty; click "Sync now" to upload)`;
 
     return {
       ok: true,
@@ -216,6 +217,7 @@ export async function verifyRelayConnection(
       latencyMs,
       totalRecords: active.length,
       countsByCollection: counts,
+      schemaVersion: "v2",
       summary,
     };
   } catch (err) {

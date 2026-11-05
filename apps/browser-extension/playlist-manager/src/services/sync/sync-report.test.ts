@@ -26,6 +26,8 @@ describe("buildSyncRunReport", () => {
         lastSummary: "Synced 29 records (↓0 applied, ↑29 uploaded)",
         pushedCount: 29,
         pulledCount: 0,
+        bytesSent: 4096,
+        bytesReceived: 1024,
         categoryProgress: {
           playlists: { processed: 27, applied: 0, total: 27 },
           history: { processed: 1, applied: 0, total: 1 },
@@ -46,6 +48,8 @@ describe("buildSyncRunReport", () => {
     expect(report.ok).toBe(true);
     expect(report.endpointHost).toBe("pfydngsbcmuhsqqjbcte.supabase.co");
     expect(report.pushedCount).toBe(29);
+    expect(report.bytesSent).toBe(4096);
+    expect(report.bytesReceived).toBe(1024);
     expect(report.knownDevices).toBe(2);
     expect(report.rows).toHaveLength(4);
     expect(report.rows[0]?.localSummary).toBe("27 playlists (142 videos)");

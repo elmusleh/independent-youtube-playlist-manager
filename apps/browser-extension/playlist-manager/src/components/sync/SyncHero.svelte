@@ -6,6 +6,7 @@
     faCircleExclamation,
     faSpinner,
     faLink,
+    faShieldHalved,
   } from "@fortawesome/free-solid-svg-icons";
   import SimpleButton from "../SimpleButton.svelte";
 
@@ -77,6 +78,12 @@
             1
               ? "s"
               : ""}
+          </span>
+          <span
+            class="e2ee-badge"
+            title="End-to-end encrypted with AES-GCM 256-bit. Keys remain on this device and are never sent to the cloud relay."
+          >
+            <Fa icon={faShieldHalved} /> E2EE Verified
           </span>
           {#if isSyncing}
             <span class="syncing-badge">Syncing…</span>
@@ -235,6 +242,20 @@
     display: inline-flex;
     align-items: center;
     gap: 0.4rem;
+  }
+  .e2ee-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    margin-left: 0.5rem;
+    padding: 0.15rem 0.5rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--success, #10b981);
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.25);
+    border-radius: 999px;
+    vertical-align: middle;
   }
   .syncing-badge {
     display: inline-flex;

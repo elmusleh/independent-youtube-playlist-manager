@@ -1,3 +1,40 @@
+## 2026-11-05 — Sync UX & transparency hardening: E2EE badge, pre-disconnect backup prompt, network byte tracking, relative time refresh, and Supabase schema version validation
+
+### Root Causes & Hardening Implemented
+
+1. **End-to-End Encryption verification badge in `SyncHero.svelte` (#39):**
+   - Added an explicit `E2EE Verified` pill in `SyncHero.svelte` with a tooltip stating data is encrypted with AES-GCM 256-bit and keys never leave local memory.
+2. **Download safety backup before disconnecting sync key (#40):**
+   - Updated `SyncKeyCard.svelte` so removing a sync key automatically captures a fresh safety snapshot JSON file and triggers a browser download before clearing the key and resetting shadows.
+3. **Network bandwidth / payload byte tracking in `SyncRunReport` (#41):**
+   - Added `bytesSent` and `bytesReceived` metrics across `relay-transport.ts`, `sync-engine-push.ts`, `sync-engine.ts`, and `sync-report.ts`.
+   - Updated `SyncReportModal.svelte` to show formatted upload and download data sizes (B / KB / MB) in the report banner.
+4. **Visual "Last Synced Time" relative timestamp auto-refresh (#42):**
+   - Added a 30-second interval in `Sync.svelte` updating a reactive `nowClock` timestamp, keeping "Just now" / "X min ago" indicators accurate without tab reloads.
+5. **Schema version validation in custom Supabase connection test (#43):**
+   - Added `schemaVersion: "v2"` to `ConnectionCheckResult` in `sync-diagnostics.ts` and updated `SupabaseCard.svelte` to display verified schema versions upon successful test connection.
+
+### Files Changed
+
+- `apps/browser-extension/playlist-manager/src/components/sync/SyncHero.svelte`
+- `apps/browser-extension/playlist-manager/src/components/sync/SyncKeyCard.svelte`
+- `apps/browser-extension/playlist-manager/src/components/sync/SyncReportModal.svelte`
+- `apps/browser-extension/playlist-manager/src/components/sync/SupabaseCard.svelte`
+- `apps/browser-extension/playlist-manager/src/services/sync-engine-push.ts`
+- `apps/browser-extension/playlist-manager/src/services/sync-engine.ts`
+- `apps/browser-extension/playlist-manager/src/services/sync/sync-diagnostics.ts`
+- `apps/browser-extension/playlist-manager/src/services/sync/sync-report.ts`
+- `apps/browser-extension/playlist-manager/src/services/sync/sync-report.test.ts`
+- `apps/browser-extension/playlist-manager/src/views/Sync.svelte`
+- `CHANGELOG.md`, `SUGGESTIONS.md`, `.ai-sync/HANDOFF.md`
+
+### Verification
+
+- `npm run check` (89 Vitest files / 790 tests, 0 ESLint errors, svelte-check clean)
+- `npm run build`
+- `npm run test:extension` (102 route checks, 13 interaction groups, Firefox boot check, popup check, Edge check)
+- `npm run test:visual` (24/24 snapshots)
+
 ## 2026-11-05 — Pre-release hardening batch: dead v1 sync retirement, oversized playlist isolation, portable JSON restore, persistent report & CI security gates
 
 ### Root Causes & Hardening Implemented

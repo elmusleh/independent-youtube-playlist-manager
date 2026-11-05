@@ -37,6 +37,8 @@ export type SyncStatus = {
   incomingCount: number;
   pushedCount: number;
   pulledCount: number;
+  bytesSent?: number;
+  bytesReceived?: number;
   failedCount: number;
   startedAt: number | null;
   estimatedMs: number | null;
@@ -211,6 +213,11 @@ export async function runOnce(): Promise<SyncStatus> {
     let additionalIncomingCount = 0;
     let didPushSuccessfully = false;
     let pushedCount = 0;
+    let bytesSent = 0;
+    let bytesReceived = incoming.reduce(
+      (sum, r) => sum + (typeof r.payload === "string" ? r.payload.length : 0),
+      0
+    );
     if (result.allDirty.length > 0) {
       const pushOutcome = await pushCandidatesWithConflictResolution(
         {
@@ -233,6 +240,8 @@ export async function runOnce(): Promise<SyncStatus> {
       additionalIncomingCount = pushOutcome.pulledCount;
       didPushSuccessfully = pushOutcome.didPushSuccessfully;
       pushedCount = pushOutcome.pushedCount;
+      bytesSent += pushOutcome.bytesSent;
+      bytesReceived += pushOutcome.bytesReceived;
       for (const coll of ["playlists", "settings", "history", "devices"] as const) {
         status.categoryProgress[coll].processed = status.categoryProgress[coll].total;
       }
@@ -291,6 +300,8 @@ export async function runOnce(): Promise<SyncStatus> {
     status.pendingCount = 0;
     status.pushedCount = pushedCount;
     status.pulledCount = incoming.length + additionalIncomingCount;
+    status.bytesSent = bytesSent;
+    status.bytesReceived = bytesReceived;
     status.failedCount = result.failed.length;
     backoffIndex = 0;
     await persistEngineSyncReport({
@@ -335,11 +346,4 @@ export function resume(): void {
   scheduleRun(0);
 }
 
-registerSyncEngine({
-  runOnce,
-  scheduleRun,
-  pause,
-  resume,
-  getStatus,
-  isRunning: () => isRunning,
-});
+registerSyncEngine({ runOnce, scheduleRun, pause, resume, getStatus, isRunning: () => isRunning });

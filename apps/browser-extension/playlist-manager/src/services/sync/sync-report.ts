@@ -36,6 +36,8 @@ export type SyncRunReport = {
   spacePrefix: string;
   pushedCount: number;
   pulledCount: number;
+  bytesSent?: number;
+  bytesReceived?: number;
   knownDevices: number;
   rows: SyncCategoryReportRow[];
 };
@@ -163,6 +165,8 @@ export function buildSyncRunReport(params: {
     spacePrefix,
     pushedCount: statusSnapshot?.pushedCount ?? 0,
     pulledCount: statusSnapshot?.pulledCount ?? 0,
+    bytesSent: statusSnapshot?.bytesSent ?? 0,
+    bytesReceived: statusSnapshot?.bytesReceived ?? 0,
     knownDevices: Math.max(1, knownDevices),
     rows,
   };

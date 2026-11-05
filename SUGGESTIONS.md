@@ -160,6 +160,11 @@ it is never repeated. After each implementation, append the new suggestions
     `browser.alarms` wakeup at `snoozeUntil`.
 37. Enforce strict bounds validation on `autoSyncOnChange` / `syncIntervalMinutes` inside `saveSyncConfig`. [done] 2026-11-05
 38. Add a Playwright interaction test for `SyncScheduleCard.svelte` preset + custom duration switching. [done] 2026-11-05
+39. Add End-to-End Encryption Verification Indicator (Badge) in `SyncHero.svelte`. [done] 2026-11-05
+40. Add "Download Safety Backup" Prompt Before Disconnecting Sync Key. [done] 2026-11-05
+41. Add Network Bandwidth / Payload Size Tracking to `SyncRunReport`. [done] 2026-11-05
+42. Add Visual "Last Synced Time" Humanized Auto-Refresh Timer. [done] 2026-11-05
+43. Expose Schema Version Validation in Custom Supabase Connection Test. [done] 2026-11-05
 
 ## Done
 

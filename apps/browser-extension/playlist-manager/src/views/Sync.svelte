@@ -477,9 +477,11 @@
     });
   }
 
+  let nowClock = $state(Date.now());
+
   function formatWhen(ts: number | null): string {
     if (!ts) return "Never";
-    const diff = Date.now() - ts;
+    const diff = Math.max(0, nowClock - ts);
     if (diff < 60_000) return "Just now";
     if (diff < 3_600_000) return `${Math.floor(diff / 60_000)} min ago`;
     if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)} h ago`;
@@ -524,6 +526,9 @@
 
   onMount(() => {
     const timer = setInterval(refreshStatus, 10_000);
+    const clockTimer = setInterval(() => {
+      nowClock = Date.now();
+    }, 30_000);
     const b = (window as any).browser || (window as any).chrome;
     const storageListener = (changes: any, area: string) => {
       if (area !== "local") return;
@@ -547,6 +552,7 @@
     refresh().then(() => subscribeNudge());
     return () => {
       clearInterval(timer);
+      clearInterval(clockTimer);
       window.removeEventListener("focus", onFocus);
       b?.storage?.onChanged?.removeListener?.(storageListener);
       b?.permissions?.onAdded?.removeListener?.(onPermissionChange);

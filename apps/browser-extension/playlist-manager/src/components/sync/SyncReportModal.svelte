@@ -23,6 +23,13 @@
     if (ms < 1000) return `${ms} ms`;
     return `${(ms / 1000).toFixed(1)} s`;
   }
+
+  function formatBytes(bytes?: number): string {
+    if (!bytes || bytes <= 0) return "0 B";
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  }
 </script>
 
 <Modal bind:display={open} title="Sync Status Report" size="standard">
@@ -69,6 +76,8 @@
         {#if report.spacePrefix}
           · Space: <code>#{report.spacePrefix}</code>
         {/if}
+        · Network traffic: <strong>↑ {formatBytes(report.bytesSent)} uploaded</strong> ·
+        <strong>↓ {formatBytes(report.bytesReceived)} downloaded</strong>
       </p>
 
       <div class="report-table-wrap">

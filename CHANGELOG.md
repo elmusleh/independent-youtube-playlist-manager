@@ -31,6 +31,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   pre-sync local restore points (`SyncSafetyCard.svelte`) with one-click JSON export, portable JSON
   import/restore, and anti-mass-wipe override protection; per-record 150 KB preflight guards to isolate
   oversized playlists without blocking the library; retirement of the legacy v1 `supabase-sync.ts` bundle;
+  an E2EE verified badge in `SyncHero.svelte`; automatic safety snapshot file download before disconnecting a sync key;
+  network bandwidth upload/download payload byte tracking in `SyncRunReport`; visual relative time auto-refresh (30s interval);
+  schema version validation reporting in Supabase connection tests;
   and automated CI guards for Firefox MV3 background reliability, message sender validation, and manifest
   domain allowlists.
 - Moved "Local Storage" and "Database Backup & Portable Restore" cards from the Settings page to

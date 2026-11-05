@@ -15,6 +15,8 @@ export type PushResolution = {
   didPushSuccessfully: boolean;
   pulledCount: number;
   pushedCount: number;
+  bytesSent: number;
+  bytesReceived: number;
 };
 
 const recordKey = (record: { collection: string; rid: string }) =>
@@ -32,8 +34,14 @@ export async function pushCandidatesWithConflictResolution(
     didPushSuccessfully: false,
     pulledCount: 0,
     pushedCount: 0,
+    bytesSent: 0,
+    bytesReceived: 0,
   };
   if (!initial.allDirty.length) return outcome;
+
+  for (const r of initial.allDirty) {
+    outcome.bytesSent += typeof r.payload === "string" ? r.payload.length : 0;
+  }
 
   const pushResults = await pushAll(
     context.relayConfig,
@@ -78,6 +86,9 @@ export async function pushCandidatesWithConflictResolution(
     context.sinceSeq
   );
   outcome.pulledCount = remote.length;
+  for (const r of remote) {
+    outcome.bytesReceived += typeof r.payload === "string" ? r.payload.length : 0;
+  }
   const remoteKeys = new Set(remote.map(recordKey));
   for (const candidate of conflictCandidates) {
     if (!remoteKeys.has(recordKey(candidate.record))) {
@@ -128,6 +139,9 @@ export async function pushCandidatesWithConflictResolution(
   );
 
   if (pushableRetryCandidates.length > 0) {
+    for (const c of pushableRetryCandidates) {
+      outcome.bytesSent += typeof c.record?.payload === "string" ? c.record.payload.length : 0;
+    }
     const retryResults: PushResult[] = await pushAll(
       context.relayConfig,
       context.space,
