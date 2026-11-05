@@ -15,29 +15,34 @@ What each document is for, and who it is for. If you are an agent starting a ses
 
 ## Process
 
-| Document                | Purpose                                                                                  |
-| ----------------------- | ---------------------------------------------------------------------------------------- |
-| `RELEASING.md`          | **The** release runbook: semver, version sync, changelog, tag, store uploads.            |
-| `DEV_BUILD_WORKFLOW.md` | Mandatory `npm run build` workflow, browser reload steps, and hosted sync relay details. |
-| `IMPROVEMENT_PLAN.md`   | Sequenced plan for in-flight work, the four open issues, debt and the sync rollout.      |
-| `DEPLOYMENT.md`         | Vercel: why there is no root `vercel.json`, the Root Directory setting, `ignoreCommand`. |
-| `RELEASE_READINESS.md`  | Pre-release checklist across stores and platforms.                                       |
-| `GITHUB_ISSUE_FIXES.md` | Record of specific issue fixes and their verification.                                   |
+| Document                               | Purpose                                                                                  |
+| -------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `RELEASING.md`                         | **The** release runbook: semver, version sync, changelog, tag, store uploads.            |
+| `DEV_BUILD_WORKFLOW.md`                | Mandatory `npm run build` workflow, browser reload steps, and hosted sync relay details. |
+| `IMPROVEMENT_PLAN.md`                  | Sequenced plan for in-flight work, the four open issues, debt and the sync rollout.      |
+| `DEPLOYMENT.md`                        | Vercel: why there is no root `vercel.json`, the Root Directory setting, `ignoreCommand`. |
+| `RELEASE_READINESS.md`                 | Pre-release checklist across stores and platforms.                                       |
+| `GITHUB_ISSUE_FIXES.md`                | Record of specific issue fixes and their verification.                                   |
+| `process/DAILY_ANALYSIS_2026_11_05.md` | Snapshot of codebase health, 783 passing tests, Sync v2 status, and prioritized items.   |
+| `process/TOPIC_CLUSTERS_2026_W45.md`   | Vault and codebase knowledge graph topic clusters (Sync v2, metadata, UI, OpenSpec).     |
 
 ## Technical reference
 
 [CONTEXT_MENU_PLAN.md](CONTEXT_MENU_PLAN.md) — proposed OneTab-style page menu,
 shared capture design, permissions and browser tests; implementation pending.
 
-| Document                                | Purpose                                                                                                               |
-| --------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `PAGE_IMPORT_VERIFICATION.md`           | How the popup scans an arbitrary page, and how to verify it manually.                                                 |
-| `RESPONSIVE_UI_PLAN.md`                 | Phased responsive work; phases 1–3 shipped, verification outstanding.                                                 |
-| `POPUP_MOBILE_PLAN.md`                  | Popup sizing/instant-open diagnosis and fix; implemented (mode split, SVG icons).                                     |
-| `ENCRYPTED_SYNC_PLAN.md`                | Zero-knowledge cross-device sync plan (sync key, encrypted snapshots, pluggable backends); approved, not implemented. |
-| `SYNC_V2_STATUS.md`                     | Sync v2 implementation status — Phases 0–3 done, Phase 4 (UI split) and Phase 5 (extras) remaining.                   |
-| `architecture.dot` / `architecture.png` | Rendered architecture graph.                                                                                          |
-| `../packages/build-tools/`              | The guards referenced by `npm run check` — read the file headers.                                                     |
+| Document                                          | Purpose                                                                                                               |
+| ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `architecture/AUTOMATIC_HANDLING.md`              | Automatic background sync, quota shield, event-driven triggers, idle worker lifecycle.                                |
+| `architecture/OFFLINE_FIRST_SYNC_ARCHITECTURE.md` | Transition spec: local-first authority, 3-way conflict merge, and categorized error handling.                         |
+| `architecture/METADATA_ARCHITECTURE.md`           | Living spec on video metadata cache, per-video IndexedDB entries, and adaptive batching.                              |
+| `PAGE_IMPORT_VERIFICATION.md`                     | How the popup scans an arbitrary page, and how to verify it manually.                                                 |
+| `RESPONSIVE_UI_PLAN.md`                           | Phased responsive work; phases 1–3 shipped, verification outstanding.                                                 |
+| `POPUP_MOBILE_PLAN.md`                            | Popup sizing/instant-open diagnosis and fix; implemented (mode split, SVG icons).                                     |
+| `ENCRYPTED_SYNC_PLAN.md`                          | Zero-knowledge cross-device sync plan (sync key, encrypted snapshots, pluggable backends); approved, not implemented. |
+| `SYNC_V2_STATUS.md`                               | Sync v2 implementation status — Phases 0–3 done, Phase 4 (UI split) and Phase 5 (extras) remaining.                   |
+| `architecture.dot` / `architecture.png`           | Rendered architecture graph.                                                                                          |
+| `../packages/build-tools/`                        | The guards referenced by `npm run check` — read the file headers.                                                     |
 
 ## Store submissions
 

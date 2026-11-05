@@ -11,5 +11,6 @@ apps/web-portal/playwright-report/
 apps/web-portal/test-results/
 .agents/
 .hermes/
+apps/mobile-app/android/
 # Generated coordination evidence (written by scripts, not hand-edited)
 openspec/changes/*/evidence/*.json

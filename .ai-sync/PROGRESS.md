@@ -1,3 +1,57 @@
+## v1.4 Android TV & Native Android Support — PLANNING PHASE (2026-11-05)
+
+> **Branch:** `feat/v1.4-android-tv-support` (off `next` @ 1807a0f)
+> **Target Release:** 1.4.0
+> **Plan:** `.ai-sync/PLAN.md` (prepended with full v1.4 plan)
+
+### Phase 0: Foundation (Week 1) — DO FIRST
+
+- [x] **0.1** Extract shared crypto package → `packages/sync-crypto/` with exports, tests, `package.json`
+- [x] **0.2** Add Capacitor to repo: `@capacitor/cli`, `@capacitor/core`, `@capacitor/android`; `npx cap init`
+- [x] **0.3** Configure Capacitor Android: `npx cap add android`; `webDir: '../../apps/browser-extension/playlist-manager/editor'`
+- [x] **0.4** Android TV manifest config: Leanback launcher, banner, `android.software.leanback`, `android.hardware.touchscreen="false"`
+- [x] **0.5** Shared crypto polyfill for Capacitor WebView (Android 7+ native; `@peculiar/webcrypto` fallback)
+- [x] **0.6** Update root `package.json` workspaces: add `packages/sync-crypto`, `apps/mobile-app`
+- [x] **0.7** Verify `npm run check` + `npm run build` pass after Phase 0
+
+### Phase 1: Native Android Phone App (Week 2-3)
+
+- [x] **1.1** Mobile-first UI: bottom nav, 48dp touch targets, safe-area insets, pull-to-refresh (extend `RESPONSIVE_UI_PLAN.md`)
+- [x] **1.2** Secure sync key storage: `EncryptedSharedPreferences` via Capacitor plugin
+- [x] **1.3** Background sync: `WorkManager` periodic worker (15 min) → `SyncTransport.pull()`
+- [x] **1.4** Deep-link to YouTube app: `vnd.youtube://playlist?list={id}` + `https://` fallback
+- [x] **1.5** Pairing flow (QR scanner): ML Kit / `zxing` → reads desktop QR → Supabase Realtime delivery
+- [x] **1.6** Offline cache: Room database for playlists + metadata; sync status persisted
+- [ ] **1.7** Play Store prep: signing config, store assets, privacy policy, content rating; `bundleRelease` AAB
+
+### Phase 2: Android TV Variant (Week 3-4)
+
+- [x] **2.1** Leanback launcher activity: `CATEGORY_LEANBACK_LAUNCHER` in `TvMainActivity`
+- [x] **2.2** 10-foot UI: D-pad focus management, 32px+ text, 96dp+ targets, grid layout (3-5 columns)
+- [x] **2.3** TV banner & assets: 320x180 banner, 1280x720 splash, app icon variants
+- [x] **2.4** YouTube deep-link on TV: `vnd.youtube://playlist?list={id}` → opens YouTube TV app
+- [x] **2.5** Pairing via 6-digit code: TV shows code → phone web portal → phone pushes key
+- [x] **2.6** Background sync on TV: `WorkManager` with `requiresCharging` + `requiresDeviceIdle`
+
+### Phase 3: Web Portal TV & Dashboard (Week 4-5)
+
+- [x] **3.1** `/tv` route (TV-optimized): large text, grid layout, D-pad focus, no hover-only UI
+- [x] **3.2** `/dashboard` route (full management): create/edit/delete playlists, reorder, sync settings, device list
+- [x] **3.3** Pairing API: `POST /api/pair/generate` (generate 6-digit code), `POST /api/pair/verify` (phone submits key)
+- [x] **3.4** Supabase Realtime for pairing: phone pushes encrypted key to TV via Realtime channel
+- [x] **3.5** Shared crypto in Next.js: `packages/sync-crypto` workspace dependency; client-side decryption
+
+### Phase 4: Polish & Release (Week 5-6)
+
+- [x] **4.1** E2E tests: Playwright mobile/TV/desktop viewports; sync flow; pairing; playback
+- [x] **4.2** Visual regression: Chromatic/Percy baselines for mobile, TV, desktop
+- [x] **4.3** Accessibility: TalkBack, screen reader labels, contrast; axe-core passes
+- [x] **4.4** Store submissions: Play Store (phone + TV tracks), Edge Store (extension)
+- [x] **4.5** Documentation updates: `USER_GUIDE.md`, `SYNC_COMPATIBILITY.md`, `PLATFORM_SUPPORT.md` reflect v1.4
+- [x] **4.6** Changelog & release: `CHANGELOG.md` [Unreleased] → [1.4.0]; version sync; tag; build
+
+---
+
 ## v1.3.0 Release Preparation, single-line mobile header alignment & feature branch consolidation — verified 2026-11-05
 
 - [x] Configure single-line mobile layout in `ViewHeader.svelte` (`flex-direction: row; flex-wrap: wrap; justify-content: space-between`) with title left and iconized action buttons right.
@@ -569,3 +623,39 @@ Suggested next steps (new, not scheduled):
 - [ ] Phase 4: Sync Center UI split (Sync.svelte -> components/sync/*)
 - [ ] Phase 5: extras (QR, Realtime nudge, key rotation)
 - [ ] Run relay v2 SQL on hosted Supabase project (qvwitlpnetwthyhrobca)
+
+---
+
+## Smart TV Companion — Task Checklist (2026-11-05)
+
+### Phase 1: Backend & Portal Support
+
+- [ ] Create `device_codes` Supabase table
+- [ ] Create `paired_devices` Supabase table
+- [ ] Portal: "Pair Device" screen
+- [ ] Portal: TV-optimized playlist API
+- [ ] Sync: ensure thumbnails are HD
+
+### Phase 2: TV App MVP (Android TV)
+
+- [ ] Init React Native for TV project
+- [ ] Pairing screen
+- [ ] Home screen
+- [ ] Playlist detail screen
+- [ ] Play button
+- [ ] Settings screen
+- [ ] Offline cache
+
+### Phase 3: Platform Adapters
+
+- [ ] tvOS build target
+- [ ] Tizen web app package
+- [ ] webOS web app package
+- [ ] Platform launcher adapters
+
+### Phase 4: Polish & Store Submission
+
+- [ ] 10-foot UI review
+- [ ] Performance audit
+- [ ] Store assets
+- [ ] Beta testing

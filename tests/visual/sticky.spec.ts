@@ -123,6 +123,9 @@ for (const vp of VIEWPORTS) {
         .poll(() => bar.evaluate((el) => el.getBoundingClientRect().top))
         .toBeGreaterThan(headerHeight - 2);
 
+      // When pinned, the bar must activate the floating elevation shadow class.
+      await expect.poll(() => bar.evaluate((el) => el.classList.contains("is-stuck"))).toBe(true);
+
       // The back-to-top button must be visible.
       await expect
         .poll(() =>

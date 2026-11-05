@@ -7,6 +7,45 @@ export type ReleaseNoteEntry = { version: string; date: string; sections: Releas
 
 export const releaseNotes: ReleaseNoteEntry[] = [
   {
+    version: "1.4.0",
+    date: "2026-11-05",
+    sections: [
+      {
+        heading: "Added",
+        items: [
+          "Native Android App (Phone + Android TV) — Capacitor wrapper around the existing Svelte SPA (apps/browser-extension/playlist-manager/editor/), single codebase for phone and TV variants. Android TV uses Leanback launcher with 10-foot UI (D-pad navigation, 320×180 banner, 32px+ text, 96dp+ touch targets).",
+          "Web Portal TV & Dashboard — /tv route (TV-optimized: large text, grid layout, D-pad focus, no hover-only UI) and /dashboard route (full playlist management: create/edit/delete, reorder, sync settings, device list, pairing flow).",
+          "6-Digit Pairing Flow — TV shows 6-digit code → phone enters code on web portal → phone pushes encrypted sync key via Supabase Realtime → TV receives and decrypts. No TV remote typing required. QR code fallback also supported.",
+          "Shared Zero-Knowledge Crypto Package — packages/sync-crypto/ with HKDF-SHA256 key derivation, AES-256-GCM record encryption, HLC versioning, snapshot codec, fingerprint pools (256 emoji + 256 words). 38 unit tests. Used by extension, Android app, and web portal.",
+          "Offline-First Room Database (Android) — Playlist, video, sync status, and settings entities with reactive Flow DAOs. Room 2.6.1 with Kotlin coroutines.",
+          "Background Sync via WorkManager — 15-minute periodic sync with network constraints. TV variant adds requiresCharging + requiresDeviceIdle for battery awareness.",
+          "Secure Storage — EncryptedSharedPreferences via Android Keystore for sync key storage. Custom Capacitor plugin (SecureStoragePlugin).",
+          "ML Kit QR Scanner — Camera capture + gallery pick for QR/6-digit code scanning. Custom Capacitor plugin (QRScannerPlugin).",
+          "YouTube Deep-Linking — vnd.youtube://playlist?list={id} opens native YouTube app on Android/TV; https:// fallback.",
+          "Supabase Realtime Pairing — Real-time channel subscription for instant sync key delivery from phone to TV.",
+          "E2E Test Suite — Playwright tests for desktop, mobile, and TV viewports covering dashboard, TV page, pairing flow, and cross-device sync.",
+          "Visual Regression Tests — Baselines for desktop, tablet, mobile, TV at light/dark themes.",
+          "Accessibility Tests — axe-core WCAG 2.1 AA compliance, keyboard navigation, screen reader labels, color contrast, focus management.",
+        ],
+      },
+      {
+        heading: "Changed",
+        items: [
+          "Capacitor webDir now points to built SPA output (dist/chrome/editor) instead of source directory.",
+          "Android manifest declares dual activities: MainActivity (phone launcher) + TvMainActivity (Leanback launcher).",
+          "Web portal /tv uses Supabase Realtime for instant pairing; /dashboard adds pairing flow with code entry and sync key verification.",
+        ],
+      },
+      {
+        heading: "Fixed",
+        items: [
+          "TypeScript strict null checks in packages/sync-crypto (non-null assertions, Uint8Array<ArrayBuffer> casts for Web Crypto API).",
+          "Capacitor Android build configuration with correct webDir and plugin registration.",
+        ],
+      },
+    ],
+  },
+  {
     version: "1.3.0",
     date: "2026-11-05",
     sections: [

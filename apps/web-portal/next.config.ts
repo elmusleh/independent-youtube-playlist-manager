@@ -2,6 +2,12 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   outputFileTracingRoot: __dirname,
+  turbopack: {
+    resolveAlias: {
+      "@iypm/sync-crypto":
+        "/home/steve/dev/independent-youtube-playlist-manager/packages/sync-crypto",
+    },
+  },
   async headers() {
     return [
       {

@@ -38,6 +38,7 @@ const playlistEditorPackageJsonPath = resolve(
   "apps/browser-extension/playlist-manager/package.json"
 );
 const webPortalPackageJsonPath = resolve(root, "apps/web-portal/package.json");
+const edgeMetadataPath = resolve(root, "docs/edge-release-metadata.json");
 
 const args = process.argv.slice(2);
 const setIndex = args.indexOf("--set");
@@ -95,6 +96,13 @@ const wpPkgPrev = wpPkg.version;
 wpPkg.version = canonicalVersion;
 await writeJson(webPortalPackageJsonPath, wpPkg);
 console.log(`  apps/web-portal/package.json -> ${canonicalVersion} (was ${wpPkgPrev})`);
+
+// Update edge-release-metadata.json
+const edgeMeta = readJson(edgeMetadataPath);
+const edgeMetaPrev = edgeMeta.version;
+edgeMeta.version = canonicalVersion;
+await writeJson(edgeMetadataPath, edgeMeta);
+console.log(`  docs/edge-release-metadata.json -> ${canonicalVersion} (was ${edgeMetaPrev})`);
 
 // Keep npm ci metadata aligned with the manifest and package versions.
 for (const directory of [".", "apps/browser-extension/playlist-manager", "apps/web-portal"]) {

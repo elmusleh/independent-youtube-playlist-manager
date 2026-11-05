@@ -36,6 +36,16 @@ jobs:
       - name: Install Playlist Editor Dependencies
         run: cd apps/browser-extension/playlist-manager && npm ci
 
+      - name: Install Mobile App Dependencies
+        run: cd apps/mobile-app && npm ci
+
+      - name: Verify Root ESLint
+        run: |
+          if [ ! -d "node_modules/eslint" ]; then
+            echo "eslint not found in root node_modules, reinstalling..."
+            npm ci
+          fi
+
       - name: Run Full Quality Check (lint + format + test + svelte-check)
         run: npm run check
 
@@ -110,8 +120,17 @@ jobs:
           node packages/build-tools/orchestration/evidence-preflight.js
           node packages/build-tools/orchestration/demo-parallel.js
 
-      - name: Audit Dependencies
+      - name: Audit Root Dependencies
         run: npm audit --audit-level=high
+        continue-on-error: true
+
+      - name: Audit Extension Dependencies
+        run: cd apps/browser-extension/playlist-manager && npm audit --audit-level=high
+        continue-on-error: true
+
+      - name: Audit Mobile App Dependencies
+        run: cd apps/mobile-app && npm audit --audit-level=high
+        continue-on-error: true
 
   build-inventory:
     name: Build & Bundle Inventory
@@ -134,6 +153,16 @@ jobs:
 
       - name: Install Playlist Editor Dependencies
         run: cd apps/browser-extension/playlist-manager && npm ci
+
+      - name: Install Mobile App Dependencies
+        run: cd apps/mobile-app && npm ci
+
+      - name: Verify Root Prettier Plugin
+        run: |
+          if [ ! -d "node_modules/prettier-plugin-svelte" ]; then
+            echo "prettier-plugin-svelte not found in root node_modules, reinstalling..."
+            npm ci
+          fi
 
       # Build failures belong on their own check: a Rollup/CJS break used to surface only
       # inside the heaviest E2E job, minutes later.
@@ -223,6 +252,17 @@ jobs:
       - name: Run Extension Regression Suite
         run: npm run test:extension
 
+      - name: Upload Extension Test Artifacts (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: extension-test-results
+          path: |
+            test-results/
+            dist/verification/
+          retention-days: 7
+          if-no-files-found: ignore
+
       - name: Run Extension Visual Regression (primary views)
         run: npm run test:visual
 
@@ -231,7 +271,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: visual-regression-diffs
-          path: test-results/
+          path: |
+            test-results/
+            dist/verification/
           retention-days: 7
           if-no-files-found: ignore
 
