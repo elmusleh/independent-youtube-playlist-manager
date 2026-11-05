@@ -1,0 +1,30 @@
+{
+  "name": "@iypm/mobile-app",
+  "version": "1.4.0",
+  "private": true,
+  "scripts": {
+    "cap:init": "npx cap init",
+    "cap:add:android": "npx cap add android",
+    "cap:sync:android": "npx cap sync android",
+    "cap:open:android": "npx cap open android",
+    "cap:build:android": "npx cap build android",
+    "android:bundle": "cd android && ./gradlew bundleRelease",
+    "android:assemble": "cd android && ./gradlew assembleRelease"
+  },
+  "dependencies": {
+    "@capacitor/app": "^6.0.0",
+    "@capacitor/core": "^6.0.0",
+    "@capacitor/haptics": "^6.0.0",
+    "@capacitor/keyboard": "^6.0.0",
+    "@capacitor/preferences": "^6.0.4",
+    "@capacitor/splash-screen": "^6.0.0",
+    "@capacitor/status-bar": "^6.0.0",
+    "@iypm/sync-crypto": "file:../../packages/sync-crypto"
+  },
+  "devDependencies": {
+    "@capacitor/android": "^6.0.0",
+    "@capacitor/assets": "^3.0.0",
+    "@capacitor/cli": "^6.0.0",
+    "husky": "^9.1.7"
+  }
+}

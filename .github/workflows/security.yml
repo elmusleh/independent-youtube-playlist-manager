@@ -47,6 +47,7 @@ jobs:
             package-lock.json
             apps/browser-extension/playlist-manager/package-lock.json
             apps/web-portal/package-lock.json
+            apps/mobile-app/package-lock.json
       - name: Install Root Dependencies
         run: npm ci
       - name: Audit Root Dependencies
@@ -61,4 +62,9 @@ jobs:
         run: npm --prefix apps/web-portal ci
       - name: Audit Web Dependencies
         run: cd apps/web-portal && npm audit --audit-level=high
+        continue-on-error: true
+      - name: Install Mobile App Dependencies
+        run: cd apps/mobile-app && npm ci
+      - name: Audit Mobile App Dependencies
+        run: cd apps/mobile-app && npm audit --audit-level=high
         continue-on-error: true
