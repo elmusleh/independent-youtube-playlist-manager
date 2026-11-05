@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { createClient } from "@supabase/supabase-js";
 import {
   deriveKeys,
+  computeStorageAddress,
   decryptRecord,
   decodeRecord,
   EncryptedRecord,
@@ -15,10 +16,12 @@ import { SyncKeyEntry } from "@/components/SyncKeyEntry";
 import { SyncStatus } from "@/components/SyncStatus";
 import { PairingCodeEntry } from "@/components/PairingCodeEntry";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+function getSupabase() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !key) return null;
+  return createClient(url, key);
+}
 
 interface Playlist {
   id: string;
@@ -50,9 +53,11 @@ export default function DashboardPage() {
     setIsLoading(true);
     setError(null);
     try {
-      const { encryptionKey, spaceAddress } = await deriveKeys(key);
+      const keys = await deriveKeys(key);
+      const spaceAddress = await computeStorageAddress(key);
 
-      const { data } = await supabase.rpc("sync_pull", {
+      const sb = getSupabase(); if (!sb) return;
+      const { data } = await sb.rpc("sync_pull", {
         space: spaceAddress,
         auth_hash: spaceAddress,
         since_seq: 0,
@@ -65,9 +70,9 @@ export default function DashboardPage() {
           const decrypted = await decryptRecord(
             r.payload as EncryptedRecord,
             {
-              encryptionKey,
-              recordIdKey: encryptionKey,
-              authTokenKey: encryptionKey,
+              encryptionKey: keys.encryptionKey,
+              recordIdKey: keys.recordIdKey,
+              authTokenKey: keys.authTokenKey,
             } as DerivedKeys
           );
           return decodeRecord(decrypted as unknown as Uint8Array);

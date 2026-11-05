@@ -1,11 +1,14 @@
+export const dynamic = "force-dynamic";
 // apps/web-portal/app/api/pair/verify/route.ts
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+function getSupabase() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !key) return null;
+  return createClient(url, key);
+}
 
 export async function POST(request: Request) {
   try {
@@ -17,7 +20,8 @@ export async function POST(request: Request) {
     }
 
     // Find the pairing code
-    const { data: pairing, error: findError } = await supabase
+    const sb = getSupabase(); if (!sb) return NextResponse.json({ error: "Not configured" }, { status: 503 });
+    const { data: pairing, error: findError } = await sb
       .from("pairing_codes")
       .select("*")
       .eq("code", code.toUpperCase())
@@ -34,7 +38,7 @@ export async function POST(request: Request) {
     }
 
     // Store the sync key for the TV to pick up
-    const { error: updateError } = await supabase
+    const { error: updateError } = await sb
       .from("pairing_codes")
       .update({
         sync_key: syncKey,

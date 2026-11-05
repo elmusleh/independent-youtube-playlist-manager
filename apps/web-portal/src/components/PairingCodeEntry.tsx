@@ -11,10 +11,12 @@ import {
   EncryptedRecord,
 } from "@iypm/sync-crypto";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+function getSupabase() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !key) return null;
+  return createClient(url, key);
+}
 
 interface Props {
   onComplete: (syncKey: string) => void;
@@ -105,7 +107,8 @@ export function PairingCodeEntry({ onComplete }: Props) {
       try {
         const { encryptionKey } = await deriveKeys(syncKey.trim());
         const spaceAddress = await computeStorageAddress(syncKey.trim());
-        const { data } = await supabase.rpc("sync_pull", {
+        const sb = getSupabase(); if (!sb) return;
+      const { data } = await sb.rpc("sync_pull", {
           space: spaceAddress,
           auth_hash: spaceAddress,
           since_seq: 0,
@@ -226,10 +229,10 @@ export function PairingCodeEntry({ onComplete }: Props) {
               </button>
               <button
                 onClick={handleVerify}
-                disabled={step === "waiting" || !syncKey.trim()}
+                disabled={false || !syncKey.trim()}
                 className="flex-1 px-4 py-3 bg-brand-600 text-white rounded-lg hover:bg-brand-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {step === "waiting" ? "Verifying..." : "Verify & Pair"}
+                {false ? "Verifying..." : "Verify & Pair"}
               </button>
             </div>
           </div>

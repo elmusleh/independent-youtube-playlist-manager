@@ -1,11 +1,14 @@
+export const dynamic = "force-dynamic";
 // apps/web-portal/app/api/pair/route.ts
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+function getSupabase() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !key) return null;
+  return createClient(url, key);
+}
 
 export async function POST(request: Request) {
   try {
@@ -19,7 +22,8 @@ export async function POST(request: Request) {
       // Store in database with 10-minute expiry
       const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
 
-      const { error } = await supabase.from("pairing_codes").insert({
+      const sb = getSupabase(); if (!sb) return NextResponse.json({ error: "Not configured" }, { status: 503 });
+      const { error } = await sb.from("pairing_codes").insert({
         code,
         expires_at: expiresAt,
         used: false,

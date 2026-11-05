@@ -5,6 +5,7 @@ import { useState, useEffect, useRef } from "react";
 import { createClient } from "@supabase/supabase-js";
 import {
   deriveKeys,
+  computeStorageAddress,
   decryptRecord,
   decodeRecord,
   EncryptedRecord,
@@ -14,10 +15,12 @@ import { PlaylistGrid } from "@/components/PlaylistGrid";
 import { SyncKeyEntry } from "@/components/SyncKeyEntry";
 import { PairingDisplay } from "@/components/PairingDisplay";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+function getSupabase() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !key) return null;
+  return createClient(url, key);
+}
 
 interface Playlist {
   id: string;
@@ -43,7 +46,7 @@ export default function TVPage() {
   const [pairingExpiresAt, setPairingExpiresAt] = useState<number | null>(null);
   const [syncKey, setSyncKey] = useState<string | null>(null);
   const [timeRemaining, setTimeRemaining] = useState(0);
-  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const channelRef = useRef<any>(null);
   const countdownRef = useRef<NodeJS.Timeout | null>(null);
 
   // Check for existing pairing on load
@@ -66,7 +69,7 @@ export default function TVPage() {
 
   function cleanup() {
     if (channelRef.current) {
-      supabase.removeChannel(channelRef.current);
+      const sb2 = getSupabase(); if (sb2 && channelRef.current) sb2.removeChannel(channelRef.current);
       channelRef.current = null;
     }
     if (countdownRef.current) {
@@ -103,7 +106,9 @@ export default function TVPage() {
   }
 
   function subscribeToPairing(code: string) {
-    const channel = supabase
+    const sb = getSupabase();
+    if (!sb) return;
+    const channel = sb
       .channel(`pairing:${code}`)
       .on(
         "postgres_changes",
@@ -159,9 +164,11 @@ export default function TVPage() {
 
   async function loadPlaylists(syncKey: string) {
     try {
-      const { encryptionKey, spaceAddress } = await deriveKeys(syncKey);
+      const keys = await deriveKeys(syncKey);
+      const spaceAddress = await computeStorageAddress(syncKey);
 
-      const { data } = await supabase.rpc("sync_pull", {
+      const sb = getSupabase(); if (!sb) return;
+      const { data } = await sb.rpc("sync_pull", {
         space: spaceAddress,
         auth_hash: spaceAddress,
         since_seq: 0,
@@ -174,9 +181,9 @@ export default function TVPage() {
           const decrypted = await decryptRecord(
             r.payload as EncryptedRecord,
             {
-              encryptionKey,
-              recordIdKey: encryptionKey,
-              authTokenKey: encryptionKey,
+              encryptionKey: keys.encryptionKey,
+              recordIdKey: keys.recordIdKey,
+              authTokenKey: keys.authTokenKey,
             } as DerivedKeys
           );
           return decodeRecord(decrypted as unknown as Uint8Array);
@@ -220,7 +227,7 @@ export default function TVPage() {
         <button
           onClick={generatePairingCode}
           className="mt-8 px-6 py-3 bg-brand-600 text-white rounded-lg text-lg hover:bg-brand-500 transition-colors"
-          disabled={timeRemaining > 0 && pairingCode}
+          disabled={timeRemaining > 0 && !!pairingCode}
         >
           Generate New Code
         </button>
