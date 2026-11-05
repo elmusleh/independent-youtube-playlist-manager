@@ -496,6 +496,16 @@
       width: 100%;
       flex-wrap: wrap;
       justify-content: flex-start;
+      gap: 8px;
+    }
+
+    /* On mobile / small screens, hide text labels inside buttons to save space and fit all actions */
+    .btn-group.right-align :global(.btn .content span:not(.refresh-icon)) {
+      display: none;
+    }
+
+    .btn-group.right-align :global(.btn) {
+      padding: 0 10px;
     }
 
     :global(h1 svg) {

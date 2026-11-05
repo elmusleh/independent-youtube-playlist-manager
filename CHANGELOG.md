@@ -36,7 +36,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   schema version validation reporting in Supabase connection tests;
   QR code generation (`uqr`) and camera/file scanning (`jsQR`) for seamless mobile/desktop Sync Key pairing without manual typing;
   a two-option onboarding redesign for new vs existing sync spaces;
-  and responsive mobile layout alignments ensuring count badges sit next to playlist titles without pushing buttons offscreen;
+  responsive mobile layout alignments ensuring count badges sit next to playlist titles;
+  icon-only responsive collapse for header action buttons on small screens (`<= 768px`) to prevent mobile button overflow;
+  iconized Copy and Show QR quick action buttons in `SyncKeyCard.svelte`;
+  remote sync space purge via `sync_delete_space` RPC (`SyncKeyAdvanced.svelte` + `purge-remote.ts`) to permanently erase all encrypted cloud records without affecting local device data;
   and automated CI guards for Firefox MV3 background reliability, message sender validation, and manifest
   domain allowlists.
 - Moved "Local Storage" and "Database Backup & Portable Restore" cards from the Settings page to

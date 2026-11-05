@@ -1,3 +1,11 @@
+## Header mobile icon-only compacting, iconized Sync Key actions & remote sync space purge — verified 2026-11-05
+
+- [x] Compact ViewHeader action buttons on mobile screens `<= 768px` by hiding text spans (`.btn .content span:not(.refresh-icon)`) while keeping SVG icons and title/aria-labels.
+- [x] Iconize Copy and Show QR buttons in `SyncKeyCard.svelte` (`iconOnly`) and position them directly next to the key code display box.
+- [x] Add `purgeRemoteSyncSpace` in `purge-remote.ts` + `purge-remote.test.ts` to call `sync_delete_space` RPC via `deleteSpace`.
+- [x] Add expandable "Advanced Space Management" panel in `SyncKeyAdvanced.svelte` with destructive confirmation modal to erase all cloud records from the relay without touching local device library data.
+- [x] Verify `npm run check`, `npm run build`, `npm run test:extension`, and `npm run test:visual`.
+
 ## Mobile UX, ViewHeader alignment & Sync QR suite — verified 2026-11-05
 
 - [x] Fix mobile `< 768px` layout in `ViewHeader.svelte`: change `.title-text` to `flex: 0 1 auto` so `.count-badge` sits directly adjacent to playlist title text instead of being pushed to the far right edge.

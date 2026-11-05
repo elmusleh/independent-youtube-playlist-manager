@@ -12,6 +12,7 @@
   import SimpleButton from "../SimpleButton.svelte";
   import SyncQrModal from "./SyncQrModal.svelte";
   import SyncKeyOnboarding from "./SyncKeyOnboarding.svelte";
+  import SyncKeyAdvanced from "./SyncKeyAdvanced.svelte";
   import {
     generateSyncKey,
     isValidSyncKey,
@@ -199,19 +200,22 @@
       <div class="key-display">
         <div class="key-value-container">
           <code class="key-value">{config.syncKey}</code>
-          <SimpleButton secondary onclick={copyKey}>
-            <Fa icon={faCopy} /> Copy
-          </SimpleButton>
-          <SimpleButton
-            secondary
-            onclick={() => {
-              qrModalMode = "view";
-              qrModalOpen = true;
-            }}
-            title="Show QR code for phone scanning"
-          >
-            <Fa icon={faQrcode} /> Show QR
-          </SimpleButton>
+          <div class="key-quick-icons">
+            <SimpleButton secondary iconOnly onclick={copyKey} title="Copy Sync Key to clipboard">
+              <Fa icon={faCopy} />
+            </SimpleButton>
+            <SimpleButton
+              secondary
+              iconOnly
+              onclick={() => {
+                qrModalMode = "view";
+                qrModalOpen = true;
+              }}
+              title="Show QR code for phone scanning"
+            >
+              <Fa icon={faQrcode} />
+            </SimpleButton>
+          </div>
         </div>
         {#if fingerprint}
           <div
@@ -226,8 +230,8 @@
         {/if}
       </div>
       <p class="key-hint">
-        <Fa icon={faInfoCircle} /> Key is active. Click <strong>Show QR</strong> to connect mobile devices
-        instantly without typing.
+        <Fa icon={faInfoCircle} /> Key is active. Click the <strong>QR icon</strong> to connect mobile
+        devices instantly without typing.
       </p>
       <div class="key-manage-actions">
         <SimpleButton secondary className="danger" onclick={handleRemoveKey}>
@@ -243,6 +247,8 @@
           </SimpleButton>
         {/if}
       </div>
+
+      <SyncKeyAdvanced {config} onPurged={removeKey} {onLog} />
     </div>
   {:else}
     <SyncKeyOnboarding
@@ -286,6 +292,11 @@
     border-radius: 6px;
     border: 1px solid var(--border, #e0e0e0);
     letter-spacing: 0.02em;
+  }
+  .key-quick-icons {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
   }
   .key-hint {
     margin: 0.5rem 0 0.75rem;

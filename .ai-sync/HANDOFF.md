@@ -1,3 +1,35 @@
+## 2026-11-05 — Header mobile icon-only compacting, iconized Sync Key actions & remote sync space purge
+
+### Root Causes & Hardening Implemented
+
+1. **Header Action Buttons Mobile Compacting in `ViewHeader.svelte`:**
+   - On screens `<= 768px`, header action buttons in `.btn-group.right-align` (e.g. Pause Tracking, Export, Import, Clear History, Refresh, etc.) could consume excessive width and push layouts.
+   - Added responsive rules in `ViewHeader.svelte` hiding text labels (`.btn .content span:not(.refresh-icon) { display: none }`) while preserving SVG icons and full `aria-label`/`title` tooltips.
+   - Buttons now collapse to sleek icon-only touch targets on mobile that wrap into clean rows without clipping or overflowing.
+2. **Compact Sync Key Quick Actions in `SyncKeyCard.svelte`:**
+   - Transformed the "Copy" and "Show QR" buttons into icon-only secondary buttons (`<SimpleButton iconOnly ...>`) placed directly adjacent to the key code display box.
+   - Preserves complete hover tooltips and accessibility attributes while drastically reducing horizontal width on mobile viewports.
+3. **Remote Space Purge / Advanced Management (`purge-remote.ts` & `SyncKeyAdvanced.svelte`):**
+   - Added `purgeRemoteSyncSpace` in `purge-remote.ts` with unit tests in `purge-remote.test.ts` invoking the backend `sync_delete_space` RPC via `deleteSpace` in `relay-transport.ts`.
+   - Added an expandable **Advanced Space Management** panel in `SyncKeyAdvanced.svelte` with a destructive confirmation dialog.
+   - Permanently deletes all encrypted cloud records from the relay/Supabase project without modifying or deleting any local playlists, history, or settings on the current device.
+
+### Files Changed
+
+- `apps/browser-extension/playlist-manager/src/components/ViewHeader.svelte`
+- `apps/browser-extension/playlist-manager/src/components/sync/SyncKeyCard.svelte`
+- `apps/browser-extension/playlist-manager/src/components/sync/SyncKeyAdvanced.svelte`
+- `apps/browser-extension/playlist-manager/src/services/sync/purge-remote.ts`
+- `apps/browser-extension/playlist-manager/src/services/sync/purge-remote.test.ts`
+- `CHANGELOG.md`, `SUGGESTIONS.md`, `.ai-sync/HANDOFF.md`, `.ai-sync/PROGRESS.md`
+
+### Verification
+
+- `npm run check` (91 Vitest files / 795 tests, 0 ESLint errors, svelte-check clean, all file limits <= 350 lines)
+- `npm run build`
+- `npm run test:extension` (102 route/viewport checks, 13 interaction groups, 0 overflow at 320px)
+- `npm run test:visual` (24/24 snapshots)
+
 ## 2026-11-05 — Mobile UX & Sync QR suite: ViewHeader alignment, 2-option onboarding, and camera/SVG QR code scanner
 
 ### Root Causes & Hardening Implemented

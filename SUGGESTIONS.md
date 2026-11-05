@@ -165,6 +165,26 @@ it is never repeated. After each implementation, append the new suggestions
 41. Add Network Bandwidth / Payload Size Tracking to `SyncRunReport`. [done] 2026-11-05
 42. Add Visual "Last Synced Time" Humanized Auto-Refresh Timer. [done] 2026-11-05
 43. Expose Schema Version Validation in Custom Supabase Connection Test. [done] 2026-11-05
+44. Add Camera Permission Denied / Blocked Diagnostic Recovery in `SyncQrModal.svelte` — Priority 82% (High value) [Professionalism]
+    What: If camera access is rejected by browser permission gates or OS privacy controls, show an actionable recovery tooltip with platform-specific instructions (e.g. Firefox Android Site Permissions vs Chrome Settings) alongside the "Choose image file instead" fallback.
+    Why: Prevents mobile users from getting stuck or thinking scanning is broken when browser permissions block the video stream.
+    How: Catch `NotAllowedError` in `startScanner()` and display an inline banner with browser-tailored unblocking steps.
+45. Add Haptic Feedback on Successful QR Code Scan — Priority 76% (High value) [Professionalism]
+    What: Trigger a gentle device vibration (`navigator.vibrate?.([40, 60, 40])`) the instant a valid sync key QR code is recognized.
+    Why: Gives immediate physical confirmation on mobile devices so users know their scan succeeded without looking away from their target screen.
+    How: Call `navigator.vibrate?.([40, 60, 40])` inside `handleKeyScanned` in `SyncQrModal.svelte` guarded by feature-detection.
+46. Add Auto-Hyphenation and Space-Stripping Paste Filter in `SyncKeyOnboarding.svelte` — Priority 73% (High value) [Best practices]
+    What: Automatically strip whitespace, newlines, and trailing characters, and auto-insert hyphens every 4 Crockford characters if the user pastes an unformatted key.
+    Why: Eliminates invalid key format errors caused by accidental spaces or mobile copy-paste artifacts.
+    How: Sanitize paste inputs with regex `replace(/[^a-zA-Z0-9]/g, '')` and reformat with chunking in the paste handler before validation.
+47. High-Contrast Inverted Mode for Dark-Theme QR Display — Priority 68% (Nice to have) [Accessibility]
+    What: Ensure the QR code modal provides an explicit white quiet-zone padding margin and option for inverted dark preview so older phone camera sensors focus cleanly in dark rooms.
+    Why: Some low-light mobile cameras struggle to focus on pure black-on-white SVG squares against dark browser backgrounds.
+    How: Add 16px solid white background padding (`border-radius: 8px`) around the SVG container in `SyncQrModal.svelte`.
+48. Add Rear vs Front Camera Selector Dropdown for Devices with Multiple Sensors — Priority 64% (Nice to have) [Best practices]
+    What: Allow users on multi-camera devices (like tablets or phones with ultra-wide vs main rear lenses) to pick their preferred sensor if `facingMode: { ideal: "environment" }` selects an undesirable lens.
+    Why: Avoids blurry focus when devices default to macro or ultra-wide lenses instead of the standard autofocus rear camera.
+    How: Query `navigator.mediaDevices.enumerateDevices()`, filter for `videoinput`, and display a camera select dropdown if more than 1 camera exists.
 
 ## Done
 
