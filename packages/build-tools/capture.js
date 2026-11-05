@@ -122,7 +122,59 @@ const DEMO_PLAYLISTS = [
 async function seed(page) {
   await page.evaluate(async (playlists) => {
     // browser is available via webextension-polyfill on extension pages
-    await browser.storage.local.set({ yph_local_playlists: playlists });
+    const now = Date.now();
+    await browser.storage.local.set({
+      yph_local_playlists: playlists,
+      yph_sync_config: {
+        syncKey: "c7m9-4k2x-8wqp-3tnv-6dj5-2hy8",
+        backends: ["relay"],
+        syncIntervalMinutes: 15,
+        autoSyncOnChange: true,
+        autoSyncOnStartup: true,
+        supabaseUrl: "",
+        supabaseKey: "",
+        content: {
+          playlists: true,
+          settings: true,
+          history: true,
+        },
+        lastSyncedAt: now - 120000,
+        lastError: null,
+      },
+      yph_sync_device_id: "dev-desktop-chrome-v130",
+      yph_sync_devices: [
+        { deviceId: "dev-desktop-chrome-v130", name: "Desktop Chrome", lastSeenAt: now - 120000 },
+        { deviceId: "dev-firefox-android-v130", name: "Firefox Android", lastSeenAt: now - 300000 },
+      ],
+      yph_sync_status: {
+        phase: "idle",
+        lastRunAt: now - 120000,
+        lastError: null,
+        incomingCount: 0,
+        pendingCount: 0,
+        lastSummary: "Synced 2 playlists, watch history & settings seamlessly.",
+        durationMs: 840,
+        pulled: 0,
+        pushed: 2,
+        failed: 0,
+        categoryProgress: {
+          playlists: { pushed: 2, pulled: 0, failed: 0 },
+          settings: { pushed: 1, pulled: 0, failed: 0 },
+          history: { pushed: 5, pulled: 0, failed: 0 },
+        },
+      },
+      yph_sync_safety_backups: [
+        {
+          id: "safety-snap-01",
+          createdAt: now - 120000,
+          reason: "Pre-sync safety backup",
+          playlistsCount: 2,
+          videosCount: 7,
+          historyCount: 15,
+          settingsCount: 12,
+        },
+      ],
+    });
 
     // Seed the IndexedDB metadata cache (yph:meta:<id>) so titles render instantly.
     const META = {};
@@ -203,9 +255,10 @@ async function seed(page) {
     ["01-editor", "#/playlist?id=local-demo-mix"],
     ["02-saved-playlists", "#/saved"],
     ["03-new-playlist", "#/new"],
-    ["04-settings", "#/settings"],
-    ["05-shortcuts", "#/shortcuts"],
-    ["06-history", "#/history"],
+    ["04-sync", "#/sync"],
+    ["05-settings", "#/settings"],
+    ["06-shortcuts", "#/shortcuts"],
+    ["07-history", "#/history"],
   ];
 
   for (const [name, hash] of routes) {
@@ -218,7 +271,27 @@ async function seed(page) {
         .catch(() => {});
       await page.waitForTimeout(800);
       await page.screenshot({ path: path.resolve(OUT, `screenshot-${name}.png`) });
-      // // console.log("[capture]", name, "ok");
+
+      // If this is the sync view, also open the QR code pairing modal and take a screenshot
+      if (name === "04-sync") {
+        try {
+          const qrBtn = await page.waitForSelector('button[title*="Show QR code"]', {
+            timeout: 4000,
+          });
+          if (qrBtn) {
+            await qrBtn.click();
+            await page.waitForTimeout(1000);
+            await page.screenshot({ path: path.resolve(OUT, "screenshot-08-qr-pairing.png") });
+            const closeBtn = await page.$(
+              '.modal-backdrop, [aria-label="Close dialog"], [aria-label="Close"]'
+            );
+            if (closeBtn) await closeBtn.click();
+            await page.waitForTimeout(500);
+          }
+        } catch (modalErr) {
+          console.warn("[capture] QR modal capture skipped:", modalErr.message);
+        }
+      }
     } catch (e) {
       console.error("[capture]", name, "FAILED:", e.message);
     }
