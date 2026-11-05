@@ -474,23 +474,27 @@ successes, but audit status is disputed and headed/native/manual gates remain op
 
 ### Technical Decisions (Locked In)
 
-| Decision         | Choice                               | Rationale                               |
-| ---------------- | ------------------------------------ | --------------------------------------- |
-| Framework        | React Native for TV                  | Single codebase for Android TV + tvOS   |
-| Web platforms    | React Native Web export              | Reuse components                        |
-| Auth             | Device pairing (OAuth2 Device Grant) | TV keyboards unusable                   |
-| Play mechanism   | `watch_videos?video_ids=` URL        | IYPM playlists aren't real YT playlists |
-| State management | React Context + AsyncStorage         | Lightweight                             |
-| Navigation       | React Navigation (TV variant)        | D-pad aware                             |
+| Decision        | Choice                               | Rationale                               |
+| --------------- | ------------------------------------ | --------------------------------------- |
+| Framework       | React Native for TV                  | Single codebase for Android TV + tvOS   |
+| Web platforms   | React Native Web export              | Reuse components                        |
+| Auth            | Device pairing (OAuth2 Device Grant) | TV keyboards unusable                   |
+| Play mechanism  | `watch_videos?video_ids=` URL        | IYPM playlists aren't real YT playlists |
+| QR Pairing      | URL: `.../tv/pair?code=XYZ`          | Faster than typing 6-digit codes        |
+| Spatial Nav     | `react-native-spatial-navigation`    | Reliable D-pad focus management         |
+| Burn-in Protect | Dimming / Floating Logo              | Prevent OLED burn-in during inactivity  |
+| High-Res Assets | HD Thumbnails (maxres)               | Essential for 4K/Large screen clarity   |
 
 ### Risk/Mitigation
 
-| Risk                            | Mitigation                               |
-| ------------------------------- | ---------------------------------------- |
-| `watch_videos` URL length limit | Chunk into 50-video segments             |
-| YouTube app not installed       | Fall back to TV browser                  |
-| Weak TV CPU                     | No metadata fetching; cache aggressively |
-| Mixed platform APIs             | Adapter pattern behind common interface  |
+| Risk                                          | Mitigation                               |
+| --------------------------------------------- | ---------------------------------------- |
+| `watch_videos` URL length limit (~1500 chars) | Chunk into 50-video segments             |
+| OLED Burn-in on static UI                     | Implement screensaver / dimming after 5m |
+| No QR code reader on user phone               | Keep 6-digit numeric fallback            |
+| YouTube app not installed                     | Fall back to TV browser                  |
+| Weak TV CPU                                   | No metadata fetching; cache aggressively |
+| Mixed platform APIs                           | Adapter pattern behind common interface  |
 
 ### Definition of Done
 
