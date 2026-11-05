@@ -1,3 +1,11 @@
+## Firefox SpiderMonkey `window` getter crash fix & 25-playlist cross-browser merge — verified 2026-11-05
+
+- [x] Fix SpiderMonkey strict-mode `TypeError: setting getter-only property "window"` in `sync-engine-registration.ts` that crashed `sync-engine.js` on load in Firefox's MV3 background `Window` AND in `Sync.svelte`'s dynamic `import()` fallback.
+- [x] Skip duplicate background listener registration when `sync-engine.js` is imported inside `/editor/index.html` or `/popup/popup.html`.
+- [x] Add `catch (err)` error surfacing in `Sync.svelte` `syncNow()`, proxy-stripping + `{ ok: false, error }` handling in `adapter-storage-io.ts` `mutateLibrary`, connection reuse in `shadow-store.ts` `openDb()`, and `lastWatchedAt` normalization in `adapters/history.ts`.
+- [x] Add SpiderMonkey getter-only `window` tests (`sync-engine-registration.test.ts`) and 25-playlist Firefox ↔ Chrome relay merge integration test (`sync-engine.firefox-merge.test.ts`).
+- [x] Verify `npm run check` and `npm run build` exit 0.
+
 ## Stale Firefox `relayUrl` fix, per-backend `Test connection`, BYO Supabase UX & zero-data-loss protections — verified 2026-11-05
 
 - [x] Purge stale foreign `*.supabase.co` `relayUrl`/`relayAnonKey` and `qvwitlpnetwthyhrobca.supabase.co` overrides in `migrateSyncConfig` (`sync-config.ts`) so Firefox uploads to `pfydngsbcmuhsqqjbcte.supabase.co`.

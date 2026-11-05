@@ -354,6 +354,11 @@
       if (elapsed < 400) {
         await new Promise((r) => setTimeout(r, 400 - elapsed));
       }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      lastError = msg;
+      lastSyncSummary = `Sync failed: ${msg}`;
+      directStatus = { phase: "error", lastError: msg, lastSummary: lastSyncSummary };
     } finally {
       manualSyncActive = false;
     }

@@ -106,4 +106,83 @@ describe("sync engine runtime registration", () => {
     expect(returned).toBeInstanceOf(Promise);
     await expect(returned).resolves.toEqual(status);
   });
+
+  it("does not throw in Firefox Window contexts where globalThis.window is a getter-only property", async () => {
+    const winDescriptor = Object.getOwnPropertyDescriptor(globalThis, "window");
+    const firefoxWindow: Record<string, any> = {};
+    Object.defineProperty(globalThis, "window", {
+      get: () => firefoxWindow,
+      set: undefined,
+      configurable: true,
+    });
+    let onMessage: any = null;
+    const runOnce = vi.fn().mockResolvedValue(status);
+    vi.stubGlobal("browser", {
+      runtime: {
+        getBrowserInfo: vi.fn(),
+        onStartup: { addListener: vi.fn() },
+        onMessage: {
+          addListener: vi.fn((listener) => {
+            onMessage = listener;
+          }),
+        },
+      },
+      storage: {
+        local: { get: vi.fn().mockResolvedValue({}) },
+        onChanged: { addListener: vi.fn() },
+      },
+    });
+
+    try {
+      expect(() =>
+        registerSyncEngine({
+          runOnce,
+          scheduleRun: vi.fn(),
+          pause: vi.fn(),
+          resume: vi.fn(),
+          getStatus: () => status,
+          isRunning: () => false,
+        })
+      ).not.toThrow();
+
+      expect(firefoxWindow.syncEngine.runOnce).toBe(runOnce);
+      const returned = onMessage({ cmd: "sync-now" }, {}, vi.fn());
+      await expect(returned).resolves.toEqual(status);
+      expect(runOnce).toHaveBeenCalledOnce();
+    } finally {
+      if (winDescriptor) {
+        Object.defineProperty(globalThis, "window", winDescriptor);
+      } else {
+        delete (globalThis as any).window;
+      }
+    }
+  });
+
+  it("skips background listener registration when imported inside /editor/index.html", () => {
+    const onMessageAdd = vi.fn();
+    vi.stubGlobal("location", { pathname: "/editor/index.html" });
+    vi.stubGlobal("browser", {
+      runtime: {
+        onStartup: { addListener: vi.fn() },
+        onMessage: { addListener: onMessageAdd },
+      },
+      storage: {
+        local: { get: vi.fn().mockResolvedValue({}) },
+        onChanged: { addListener: vi.fn() },
+      },
+    });
+
+    const runOnce = vi.fn().mockResolvedValue(status);
+    registerSyncEngine({
+      runOnce,
+      scheduleRun: vi.fn(),
+      pause: vi.fn(),
+      resume: vi.fn(),
+      getStatus: () => status,
+      isRunning: () => false,
+    });
+
+    expect((globalThis as any).window.syncEngine.runOnce).toBe(runOnce);
+    expect(onMessageAdd).not.toHaveBeenCalled();
+  });
 });

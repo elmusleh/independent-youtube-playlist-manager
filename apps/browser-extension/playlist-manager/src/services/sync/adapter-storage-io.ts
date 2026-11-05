@@ -62,10 +62,20 @@ export function createSyncStorageBridge() {
   const mutateLibrary = async (op: any) => {
     const w = (globalThis as any).window;
     if (w?.mutateLibrary) return w.mutateLibrary(op);
+    const plain = JSON.parse(JSON.stringify(op));
     const local = (globalThis as any).yphMutateLibrary;
-    if (typeof local === "function") return local(op);
+    if (typeof local === "function") return local(plain);
     const b = (globalThis as any).browser || (globalThis as any).chrome;
-    return b?.runtime?.sendMessage({ cmd: "mutate-library", operation: op });
+    const res = await b?.runtime?.sendMessage({ cmd: "mutate-library", operation: plain });
+    if (res && typeof res === "object" && "ok" in res) {
+      if (!res.ok) {
+        throw new Error(
+          res.error || "Playlist storage is unavailable. Retry without closing this page."
+        );
+      }
+      return res.result;
+    }
+    return res;
   };
 
   const saveSettings = async (s: Record<string, unknown>, deletedKeys: string[] = []) => {

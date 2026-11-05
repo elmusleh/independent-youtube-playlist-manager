@@ -187,6 +187,59 @@ it is never repeated. After each implementation, append the new suggestions
     watch-history entries. How: pipe `serializeSafetyBackupJson` through
     `new CompressionStream("gzip")` and store the `Uint8Array` in an IndexedDB
     object store with automatic fallback to `storage.local` in unit tests.
+29. Add an ESLint `no-restricted-syntax` rule banning unguarded `.window =` assignments.
+    Priority 88% (High value) [Best practices]. What: add a lint rule that blocks
+    direct assignments to `globalThis.window` or `self.window` unless guarded for
+    getter-only `Window` environments. Why: prevents SpiderMonkey strict-mode
+    `TypeError: setting getter-only property "window"` crashes from ever recurring in
+    Firefox MV3 background event pages or extension tabs. How: add a
+    `no-restricted-syntax` AST selector in `eslint.config.mjs` targeting
+    `AssignmentExpression[left.property.name='window']` and centralize the
+    `typeof globalThis.window === "undefined"` polyfill in `background/init.js`.
+30. Add an automated Playwright Firefox background-bundle boot smoke check in CI.
+    Priority 83% (High value) [Best practices]. What: execute the built
+    `dist/firefox/background/index.js` bundle inside a real headless Firefox
+    (SpiderMonkey) browser context during `npm run test:extension` and verify
+    `sync-status` and `sync-now` respond without module-evaluation errors. Why:
+    catches Gecko-only WebExtension differences (getter-only `Window` globals,
+    Promise-returning `onMessage` listeners, structured-clone quirks) automatically
+    before manual testing. How: add a small Playwright `firefox.launch()` verification
+    step in `packages/build-tools/` that stubs `browser.*` on a Gecko `Window`,
+    loads `dist/firefox/background/index.js`, and asserts zero `pageerror` events.
+31. Validate `sender.id === browser.runtime.id` on privileged internal `runtime.onMessage` commands.
+    Priority 77% (High value) [Security]. What: verify in
+    `sync-engine-registration.ts` and `background/library-mutations.js` that
+    internal commands (`sync-now`, `sync-pause`, `sync-test-connection`, and
+    `mutate-library` `replace`) come from the extension's own runtime ID and not an
+    external or untrusted frame. Why: strengthens defense-in-depth so content scripts
+    or web frames cannot spoof internal editor/sync commands over the extension
+    message bus. How: check `if (sender?.id && runtimeId && sender.id !== runtimeId) return undefined;`
+    at the top of the `onMessage` handlers and require `!sender?.tab` for editor-only
+    commands.
+32. Show a live "Background sync worker: Ready" health indicator in `#/sync` diagnostics.
+    Priority 65% (Nice to have) [Professionalism]. What: ping `{ cmd: "sync-status" }`
+    when opening `#/sync` and display whether the background sync worker answered
+    directly or whether `#/sync` is using the in-page fallback. Why: makes background
+    worker or event-page startup issues immediately transparent to users and
+    developers without opening `about:debugging`. How: record whether
+    `runtime.sendMessage({ cmd: "sync-status" })` returned a non-undefined status in
+    `Sync.svelte` and render a compact status badge in the Sync activity card header.
+33. Add a per-record payload size preflight guard before `sync_push`.
+    Priority 58% (Nice to have) [Security]. What: check each encrypted record's byte
+    length against a safe maximum (e.g., 512 KiB) before sending a `sync_push` batch,
+    skipping any oversized record with a clear warning while uploading the rest of
+    the library. Why: prevents one unusually huge playlist from triggering an opaque
+    HTTP 413 payload error that blocks all other playlists from syncing. How: check
+    `candidate.record.payload.length` in `sync-engine-adapters.ts` before pushing and
+    append a human-readable playlist warning to `failed` if exceeded.
+34. Format connected device names ("Firefox · Linux", "Chrome · Linux") in `SyncCounters.svelte`.
+    Priority 46% (Nice to have) [Professionalism]. What: turn the already-synced
+    `DeviceRecord.userAgent` and `platform` metadata into readable browser/OS labels
+    in a tooltip or inline list next to `"2 devices connected"`. Why: lets users
+    confirm at a glance that both Firefox and Chrome are paired to the same Sync Key
+    space instead of seeing only a raw count. How: add a pure `formatDeviceLabel`
+    helper in `src/services/sync/` and pass the formatted labels from `Sync.svelte`
+    into `SyncCounters.svelte`.
 
 ## Done
 

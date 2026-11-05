@@ -40,9 +40,14 @@ export type ShadowRecord = {
   updatedAt: number;
 };
 
-/** Open the shadow database. */
+let dbPromise: Promise<IDBDatabase> | null = null;
+let cachedFactory: IDBFactory | null = null;
+
+/** Open (and reuse) the shadow database connection. */
 async function openDb(): Promise<IDBDatabase> {
-  return new Promise((resolve, reject) => {
+  if (dbPromise && cachedFactory === indexedDB) return dbPromise;
+  cachedFactory = indexedDB;
+  dbPromise = new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
     request.onupgradeneeded = (event) => {
       const db = (event.target as IDBOpenDBRequest).result;
@@ -52,9 +57,26 @@ async function openDb(): Promise<IDBDatabase> {
         store.createIndex("updatedAt", "updatedAt", { unique: false });
       }
     };
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
+    request.onsuccess = () => {
+      const db = request.result;
+      db.onversionchange = () => {
+        db.close();
+        dbPromise = null;
+      };
+      db.onclose = () => {
+        dbPromise = null;
+      };
+      resolve(db);
+    };
+    request.onerror = () => {
+      dbPromise = null;
+      reject(request.error);
+    };
+    request.onblocked = () => {
+      dbPromise = null;
+    };
   });
+  return dbPromise;
 }
 
 /**

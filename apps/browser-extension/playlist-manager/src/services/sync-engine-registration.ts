@@ -25,8 +25,11 @@ export function registerSyncEngine(handlers: SyncEngineHandlers): void {
   const browserObj = (globalThis as any).browser || (globalThis as any).chrome;
   if (!browserObj?.runtime) return;
 
-  (globalThis as any).window = (globalThis as any).window || globalThis;
-  (globalThis as any).window.syncEngine = {
+  if (typeof (globalThis as any).window === "undefined") {
+    (globalThis as any).window = globalThis;
+  }
+  const host = (globalThis as any).window || globalThis;
+  host.syncEngine = {
     runOnce: handlers.runOnce,
     scheduleRun: handlers.scheduleRun,
     pause: handlers.pause,
@@ -34,6 +37,11 @@ export function registerSyncEngine(handlers: SyncEngineHandlers): void {
     getStatus: handlers.getStatus,
     triggerSync: handlers.runOnce,
   };
+
+  const pathname = (globalThis as any).location?.pathname ?? "";
+  if (pathname.endsWith("/editor/index.html") || pathname.endsWith("/popup/popup.html")) {
+    return;
+  }
 
   async function refreshPeriodicAlarm(): Promise<void> {
     try {

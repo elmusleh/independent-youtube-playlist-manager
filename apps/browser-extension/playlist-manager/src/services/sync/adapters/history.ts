@@ -33,7 +33,12 @@ function normalizeHistoryEntry(videoId: string, raw: unknown): HistoryEntry | nu
   const obj = raw as Record<string, unknown>;
   const resolvedId = typeof obj.videoId === "string" && obj.videoId ? obj.videoId : videoId;
   if (!resolvedId) return null;
-  return { ...(obj as HistoryEntry), videoId: resolvedId };
+  const lastWatchedAt = Number.isFinite(obj.lastWatchedAt)
+    ? (obj.lastWatchedAt as number)
+    : Number.isFinite(obj.watchedAt)
+      ? (obj.watchedAt as number)
+      : 0;
+  return { ...(obj as HistoryEntry), videoId: resolvedId, lastWatchedAt };
 }
 
 export async function collectDirtyHistory(ctx: AdapterContext): Promise<DirtyCandidate[]> {

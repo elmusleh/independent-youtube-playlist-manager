@@ -1,3 +1,36 @@
+## 2026-11-05 — Fix Firefox SpiderMonkey getter-only `window` crash in `sync-engine-registration.ts` blocking 25-playlist upload
+
+### Root Cause & Fixes Implemented
+
+1. **Primary Root Cause — SpiderMonkey Strict-Mode Crash on `globalThis.window = ...` (`sync-engine-registration.ts:28`):**
+   - Firefox MV3 runs `"background": { "scripts": ["background/index.js"], "type": "module" }` inside a hidden `Window` (`_generated_background_page.html`), where `window` is a **non-writable getter-only accessor property** (`set: undefined`).
+   - While `background/init.js` safely guarded `if (typeof globalThis.window === "undefined")`, `sync-engine-registration.ts:28` unconditionally executed `(globalThis as any).window = (globalThis as any).window || globalThis` in ES module strict mode, throwing **`TypeError: setting getter-only property "window"`** in SpiderMonkey before registering `runtime.onMessage`, `storage.onChanged`, or `alarms.onAlarm`.
+   - When `Sync.svelte`'s `triggerSyncNow()` saw `sendMessage({ cmd: "sync-now" })` return `undefined` and dynamically imported `../services/sync-engine.js` inside `/editor/index.html` (also a Firefox `Window`!), it threw the **exact same `TypeError`**, and `syncNow()` lacked a `catch` block—leaving Firefox stuck on `"Key and backend ready"` with `0` uploaded playlists and `0` rows in `yph_sync_shadow_v1`.
+   - **Fix:** Guarded `if (typeof (globalThis as any).window === "undefined")` in `sync-engine-registration.ts`, attached `syncEngine` via `const host = (globalThis as any).window || globalThis`, and skipped duplicate background listener registration when imported inside `/editor/index.html` or `/popup/popup.html`.
+2. **Error Surfacing & Storage/IndexedDB Hardening:**
+   - Added `catch (err)` handling in `Sync.svelte` `syncNow()` so any unexpected runtime throw surfaces immediately in `lastError`, `SyncReportModal`, `toast`, and `[SYNC]` logs instead of silently aborting.
+   - Hardened `mutateLibrary` in `adapter-storage-io.ts` to strip Svelte proxies (`JSON.parse(JSON.stringify(op))`) and throw on `{ ok: false, error }` responses from `background/library-mutations.js`.
+   - Cached a single shared `IDBDatabase` connection per `indexedDB` factory in `shadow-store.ts` (`openDb()`) with `onversionchange` / `onclose` cleanup instead of opening ~245 unclosed handles during a 25-playlist sync.
+   - Normalized `lastWatchedAt` fallback in `adapters/history.ts` (`normalizeHistoryEntry`) so legacy/imported `local_yt_history` items never fail validation on pull.
+3. **Regression Coverage:**
+   - Added SpiderMonkey getter-only `window` + `/editor/index.html` guard unit tests in `sync-engine-registration.test.ts`.
+   - Added end-to-end `sync-engine.firefox-merge.test.ts` verifying Chrome (1 playlist) + Firefox (getter-only `window`, 25 `string[]` playlists, 1 history item, `favoritePlaylistIds`) merge to **26 playlists + 1 history item + 2 connected devices** on both browsers.
+
+### Files Changed
+
+- `apps/browser-extension/playlist-manager/src/services/sync-engine-registration.ts`
+- `apps/browser-extension/playlist-manager/src/services/sync-engine-registration.test.ts`
+- `apps/browser-extension/playlist-manager/src/services/sync-engine.firefox-merge.test.ts`
+- `apps/browser-extension/playlist-manager/src/services/sync/adapter-storage-io.ts`
+- `apps/browser-extension/playlist-manager/src/services/sync/shadow-store.ts`
+- `apps/browser-extension/playlist-manager/src/services/sync/adapters/history.ts`
+- `apps/browser-extension/playlist-manager/src/views/Sync.svelte`
+
+### Verification & Reload Steps
+
+- `npm run check` and `npm run build` exit 0 (`dist/firefox`, `dist/chrome`, `dist/edge` freshly rebuilt, all file sizes `<= 350` lines and CSS budgets green).
+- Reload `dist/firefox` (`about:debugging` → **Reload** on IYPM), open `#/sync`, and click **Sync now** to upload all 25 playlists + 1 history item + settings, then click **Sync now** in Chrome to pull all 26 merged playlists.
+
 ## 2026-11-05 — Stale Firefox `relayUrl` purge, per-backend `Test connection`, BYO Supabase schema UX & zero-data-loss protections
 
 ### Root Causes & Improvements Implemented
