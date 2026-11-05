@@ -623,3 +623,39 @@ Suggested next steps (new, not scheduled):
 - [ ] Phase 4: Sync Center UI split (Sync.svelte -> components/sync/*)
 - [ ] Phase 5: extras (QR, Realtime nudge, key rotation)
 - [ ] Run relay v2 SQL on hosted Supabase project (qvwitlpnetwthyhrobca)
+
+---
+
+## Smart TV Companion — Task Checklist (2026-11-05)
+
+### Phase 1: Backend & Portal Support
+
+- [ ] Create `device_codes` Supabase table
+- [ ] Create `paired_devices` Supabase table
+- [ ] Portal: "Pair Device" screen
+- [ ] Portal: TV-optimized playlist API
+- [ ] Sync: ensure thumbnails are HD
+
+### Phase 2: TV App MVP (Android TV)
+
+- [ ] Init React Native for TV project
+- [ ] Pairing screen
+- [ ] Home screen
+- [ ] Playlist detail screen
+- [ ] Play button
+- [ ] Settings screen
+- [ ] Offline cache
+
+### Phase 3: Platform Adapters
+
+- [ ] tvOS build target
+- [ ] Tizen web app package
+- [ ] webOS web app package
+- [ ] Platform launcher adapters
+
+### Phase 4: Polish & Store Submission
+
+- [ ] 10-foot UI review
+- [ ] Performance audit
+- [ ] Store assets
+- [ ] Beta testing

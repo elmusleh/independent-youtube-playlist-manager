@@ -454,7 +454,61 @@ successes, but audit status is disputed and headed/native/manual gates remain op
 - CM-R3: prove safety assertions with selective mutations in disposable copies.
   Hermes reports all four safety mutations caught.
 
-## Additional verification scope
+---
+
+## 2026-11-05 — Smart TV Companion App (Planning & Scaffolding)
+
+> **Branch:** `feat/smart-tv-companion` (off `next`)  
+> **Core Principle:** Client-only — consumes synced data, no capture. Read-only viewer + launcher.  
+> **Status:** Planning & scaffolding only. Implementation in next session.
+
+### Platform Matrix
+
+| Platform        | Framework                  | Priority | Status     |
+| --------------- | -------------------------- | -------- | ---------- |
+| Android TV      | React Native for TV        | P0       | Scaffolded |
+| Fire TV         | Same APK (Amazon Appstore) | P0       | Scaffolded |
+| Apple TV (tvOS) | React Native for TV        | P1       | Scaffolded |
+| Samsung Tizen   | Web app (React Native Web) | P2       | Scaffolded |
+| LG webOS        | Web app (React Native Web) | P2       | Scaffolded |
+
+### Technical Decisions (Locked In)
+
+| Decision         | Choice                               | Rationale                               |
+| ---------------- | ------------------------------------ | --------------------------------------- |
+| Framework        | React Native for TV                  | Single codebase for Android TV + tvOS   |
+| Web platforms    | React Native Web export              | Reuse components                        |
+| Auth             | Device pairing (OAuth2 Device Grant) | TV keyboards unusable                   |
+| Play mechanism   | `watch_videos?video_ids=` URL        | IYPM playlists aren't real YT playlists |
+| State management | React Context + AsyncStorage         | Lightweight                             |
+| Navigation       | React Navigation (TV variant)        | D-pad aware                             |
+
+### Risk/Mitigation
+
+| Risk                            | Mitigation                               |
+| ------------------------------- | ---------------------------------------- |
+| `watch_videos` URL length limit | Chunk into 50-video segments             |
+| YouTube app not installed       | Fall back to TV browser                  |
+| Weak TV CPU                     | No metadata fetching; cache aggressively |
+| Mixed platform APIs             | Adapter pattern behind common interface  |
+
+### Definition of Done
+
+- [ ] Android TV app builds on emulator
+- [ ] Device pairing flow works end-to-end
+- [ ] Playlists display with D-pad navigation
+- [ ] Play launches YouTube app
+- [ ] Offline cache works
+- [ ] `npm run check` + `npm run build` pass
+- [ ] Documentation updated
+
+### Scaffolded Files
+
+- `apps/smart-tv/` — React Native for TV scaffold (package.json, tsconfig, placeholders)
+- `apps/web-portal/app/tv/pair/page.tsx` — Pairing confirmation page (placeholder)
+- `docs/SMART_TV_ARCHITECTURE.md` — Architecture doc
+- `.ai-sync/PROGRESS.md` — Task checkboxes
+- `.ai-sync/HANDOFF.md` — Session state
 
 Review open issues #10/#11/#13/#14 against existing fixes and this pass's improvements.
 Do not close issues based on source inspection alone. Mobile real-device verification

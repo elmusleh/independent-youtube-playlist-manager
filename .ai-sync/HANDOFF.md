@@ -1348,3 +1348,34 @@ writes. `.husky/pre-commit` was modified by a concurrent process (a commit attem
   - All analysis/dependency/codeql/audit checks ✅
 - Root cause of Docker fixture failure: `authenticated` role missing in `test-relay-roles.sql`; added and granted schema usage.
 - No human code-review findings on PR (only auto-generated bot comments).
+
+---
+
+## Smart TV Companion — Session State (2026-11-05)
+
+- **Branch:** `feat/smart-tv-companion` (off `next`)
+- **Status:** Planning & scaffolding complete. No implementation logic yet.
+- **Next:** Implementation session (Phase 1: Backend & Portal Support)
+
+### What Was Done
+
+- Created Smart TV section in `.ai-sync/PLAN.md`
+- Created `docs/SMART_TV_ARCHITECTURE.md`
+- Scaffolded `apps/smart-tv/` (React Native for TV)
+- Scaffolded `apps/web-portal/app/tv/pair/page.tsx` (placeholder)
+- Updated `.ai-sync/PROGRESS.md` with task checkboxes
+- Updated `docs/DATA_COMPATIBILITY.md` (data migration policy)
+
+### Key Decisions
+
+- React Native for TV for Android TV + tvOS
+- React Native Web for Tizen/webOS
+- Device pairing auth (OAuth2 Device Grant)
+- `watch_videos` URL for play launch
+- Read-only consumer (no capture on TV)
+
+### Risks
+
+- `watch_videos` URL length limit (~1500 chars) → chunk at 50
+- YouTube app may not be installed → browser fallback
+- TV input is D-pad only → spatial navigation needed
