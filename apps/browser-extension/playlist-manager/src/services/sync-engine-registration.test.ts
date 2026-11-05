@@ -292,4 +292,130 @@ describe("sync engine runtime registration", () => {
       vi.useRealTimers();
     }
   });
+
+  it("rejects untrusted content-script or foreign senders on sync-* commands (#31)", async () => {
+    let onMessage: any = null;
+    const runOnce = vi.fn().mockResolvedValue(status);
+    vi.stubGlobal("browser", {
+      runtime: {
+        id: "iypm-ext-id",
+        getURL: (p = "") => `chrome-extension://iypm-ext-id/${String(p).replace(/^\//, "")}`,
+        onStartup: { addListener: vi.fn() },
+        onMessage: {
+          addListener: vi.fn((cb) => {
+            onMessage = cb;
+          }),
+        },
+      },
+      storage: {
+        local: { get: vi.fn().mockResolvedValue({}) },
+        onChanged: { addListener: vi.fn() },
+      },
+    });
+
+    registerSyncEngine({
+      runOnce,
+      scheduleRun: vi.fn(),
+      pause: vi.fn(),
+      resume: vi.fn(),
+      getStatus: () => status,
+      isRunning: () => false,
+    });
+
+    const sendResponse = vi.fn();
+    expect(
+      onMessage(
+        { cmd: "sync-now" },
+        { id: "foreign-ext", url: "chrome-extension://foreign-ext/page.html" },
+        sendResponse
+      )
+    ).toBeUndefined();
+    expect(
+      onMessage(
+        { cmd: "sync-now" },
+        { id: "iypm-ext-id", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ" },
+        sendResponse
+      )
+    ).toBeUndefined();
+    expect(runOnce).not.toHaveBeenCalled();
+
+    expect(
+      onMessage(
+        { cmd: "sync-now" },
+        { id: "iypm-ext-id", url: "chrome-extension://iypm-ext-id/editor/index.html#/sync" },
+        sendResponse
+      )
+    ).toBe(true);
+    await Promise.resolve();
+    expect(runOnce).toHaveBeenCalledOnce();
+  });
+
+  it("skips automatic alarm sync while offline and runs catch-up sync when online (#35)", async () => {
+    let onAlarm: any = null;
+    let onlineHandler: (() => void) | null = null;
+    const runOnce = vi.fn().mockResolvedValue(status);
+    let onlineState = false;
+
+    vi.stubGlobal("navigator", {
+      get onLine() {
+        return onlineState;
+      },
+    });
+    const origAdd = globalThis.addEventListener;
+    vi.spyOn(globalThis, "addEventListener").mockImplementation(((type: string, fn: any) => {
+      if (type === "online") onlineHandler = fn;
+      else origAdd?.call(globalThis, type, fn);
+    }) as any);
+
+    vi.stubGlobal("browser", {
+      runtime: {
+        onStartup: { addListener: vi.fn() },
+        onMessage: { addListener: vi.fn() },
+      },
+      storage: {
+        local: {
+          get: vi.fn().mockResolvedValue({
+            yph_sync_config: {
+              syncKey: "ABCDEFGHIJKLMNOPQRST",
+              backends: ["relay"],
+              syncIntervalMinutes: 15,
+              autoSyncOnChange: true,
+              autoSyncOnStartup: true,
+              syncConfigVersion: 2,
+              syncProtocolVersion: 2,
+              legacyV2AcknowledgedAt: 1000,
+            },
+          }),
+        },
+        onChanged: { addListener: vi.fn() },
+      },
+      alarms: {
+        clear: vi.fn().mockResolvedValue(true),
+        create: vi.fn(),
+        onAlarm: {
+          addListener: vi.fn((cb) => {
+            onAlarm = cb;
+          }),
+        },
+      },
+    });
+
+    registerSyncEngine({
+      runOnce,
+      scheduleRun: vi.fn(),
+      pause: vi.fn(),
+      resume: vi.fn(),
+      getStatus: () => status,
+      isRunning: () => false,
+    });
+
+    onAlarm({ name: "yph-sync-periodic" });
+    await Promise.resolve();
+    expect(runOnce).not.toHaveBeenCalled();
+
+    onlineState = true;
+    (onlineHandler as any)?.();
+    await new Promise((r) => setTimeout(r, 10));
+    expect(runOnce).toHaveBeenCalledOnce();
+  });
 });

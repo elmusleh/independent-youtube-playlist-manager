@@ -68,6 +68,35 @@ function validate(path, shouldHaveKey, shouldHaveScripts) {
       }
     }
   }
+
+  // Security guard (#12): only the official IYPM sync relay (`pfydngsbcmuhsqqjbcte.supabase.co`)
+  // may appear in manifest permissions, and only as an optional host permission.
+  const APPROVED_SUPABASE_ORIGIN = "https://pfydngsbcmuhsqqjbcte.supabase.co/*";
+  for (const field of ["permissions", "host_permissions", "optional_permissions"]) {
+    for (const entry of manifest[field] || []) {
+      if (typeof entry === "string" && entry.includes("supabase.co")) {
+        console.error(`FAIL: ${path} declares Supabase origin in ${field}: "${entry}"`);
+        errors++;
+      }
+    }
+  }
+  const optionalHosts = manifest.optional_host_permissions || [];
+  if (!optionalHosts.includes(APPROVED_SUPABASE_ORIGIN)) {
+    console.error(
+      `FAIL: ${path} optional_host_permissions must include "${APPROVED_SUPABASE_ORIGIN}"`
+    );
+    errors++;
+  }
+  for (const entry of optionalHosts) {
+    if (
+      typeof entry === "string" &&
+      entry.includes("supabase.co") &&
+      entry !== APPROVED_SUPABASE_ORIGIN
+    ) {
+      console.error(`FAIL: ${path} declares unapproved Supabase host "${entry}"`);
+      errors++;
+    }
+  }
 }
 
 function validateEdgeMatchesChrome() {

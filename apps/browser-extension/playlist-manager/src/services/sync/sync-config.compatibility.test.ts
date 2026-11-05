@@ -81,4 +81,33 @@ describe("sync config compatibility migration", () => {
     expect(testMockConfig.relayUrl).toBe("https://relay.test");
     expect(testMockConfig.relayAnonKey).toBe("test-anon-key");
   });
+
+  it("clamps out-of-range syncIntervalMinutes on write inside saveSyncConfig (#38)", async () => {
+    const saved: Record<string, any> = {};
+    const origBrowser = (globalThis as any).browser;
+    (globalThis as any).browser = {
+      storage: {
+        local: {
+          get: async (k: string) => ({ [k]: saved[k] }),
+          set: async (obj: Record<string, any>) => Object.assign(saved, obj),
+        },
+      },
+    };
+    try {
+      const { DEFAULT_SYNC_CONFIG, saveSyncConfig } = await import("./sync-config");
+      await saveSyncConfig({
+        ...DEFAULT_SYNC_CONFIG,
+        syncIntervalMinutes: 999_999,
+      });
+      expect(saved.yph_sync_config.syncIntervalMinutes).toBe(10_080);
+
+      await saveSyncConfig({
+        ...DEFAULT_SYNC_CONFIG,
+        syncIntervalMinutes: Number.NaN,
+      });
+      expect(saved.yph_sync_config.syncIntervalMinutes).toBe(5);
+    } finally {
+      (globalThis as any).browser = origBrowser;
+    }
+  });
 });

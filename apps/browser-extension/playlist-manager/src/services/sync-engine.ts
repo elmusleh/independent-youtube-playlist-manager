@@ -17,6 +17,7 @@ import { registerSyncEngine } from "./sync-engine-registration";
 import { computeStorageAddress, computeAuthToken } from "./sync/keys";
 import { claimSpace, pullAll } from "./sync/relay-transport";
 import { ensureShadowBinding } from "./sync/sync-state-reset";
+import { persistEngineSyncReport } from "./sync/sync-report";
 import {
   appendSyncSystemLog,
   enabledCollectionNames,
@@ -292,6 +293,12 @@ export async function runOnce(): Promise<SyncStatus> {
     status.pulledCount = incoming.length + additionalIncomingCount;
     status.failedCount = result.failed.length;
     backoffIndex = 0;
+    await persistEngineSyncReport({
+      config: cfg,
+      statusSnapshot: status,
+      durationMs: Date.now() - startedAt,
+      spacePrefix: space.slice(0, 8),
+    }).catch(() => {});
   } catch (err) {
     phase = "error";
     status.lastError = err instanceof Error ? err.message : String(err);

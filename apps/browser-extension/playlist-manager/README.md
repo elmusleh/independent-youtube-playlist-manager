@@ -7,7 +7,7 @@ The Svelte 5 + TypeScript single-page application that powers the extension's pl
 ## Structure
 
 - `src/App.svelte` — Root view router (Editor, Saved, Settings, History, Search)
-- `src/services/` — Data layer: `video-service.ts` / `youtube-api.ts` (5-tier metadata pipeline), `db-service.ts` (IndexedDB), `storage-service.ts` (debounced persistence), `backup-service.ts` (JSON/CSV/M3U export), `schema-normalizer.ts`, `supabase-client.ts` / `supabase-sync.ts` (optional cloud sync)
+- `src/services/` — Data layer: `video-service.ts` / `youtube-api.ts` (5-tier metadata pipeline), `db-service.ts` (IndexedDB), `storage-service.ts` (debounced persistence), `backup-service.ts` (JSON/CSV/M3U export), `schema-normalizer.ts`, `sync-engine.ts` / `sync/` (zero-knowledge encrypted sync)
 - `src/types/` — Shared TypeScript models
 
 ## Commands (from repository root)

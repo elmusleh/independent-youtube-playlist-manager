@@ -15,11 +15,41 @@ type SyncEngineHandlers = {
 
 const IGNORED_STORAGE_KEYS = new Set([
   "yph_sync_status",
+  "yph_last_sync_report",
   "yph_system_logs",
   "yph_sync_devices",
   "yph_sync_safety_backups",
   "yt_playlist_cache_v1",
 ]);
+
+function isTrustedExtensionSender(sender: any, browserObj: any): boolean {
+  const runtimeId = browserObj?.runtime?.id;
+  if (typeof runtimeId === "string" && runtimeId.length > 0 && sender?.id !== runtimeId) {
+    return false;
+  }
+  if (sender?.tab?.incognito) return false;
+  if (typeof sender?.url === "string" && sender.url.length > 0) {
+    try {
+      const source = new URL(sender.url);
+      if (typeof browserObj?.runtime?.getURL === "function") {
+        const root = new URL(browserObj.runtime.getURL("/"));
+        if (source.protocol !== root.protocol || source.host !== root.host) return false;
+      } else if (source.protocol === "http:" || source.protocol === "https:") {
+        return false;
+      }
+    } catch {
+      return false;
+    }
+  }
+  return true;
+}
+
+function canRunAutoSyncNow(): boolean {
+  const nav = (globalThis as any).navigator;
+  if (nav && nav.onLine === false) return false;
+  if (nav?.connection?.saveData === true) return false;
+  return true;
+}
 
 /** Register engine triggers and the runtime message bridge in the background context. */
 export function registerSyncEngine(handlers: SyncEngineHandlers): void {
@@ -45,6 +75,16 @@ export function registerSyncEngine(handlers: SyncEngineHandlers): void {
   }
 
   let alarmRefreshSeq = 0;
+  let pendingOnlineCatchUp = false;
+
+  function runAutoSync(): Promise<SyncStatus | undefined> {
+    if (!canRunAutoSyncNow()) {
+      pendingOnlineCatchUp = true;
+      return Promise.resolve(undefined);
+    }
+    pendingOnlineCatchUp = false;
+    return handlers.runOnce();
+  }
 
   async function refreshPeriodicAlarm(): Promise<void> {
     const seq = ++alarmRefreshSeq;
@@ -81,10 +121,28 @@ export function registerSyncEngine(handlers: SyncEngineHandlers): void {
     refreshPeriodicAlarm().catch(() => {});
     loadSyncConfig()
       .then((cfg) => {
-        if (cfg.autoSyncOnStartup !== false) return handlers.runOnce();
+        if (cfg.autoSyncOnStartup !== false) return runAutoSync();
       })
       .catch(() => {});
   });
+
+  if (typeof (globalThis as any).addEventListener === "function") {
+    (globalThis as any).addEventListener("online", () => {
+      if (!pendingOnlineCatchUp || !canRunAutoSyncNow()) return;
+      pendingOnlineCatchUp = false;
+      loadSyncConfig()
+        .then((cfg) => {
+          const autoEnabled =
+            (cfg.syncIntervalMinutes ?? 0) > 0 ||
+            cfg.autoSyncOnChange !== false ||
+            cfg.autoSyncOnStartup !== false;
+          if (cfg.syncKey && cfg.backends.length > 0 && autoEnabled) {
+            return handlers.runOnce();
+          }
+        })
+        .catch(() => {});
+    });
+  }
 
   let debounceTimer: ReturnType<typeof setTimeout> | null = null;
   browserObj.storage?.onChanged?.addListener?.((changes: any, area: string) => {
@@ -116,19 +174,22 @@ export function registerSyncEngine(handlers: SyncEngineHandlers): void {
       debounceTimer = null;
       loadSyncConfig()
         .then((cfg) => {
-          if (cfg.autoSyncOnChange !== false) return handlers.runOnce();
+          if (cfg.autoSyncOnChange !== false) return runAutoSync();
         })
         .catch(() => {});
     }, 3_000);
   });
 
   browserObj.alarms?.onAlarm?.addListener?.((alarm: any) => {
-    if (alarm?.name === "yph-sync-periodic") handlers.runOnce().catch(() => {});
+    if (alarm?.name === "yph-sync-periodic") runAutoSync().catch(() => {});
   });
 
   const isNativeFirefox = typeof browserObj?.runtime?.getBrowserInfo === "function";
 
-  browserObj.runtime.onMessage.addListener((request: any, _sender: any, sendResponse: any) => {
+  browserObj.runtime.onMessage.addListener((request: any, sender: any, sendResponse: any) => {
+    if (typeof request?.cmd === "string" && request.cmd.startsWith("sync-")) {
+      if (!isTrustedExtensionSender(sender, browserObj)) return undefined;
+    }
     if (request?.cmd === "sync-now") {
       const p = handlers
         .runOnce()

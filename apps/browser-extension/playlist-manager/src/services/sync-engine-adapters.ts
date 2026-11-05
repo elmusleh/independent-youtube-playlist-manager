@@ -15,6 +15,7 @@ import type { PushResult, RelayRecord } from "./sync/relay-transport";
 import type { DirtyCandidate } from "./sync/adapters/types";
 
 const KNOWN_COLLECTIONS = new Set(["playlists", "history", "settings", "devices"]);
+export const MAX_RECORD_PAYLOAD_BYTES = 150_000;
 
 function isFutureVersionPayload(payload: unknown): boolean {
   if (typeof payload !== "string" || !payload.startsWith("{")) return false;
@@ -298,12 +299,31 @@ export async function runAdapterPass(ctx: AdapterPassContext): Promise<AdapterPa
       );
     });
 
+  const pushableCandidates: DirtyCandidate[] = [];
+  for (const candidate of dirtyCandidates) {
+    const payloadLen = candidate.record?.payload?.length ?? 0;
+    if (payloadLen > MAX_RECORD_PAYLOAD_BYTES) {
+      const title =
+        candidate.collection === "playlists" &&
+        candidate.value &&
+        typeof (candidate.value as any).title === "string"
+          ? (candidate.value as any).title.trim()
+          : "";
+      const label = title ? `"${title}" (${candidate.recordId})` : candidate.recordId;
+      failed.push(
+        `${candidate.collection}/${label}: skipped — encrypted payload (${Math.ceil(payloadLen / 1024)} KB) exceeds 150 KB relay limit`
+      );
+      continue;
+    }
+    pushableCandidates.push(candidate);
+  }
+
   return {
     failed,
     conflicts,
     appliedCount,
-    allDirty: dirtyCandidates.map((candidate) => candidate.record),
-    dirtyCandidates,
+    allDirty: pushableCandidates.map((candidate) => candidate.record),
+    dirtyCandidates: pushableCandidates,
     maxSeq,
     cursorBlocked,
     categoryProgress,

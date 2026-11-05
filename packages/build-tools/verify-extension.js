@@ -8,6 +8,7 @@ const path = require("node:path");
 const { createFixture, seedExtension, routes, sizes } = require("./extension-fixture.js");
 const { verifyPinnedSidebarTruncation } = require("./verify-pinned-sidebar.js");
 const { verifySyncLegacyWarning } = require("./verify-sync-legacy-warning.js");
+const { verifySyncSchedule } = require("./verify-sync-schedule.js");
 
 const root = path.resolve(__dirname, "../..");
 const output = path.join(root, "dist/verification");
@@ -271,7 +272,7 @@ async function main() {
       "IYPM hosted (Beta)",
       "Zero setup",
       "Your own Supabase project",
-      "File / Syncthing",
+      "File sync (Syncthing)",
     ]) {
       assert(syncBody.includes(label), `Sync view is missing "${label}"`);
     }
@@ -280,6 +281,11 @@ async function main() {
     await verifySyncLegacyWarning(page, base, requestUrls);
     report.interactions.push(
       "Legacy sync recovery warning blocks relay until explicit backup acknowledgement"
+    );
+
+    await verifySyncSchedule(page, worker, base, requestUrls);
+    report.interactions.push(
+      "Sync schedule presets, custom 2-hour alarm bridge, and zero api.github.com requests"
     );
 
     // Regression guard for the theme desync that shipped in 1.2.1: the persisted

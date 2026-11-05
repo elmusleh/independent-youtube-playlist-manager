@@ -216,26 +216,6 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
         sendResponse(false);
       });
     return true;
-  } else if (request.cmd === "supabase-trigger-sync") {
-    if (window.syncEngine) {
-      window.syncEngine
-        .triggerSync()
-        .then(sendResponse)
-        .catch((err) => sendResponse({ success: false, error: err.message }));
-    } else {
-      sendResponse({ success: false, error: "Sync engine not mounted" });
-    }
-    return true;
-  } else if (request.cmd === "supabase-get-session") {
-    if (window.supabaseGetSession) {
-      window
-        .supabaseGetSession()
-        .then(sendResponse)
-        .catch(() => sendResponse(null));
-    } else {
-      sendResponse(null);
-    }
-    return true;
   } else if (request.cmd === "log-event") {
     if (window.logSystemEvent) {
       window.logSystemEvent(request.level, request.message, request.details);

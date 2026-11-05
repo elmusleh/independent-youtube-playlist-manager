@@ -7,8 +7,11 @@ import { mergePlaylists } from "./merge/playlists";
 import { runAdapterPass } from "../sync-engine-adapters";
 import {
   captureSyncSafetyBackup,
+  importSyncSafetyBackupJson,
   listSyncSafetyBackups,
+  parseSafetyBackupJson,
   restoreSyncSafetyBackup,
+  serializeSafetyBackupJson,
 } from "./sync-safety-backup";
 
 const SYNC_KEY = "ABCDEFGHIJKLMNOPQRST";
@@ -182,5 +185,53 @@ describe("sync zero-data-loss & forward-compatibility protections", () => {
     expect(result.failed).toEqual([]);
     expect(result.cursorBlocked).toBe(true);
     expect(localPlaylists).toHaveLength(3);
+  });
+
+  it("exports, validates, and imports portable safety backup JSON files (#24)", async () => {
+    const snap = await captureSyncSafetyBackup("Portable export", { force: true });
+    const exportedJson = serializeSafetyBackupJson(snap!);
+
+    expect(() => parseSafetyBackupJson("{bad-json")).toThrow(/not valid JSON/i);
+    expect(() => parseSafetyBackupJson('{"schema":"wrong"}')).toThrow(/schema/i);
+
+    // Wipe local state completely as if browser was reinstalled
+    localPlaylists = [];
+    state.local_yt_history = {};
+    state.yph_sync_safety_backups = [];
+
+    const imported = await importSyncSafetyBackupJson(exportedJson);
+    expect(imported.playlistsCount).toBe(3);
+    expect(localPlaylists).toHaveLength(3);
+    expect(Object.keys(state.local_yt_history)).toEqual(["v1"]);
+  });
+
+  it("skips a single oversized playlist (>150 KB) while syncing remaining playlists (#33)", async () => {
+    localPlaylists.push({
+      id: "huge-pl",
+      title: "Giant Archive",
+      videos: ["v1"],
+      giantNotes: "X".repeat(160_000),
+      revision: 1,
+    });
+
+    const result = await runAdapterPass({
+      syncKey: SYNC_KEY,
+      localDeviceId: "dev-a",
+      relayConfig: { url: "https://relay.test", anonKey: "k" },
+      space: "sp",
+      authHash: "ah",
+      sinceSeq: 0,
+      cfg: { content: { playlists: true, settings: true, history: true }, lastSyncedAt: 100 },
+      storage: (globalThis as any).browser.storage.local,
+      incoming: [],
+    });
+
+    expect(
+      result.failed.some((msg) => msg.includes('"Giant Archive"') && msg.includes("150 KB"))
+    ).toBe(true);
+    const dirtyPlaylistIds = result.dirtyCandidates
+      .filter((c) => c.collection === "playlists")
+      .map((c) => c.recordId);
+    expect(dirtyPlaylistIds).toEqual(["p1", "p2", "p3"]);
   });
 });

@@ -16,7 +16,9 @@ async function verifySyncLegacyWarning(page, base, requestUrls) {
       new Promise((resolve) => chrome.storage.local.set({ yph_sync_config: config }, resolve)),
     LEGACY_CONFIG
   );
+  await page.goto(`${base}/editor/index.html#/saved`);
   await page.goto(`${base}/editor/index.html#/sync`);
+  await page.reload();
 
   const warning = page.getByTestId("legacy-sync-warning");
   await warning.waitFor();

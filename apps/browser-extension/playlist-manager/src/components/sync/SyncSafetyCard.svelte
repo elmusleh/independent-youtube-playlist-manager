@@ -5,11 +5,15 @@
     faCamera,
     faRotateLeft,
     faDownload,
+    faUpload,
     faShieldHalved,
+    faTriangleExclamation,
   } from "@fortawesome/free-solid-svg-icons";
   import SimpleButton from "../SimpleButton.svelte";
   import {
     captureSyncSafetyBackup,
+    importSyncSafetyBackupJson,
+    parseSafetyBackupJson,
     restoreSyncSafetyBackup,
     serializeSafetyBackupJson,
     type SyncSafetyBackup,
@@ -19,15 +23,25 @@
 
   let {
     backups = [],
+    lastError = null,
     onRefresh,
     onLog,
+    onKeepLocalAndReupload,
+    onConfirmEmptyWipe,
   }: {
     backups: SyncSafetyBackup[];
+    lastError?: string | null;
     onRefresh: () => void | Promise<void>;
     onLog: (message: string, type?: "info" | "success" | "error" | "warning") => void;
+    onKeepLocalAndReupload?: () => void | Promise<void>;
+    onConfirmEmptyWipe?: () => void | Promise<void>;
   } = $props();
 
   let busy = $state(false);
+  let fileInput = $state<HTMLInputElement | null>(null);
+  const wipeGuardBlocked = $derived(
+    typeof lastError === "string" && lastError.includes("playlists safety guard")
+  );
 
   async function saveManualSnapshot() {
     busy = true;
@@ -85,6 +99,61 @@
     URL.revokeObjectURL(url);
     onLog("Downloaded safety snapshot JSON", "info");
   }
+
+  async function handleImportFile(event: Event) {
+    const input = event.currentTarget as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = "";
+    if (!file) return;
+    try {
+      const rawText = await file.text();
+      const preview = parseSafetyBackupJson(rawText);
+      requestConfirm({
+        title: "Import and restore this safety backup?",
+        message: `Restores ${preview.playlistsCount} playlist${preview.playlistsCount === 1 ? "" : "s"} (${preview.videosCount} videos) and ${preview.historyCount} watched history item${preview.historyCount === 1 ? "" : "s"} from "${file.name}". Click "Sync now" afterward to push the restored library.`,
+        color: "primary",
+        confirmLabel: "Import & restore",
+        onConfirm: async () => {
+          busy = true;
+          try {
+            const restored = await importSyncSafetyBackupJson(rawText);
+            await onRefresh();
+            const msg = `Imported & restored ${restored.playlistsCount} playlists — click "Sync now" to push`;
+            onLog(msg, "success");
+            toast.show(msg, "success");
+          } catch (err) {
+            const msg = err instanceof Error ? err.message : String(err);
+            onLog(`Backup import failed: ${msg}`, "error");
+            toast.show(`Backup import failed: ${msg}`, "error");
+          } finally {
+            busy = false;
+          }
+        },
+      });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      onLog(`Invalid backup file: ${msg}`, "error");
+      toast.show(`Invalid backup file: ${msg}`, "error");
+    }
+  }
+
+  function confirmDeleteAllLocally() {
+    requestConfirm({
+      title: "Delete all local playlists to match cloud?",
+      message:
+        "Another device deleted every playlist in this sync space. Confirm only if you intentionally emptied your library; a local restore point will still remain saved above.",
+      color: "danger",
+      confirmLabel: "Confirm delete all locally",
+      onConfirm: async () => {
+        busy = true;
+        try {
+          await onConfirmEmptyWipe?.();
+        } finally {
+          busy = false;
+        }
+      },
+    });
+  }
 </script>
 
 <section class="card safety-card">
@@ -104,7 +173,47 @@
     <SimpleButton secondary disabled={busy} onclick={saveManualSnapshot}>
       <Fa icon={faCamera} /> Save local snapshot now
     </SimpleButton>
+    <SimpleButton
+      secondary
+      disabled={busy}
+      title="Import and restore a previously downloaded iypm-safety-backup-*.json file"
+      onclick={() => fileInput?.click()}
+    >
+      <Fa icon={faUpload} /> Import JSON
+    </SimpleButton>
+    <input
+      bind:this={fileInput}
+      type="file"
+      accept=".json,application/json"
+      hidden
+      onchange={handleImportFile}
+    />
   </div>
+
+  {#if wipeGuardBlocked}
+    <div class="wipe-guard-banner" role="alert">
+      <div class="wipe-guard-head">
+        <Fa icon={faTriangleExclamation} />
+        <strong>Anti-mass-wipe guard protected your local playlists</strong>
+      </div>
+      <p>
+        Remote tombstones attempted to delete every playlist on this device. Choose whether to keep
+        and re-upload your local playlists or intentionally accept the empty library once.
+      </p>
+      <div class="wipe-guard-actions">
+        {#if onKeepLocalAndReupload}
+          <SimpleButton secondary disabled={busy} onclick={() => onKeepLocalAndReupload?.()}>
+            Keep local &amp; re-upload
+          </SimpleButton>
+        {/if}
+        {#if onConfirmEmptyWipe}
+          <SimpleButton secondary disabled={busy} onclick={confirmDeleteAllLocally}>
+            Confirm delete all locally
+          </SimpleButton>
+        {/if}
+      </div>
+    </div>
+  {/if}
 
   {#if backups.length > 0}
     <ul class="backup-list">
@@ -150,7 +259,32 @@
 
 <style>
   .safety-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
     margin: 0.65rem 0;
+  }
+  .wipe-guard-banner {
+    margin: 0.65rem 0;
+    padding: 0.65rem 0.75rem;
+    border-radius: 8px;
+    border: 1px solid #f59e0b;
+    background: rgba(245, 158, 11, 0.1);
+    font-size: 0.78rem;
+  }
+  .wipe-guard-head {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-bottom: 0.3rem;
+  }
+  .wipe-guard-banner p {
+    margin: 0 0 0.5rem;
+  }
+  .wipe-guard-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
   }
   .backup-list {
     list-style: none;

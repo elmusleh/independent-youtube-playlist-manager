@@ -9,9 +9,12 @@
     faSpinner,
     faPlugCircleCheck,
     faUpRightFromSquare,
+    faCopy,
   } from "@fortawesome/free-solid-svg-icons";
   import SimpleButton from "../SimpleButton.svelte";
+  import { SYNC_RELAY_V2_SQL } from "../../services/sync/sync-relay-schema-sql.js";
   import type { ConnectionCheckResult } from "../../services/sync/sync-diagnostics.js";
+  import { toast } from "../../stores/toast.js";
 
   const SQL_SCHEMA_URL =
     "https://github.com/elmusleh/independent-youtube-playlist-manager/blob/next/docs/sync-relay-v2.sql";
@@ -41,6 +44,20 @@
   } = $props();
 
   let expanded = $state(false);
+  let sqlCopied = $state(false);
+
+  async function copySqlSchema() {
+    try {
+      await navigator.clipboard.writeText(SYNC_RELAY_V2_SQL);
+      sqlCopied = true;
+      toast.show("Copied Sync v2 SQL bootstrap script to clipboard.", "success");
+      setTimeout(() => {
+        sqlCopied = false;
+      }, 2500);
+    } catch {
+      toast.show("Clipboard access failed — open docs/sync-relay-v2.sql to copy.", "error");
+    }
+  }
 </script>
 
 <section class="card" class:enabled>
@@ -90,6 +107,14 @@
             <Fa icon={faPlugCircleCheck} /> Test connection
           {/if}
         </SimpleButton>
+        <SimpleButton
+          secondary
+          title="Copy the one-time Sync v2 SQL schema script to paste into Supabase SQL Editor"
+          onclick={copySqlSchema}
+        >
+          <Fa icon={sqlCopied ? faCircleCheck : faCopy} />
+          {sqlCopied ? "SQL copied!" : "Copy SQL schema"}
+        </SimpleButton>
       </div>
     {/if}
 
@@ -115,10 +140,15 @@
     <div class="backend-detail">
       <p>
         <strong>1. One-time database setup:</strong> open your Supabase project's
-        <em>SQL Editor</em> and run
+        <em>SQL Editor</em>, click
+        <button type="button" class="inline-copy-btn" onclick={copySqlSchema}>
+          <Fa icon={sqlCopied ? faCircleCheck : faCopy} />
+          {sqlCopied ? "Copied SQL!" : "Copy SQL schema"}
+        </button>
+        (or view
         <a href={SQL_SCHEMA_URL} target="_blank" rel="noopener noreferrer" class="api-link">
           docs/sync-relay-v2.sql <Fa icon={faUpRightFromSquare} />
-        </a>.
+        </a>) and run it once.
       </p>
       <p>
         <strong>2. How data &amp; security are managed:</strong> the script creates
@@ -134,3 +164,24 @@
     </div>
   {/if}
 </section>
+
+<style>
+  .conn-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .inline-copy-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.12rem 0.45rem;
+    border-radius: 5px;
+    border: 1px solid var(--border, #d1d5db);
+    background: var(--muted, #f3f4f6);
+    color: inherit;
+    font-size: 0.76rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+</style>

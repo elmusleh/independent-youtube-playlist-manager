@@ -130,12 +130,6 @@ browser.alarms.onAlarm.addListener(async (alarm) => {
     // Import needed lazily to avoid circular dependency
     const { pruneStaleMetadataCache } = await import("./history.js");
     await pruneStaleMetadataCache();
-  } else if (alarm.name === "supabase-cloud-sync") {
-    if (window.syncEngine) {
-      await window.syncEngine
-        .triggerSync()
-        .catch((e) => console.warn("[Background] Supabase auto-sync error:", e));
-    }
   } else if (alarm.name.startsWith("sync-retry-")) {
     const localPlaylistId = alarm.name.replace("sync-retry-", "");
     await handleSyncRetry(localPlaylistId);

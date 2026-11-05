@@ -276,5 +276,15 @@ export async function saveSyncConfig(config: SyncConfig): Promise<void> {
   // Serialize to a plain object before handing it to storage.
   const plain = JSON.parse(JSON.stringify(config)) as SyncConfig;
   plain.syncConfigVersion = 2;
+  plain.syncIntervalMinutes = clampSyncIntervalMinutes(
+    plain.syncIntervalMinutes,
+    DEFAULT_SYNC_CONFIG.syncIntervalMinutes
+  );
+  if (typeof plain.autoSyncOnChange !== "boolean") {
+    plain.autoSyncOnChange = plain.syncIntervalMinutes !== 0;
+  }
+  if (typeof plain.autoSyncOnStartup !== "boolean") {
+    plain.autoSyncOnStartup = plain.syncIntervalMinutes !== 0;
+  }
   await storageArea().set(KEY, plain);
 }

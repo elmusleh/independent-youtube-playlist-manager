@@ -20,16 +20,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   writes. Custom HTTPS Supabase hosts are requested only when the user starts a sync.
 - Sync Center transparency, diagnostics, and data-protection safeguards: a post-sync
   **Sync Status Report** dialog (`SyncReportModal.svelte`) with per-category uploaded/applied
-  totals and cloud space ID; per-backend **Test connection** checks inside both `IYPM hosted`
-  and `Your own Supabase project` (including missing `docs/sync-relay-v2.sql` schema detection
-  and inline setup instructions); a 4-emoji + 4-word **Key check** fingerprint badge; a
-  configurable **Sync Frequency** card (`SyncScheduleCard.svelte`) with quick presets (`Manual
-only`, `5 min`–`24 hours`), custom intervals (`1 min`–`7 days`), independent toggles for
-  auto-sync on local edits and browser startup, and a live next-scheduled-check readout; a
-  configurable conflict policy card (`Automatic 3-way merge` vs `Last-write-wins`); automatic
-  rolling pre-sync local restore points (`SyncSafetyCard.svelte`) with one-click JSON export
-  and full local restore; and an anti-mass-wipe safety guard blocking automatic deletion if
-  remote tombstones would wipe three or more local playlists down to zero.
+  totals and cloud space ID; durable cross-session `yph_last_sync_report` persistence; per-backend
+  **Test connection** checks inside both `IYPM hosted` and `Your own Supabase project` (including
+  one-click "Copy SQL schema" bootstrap button and missing `docs/sync-relay-v2.sql` schema detection);
+  a 4-emoji + 4-word **Key check** fingerprint badge; a configurable **Sync Frequency** card
+  (`SyncScheduleCard.svelte`) with quick presets (`Manual only`, `5 min`–`24 hours`), custom intervals
+  (`1 min`–`7 days`), independent toggles for auto-sync on local edits and browser startup, and a live
+  next-scheduled-check readout; automatic offline/metered network pause with online catch-up sync;
+  a configurable conflict policy card (`Automatic 3-way merge` vs `Last-write-wins`); automatic rolling
+  pre-sync local restore points (`SyncSafetyCard.svelte`) with one-click JSON export, portable JSON
+  import/restore, and anti-mass-wipe override protection; per-record 150 KB preflight guards to isolate
+  oversized playlists without blocking the library; retirement of the legacy v1 `supabase-sync.ts` bundle;
+  and automated CI guards for Firefox MV3 background reliability, message sender validation, and manifest
+  domain allowlists.
 - Moved "Local Storage" and "Database Backup & Portable Restore" cards from the Settings page to
   the Sync page; Sync Key card promoted to a full-width block at the top of Sync. Sync page now
   shares the masonry card layout with Settings.

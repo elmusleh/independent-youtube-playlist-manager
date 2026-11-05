@@ -6,7 +6,9 @@
 import { librarySnapshot } from "../../../../shared/storage-client.js";
 import { readSyncableSettingsFromStorage } from "./adapter-storage-io.js";
 import { resolveActiveRelayEndpoint } from "./sync-diagnostics.js";
-import type { SyncConfig } from "./sync-config.js";
+import { getOrCreateDeviceId, type SyncConfig } from "./sync-config.js";
+
+export const LAST_SYNC_REPORT_KEY = "yph_last_sync_report";
 
 export type LocalSyncInventory = {
   playlistsCount: number;
@@ -164,4 +166,88 @@ export function buildSyncRunReport(params: {
     knownDevices: Math.max(1, knownDevices),
     rows,
   };
+}
+
+function getLocalReportStorage(): {
+  get: (key: string) => Promise<unknown>;
+  set: (key: string, val: unknown) => Promise<void>;
+} | null {
+  const b = (globalThis as any).browser || (globalThis as any).chrome;
+  if (b?.storage?.local?.get && b?.storage?.local?.set) {
+    return {
+      get: async (k) => (await b.storage.local.get(k))?.[k],
+      set: async (k, v) => b.storage.local.set({ [k]: v }),
+    };
+  }
+  if (typeof localStorage !== "undefined") {
+    return {
+      get: async (k) => JSON.parse(localStorage.getItem(k) || "null"),
+      set: async (k, v) => localStorage.setItem(k, JSON.stringify(v)),
+    };
+  }
+  return null;
+}
+
+export async function saveLastSyncReport(report: SyncRunReport): Promise<void> {
+  const area = getLocalReportStorage();
+  if (!area) return;
+  try {
+    await area.set(LAST_SYNC_REPORT_KEY, JSON.parse(JSON.stringify(report)));
+  } catch {
+    // Ignore storage write failure.
+  }
+}
+
+export async function loadLastSyncReport(): Promise<SyncRunReport | null> {
+  const area = getLocalReportStorage();
+  if (!area) return null;
+  try {
+    const raw = await area.get(LAST_SYNC_REPORT_KEY);
+    if (
+      raw &&
+      typeof raw === "object" &&
+      typeof (raw as SyncRunReport).completedAt === "number" &&
+      Array.isArray((raw as SyncRunReport).rows)
+    ) {
+      return raw as SyncRunReport;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+export async function persistEngineSyncReport(params: {
+  config: SyncConfig;
+  statusSnapshot: any;
+  durationMs: number;
+  spacePrefix?: string;
+}): Promise<SyncRunReport> {
+  const inventoryAfter = await readLocalSyncInventory();
+  const b = (globalThis as any).browser || (globalThis as any).chrome;
+  let knownDevices = 1;
+  try {
+    const stored = await b?.storage?.local?.get?.("yph_sync_devices");
+    const list = Array.isArray(stored?.yph_sync_devices) ? stored.yph_sync_devices : [];
+    const ids = new Set(
+      list
+        .map((d: any) => d?.deviceId)
+        .filter((id: unknown): id is string => typeof id === "string" && !!id)
+    );
+    const localId = await getOrCreateDeviceId().catch(() => "");
+    if (localId) ids.add(localId);
+    knownDevices = Math.max(1, ids.size);
+  } catch {
+    knownDevices = 1;
+  }
+  const report = buildSyncRunReport({
+    config: params.config,
+    statusSnapshot: params.statusSnapshot,
+    inventoryAfter,
+    knownDevices,
+    durationMs: params.durationMs,
+    spacePrefix: params.spacePrefix,
+  });
+  await saveLastSyncReport(report);
+  return report;
 }

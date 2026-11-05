@@ -22,7 +22,6 @@ export default {
     utils: "src/services/utils.ts",
     "sync-state-service": "src/services/sync-state-service.ts",
     "supabase-client": "src/services/supabase-client.ts",
-    "supabase-sync": "src/services/supabase-sync.ts",
     "sync-engine": "src/services/sync-engine.ts",
   },
   onwarn: (warning, handler) => {

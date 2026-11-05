@@ -116,13 +116,7 @@ export async function captureSyncSafetyBackup(
   return entry;
 }
 
-export async function restoreSyncSafetyBackup(backupId: string): Promise<SyncSafetyBackup> {
-  const backups = await listSyncSafetyBackups();
-  const target = backups.find((b) => b.id === backupId);
-  if (!target) {
-    throw new Error("Safety restore point was not found.");
-  }
-
+async function applySafetyBackupData(target: SyncSafetyBackup): Promise<void> {
   const bridge = createSyncStorageBridge();
   const current = await bridge.librarySnapshot();
   await bridge.mutateLibrary({
@@ -144,7 +138,15 @@ export async function restoreSyncSafetyBackup(backupId: string): Promise<SyncSaf
   const cfg = await loadSyncConfig();
   resetSyncConfigCursors(cfg, "Local safety restore point applied");
   await saveSyncConfig(cfg);
+}
 
+export async function restoreSyncSafetyBackup(backupId: string): Promise<SyncSafetyBackup> {
+  const backups = await listSyncSafetyBackups();
+  const target = backups.find((b) => b.id === backupId);
+  if (!target) {
+    throw new Error("Safety restore point was not found.");
+  }
+  await applySafetyBackupData(target);
   return target;
 }
 
@@ -158,4 +160,65 @@ export function serializeSafetyBackupJson(backup: SyncSafetyBackup): string {
     null,
     2
   );
+}
+
+export function parseSafetyBackupJson(rawJson: string): SyncSafetyBackup {
+  let parsed: any;
+  try {
+    parsed = JSON.parse(rawJson);
+  } catch {
+    throw new Error("Selected file is not valid JSON.");
+  }
+  if (!parsed || typeof parsed !== "object" || parsed.schema !== "iypm-sync-safety-backup-v1") {
+    throw new Error("Invalid safety backup file (expected schema iypm-sync-safety-backup-v1).");
+  }
+  if (!Array.isArray(parsed.playlists)) {
+    throw new Error("Invalid safety backup file: playlists array is missing.");
+  }
+  const history =
+    parsed.history && typeof parsed.history === "object" && !Array.isArray(parsed.history)
+      ? parsed.history
+      : {};
+  const settings =
+    parsed.settings && typeof parsed.settings === "object" && !Array.isArray(parsed.settings)
+      ? parsed.settings
+      : {};
+
+  let videosCount = 0;
+  for (const pl of parsed.playlists) {
+    if (Array.isArray(pl?.videos)) videosCount += pl.videos.length;
+  }
+  const now = Date.now();
+  return JSON.parse(
+    JSON.stringify({
+      id: `import-${now}-${Math.random().toString(36).slice(2, 7)}`,
+      createdAt:
+        typeof parsed.createdAt === "number" && Number.isFinite(parsed.createdAt)
+          ? parsed.createdAt
+          : now,
+      reason:
+        typeof parsed.reason === "string" && parsed.reason.trim()
+          ? `Imported: ${parsed.reason.trim()}`
+          : "Imported safety snapshot JSON",
+      playlistsCount: parsed.playlists.length,
+      videosCount,
+      historyCount: Object.keys(history).length,
+      settingsCount: Object.keys(settings).length,
+      playlists: parsed.playlists,
+      history,
+      settings,
+    })
+  );
+}
+
+export async function importSyncSafetyBackupJson(rawJson: string): Promise<SyncSafetyBackup> {
+  const entry = parseSafetyBackupJson(rawJson);
+  const area = getLocalStorageArea();
+  if (area) {
+    const existing = await listSyncSafetyBackups();
+    const updated = [entry, ...existing].slice(0, MAX_SAFETY_BACKUPS);
+    await area.set(SAFETY_BACKUPS_KEY, updated);
+  }
+  await applySafetyBackupData(entry);
+  return entry;
 }

@@ -1,3 +1,45 @@
+## 2026-11-05 — Pre-release hardening batch: dead v1 sync retirement, oversized playlist isolation, portable JSON restore, persistent report & CI security gates
+
+### Root Causes & Hardening Implemented
+
+1. **Retired legacy v1 `supabase-sync.ts` and dead background listeners (#17):**
+   - Removed `supabase-sync.ts` (389 lines of dead plaintext v1 code) and its entry from Rollup and `verify-file-size.js`.
+   - Removed dead `import "../editor/supabase-sync.js"` from `background/index.js` and removed legacy `supabase-cloud-sync`, `supabase-trigger-sync`, and `supabase-get-session` command stubs from `background/sync.js` and `background/background.js`.
+2. **Per-record 150 KB preflight payload guard (#33):**
+   - Isolated oversized single playlists in `sync-engine-adapters.ts` (`MAX_RECORD_PAYLOAD_BYTES = 150_000`) before calling `pushAll`, preventing one unusually huge playlist from crashing the batch with an opaque error and blocking the rest of the library from syncing.
+3. **Completed the disaster-recovery loop with portable JSON import & anti-mass-wipe override (#24, #26):**
+   - Added `importSyncSafetyBackupJson` and `parseSafetyBackupJson` in `sync-safety-backup.ts` with a 1-click **Import JSON** file picker in `SyncSafetyCard.svelte` to restore library state from exported files even after reinstalling.
+   - Added interactive "Keep local & re-upload" vs "Confirm delete all locally" override actions in `SyncSafetyCard.svelte` when the anti-mass-wipe guard triggers.
+4. **Persisted last `SyncRunReport` across page reloads & live permission updates (#18, #19):**
+   - Added `yph_last_sync_report` storage persistence in `sync-report.ts` and `sync-engine.ts`, hydrating the last report on load and listening to `browser.permissions.onAdded` / `onRemoved`.
+5. **One-click "Copy SQL schema" in `SupabaseCard.svelte` (#23):**
+   - Embedded canonical `SYNC_RELAY_V2_SQL` (`sync-relay-schema-sql.ts`) with byte-for-byte verification test against `docs/sync-relay-v2.sql`.
+6. **Hardened message sender verification & network/offline auto-sync (#31, #35, #38):**
+   - Added `isTrustedExtensionSender` checks on `sync-*` commands in `sync-engine-registration.ts`.
+   - Added `canRunAutoSyncNow` checking `navigator.onLine` and `navigator.connection?.saveData`, with automatic catch-up on `online` events.
+   - Enforced `clampSyncIntervalMinutes` bounds normalization on write in `saveSyncConfig`.
+7. **CI & build-tools verification (#10, #12, #29, #30, #39):**
+   - Added `verify-firefox-background.js` testing headless background boot and ESLint AST rules blocking unguarded `.window =` writes.
+   - Added manifest host allowlist check in `validate-manifests.js` guaranteeing only `pfydngsbcmuhsqqjbcte.supabase.co` is declared.
+   - Added `verify-sync-schedule.js` in `verify-extension.js` asserting Chromium alarm creation and zero requests to `api.github.com`.
+
+### Files Changed
+
+- `apps/browser-extension/background/{background,index,sync}.js`
+- `apps/browser-extension/playlist-manager/rollup.config.js`
+- `apps/browser-extension/playlist-manager/src/services/sync-engine-adapters.ts`
+- `apps/browser-extension/playlist-manager/src/services/sync-engine-registration.ts`
+- `apps/browser-extension/playlist-manager/src/services/sync-engine.ts`
+- `apps/browser-extension/playlist-manager/src/services/sync/{sync-config,sync-report,sync-safety-backup,sync-relay-schema-sql}.ts`
+- `apps/browser-extension/playlist-manager/src/components/sync/{SupabaseCard,SyncSafetyCard}.svelte`
+- `apps/browser-extension/playlist-manager/src/views/Sync.svelte`
+- `packages/build-tools/{validate-manifests,verify-extension,verify-file-size,verify-firefox-background,verify-sync-schedule,verify-sync-legacy-warning}.js`
+- `package.json`, `eslint.config.mjs`, `CHANGELOG.md`, `SUGGESTIONS.md`, `.ai-sync/HANDOFF.md`
+
+### Verification
+
+- `npm run check` (89 Vitest files / 790 tests, 0 ESLint errors, svelte-check clean), `npm run build`, `npm run test:extension` (102 route checks, 13 interaction groups, Firefox boot check, popup check, Edge check), and `npm run test:visual` (24/24 snapshots) all pass cleanly.
+
 ## 2026-11-05 — Sync Frequency custom duration controls, live alarm status & strict Manual only fixes
 
 ### Root Causes & Enhancements Implemented

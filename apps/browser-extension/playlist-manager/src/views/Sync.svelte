@@ -43,12 +43,17 @@
     type ConnectionCheckResult,
   } from "../services/sync/sync-diagnostics.js";
   import {
+    captureSyncSafetyBackup,
     listSyncSafetyBackups,
     type SyncSafetyBackup,
   } from "../services/sync/sync-safety-backup.js";
+  import { clearAllShadows } from "../services/sync/shadow-store.js";
+  import { resetSyncConfigCursors } from "../services/sync/sync-state-reset.js";
   import {
     buildSyncRunReport,
+    loadLastSyncReport,
     readLocalSyncInventory,
+    saveLastSyncReport,
     type LocalSyncInventory,
     type SyncRunReport,
   } from "../services/sync/sync-report.js";
@@ -174,6 +179,9 @@
       localDeviceId = await getOrCreateDeviceId().catch(() => null);
       localInventory = await readLocalSyncInventory();
       safetyBackups = await listSyncSafetyBackups();
+      if (!lastSyncReport) {
+        lastSyncReport = await loadLastSyncReport();
+      }
       await refreshPermissionState();
       await refreshStatus();
     });
@@ -383,6 +391,7 @@
       fallbackError: lastError,
       fallbackSummary: lastSyncSummary,
     });
+    await saveLastSyncReport(lastSyncReport);
     reportModalOpen = true;
 
     addLogEntry(lastSyncSummary || "Sync finished", lastError ? "error" : "success");
@@ -492,24 +501,56 @@
     }
   }
 
+  async function keepLocalAndReupload() {
+    await clearAllShadows();
+    resetSyncConfigCursors(config, "Re-uploading local playlists after safety guard");
+    await persist();
+    await syncNow();
+  }
+
+  async function confirmEmptyLibraryWipe() {
+    await captureSyncSafetyBackup("Before confirming empty-library wipe", { force: true }).catch(
+      () => {}
+    );
+    config.allowEmptyLibrarySync = true;
+    await persist();
+    try {
+      await syncNow();
+    } finally {
+      config.allowEmptyLibrarySync = false;
+      await persist();
+    }
+  }
+
   onMount(() => {
     const timer = setInterval(refreshStatus, 10_000);
     const b = (window as any).browser || (window as any).chrome;
     const storageListener = (changes: any, area: string) => {
-      if (area === "local" && (changes?.yph_sync_status || changes?.yph_sync_devices)) {
+      if (area !== "local") return;
+      if (changes?.yph_sync_status || changes?.yph_sync_devices) {
         refreshStatus();
+      }
+      if (changes?.yph_last_sync_report?.newValue) {
+        lastSyncReport = changes.yph_last_sync_report.newValue;
       }
     };
     const onFocus = () => {
       refreshPermissionState();
     };
+    const onPermissionChange = () => {
+      refreshPermissionState();
+    };
     window.addEventListener("focus", onFocus);
     b?.storage?.onChanged?.addListener?.(storageListener);
+    b?.permissions?.onAdded?.addListener?.(onPermissionChange);
+    b?.permissions?.onRemoved?.addListener?.(onPermissionChange);
     refresh().then(() => subscribeNudge());
     return () => {
       clearInterval(timer);
       window.removeEventListener("focus", onFocus);
       b?.storage?.onChanged?.removeListener?.(storageListener);
+      b?.permissions?.onAdded?.removeListener?.(onPermissionChange);
+      b?.permissions?.onRemoved?.removeListener?.(onPermissionChange);
       if (nudgeUnsubscribe) nudgeUnsubscribe();
     };
   });
@@ -593,7 +634,14 @@
         onChooseFolder={chooseFolder}
       />
 
-      <SyncSafetyCard backups={safetyBackups} onRefresh={refresh} onLog={addLogEntry} />
+      <SyncSafetyCard
+        backups={safetyBackups}
+        {lastError}
+        onRefresh={refresh}
+        onLog={addLogEntry}
+        onKeepLocalAndReupload={keepLocalAndReupload}
+        onConfirmEmptyWipe={confirmEmptyLibraryWipe}
+      />
 
       <SyncOfflineCard {config} onPersist={persist} onLog={addLogEntry} />
 
