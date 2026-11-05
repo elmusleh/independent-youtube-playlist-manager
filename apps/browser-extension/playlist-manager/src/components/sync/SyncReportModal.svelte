@@ -28,9 +28,9 @@
 <Modal bind:display={open} title="Sync Status Report" size="standard">
   {#snippet children()}
     {#if report}
-      <div class="report-banner" class:ok={report.ok} class:err={!report.ok}>
+      <div class="conn-result report-banner" class:ok={report.ok} class:err={!report.ok}>
         <Fa icon={report.ok ? faCircleCheck : faCircleExclamation} size="lg" />
-        <div class="report-banner-text">
+        <div class="conn-result-body">
           <strong>{report.ok ? "Sync completed" : "Sync encountered an issue"}</strong>
           <span>{report.summary}</span>
           {#if report.error && report.error !== report.summary}
@@ -66,6 +66,9 @@
 
       <p class="endpoint-line">
         Relay endpoint: <code>{report.endpointHost}</code>
+        {#if report.spacePrefix}
+          · Space: <code>#{report.spacePrefix}</code>
+        {/if}
       </p>
 
       <div class="report-table-wrap">
@@ -109,29 +112,8 @@
 
 <style>
   .report-banner {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.75rem;
+    margin: 0 0 1rem;
     padding: 0.85rem 1rem;
-    border-radius: 10px;
-    margin-bottom: 1rem;
-    border: 1px solid var(--border, #e5e7eb);
-  }
-  .report-banner.ok {
-    background: rgba(16, 185, 129, 0.08);
-    border-color: rgba(16, 185, 129, 0.35);
-    color: var(--success, #10b981);
-  }
-  .report-banner.err {
-    background: rgba(239, 68, 68, 0.08);
-    border-color: rgba(239, 68, 68, 0.35);
-    color: var(--danger, #ef4444);
-  }
-  .report-banner-text {
-    display: flex;
-    flex-direction: column;
-    gap: 0.2rem;
-    color: var(--foreground, #111);
     font-size: 0.875rem;
   }
   .report-err-detail {

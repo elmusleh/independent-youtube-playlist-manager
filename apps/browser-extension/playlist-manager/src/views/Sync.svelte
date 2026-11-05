@@ -12,6 +12,7 @@
   import SyncCounters from "../components/sync/SyncCounters.svelte";
   import SyncKeyCard from "../components/sync/SyncKeyCard.svelte";
   import SyncConflictCard from "../components/sync/SyncConflictCard.svelte";
+  import SyncSafetyCard from "../components/sync/SyncSafetyCard.svelte";
   import SyncReportModal from "../components/sync/SyncReportModal.svelte";
   import SyncAdvanced from "../components/sync/SyncAdvanced.svelte";
   import SyncScheduleCard from "../components/sync/SyncScheduleCard.svelte";
@@ -36,7 +37,15 @@
     checkSyncHostPermission,
     requestSyncHostPermission,
   } from "../services/sync/host-permissions.js";
-  import { verifyRelayConnection } from "../services/sync/sync-diagnostics.js";
+  import { computeStorageAddress } from "../services/sync/keys.js";
+  import {
+    verifyRelayConnection,
+    type ConnectionCheckResult,
+  } from "../services/sync/sync-diagnostics.js";
+  import {
+    listSyncSafetyBackups,
+    type SyncSafetyBackup,
+  } from "../services/sync/sync-safety-backup.js";
   import {
     buildSyncRunReport,
     readLocalSyncInventory,
@@ -51,14 +60,19 @@
   async function triggerSyncNow(): Promise<any> {
     const b = (window as any).browser || (window as any).chrome;
     if (b?.runtime?.sendMessage) {
-      return b.runtime.sendMessage({ cmd: "sync-now" }).catch((err: unknown) => ({
-        phase: "error",
-        lastError: err instanceof Error ? err.message : String(err),
-      }));
+      try {
+        const res = await b.runtime.sendMessage({ cmd: "sync-now" });
+        if (res && typeof res === "object" && "phase" in res) {
+          return res;
+        }
+      } catch {
+        // Fall through to direct in-page sync engine if background event page was asleep.
+      }
     }
     const engine = (window as any).syncEngine;
     if (engine?.runOnce) return engine.runOnce();
-    return {};
+    const mod = await import("../services/sync-engine.js");
+    return mod.runOnce();
   }
 
   const caps = detectCapabilities();
@@ -76,7 +90,10 @@
   let knownDevices = $state(0);
   let isSyncing = $state(false);
   let manualSyncActive = $state(false);
-  let isTestingConnection = $state(false);
+  let testingBackend = $state<"relay" | "supabase-byo" | null>(null);
+  let relayTestResult = $state<ConnectionCheckResult | null>(null);
+  let byoTestResult = $state<ConnectionCheckResult | null>(null);
+  let safetyBackups = $state<SyncSafetyBackup[]>([]);
   let relayPermissionGranted = $state<boolean | null>(null);
   let localInventory = $state<LocalSyncInventory | null>(null);
   let lastSyncReport = $state<SyncRunReport | null>(null);
@@ -153,6 +170,7 @@
       config = await loadSyncConfig();
       localDeviceId = await getOrCreateDeviceId().catch(() => null);
       localInventory = await readLocalSyncInventory();
+      safetyBackups = await listSyncSafetyBackups();
       await refreshPermissionState();
       await refreshStatus();
     });
@@ -173,7 +191,7 @@
 
     lastSyncedAt = s.lastRunAt ?? config.lastSyncedAt ?? null;
     lastError = s.lastError ?? config.lastError ?? null;
-    if (!isTestingConnection) {
+    if (!testingBackend) {
       lastSyncSummary = s.lastSummary ?? config.lastSyncSummary ?? null;
     }
 
@@ -344,12 +362,16 @@
     const latestStatus = await refreshStatus();
     const mergedStatus = { ...latestStatus, ...(directStatus ?? {}) };
     const inv = localInventory ?? (await readLocalSyncInventory());
+    const spacePrefix = config.syncKey
+      ? (await computeStorageAddress(config.syncKey).catch(() => "")).slice(0, 8)
+      : "";
     lastSyncReport = buildSyncRunReport({
       config,
       statusSnapshot: mergedStatus,
       inventoryAfter: inv,
       knownDevices,
       durationMs: Date.now() - startedMs,
+      spacePrefix,
       fallbackError: lastError,
       fallbackSummary: lastSyncSummary,
     });
@@ -360,26 +382,53 @@
     else if (lastSyncSummary) toast.show(lastSyncSummary, "success");
   }
 
-  async function testConnection() {
-    if (!(await ensureEndpointPermissions())) return;
-    isTestingConnection = true;
-    lastError = null;
-    addLogEntry("Testing relay connection…", "info");
+  async function testBackendConnection(target: "relay" | "supabase-byo") {
+    const permissions =
+      (globalThis as any).browser?.permissions || (globalThis as any).chrome?.permissions;
+    const targetUrl = target === "relay" ? RELAY_SUPABASE_URL : config.supabaseUrl;
+    if (permissions && targetUrl) {
+      const granted = await requestSyncHostPermission(targetUrl, permissions);
+      if (target === "relay") relayPermissionGranted = granted;
+      if (!granted) {
+        const msg =
+          target === "relay"
+            ? "Allow secure access to the IYPM sync relay before testing."
+            : "Allow secure access to your Supabase project URL before testing.";
+        const denied: ConnectionCheckResult = {
+          ok: false,
+          endpointHost: "",
+          spacePrefix: "",
+          latencyMs: 0,
+          totalRecords: 0,
+          countsByCollection: {},
+          summary: msg,
+          error: msg,
+        };
+        if (target === "relay") relayTestResult = denied;
+        else byoTestResult = denied;
+        toast.show(msg, "error");
+        return;
+      }
+    }
+
+    testingBackend = target;
+    addLogEntry(
+      target === "relay" ? "Testing IYPM hosted relay connection…" : "Testing Supabase connection…",
+      "info"
+    );
     try {
-      const check = await verifyRelayConnection(config);
+      const check = await verifyRelayConnection(config, target);
+      if (target === "relay") relayTestResult = check;
+      else byoTestResult = check;
       if (check.ok) {
-        lastError = null;
-        lastSyncSummary = check.summary;
         addLogEntry(check.summary, "success");
         toast.show(check.summary, "success");
       } else {
-        lastError = check.error || check.summary;
-        lastSyncSummary = check.summary;
         addLogEntry(check.summary, "error");
         toast.show(check.summary, "error");
       }
     } finally {
-      isTestingConnection = false;
+      testingBackend = null;
     }
   }
 
@@ -484,7 +533,6 @@
       {lastSyncSummary}
       {getStageLabel}
       onSyncNow={syncNow}
-      onTestConnection={testConnection}
       onGrantPermission={grantRelayPermission}
       onOpenReport={() => (reportModalOpen = true)}
       {needsRelayPermission}
@@ -504,29 +552,30 @@
     />
 
     <div class="settings-grid">
-      <SyncKeyCard
-        {config}
-        onPersist={persist}
-        onLog={addLogEntry}
-        onRotate={handleRotateKey}
-        onTestConnection={testConnection}
-        {isTestingConnection}
-      />
+      <SyncKeyCard {config} onPersist={persist} onLog={addLogEntry} onRotate={handleRotateKey} />
       <RelayCard
         enabled={config.backends.includes("relay")}
         ready={isRelayConfigured()}
+        hasSyncKey={!!config.syncKey}
         permissionGranted={relayPermissionGranted}
+        isTesting={testingBackend === "relay"}
+        testResult={relayTestResult}
         onToggle={(v) => toggleBackend("relay", v)}
         onRequestPermission={grantRelayPermission}
+        onTestConnection={() => testBackendConnection("relay")}
       />
 
       <SupabaseCard
         enabled={config.backends.includes("supabase-byo")}
         url={config.supabaseUrl}
         key={config.supabaseKey}
+        hasSyncKey={!!config.syncKey}
+        isTesting={testingBackend === "supabase-byo"}
+        testResult={byoTestResult}
         onToggle={(v) => toggleBackend("supabase-byo", v)}
         onSetUrl={setUrl}
         onSetKey={setKey}
+        onTestConnection={() => testBackendConnection("supabase-byo")}
       />
 
       <FileSyncCard
@@ -535,6 +584,8 @@
         onToggle={(v) => toggleBackend("file", v)}
         onChooseFolder={chooseFolder}
       />
+
+      <SyncSafetyCard backups={safetyBackups} onRefresh={refresh} onLog={addLogEntry} />
 
       <SyncOfflineCard {config} onPersist={persist} onLog={addLogEntry} />
 

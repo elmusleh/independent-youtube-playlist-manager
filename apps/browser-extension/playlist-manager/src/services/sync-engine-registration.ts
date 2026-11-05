@@ -16,6 +16,7 @@ const IGNORED_STORAGE_KEYS = new Set([
   "yph_sync_status",
   "yph_system_logs",
   "yph_sync_devices",
+  "yph_sync_safety_backups",
   "yt_playlist_cache_v1",
 ]);
 
@@ -93,29 +94,33 @@ export function registerSyncEngine(handlers: SyncEngineHandlers): void {
     if (alarm?.name === "yph-sync-periodic") handlers.runOnce().catch(() => {});
   });
 
+  const isNativeFirefox = typeof browserObj?.runtime?.getBrowserInfo === "function";
+
   browserObj.runtime.onMessage.addListener((request: any, _sender: any, sendResponse: any) => {
     if (request?.cmd === "sync-now") {
-      handlers
+      const p = handlers
         .runOnce()
-        .then((result) => sendResponse(result))
-        .catch((error) => sendResponse({ phase: "error", lastError: String(error) }));
+        .catch((error) => ({ phase: "error", lastError: String(error) }) as any);
+      if (isNativeFirefox) return p;
+      p.then((result: any) => sendResponse(result));
       return true;
     }
     if (request?.cmd === "sync-test-connection") {
-      loadSyncConfig()
-        .then((cfg) => verifyRelayConnection(cfg))
-        .then((res) => sendResponse(res))
-        .catch((error) =>
-          sendResponse({ ok: false, error: String(error), summary: String(error) })
-        );
+      const p = loadSyncConfig()
+        .then((cfg) => verifyRelayConnection(cfg, request?.targetBackend))
+        .catch((error) => ({ ok: false, error: String(error), summary: String(error) }));
+      if (isNativeFirefox) return p;
+      p.then((res: any) => sendResponse(res));
       return true;
     }
     if (request?.cmd === "sync-pause") {
       handlers.pause();
+      if (isNativeFirefox) return Promise.resolve(handlers.getStatus());
       sendResponse(handlers.getStatus());
       return false;
     }
     if (request?.cmd === "sync-status") {
+      if (isNativeFirefox) return Promise.resolve(handlers.getStatus());
       sendResponse(handlers.getStatus());
       return false;
     }

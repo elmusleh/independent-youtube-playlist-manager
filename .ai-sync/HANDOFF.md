@@ -1,3 +1,37 @@
+## 2026-11-05 — Stale Firefox `relayUrl` purge, per-backend `Test connection`, BYO Supabase schema UX & zero-data-loss protections
+
+### Root Causes & Improvements Implemented
+
+1. **Firefox → Chrome missing 25 playlists + 1 history item (proven via live SQL on `pfydngsbcmuhsqqjbcte`):**
+   - Querying `public.sync_records` on `pfydngsbcmuhsqqjbcte` confirmed ONLY Chrome's records existed in space `4703b58e…` and **0 records** arrived from Firefox.
+   - **Root Cause A (Stale `relayUrl` persisted in Firefox's `yph_sync_config`):** `migrateSyncConfig` in `sync-config.ts` spread `...source`, preserving `relayUrl: "https://qvwitlpnetwthyhrobca.supabase.co"` saved during an earlier broken session. `resolveActiveRelayEndpoint` evaluated `cfg.relayUrl || RELAY_SUPABASE_URL`, silently routing Firefox's pushes to the wrong Supabase project while Chrome talked to `pfydngsbcmuhsqqjbcte.supabase.co`. `migrateSyncConfig` now purges any stale `*.supabase.co` `relayUrl`/`relayAnonKey` override not matching `RELAY_SUPABASE_URL` (while keeping `https://relay.test` working in unit tests) and strips `qvwitlpnetwthyhrobca.supabase.co` from `supabaseUrl`.
+   - **Root Cause B (Firefox MV3 `runtime.onMessage` Promise contract + cold event page):** `sync-engine-registration.ts` now returns native `Promise`s directly when `browser.runtime.getBrowserInfo` is present (Firefox MV3), and `triggerSyncNow()` in `Sync.svelte` falls back to running `sync-engine.ts` `runOnce()` directly in-page if `sendMessage` returns `undefined`.
+   - **Key & Space Verification:** `SyncKeyCard.svelte` now displays the 4-emoji + 4-word `generateKeyFingerprint` badge, and `SyncReportModal.svelte` + `verifyRelayConnection` display `Space: #xxxxxxxx` so key/space mismatches across browsers are immediately visible.
+2. **Moved `Test connection` out of `SyncKeyCard` into `RelayCard` (`IYPM hosted`) & `SupabaseCard` (`Your own Supabase`):**
+   - Removed `Test connection` from `SyncKeyCard.svelte` and placed dedicated per-backend `Test connection` buttons + inline connection result banners (`endpointHost`, `spacePrefix`, `latencyMs`, cloud record breakdown, or missing-SQL-schema error) inside `RelayCard.svelte` and `SupabaseCard.svelte`.
+3. **Clarified & improved `Your own Supabase project` (`SupabaseCard.svelte`):**
+   - Added a clear 3-step inline guide + direct link to `docs/sync-relay-v2.sql` explaining how `sync_spaces`, `sync_records`, `sync_rate_limit`, and the 4 `SECURITY DEFINER` RPCs (`sync_claim`, `sync_pull`, `sync_push`, `sync_delete_space`) work, plus automatic `404` / `PGRST202` missing-schema detection in `verifyRelayConnection`.
+4. **Zero-data-loss & forward-compatibility protections:**
+   - Added `sync-safety-backup.ts` + `SyncSafetyCard.svelte` ("Data Protection & Restore Points"): automatically captures up to 3 rolling local snapshots (`yph_sync_safety_backups`) before full syncs or remote playlist merges, plus 1-click manual snapshots, JSON export, and full local restore.
+   - Added anti-mass-wipe guard in `adapters/playlists.ts`: refuses automatic deletion when remote tombstones would wipe `>= 3` local playlists down to `0` (unless `allowEmptyLibrarySync` is set).
+   - Fixed forward-compatible 3-way playlist merge in `merge/playlists.ts` (`{ ...local, ...(remoteIsNewer ? remote : {}) }`) so unknown future fields survive merges, and updated `sync-engine-adapters.ts` to defer future record versions (`v > RECORD_VERSION`) or unknown collections (`cursorBlocked = true`) without crashing or advancing cursors past them.
+
+### Files Changed
+
+- `apps/browser-extension/playlist-manager/src/services/sync/{sync-config,sync-config.compatibility.test,sync-diagnostics,sync-report,sync-safety-backup,sync-safety-backup.test}.ts`
+- `apps/browser-extension/playlist-manager/src/services/sync/{merge/playlists,adapters/playlists}.ts`
+- `apps/browser-extension/playlist-manager/src/services/{sync-engine-adapters,sync-engine-registration,sync-engine-registration.test}.ts`
+- `apps/browser-extension/playlist-manager/src/components/sync/{RelayCard,SupabaseCard,SyncKeyCard,SyncReportModal,SyncSafetyCard}.svelte`, `src/views/Sync.svelte`
+- `tests/visual/views.spec.ts-snapshots/sync-{light,dark}-{mobile,desktop}-chromium-linux.png`
+
+### Verification & Reload Steps
+
+- `npm run check`, `npm run test:visual`, and `npm run build` all pass (`0` errors, all files `<= 350` lines).
+- Reload `dist/firefox` (`about:debugging` → **Reload**) and `dist/chrome` (`chrome://extensions` → **Reload**):
+  1. Confirm both show the same **Key check** fingerprint (`Sync Key` card).
+  2. In Firefox `#/sync`, click **Sync now** — `migrateSyncConfig` strips the stale `relayUrl`, `ensureShadowBinding` resets shadows for the new relay URL, a local safety snapshot is saved automatically, and all 25 playlists + 1 history item upload to `pfydngsbcmuhsqqjbcte.supabase.co`.
+  3. In Chrome `#/sync`, click **Sync now** (or **Test connection** inside `IYPM hosted (Beta)`) to pull all 25 playlists + 1 history item!
+
 ## 2026-11-05 — Firefox MV3 relay host permission user-gesture fix, unified summary bar & Sync Status Report modal
 
 ### Root Causes & UX Improvements Implemented

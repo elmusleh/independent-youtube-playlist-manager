@@ -81,6 +81,8 @@ export type SyncConfig = {
   lastSyncedSpace?: string | null;
   /** Active relay URL most recently synced by this device. */
   lastSyncedRelayUrl?: string | null;
+  /** Explicit opt-in required before remote tombstones can wipe >= 3 local playlists down to 0. */
+  allowEmptyLibrarySync?: boolean;
 };
 
 const KEY = "yph_sync_config";
@@ -164,21 +166,48 @@ export async function getOrCreateDeviceId(): Promise<string> {
   return id;
 }
 
+const FORBIDDEN_FOREIGN_SUPABASE_HOST = "qvwitlpnetwthyhrobca.supabase.co";
+
+function isStaleProductionRelayOverride(url: unknown): boolean {
+  if (typeof url !== "string" || !url.trim()) return false;
+  const normalized = url.trim().replace(/\/$/, "");
+  if (normalized === RELAY_SUPABASE_URL) return false;
+  // Strip any stale *.supabase.co hosted relay override (e.g. legacy mawqiei.net test URL),
+  // while keeping non-supabase mock URLs (such as https://relay.test) working in unit tests.
+  return normalized.includes(".supabase.co");
+}
+
 export function migrateSyncConfig(stored: unknown): SyncConfig {
   if (!stored || typeof stored !== "object" || Array.isArray(stored)) {
     return structuredClone(DEFAULT_SYNC_CONFIG);
   }
 
-  const source = stored as Partial<SyncConfig> & { backend?: SyncBackend | null };
+  const source = { ...(stored as Partial<SyncConfig> & { backend?: SyncBackend | null }) };
+  if (isStaleProductionRelayOverride(source.relayUrl)) {
+    delete source.relayUrl;
+    delete source.relayAnonKey;
+  }
+  const hasForeignByo =
+    typeof source.supabaseUrl === "string" &&
+    source.supabaseUrl.includes(FORBIDDEN_FOREIGN_SUPABASE_HOST);
+  if (hasForeignByo) {
+    source.supabaseUrl = "";
+    source.supabaseKey = "";
+  }
   const content = { playlists: true, settings: true, history: true };
   const requestedBackends = Array.isArray(source.backends)
     ? source.backends
     : source.backend
       ? [source.backend]
       : [];
-  const backends = requestedBackends.filter((backend): backend is SyncBackend =>
-    ["relay", "supabase-byo", "file"].includes(backend)
+  const backends = requestedBackends.filter(
+    (backend): backend is SyncBackend =>
+      ["relay", "supabase-byo", "file"].includes(backend) &&
+      !(hasForeignByo && backend === "supabase-byo")
   );
+  if (backends.length === 0 && hasForeignByo && source.syncKey && isRelayConfigured()) {
+    backends.push("relay");
+  }
   const categoryTimestamps = source.categoryTimestamps ?? {
     playlists: source.lastSyncedAt ?? null,
     settings: null,

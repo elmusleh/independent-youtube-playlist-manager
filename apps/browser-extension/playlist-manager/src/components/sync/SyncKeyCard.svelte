@@ -7,7 +7,7 @@
     faKey,
     faInfoCircle,
     faArrowsRotate,
-    faSpinner,
+    faFingerprint,
   } from "@fortawesome/free-solid-svg-icons";
   import SimpleButton from "../SimpleButton.svelte";
   import {
@@ -16,6 +16,7 @@
     formatSyncKey,
     SYNC_KEY_SYMBOLS,
   } from "../../services/sync/sync-key.js";
+  import { generateKeyFingerprint, type KeyFingerprint } from "../../services/sync/fingerprint.js";
   import {
     isRelayConfigured,
     RELAY_SUPABASE_URL,
@@ -33,21 +34,37 @@
     onPersist,
     onLog,
     onRotate,
-    onTestConnection,
-    isTestingConnection = false,
   }: {
     config: SyncConfig;
     onPersist: () => void | Promise<void>;
     onLog: (message: string, type?: "info" | "success" | "error" | "warning") => void;
     onRotate?: () => void | Promise<void>;
-    onTestConnection?: () => void | Promise<void>;
-    isTestingConnection?: boolean;
   } = $props();
 
   let keyInput = $state("");
   let keyError = $state<string | null>(null);
+  let fingerprint = $state<KeyFingerprint | null>(null);
 
   const hasSyncKey = $derived(!!config.syncKey);
+
+  $effect(() => {
+    const activeKey = config.syncKey;
+    if (!activeKey) {
+      fingerprint = null;
+      return;
+    }
+    let cancelled = false;
+    generateKeyFingerprint(activeKey)
+      .then((fp) => {
+        if (!cancelled) fingerprint = fp;
+      })
+      .catch(() => {
+        if (!cancelled) fingerprint = null;
+      });
+    return () => {
+      cancelled = true;
+    };
+  });
 
   function requestRelayAccessIfNeeded(): Promise<boolean> {
     if (!config.backends.includes("relay")) return Promise.resolve(true);
@@ -155,21 +172,18 @@
           <SimpleButton secondary onclick={copyKey}>
             <Fa icon={faCopy} /> Copy
           </SimpleButton>
-          {#if onTestConnection}
-            <SimpleButton
-              secondary
-              disabled={isTestingConnection}
-              title="Verifies encrypted relay access and checks how many records exist in your cloud space"
-              onclick={() => onTestConnection?.()}
-            >
-              {#if isTestingConnection}
-                <Fa icon={faSpinner} spin /> Testing…
-              {:else}
-                Test connection
-              {/if}
-            </SimpleButton>
-          {/if}
         </div>
+        {#if fingerprint}
+          <div
+            class="fingerprint-pill"
+            title="Compare this fingerprint across devices to confirm both use the exact same key"
+          >
+            <Fa icon={faFingerprint} />
+            <span>Key check:</span>
+            <span class="fp-emoji">{fingerprint.emoji}</span>
+            <code>{fingerprint.words}</code>
+          </div>
+        {/if}
       </div>
       <p class="key-hint">
         <Fa icon={faInfoCircle} /> This key is set. Paste it into other devices to link them, then click
@@ -243,6 +257,21 @@
     margin: 0.5rem 0 0;
     font-size: 0.8rem;
     color: var(--muted-foreground, #6b7280);
+  }
+  .fingerprint-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+    padding: 0.35rem 0.65rem;
+    border-radius: 6px;
+    background: var(--muted, #f3f4f6);
+    font-size: 0.78rem;
+    color: var(--muted-foreground, #6b7280);
+  }
+  .fp-emoji {
+    font-size: 0.95rem;
+    letter-spacing: 0.08em;
   }
   .key-input-group {
     display: flex;

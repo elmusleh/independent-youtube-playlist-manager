@@ -31,6 +31,7 @@ export type SyncRunReport = {
   summary: string;
   error: string | null;
   endpointHost: string;
+  spacePrefix: string;
   pushedCount: number;
   pulledCount: number;
   knownDevices: number;
@@ -83,10 +84,14 @@ export function buildSyncRunReport(params: {
   inventoryAfter: LocalSyncInventory;
   knownDevices: number;
   durationMs: number;
+  spacePrefix?: string;
   fallbackError?: string | null;
   fallbackSummary?: string | null;
 }): SyncRunReport {
   const { config, statusSnapshot, inventoryAfter, knownDevices, durationMs } = params;
+  const spacePrefix =
+    params.spacePrefix ??
+    (typeof config.lastSyncedSpace === "string" ? config.lastSyncedSpace.slice(0, 8) : "");
   const error = statusSnapshot?.lastError ?? params.fallbackError ?? config.lastError ?? null;
   const summary =
     statusSnapshot?.lastSummary ??
@@ -153,6 +158,7 @@ export function buildSyncRunReport(params: {
     summary,
     error,
     endpointHost,
+    spacePrefix,
     pushedCount: statusSnapshot?.pushedCount ?? 0,
     pulledCount: statusSnapshot?.pulledCount ?? 0,
     knownDevices: Math.max(1, knownDevices),

@@ -57,4 +57,28 @@ describe("sync config compatibility migration", () => {
       })
     ).toBe(false);
   });
+
+  it("purges stale foreign *.supabase.co relay overrides while keeping test mock URLs", () => {
+    const staleFirefoxConfig = migrateSyncConfig({
+      syncKey: SYNC_KEY,
+      backends: ["relay"],
+      relayUrl: "https://qvwitlpnetwthyhrobca.supabase.co",
+      relayAnonKey: "sb_publishable_stale_key",
+      syncConfigVersion: 2,
+      syncProtocolVersion: 2,
+    });
+    expect(staleFirefoxConfig.relayUrl).toBeUndefined();
+    expect(staleFirefoxConfig.relayAnonKey).toBeUndefined();
+
+    const testMockConfig = migrateSyncConfig({
+      syncKey: SYNC_KEY,
+      backends: ["relay"],
+      relayUrl: "https://relay.test",
+      relayAnonKey: "test-anon-key",
+      syncConfigVersion: 2,
+      syncProtocolVersion: 2,
+    });
+    expect(testMockConfig.relayUrl).toBe("https://relay.test");
+    expect(testMockConfig.relayAnonKey).toBe("test-anon-key");
+  });
 });

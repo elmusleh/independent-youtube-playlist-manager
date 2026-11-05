@@ -6,21 +6,32 @@
     faChevronUp,
     faCircleCheck,
     faCircleExclamation,
+    faSpinner,
+    faPlugCircleCheck,
   } from "@fortawesome/free-solid-svg-icons";
   import SimpleButton from "../SimpleButton.svelte";
+  import type { ConnectionCheckResult } from "../../services/sync/sync-diagnostics.js";
 
   let {
     enabled,
     ready,
+    hasSyncKey = false,
     permissionGranted = null,
+    isTesting = false,
+    testResult = null,
     onToggle,
     onRequestPermission,
+    onTestConnection,
   }: {
     enabled: boolean;
     ready: boolean;
+    hasSyncKey?: boolean;
     permissionGranted?: boolean | null;
+    isTesting?: boolean;
+    testResult?: ConnectionCheckResult | null;
     onToggle: (v: boolean) => void;
     onRequestPermission?: () => void;
+    onTestConnection?: () => void | Promise<void>;
   } = $props();
 
   let expanded = $state(false);
@@ -70,6 +81,46 @@
     </div>
   {/if}
 
+  {#if ready && enabled && onTestConnection}
+    <div class="conn-actions">
+      <SimpleButton
+        secondary
+        disabled={isTesting || !hasSyncKey}
+        title={hasSyncKey
+          ? "Verifies encrypted IYPM hosted relay access and checks how many records exist in your cloud space"
+          : "Enter or generate a sync key first to test your encrypted space on IYPM hosted"}
+        onclick={() => onTestConnection?.()}
+      >
+        {#if isTesting}
+          <Fa icon={faSpinner} spin /> Testing…
+        {:else}
+          <Fa icon={faPlugCircleCheck} /> Test connection
+        {/if}
+      </SimpleButton>
+    </div>
+  {/if}
+
+  {#if testResult}
+    <div class="conn-result" class:ok={testResult.ok} class:err={!testResult.ok}>
+      <Fa icon={testResult.ok ? faCircleCheck : faCircleExclamation} />
+      <div class="conn-result-body">
+        <strong>{testResult.ok ? "Connected to IYPM hosted" : "Connection failed"}</strong>
+        <span>{testResult.summary}</span>
+        {#if testResult.endpointHost}
+          <span class="conn-meta">
+            Host: <code>{testResult.endpointHost}</code>
+            {#if testResult.spacePrefix}
+              · Space: <code>#{testResult.spacePrefix}</code>
+            {/if}
+            {#if testResult.latencyMs > 0}
+              · {testResult.latencyMs} ms
+            {/if}
+          </span>
+        {/if}
+      </div>
+    </div>
+  {/if}
+
   <button type="button" class="learn-more" onclick={() => (expanded = !expanded)}>
     <Fa icon={expanded ? faChevronUp : faChevronDown} />
     {expanded ? "Hide" : "Learn more"}
@@ -77,8 +128,8 @@
   {#if expanded}
     <div class="backend-detail">
       <p>
-        <strong>Where your data goes:</strong> encrypted on this device, then the encrypted blob is uploaded
-        to IYPM's server.
+        <strong>Where your data goes:</strong> encrypted on this device with AES-256-GCM, then only ciphertext
+        is uploaded to IYPM's hosted relay.
       </p>
       <p>
         <strong>Privacy:</strong> the server stores ciphertext only — nobody (including IYPM) can read

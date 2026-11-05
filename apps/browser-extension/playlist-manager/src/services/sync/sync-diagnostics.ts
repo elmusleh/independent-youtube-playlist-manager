@@ -49,6 +49,7 @@ export async function appendSyncSystemLog(
 export type ConnectionCheckResult = {
   ok: boolean;
   endpointHost: string;
+  spacePrefix: string;
   latencyMs: number;
   totalRecords: number;
   countsByCollection: Record<string, number>;
@@ -56,14 +57,16 @@ export type ConnectionCheckResult = {
   error?: string;
 };
 
-export function resolveActiveRelayEndpoint(cfg: SyncConfig): { url: string; anonKey: string } {
-  const useByo = cfg.backends.includes("supabase-byo") && !!cfg.supabaseUrl;
+export function resolveActiveRelayEndpoint(
+  cfg: SyncConfig,
+  targetBackend?: "relay" | "supabase-byo"
+): { url: string; anonKey: string } {
+  const useByo =
+    targetBackend === "supabase-byo" ||
+    (targetBackend !== "relay" && cfg.backends.includes("supabase-byo") && !!cfg.supabaseUrl);
   return {
     url: useByo ? cfg.supabaseUrl : cfg.relayUrl || RELAY_SUPABASE_URL,
-    anonKey:
-      (cfg.backends.includes("supabase-byo") && cfg.supabaseKey) ||
-      cfg.relayAnonKey ||
-      RELAY_SUPABASE_ANON_KEY,
+    anonKey: useByo ? cfg.supabaseKey || "" : cfg.relayAnonKey || RELAY_SUPABASE_ANON_KEY,
   };
 }
 
@@ -113,12 +116,16 @@ export function stampSyncedConfig(
   };
 }
 
-export async function verifyRelayConnection(cfg: SyncConfig): Promise<ConnectionCheckResult> {
+export async function verifyRelayConnection(
+  cfg: SyncConfig,
+  targetBackend?: "relay" | "supabase-byo"
+): Promise<ConnectionCheckResult> {
   const started = Date.now();
   if (!cfg.syncKey) {
     return {
       ok: false,
       endpointHost: "",
+      spacePrefix: "",
       latencyMs: 0,
       totalRecords: 0,
       countsByCollection: {},
@@ -126,10 +133,23 @@ export async function verifyRelayConnection(cfg: SyncConfig): Promise<Connection
       error: "No sync key configured.",
     };
   }
-  if (!cfg.backends.includes("relay") && !cfg.backends.includes("supabase-byo")) {
+  if (targetBackend === "supabase-byo" && (!cfg.supabaseUrl?.trim() || !cfg.supabaseKey?.trim())) {
     return {
       ok: false,
       endpointHost: "",
+      spacePrefix: "",
+      latencyMs: 0,
+      totalRecords: 0,
+      countsByCollection: {},
+      summary: "Enter both Project URL and Anon (public) key before testing.",
+      error: "Supabase URL and anon key are required.",
+    };
+  }
+  if (!targetBackend && !cfg.backends.includes("relay") && !cfg.backends.includes("supabase-byo")) {
+    return {
+      ok: false,
+      endpointHost: "",
+      spacePrefix: "",
       latencyMs: 0,
       totalRecords: 0,
       countsByCollection: {},
@@ -138,13 +158,16 @@ export async function verifyRelayConnection(cfg: SyncConfig): Promise<Connection
     };
   }
   if (
-    cfg.backends.includes("relay") &&
-    !cfg.backends.includes("supabase-byo") &&
+    (targetBackend === "relay" ||
+      (!targetBackend &&
+        cfg.backends.includes("relay") &&
+        !cfg.backends.includes("supabase-byo"))) &&
     !isRelayConfigured()
   ) {
     return {
       ok: false,
       endpointHost: "",
+      spacePrefix: "",
       latencyMs: 0,
       totalRecords: 0,
       countsByCollection: {},
@@ -153,7 +176,7 @@ export async function verifyRelayConnection(cfg: SyncConfig): Promise<Connection
     };
   }
 
-  const relayConfig = resolveActiveRelayEndpoint(cfg);
+  const relayConfig = resolveActiveRelayEndpoint(cfg, targetBackend);
   let endpointHost = relayConfig.url;
   try {
     endpointHost = new URL(relayConfig.url).host;
@@ -161,8 +184,10 @@ export async function verifyRelayConnection(cfg: SyncConfig): Promise<Connection
     // keep raw string if malformed; fetch will report error cleanly
   }
 
+  let spacePrefix = "";
   try {
     const space = await computeStorageAddress(cfg.syncKey);
+    spacePrefix = space.slice(0, 8);
     const authHash = await computeAuthToken(cfg.syncKey, space);
     const claimed = await claimSpace(relayConfig, space, authHash);
     if (!claimed) {
@@ -181,12 +206,13 @@ export async function verifyRelayConnection(cfg: SyncConfig): Promise<Connection
       .join(", ");
     const summary =
       active.length > 0
-        ? `Connected to ${endpointHost} (${latencyMs} ms) — cloud space holds ${active.length} encrypted record${active.length === 1 ? "" : "s"} (${breakdown})`
-        : `Connected to ${endpointHost} (${latencyMs} ms) — cloud space verified (empty; click "Sync now" to upload)`;
+        ? `Connected to ${endpointHost} (${latencyMs} ms, space #${spacePrefix}) — ${active.length} encrypted record${active.length === 1 ? "" : "s"} (${breakdown})`
+        : `Connected to ${endpointHost} (${latencyMs} ms, space #${spacePrefix}) — cloud space verified (empty; click "Sync now" to upload)`;
 
     return {
       ok: true,
       endpointHost,
+      spacePrefix,
       latencyMs,
       totalRecords: active.length,
       countsByCollection: counts,
@@ -194,10 +220,18 @@ export async function verifyRelayConnection(cfg: SyncConfig): Promise<Connection
     };
   } catch (err) {
     const latencyMs = Math.max(1, Date.now() - started);
-    const msg = err instanceof Error ? err.message : String(err);
+    const rawMsg = err instanceof Error ? err.message : String(err);
+    const missingSchema =
+      rawMsg.includes("404") ||
+      rawMsg.includes("PGRST202") ||
+      rawMsg.includes("Could not find the function");
+    const msg = missingSchema
+      ? "Sync v2 SQL schema not found on this Supabase project. Run docs/sync-relay-v2.sql in the Supabase SQL Editor first."
+      : rawMsg;
     return {
       ok: false,
       endpointHost,
+      spacePrefix,
       latencyMs,
       totalRecords: 0,
       countsByCollection: {},

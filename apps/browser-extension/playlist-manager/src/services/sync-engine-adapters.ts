@@ -8,9 +8,23 @@ import { collectDirtyHistory, applyRemoteHistory } from "./sync/adapters/history
 import { collectDirtySettings, applyRemoteSettings } from "./sync/adapters/settings";
 import { collectDirtyDevices, applyRemoteDevices } from "./sync/adapters/devices";
 import { createSyncStorageBridge } from "./sync/adapter-storage-io";
+import { RECORD_VERSION } from "./sync/record-codec";
 import { deleteShadow, setShadow } from "./sync/shadow-store";
+import { captureSyncSafetyBackup } from "./sync/sync-safety-backup";
 import type { PushResult, RelayRecord } from "./sync/relay-transport";
 import type { DirtyCandidate } from "./sync/adapters/types";
+
+const KNOWN_COLLECTIONS = new Set(["playlists", "history", "settings", "devices"]);
+
+function isFutureVersionPayload(payload: unknown): boolean {
+  if (typeof payload !== "string" || !payload.startsWith("{")) return false;
+  try {
+    const parsed = JSON.parse(payload) as { v?: unknown };
+    return typeof parsed?.v === "number" && parsed.v > RECORD_VERSION;
+  } catch {
+    return false;
+  }
+}
 
 export type CategoryProgressMap = {
   playlists: { processed: number; applied: number; total: number };
@@ -112,8 +126,26 @@ export async function runAdapterPass(ctx: AdapterPassContext): Promise<AdapterPa
 
   const { librarySnapshot, mutateLibrary, saveSettings, saveHistory } = createSyncStorageBridge();
 
+  if (
+    ctx.incoming.length > 0 &&
+    (!ctx.cfg?.lastSyncedAt ||
+      ctx.sinceSeq === 0 ||
+      ctx.incoming.some((r: any) => r.deleted || r.collection === "playlists"))
+  ) {
+    const reason =
+      !ctx.cfg?.lastSyncedAt || ctx.sinceSeq === 0
+        ? "Auto backup before full sync"
+        : "Auto backup before remote playlist merge";
+    await captureSyncSafetyBackup(reason).catch(() => {});
+  }
+
+  let hasDeferredFutureRecords = false;
   const incomingByCollection = new Map<string, any[]>();
   for (const r of ctx.incoming) {
+    if (!KNOWN_COLLECTIONS.has(r.collection) || isFutureVersionPayload(r.payload)) {
+      hasDeferredFutureRecords = true;
+      continue;
+    }
     if (!incomingByCollection.has(r.collection)) incomingByCollection.set(r.collection, []);
     incomingByCollection.get(r.collection)!.push(r);
   }
@@ -161,6 +193,7 @@ export async function runAdapterPass(ctx: AdapterPassContext): Promise<AdapterPa
   if (content.playlists !== false) {
     const playlistCtx = {
       ...ctxBase,
+      allowEmptyLibrarySync: !!ctx.cfg?.allowEmptyLibrarySync,
       relayConfig: ctx.relayConfig,
       librarySnapshot: async () => {
         const snap = await librarySnapshot();
@@ -254,13 +287,16 @@ export async function runAdapterPass(ctx: AdapterPassContext): Promise<AdapterPa
 
   const maxSeq =
     ctx.incoming.length > 0 ? Math.max(...ctx.incoming.map((r: any) => r.seq)) : ctx.sinceSeq;
-  const cursorBlocked = ctx.incoming.some((record: any) => {
-    if (record.collection === "devices") return false;
-    return (
-      content[record.collection as "playlists" | "history" | "settings"] !== true &&
-      !(record.collection === "playlists" && content.playlists !== false)
-    );
-  });
+  const cursorBlocked =
+    hasDeferredFutureRecords ||
+    ctx.incoming.some((record: any) => {
+      if (record.collection === "devices" || !KNOWN_COLLECTIONS.has(record.collection))
+        return false;
+      return (
+        content[record.collection as "playlists" | "history" | "settings"] !== true &&
+        !(record.collection === "playlists" && content.playlists !== false)
+      );
+    });
 
   return {
     failed,

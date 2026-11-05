@@ -1,3 +1,11 @@
+## Stale Firefox `relayUrl` fix, per-backend `Test connection`, BYO Supabase UX & zero-data-loss protections — verified 2026-11-05
+
+- [x] Purge stale foreign `*.supabase.co` `relayUrl`/`relayAnonKey` and `qvwitlpnetwthyhrobca.supabase.co` overrides in `migrateSyncConfig` (`sync-config.ts`) so Firefox uploads to `pfydngsbcmuhsqqjbcte.supabase.co`.
+- [x] Return native `Promise`s in Firefox MV3 `runtime.onMessage` (`sync-engine-registration.ts`) and add direct in-page `runOnce()` fallback in `Sync.svelte` `triggerSyncNow()`.
+- [x] Move `Test connection` out of `SyncKeyCard.svelte` into `RelayCard.svelte` (`IYPM hosted`) and `SupabaseCard.svelte` (`Your own Supabase project`) with inline diagnostics, 404/PGRST202 missing-schema guidance, `docs/sync-relay-v2.sql` setup steps, and 4-emoji + 4-word key fingerprint display.
+- [x] Add `sync-safety-backup.ts` + `SyncSafetyCard.svelte` (automatic pre-sync rolling local snapshots + 1-click JSON export & restore), anti-mass-wipe guard in `adapters/playlists.ts`, and forward-compatible unknown-field/future-version handling in `merge/playlists.ts` and `sync-engine-adapters.ts`.
+- [x] Add unit tests (`sync-safety-backup.test.ts`, `sync-config.compatibility.test.ts`, `sync-engine-registration.test.ts`), update `#/sync` visual snapshots, and verify `npm run check` + `npm run build` exit 0.
+
 ## Firefox relay permission user-gesture fix & Sync Status Report dialog — verified 2026-11-05
 
 - [x] Invoke `browser.permissions.request` synchronously before any `await` in `host-permissions.ts`, `Sync.svelte`, and `SyncKeyCard.svelte` so Firefox MV3 displays the native relay permission prompt on click.

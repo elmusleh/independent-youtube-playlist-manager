@@ -258,8 +258,9 @@ function mergeModifiedPlaylist(
   );
 
   const merged: Playlist = {
-    ...(remoteIsNewer ? remote : local),
     ...local,
+    ...(remoteIsNewer ? remote : {}),
+    id: local.id,
     title,
     videos,
     updatedAt: formatMergedUpdatedAt(local, remote, maxTime),

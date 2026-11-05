@@ -18,7 +18,6 @@
   border-color: var(--primary-color);
 }
 
-/* Full-width, colour-coded status strip pinned above the cards. */
 .sync-status-banner {
   display: flex;
   align-items: center;
@@ -46,34 +45,6 @@
   color: var(--color-brand-success);
 }
 
-.status-body {
-  flex: 1;
-  min-width: 0;
-}
-
-.status-body h3 {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 700;
-}
-
-/* Step-by-step pairing instructions inside the Device pairing card. */
-.pairing-steps {
-  margin: 0;
-  padding-left: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  font-size: 14px;
-  color: var(--text-color);
-  line-height: 1.5;
-}
-
-.pairing-steps li::marker {
-  color: var(--primary-color);
-  font-weight: 700;
-}
-
 .key-display {
   display: flex;
   flex-direction: column;
@@ -92,26 +63,6 @@
   text-align: center;
   word-break: break-all;
   color: var(--text-color);
-}
-
-.key-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.link-btn {
-  background: none;
-  border: none;
-  color: var(--primary-color);
-  cursor: pointer;
-  font-size: var(--font-size-sm, 13px);
-  padding: 0;
-  align-self: flex-start;
-}
-
-.link-btn:hover {
-  text-decoration: underline;
 }
 
 .backend-option {
@@ -206,13 +157,6 @@
   cursor: pointer;
 }
 
-.sync-error {
-  color: var(--color-brand-danger);
-  font-size: var(--font-size-sm, 13px);
-  margin: 0;
-  line-height: 1.5;
-}
-
 .api-link {
   display: inline-flex;
   align-items: center;
@@ -261,54 +205,42 @@
   margin: 0;
 }
 
-.compat-table {
+.conn-actions {
+  margin: 0.5rem 0;
+}
+
+.conn-result {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  margin: 0.5rem 0;
+  padding: 0.6rem 0.75rem;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  border: 1px solid var(--border, #e5e7eb);
+}
+
+.conn-result.ok {
+  background: rgba(16, 185, 129, 0.08);
+  border-color: rgba(16, 185, 129, 0.35);
+  color: var(--success, #10b981);
+}
+
+.conn-result.err {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.35);
+  color: var(--danger, #ef4444);
+}
+
+.conn-result-body {
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--border-color);
-  border-radius: 10px;
-  overflow: hidden;
+  gap: 0.15rem;
+  color: var(--foreground, #111);
+  min-width: 0;
 }
 
-.compat-row {
-  display: grid;
-  grid-template-columns: 1fr auto auto;
-  gap: 8px;
-  padding: 8px 12px;
-  font-size: 13px;
-  align-items: center;
-}
-
-.compat-row + .compat-row {
-  border-top: 1px solid var(--border-color);
-}
-
-.compat-head {
-  font-weight: 700;
-  color: var(--text-muted, var(--text-secondary));
-  background: var(--bg-secondary, var(--color-bg-secondary));
-}
-
-.compat-row.you {
-  background: rgba(6, 95, 212, 0.06);
-}
-
-.compat-row.you span:first-child {
-  font-weight: 700;
-  color: var(--primary-color);
-}
-
-.compat-ok,
-.compat-no,
-.compat-na {
-  text-align: center;
-}
-
-.compat-na {
-  color: var(--text-muted, var(--text-secondary));
-  opacity: 0.6;
-}
-
-/* Sync Key card promoted to a full-width block above the grid. */
-.sync-key-top {
-  margin-bottom: 24px;
+.conn-meta {
+  font-size: 0.74rem;
+  color: var(--muted-foreground, #6b7280);
 }

@@ -41,16 +41,7 @@ it is never repeated. After each implementation, append the new suggestions
     verify-extension or add a unit test checking no fetch to GitHub. Why: guards
     against re-introducing the removed request. How: add assertion in
     packages/build-tools/verify-extension.js network audit.
-11. Pre-pull local snapshot safety backup before first sync into a non-empty space.
-    Priority 92% (Critical) [Security]. What: automatically save a one-slot local
-    recovery snapshot in IndexedDB right before a newly paired browser pulls and
-    merges records from an existing sync space for the first time. Why: protects a
-    user's local playlists and watch history with a one-click local rollback if they
-    paste the wrong sync key or pair an unintended profile. How: check when
-    `lastSeq === 0` and remote pull count > 0 in `sync-engine.ts`, serialize current
-    `playlists` + `local_yt_history` + syncable settings into an IndexedDB
-    `yph_sync_pre_pair_backup` record, and expose a "Restore pre-sync backup" button
-    in `SyncDangerZone.svelte`.
+11. Pre-pull local snapshot safety backup before first sync into a non-empty space. [done] 2026-11-05
 12. Add a CI manifest domain allowlist check blocking non-IYPM Supabase projects.
     Priority 86% (High value) [Security]. What: add an automated build-tools check
     that fails CI if `manifest.chrome.json` or `manifest.firefox.json` declares any
@@ -145,6 +136,57 @@ it is never repeated. After each implementation, append the new suggestions
     Why: makes sharing bug reports or verifying multi-device test runs effortless.
     How: format `report.rows` + `report.summary` into a short markdown/text block
     and pass it to `navigator.clipboard.writeText` with a confirmation toast.
+23. Add a one-click "Copy SQL schema" button directly inside `SupabaseCard.svelte`.
+    Priority 82% (High value) [Professionalism]. What: bundle a minified copy or raw
+    import of `docs/sync-relay-v2.sql` so self-hosting users can copy the entire
+    bootstrap SQL into their clipboard with one click without leaving the extension.
+    Why: eliminates copy-paste mistakes or version skew when users set up their own
+    Supabase project. How: import `docs/sync-relay-v2.sql?raw` (or expose a helper)
+    and add a "Copy SQL bootstrap" button next to the setup guide in
+    `SupabaseCard.svelte`.
+24. Add "Import safety backup JSON" file picker to `SyncSafetyCard.svelte`.
+    Priority 80% (High value) [Security]. What: let users upload a previously
+    downloaded `iypm-safety-backup-*.json` file directly into `SyncSafetyCard.svelte`
+    to restore playlists, watch history, and settings even after reinstalling the
+    browser or OS. Why: completes the disaster-recovery loop so exported safety
+    snapshots work even if `browser.storage.local` is completely wiped. How: add a
+    hidden `<input type="file" accept=".json">` in `SyncSafetyCard.svelte`, validate
+    `schema === "iypm-sync-safety-backup-v1"`, and pass it to the restore helper in
+    `sync-safety-backup.ts`.
+25. Add optional passphrase-encrypted JSON export for local safety snapshots.
+    Priority 76% (High value) [Security]. What: offer an optional password prompt
+    when downloading a safety snapshot JSON so the exported file on disk is
+    encrypted with PBKDF2 + AES-256-GCM. Why: protects exported playlist and watch
+    history files if a user saves them to a shared downloads folder or unencrypted
+    cloud drive. How: derive an AES-GCM key via WebCrypto `PBKDF2` (600,000
+    iterations) over a random 16-byte salt and wrap `serializeSafetyBackupJson` in
+    an encrypted envelope.
+26. Add an interactive "Approve empty-library wipe" override dialog when the
+    anti-mass-wipe guard triggers. Priority 71% (High value) [Professionalism].
+    What: surface a dedicated confirmation action on `#/sync` when
+    `adapters/playlists.ts` blocks a remote mass-tombstone wipe, letting the user
+    either restore their playlists back to the cloud or explicitly confirm the wipe
+    once. Why: handles the rare legitimate case where a user intentionally deleted
+    every playlist on another device while keeping accidental wipes 100% blocked by
+    default. How: detect `"playlists safety guard"` in `lastError` and show two clear
+    actions: "Keep local & re-upload" vs "Confirm delete all locally" (setting
+    `allowEmptyLibrarySync: true` for one run).
+27. Add a schema version health check RPC (`sync_info`) to `sync-relay-v2.sql`.
+    Priority 63% (Nice to have) [Best practices]. What: add a lightweight read-only
+    `public.sync_info()` SQL function returning `{ schema_version: 2, migrations:
+[2, 3] }` so `Test connection` on a self-hosted Supabase project can verify not
+    just `sync_claim` existence, but also whether hardening migrations were applied.
+    Why: prevents subtle rate-limit or role-permission mismatches on older
+    user-hosted Supabase databases. How: add `sync_info()` in a new migration under
+    `docs/migrations/` and call it optionally inside `verifyRelayConnection`.
+28. Move `yph_sync_safety_backups` payloads to IndexedDB with `gzip` `CompressionStream`.
+    Priority 54% (Nice to have) [Best practices]. What: compress rolling safety
+    snapshots using the browser's built-in `CompressionStream("gzip")` API and store
+    them in IndexedDB instead of `storage.local`. Why: reduces local storage
+    footprint by ~80% for power users with hundreds of playlists and thousands of
+    watch-history entries. How: pipe `serializeSafetyBackupJson` through
+    `new CompressionStream("gzip")` and store the `Uint8Array` in an IndexedDB
+    object store with automatic fallback to `storage.local` in unit tests.
 
 ## Done
 

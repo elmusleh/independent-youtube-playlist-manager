@@ -34,6 +34,7 @@ export type AdapterContext = {
   relayConfig: { url: string; anonKey: string };
   localDeviceId: string;
   conflictStrategy?: "merge" | "lww";
+  allowEmptyLibrarySync?: boolean;
   // injected by the engine
   librarySnapshot: () => Promise<{ playlists: any[]; revision: number }>;
   mutateLibrary: (op: any) => Promise<any>;
@@ -218,6 +219,18 @@ export async function applyRemotePlaylists(
   }
 
   const finalPlaylists = [...mergedById.values()];
+
+  if (
+    local.length >= 3 &&
+    finalPlaylists.length === 0 &&
+    appliedDeletes.size >= local.length &&
+    !ctx.allowEmptyLibrarySync
+  ) {
+    failed.push(
+      `playlists safety guard: blocked automatic deletion of all ${local.length} local playlists from remote tombstones`
+    );
+    return { applied: 0, failed, conflicts: [] };
+  }
 
   try {
     await ctx.mutateLibrary({

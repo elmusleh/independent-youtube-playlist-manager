@@ -73,4 +73,37 @@ describe("sync engine runtime registration", () => {
     expect(runOnce).toHaveBeenCalledOnce();
     expect(sendResponse).toHaveBeenLastCalledWith(status);
   });
+
+  it("returns a native Promise in Firefox MV3 when browser.runtime.getBrowserInfo exists", async () => {
+    let onMessage: any = null;
+    const runOnce = vi.fn().mockResolvedValue(status);
+    vi.stubGlobal("browser", {
+      runtime: {
+        getBrowserInfo: vi.fn(),
+        onStartup: { addListener: vi.fn() },
+        onMessage: {
+          addListener: vi.fn((listener) => {
+            onMessage = listener;
+          }),
+        },
+      },
+      storage: {
+        local: { get: vi.fn().mockResolvedValue({}) },
+        onChanged: { addListener: vi.fn() },
+      },
+    });
+
+    registerSyncEngine({
+      runOnce,
+      scheduleRun: vi.fn(),
+      pause: vi.fn(),
+      resume: vi.fn(),
+      getStatus: () => status,
+      isRunning: () => false,
+    });
+
+    const returned = onMessage({ cmd: "sync-now" }, {}, vi.fn());
+    expect(returned).toBeInstanceOf(Promise);
+    await expect(returned).resolves.toEqual(status);
+  });
 });
