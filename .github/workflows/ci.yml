@@ -150,6 +150,13 @@ jobs:
       - name: Install Mobile App Dependencies
         run: cd apps/mobile-app && npm ci
 
+      - name: Verify Root Prettier Plugin
+        run: |
+          if [ ! -d "node_modules/prettier-plugin-svelte" ]; then
+            echo "prettier-plugin-svelte not found in root node_modules, reinstalling..."
+            npm ci
+          fi
+
       # Build failures belong on their own check: a Rollup/CJS break used to surface only
       # inside the heaviest E2E job, minutes later.
       - name: Build All Targets
