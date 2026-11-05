@@ -1,3 +1,10 @@
+## Sync Frequency custom duration controls, live alarm readout & strict Manual-only wiring — verified 2026-11-05
+
+- [x] Add `sync-schedule.ts` + `sync-schedule.test.ts` (includes default `5 min` preset, `1 min – 7 days` custom duration conversion, and next-alarm formatting).
+- [x] Add `autoSyncOnChange` and `autoSyncOnStartup` controls to `SyncConfig` (`sync-config.ts`) and enforce them across `sync-engine-registration.ts` (`storage.onChanged`, `runtime.onStartup`, serialized `await alarms.clear` + `sync-refresh-schedule`) and `Sync.svelte` (`subscribeNudge`).
+- [x] Redesign `SyncScheduleCard.svelte` with clickable preset pills, custom duration input (`Minutes` / `Hours`), independent event-trigger checkboxes, and live next-scheduled-check readout.
+- [x] Update `#/sync` visual regression baselines (`24/24`) and verify `npm run build` + `npm run check` exit `0`.
+
 ## Firefox SpiderMonkey `window` getter crash fix & 25-playlist cross-browser merge — verified 2026-11-05
 
 - [x] Fix SpiderMonkey strict-mode `TypeError: setting getter-only property "window"` in `sync-engine-registration.ts` that crashed `sync-engine.js` on load in Firefox's MV3 background `Window` AND in `Sync.svelte`'s dynamic `import()` fallback.

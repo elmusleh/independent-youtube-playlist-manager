@@ -1,3 +1,31 @@
+## 2026-11-05 — Sync Frequency custom duration controls, live alarm status & strict Manual only fixes
+
+### Root Causes & Enhancements Implemented
+
+1. **Fixed silent default mismatch (`syncIntervalMinutes: 5` displaying as `"Manual only"`):**
+   - `DEFAULT_SYNC_CONFIG.syncIntervalMinutes` is `5`, which was absent from `SyncScheduleCard.svelte`'s hardcoded `OPTIONS = [0, 15, 30, 60, 360, 1440]`, causing `OPTIONS.indexOf(5)` to return `-1` and display `Frequency: Manual only` while the 5-minute background alarm was actually active.
+   - Added `services/sync/sync-schedule.ts` (`SYNC_INTERVAL_PRESETS` including `5 min`, `clampSyncIntervalMinutes`, `toIntervalMinutes`, `decomposeIntervalMinutes`, `formatSyncInterval`, `formatNextScheduledCheck`).
+2. **Made `"Manual only"` genuinely manual + added custom duration & trigger controls (`SyncScheduleCard.svelte`, `sync-config.ts`, `sync-engine-registration.ts`, `Sync.svelte`):**
+   - Previously, `runtime.onStartup`, `storage.onChanged` (3s debounce), and `subscribeNudge` ignored `syncIntervalMinutes === 0`—and changing `syncIntervalMinutes` in `yph_sync_config` even triggered a background sync 3 seconds later!
+   - Added `autoSyncOnChange` and `autoSyncOnStartup` booleans to `SyncConfig` (defaulting to `false` when `syncIntervalMinutes === 0`, `true` otherwise).
+   - Redesigned `SyncScheduleCard.svelte` with:
+     - 1-click preset pills (`Manual only`, `5 min`, `15 min`, `30 min`, `1 hour`, `6 hours`, `24 hours`),
+     - Custom duration input (`1 min` – `7 days` in `Minutes` or `Hours`),
+     - Independent checkboxes for **Sync automatically after local edits (3s delay)** and **Sync on browser startup & live device nudges**,
+     - Live schedule readout querying `{ cmd: "sync-refresh-schedule" }` / `browser.alarms.get("yph-sync-periodic")` to display the exact next scheduled check timestamp.
+   - Serialized `refreshPeriodicAlarm()` in `sync-engine-registration.ts` (`await browserObj.alarms?.clear(...)` + sequence guard + `{ delayInMinutes, periodInMinutes }` + `runtime.onInstalled` hook).
+
+### Files Changed
+
+- `apps/browser-extension/playlist-manager/src/services/sync/{sync-schedule,sync-schedule.test,sync-config}.ts`
+- `apps/browser-extension/playlist-manager/src/services/{sync-engine-registration,sync-engine-registration.test}.ts`
+- `apps/browser-extension/playlist-manager/src/components/sync/SyncScheduleCard.svelte`, `src/views/Sync.svelte`
+- `packages/build-tools/verify-budgets.js`, `tests/visual/views.spec.ts-snapshots/sync-{light,dark}-{mobile,desktop}-chromium-linux.png`
+
+### Verification
+
+- `npm run build`, `npm run test:visual` (`24/24`), and `npm run check` (`88` Vitest files / `783` tests) all exit `0`.
+
 ## 2026-11-05 — Fix Firefox SpiderMonkey getter-only `window` crash in `sync-engine-registration.ts` blocking 25-playlist upload
 
 ### Root Cause & Fixes Implemented

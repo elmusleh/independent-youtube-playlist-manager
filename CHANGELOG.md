@@ -23,6 +23,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   totals and cloud space ID; per-backend **Test connection** checks inside both `IYPM hosted`
   and `Your own Supabase project` (including missing `docs/sync-relay-v2.sql` schema detection
   and inline setup instructions); a 4-emoji + 4-word **Key check** fingerprint badge; a
+  configurable **Sync Frequency** card (`SyncScheduleCard.svelte`) with quick presets (`Manual
+only`, `5 min`–`24 hours`), custom intervals (`1 min`–`7 days`), independent toggles for
+  auto-sync on local edits and browser startup, and a live next-scheduled-check readout; a
   configurable conflict policy card (`Automatic 3-way merge` vs `Last-write-wins`); automatic
   rolling pre-sync local restore points (`SyncSafetyCard.svelte`) with one-click JSON export
   and full local restore; and an anti-mass-wipe safety guard blocking automatic deletion if

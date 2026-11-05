@@ -240,6 +240,48 @@ it is never repeated. After each implementation, append the new suggestions
     space instead of seeing only a raw count. How: add a pure `formatDeviceLabel`
     helper in `src/services/sync/` and pass the formatted labels from `Sync.svelte`
     into `SyncCounters.svelte`.
+35. Pause automatic periodic background sync while the device reports offline (`navigator.onLine === false`) or on metered connections.
+    Priority 81% (High value) [Best practices]. What: add an optional "Pause
+    automatic sync on metered / mobile-hotspot networks" toggle in
+    `SyncScheduleCard.svelte` using `navigator.connection?.saveData` /
+    `navigator.onLine`, and automatically resume once connectivity returns. Why:
+    prevents wasted wakeups, battery drain, and failed-sync error badges on laptops
+    tethered to mobile data or temporarily offline. How: check `navigator.onLine`
+    and `navigator.connection?.saveData` before periodic alarm runs in
+    `sync-engine-registration.ts` and listen to `online` events to trigger a single
+    catch-up sync.
+36. Add configurable debounce delay (`3s`, `15s`, `60s`) for "Sync automatically after local edits".
+    Priority 69% (Nice to have) [Professionalism]. What: let power users who reorder
+    or curate playlists heavily choose a `15s` or `60s` batching window instead of
+    the fixed `3s` post-edit delay. Why: coalesces rapid multi-video drag-and-drop
+    edits into a single encrypted relay push, saving bandwidth and relay rate-limit
+    tokens. How: add `autoSyncDebounceSeconds?: number` (`3 | 15 | 60`, default `3`)
+    to `SyncConfig` and read it when scheduling `debounceTimer` in
+    `sync-engine-registration.ts`.
+37. Add a temporary "Snooze automatic sync for 1 hour" quick action in the header `SyncStatusIndicator`.
+    Priority 62% (Nice to have) [Professionalism]. What: let users temporarily pause
+    background sync for 1 hour during bulk playlist imports or cleanup without
+    losing their saved `Sync Frequency` schedule. Why: avoids partial mid-cleanup
+    pushes without forcing users to switch to `Manual only` and remember to turn
+    their schedule back on later. How: store `snoozeUntil?: number` in `SyncConfig`,
+    skip automatic runs while `Date.now() < snoozeUntil`, and arm a one-shot
+    `browser.alarms` wakeup at `snoozeUntil`.
+38. Enforce strict bounds validation on `autoSyncOnChange` / `syncIntervalMinutes` inside `saveSyncConfig`.
+    Priority 57% (Nice to have) [Security]. What: run `clampSyncIntervalMinutes`
+    inside `saveSyncConfig()` on write (in addition to `migrateSyncConfig()` on
+    read) so malformed or tampered DevTools writes can never pass `NaN` or `< 1`
+    fractional values to `browser.alarms.create`. Why: guarantees Chrome and Firefox
+    never throw or silently clamp sub-minute alarm periods if config is mutated
+    outside `SyncScheduleCard.svelte`. How: normalize `plain.syncIntervalMinutes = clampSyncIntervalMinutes(plain.syncIntervalMinutes)`
+    before `storageArea().set(KEY, plain)` in `sync-config.ts`.
+39. Add a Playwright interaction test for `SyncScheduleCard.svelte` preset + custom duration switching.
+    Priority 75% (High value) [Best practices]. What: extend `verify-extension.js`
+    to click `Manual only`, enter a custom `2 Hours` interval, click `Set`, and
+    assert `yph_sync_config.syncIntervalMinutes === 120` and active alarm creation
+    in Chromium. Why: guards the live UI-to-service-worker alarm bridge end-to-end
+    beyond unit tests. How: add a `#/sync` interaction step in
+    `packages/build-tools/verify-extension.js` asserting both storage persistence
+    and `chrome.alarms.get("yph-sync-periodic")`.
 
 ## Done
 

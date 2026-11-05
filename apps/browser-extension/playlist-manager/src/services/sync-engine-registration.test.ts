@@ -185,4 +185,111 @@ describe("sync engine runtime registration", () => {
     expect((globalThis as any).window.syncEngine.runOnce).toBe(runOnce);
     expect(onMessageAdd).not.toHaveBeenCalled();
   });
+
+  it("schedules custom periodic intervals via sync-refresh-schedule and respects Manual only", async () => {
+    vi.useFakeTimers();
+    try {
+      let onMessage: any = null;
+      let onStorageChanged: any = null;
+      let onStartup: any = null;
+      const storedConfig: Record<string, any> = {
+        syncKey: "ABCDEFGHIJKLMNOPQRST",
+        backends: ["relay"],
+        syncIntervalMinutes: 10,
+        autoSyncOnChange: true,
+        autoSyncOnStartup: true,
+        syncConfigVersion: 2,
+        syncProtocolVersion: 2,
+      };
+      let currentAlarm: any = null;
+      const runOnce = vi.fn().mockResolvedValue(status);
+      const alarmsApi = {
+        clear: vi.fn(async () => {
+          currentAlarm = null;
+          return true;
+        }),
+        create: vi.fn((name: string, info: any) => {
+          currentAlarm = {
+            name,
+            scheduledTime: 1_700_000_600_000,
+            periodInMinutes: info.periodInMinutes,
+          };
+        }),
+        get: vi.fn(async () => currentAlarm),
+        onAlarm: { addListener: vi.fn() },
+      };
+
+      vi.stubGlobal("browser", {
+        runtime: {
+          getBrowserInfo: vi.fn(),
+          onStartup: {
+            addListener: vi.fn((cb) => {
+              onStartup = cb;
+            }),
+          },
+          onMessage: {
+            addListener: vi.fn((cb) => {
+              onMessage = cb;
+            }),
+          },
+        },
+        storage: {
+          local: {
+            get: vi.fn(async () => ({ yph_sync_config: structuredClone(storedConfig) })),
+          },
+          onChanged: {
+            addListener: vi.fn((cb) => {
+              onStorageChanged = cb;
+            }),
+          },
+        },
+        alarms: alarmsApi,
+      });
+
+      registerSyncEngine({
+        runOnce,
+        scheduleRun: vi.fn(),
+        pause: vi.fn(),
+        resume: vi.fn(),
+        getStatus: () => status,
+        isRunning: () => false,
+      });
+
+      const scheduleRes = await onMessage({ cmd: "sync-refresh-schedule" }, {}, vi.fn());
+      expect(alarmsApi.create).toHaveBeenLastCalledWith("yph-sync-periodic", {
+        delayInMinutes: 10,
+        periodInMinutes: 10,
+      });
+      expect(scheduleRes).toEqual({
+        ok: true,
+        scheduledTime: 1_700_000_600_000,
+        periodInMinutes: 10,
+      });
+
+      // Switch to Manual only (0 min + triggers disabled)
+      const prevConfig = structuredClone(storedConfig);
+      storedConfig.syncIntervalMinutes = 0;
+      storedConfig.autoSyncOnChange = false;
+      storedConfig.autoSyncOnStartup = false;
+
+      onStorageChanged(
+        { yph_sync_config: { oldValue: prevConfig, newValue: structuredClone(storedConfig) } },
+        "local"
+      );
+      await vi.advanceTimersByTimeAsync(3_500);
+      expect(runOnce).not.toHaveBeenCalled();
+
+      const manualRes = await onMessage({ cmd: "sync-refresh-schedule" }, {}, vi.fn());
+      expect(manualRes.periodInMinutes).toBeNull();
+
+      // Local playlist edits & startup must NOT auto-sync while Manual only is active
+      onStorageChanged({ yph_local_playlists: { newValue: [] } }, "local");
+      await vi.advanceTimersByTimeAsync(3_500);
+      onStartup();
+      await vi.advanceTimersByTimeAsync(50);
+      expect(runOnce).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });

@@ -11,6 +11,7 @@
  */
 
 import type { SyncSnapshot } from "./snapshot-codec.js";
+import { clampSyncIntervalMinutes } from "./sync-schedule.js";
 
 export type SyncBackend = "relay" | "supabase-byo" | "file";
 export type ConflictStrategy = "merge" | "lww";
@@ -44,6 +45,10 @@ export type SyncConfig = {
   backends: SyncBackend[];
   /** Periodic sync interval in minutes. 0 = manual only. */
   syncIntervalMinutes: number;
+  /** Upload local playlist, history, and setting edits automatically (~3s debounce). */
+  autoSyncOnChange?: boolean;
+  /** Check for remote updates automatically on browser startup and live device nudges. */
+  autoSyncOnStartup?: boolean;
   /** User-supplied Supabase endpoint for the "supabase-byo" backend. */
   supabaseUrl: string;
   supabaseKey: string;
@@ -92,6 +97,8 @@ export const DEFAULT_SYNC_CONFIG: SyncConfig = {
   syncKey: null,
   backends: [],
   syncIntervalMinutes: 5,
+  autoSyncOnChange: true,
+  autoSyncOnStartup: true,
   supabaseUrl: "",
   supabaseKey: "",
   content: { playlists: true, settings: true, history: true },
@@ -235,10 +242,22 @@ export function migrateSyncConfig(stored: unknown): SyncConfig {
     lastSyncedSpace: typeof source.lastSyncedSpace === "string" ? source.lastSyncedSpace : null,
     lastSyncedRelayUrl:
       typeof source.lastSyncedRelayUrl === "string" ? source.lastSyncedRelayUrl : null,
-    syncIntervalMinutes:
-      typeof source.syncIntervalMinutes === "number"
-        ? source.syncIntervalMinutes
-        : DEFAULT_SYNC_CONFIG.syncIntervalMinutes,
+    syncIntervalMinutes: clampSyncIntervalMinutes(
+      source.syncIntervalMinutes,
+      DEFAULT_SYNC_CONFIG.syncIntervalMinutes
+    ),
+    autoSyncOnChange:
+      typeof source.autoSyncOnChange === "boolean"
+        ? source.autoSyncOnChange
+        : source.syncIntervalMinutes === 0
+          ? false
+          : true,
+    autoSyncOnStartup:
+      typeof source.autoSyncOnStartup === "boolean"
+        ? source.autoSyncOnStartup
+        : source.syncIntervalMinutes === 0
+          ? false
+          : true,
   };
 }
 

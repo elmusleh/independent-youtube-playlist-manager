@@ -1,6 +1,7 @@
 import { loadSyncConfig } from "./sync/sync-config";
 import { needsV2RelayAcknowledgement } from "./sync/sync-config-compatibility";
 import { verifyRelayConnection } from "./sync/sync-diagnostics";
+import { clampSyncIntervalMinutes } from "./sync/sync-schedule";
 import type { SyncStatus } from "./sync-engine";
 
 type SyncEngineHandlers = {
@@ -43,22 +44,29 @@ export function registerSyncEngine(handlers: SyncEngineHandlers): void {
     return;
   }
 
+  let alarmRefreshSeq = 0;
+
   async function refreshPeriodicAlarm(): Promise<void> {
+    const seq = ++alarmRefreshSeq;
     try {
-      browserObj.alarms?.clear?.("yph-sync-periodic");
+      await browserObj.alarms?.clear?.("yph-sync-periodic");
     } catch {
       /* ignore */
     }
     try {
       const cfg = await loadSyncConfig();
-      const interval = typeof cfg?.syncIntervalMinutes === "number" ? cfg.syncIntervalMinutes : 0;
+      if (seq !== alarmRefreshSeq) return;
+      const interval = clampSyncIntervalMinutes(cfg?.syncIntervalMinutes, 0);
       const enabled =
         !!cfg?.syncKey &&
         Array.isArray(cfg?.backends) &&
         cfg.backends.length > 0 &&
         !needsV2RelayAcknowledgement(cfg);
       if (interval > 0 && enabled) {
-        browserObj.alarms?.create?.("yph-sync-periodic", { periodInMinutes: interval });
+        browserObj.alarms?.create?.("yph-sync-periodic", {
+          delayInMinutes: interval,
+          periodInMinutes: interval,
+        });
       }
     } catch {
       /* ignore */
@@ -66,8 +74,16 @@ export function registerSyncEngine(handlers: SyncEngineHandlers): void {
   }
 
   refreshPeriodicAlarm().catch(() => {});
+  browserObj.runtime.onInstalled?.addListener?.(() => {
+    refreshPeriodicAlarm().catch(() => {});
+  });
   browserObj.runtime.onStartup?.addListener?.(() => {
-    handlers.runOnce().catch(() => {});
+    refreshPeriodicAlarm().catch(() => {});
+    loadSyncConfig()
+      .then((cfg) => {
+        if (cfg.autoSyncOnStartup !== false) return handlers.runOnce();
+      })
+      .catch(() => {});
   });
 
   let debounceTimer: ReturnType<typeof setTimeout> | null = null;
@@ -80,7 +96,11 @@ export function registerSyncEngine(handlers: SyncEngineHandlers): void {
       refreshPeriodicAlarm().catch(() => {});
       const prev = changes.yph_sync_config.oldValue;
       const next = changes.yph_sync_config.newValue;
-      const onlyCursorOrMetaChanged =
+      if (next?.autoSyncOnChange === false && debounceTimer) {
+        clearTimeout(debounceTimer);
+        debounceTimer = null;
+      }
+      const onlyScheduleOrMetaChanged =
         prev &&
         next &&
         prev.syncKey === next.syncKey &&
@@ -88,13 +108,17 @@ export function registerSyncEngine(handlers: SyncEngineHandlers): void {
         prev.supabaseUrl === next.supabaseUrl &&
         prev.supabaseKey === next.supabaseKey &&
         prev.conflictStrategy === next.conflictStrategy;
-      if (changedKeys.length === 1 && onlyCursorOrMetaChanged) return;
+      if (changedKeys.length === 1 && onlyScheduleOrMetaChanged) return;
     }
 
     if (debounceTimer) clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => {
       debounceTimer = null;
-      handlers.runOnce().catch(() => {});
+      loadSyncConfig()
+        .then((cfg) => {
+          if (cfg.autoSyncOnChange !== false) return handlers.runOnce();
+        })
+        .catch(() => {});
     }, 3_000);
   });
 
@@ -111,6 +135,21 @@ export function registerSyncEngine(handlers: SyncEngineHandlers): void {
         .catch((error) => ({ phase: "error", lastError: String(error) }) as any);
       if (isNativeFirefox) return p;
       p.then((result: any) => sendResponse(result));
+      return true;
+    }
+    if (request?.cmd === "sync-refresh-schedule") {
+      const p = refreshPeriodicAlarm()
+        .then(async () => {
+          const alarm = await browserObj.alarms?.get?.("yph-sync-periodic");
+          return {
+            ok: true,
+            scheduledTime: alarm?.scheduledTime ?? null,
+            periodInMinutes: alarm?.periodInMinutes ?? null,
+          };
+        })
+        .catch((error) => ({ ok: false, scheduledTime: null, error: String(error) }));
+      if (isNativeFirefox) return p;
+      p.then((res: any) => sendResponse(res));
       return true;
     }
     if (request?.cmd === "sync-test-connection") {

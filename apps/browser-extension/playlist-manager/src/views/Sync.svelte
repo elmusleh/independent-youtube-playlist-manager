@@ -140,7 +140,9 @@
       nudgeUnsubscribe();
       nudgeUnsubscribe = null;
     }
-    if (!config.syncKey) return;
+    if (!config.syncKey || config.backends.length === 0 || config.autoSyncOnStartup === false) {
+      return;
+    }
     try {
       nudgeUnsubscribe = await subscribeToSyncNudge(config.syncKey, () => {
         triggerSyncNow().catch(() => {});
@@ -163,6 +165,7 @@
   async function persist() {
     await status.save(() => saveSyncConfig(config));
     await refreshPermissionState();
+    subscribeNudge().catch(() => {});
   }
 
   async function refresh() {
