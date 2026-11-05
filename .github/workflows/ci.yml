@@ -223,6 +223,17 @@ jobs:
       - name: Run Extension Regression Suite
         run: npm run test:extension
 
+      - name: Upload Extension Test Artifacts (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: extension-test-results
+          path: |
+            test-results/
+            dist/verification/
+          retention-days: 7
+          if-no-files-found: ignore
+
       - name: Run Extension Visual Regression (primary views)
         run: npm run test:visual
 
@@ -231,7 +242,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: visual-regression-diffs
-          path: test-results/
+          path: |
+            test-results/
+            dist/verification/
           retention-days: 7
           if-no-files-found: ignore
 
