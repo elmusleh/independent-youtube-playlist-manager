@@ -1,5 +1,11 @@
 "use client";
-export function PlaylistGrid({ playlists, onPlay }: { playlists: any[]; onPlay?: (id: string) => void }) {
+export function PlaylistGrid({
+  playlists,
+  onPlay,
+}: {
+  playlists: any[];
+  onPlay?: (id: string) => void;
+}) {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {playlists?.map((p: any) => (

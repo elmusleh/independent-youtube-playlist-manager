@@ -107,8 +107,9 @@ export function PairingCodeEntry({ onComplete }: Props) {
       try {
         const { encryptionKey } = await deriveKeys(syncKey.trim());
         const spaceAddress = await computeStorageAddress(syncKey.trim());
-        const sb = getSupabase(); if (!sb) return;
-      const { data } = await sb.rpc("sync_pull", {
+        const sb = getSupabase();
+        if (!sb) return;
+        const { data } = await sb.rpc("sync_pull", {
           space: spaceAddress,
           auth_hash: spaceAddress,
           since_seq: 0,

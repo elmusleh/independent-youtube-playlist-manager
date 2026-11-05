@@ -69,7 +69,8 @@ export default function TVPage() {
 
   function cleanup() {
     if (channelRef.current) {
-      const sb2 = getSupabase(); if (sb2 && channelRef.current) sb2.removeChannel(channelRef.current);
+      const sb2 = getSupabase();
+      if (sb2 && channelRef.current) sb2.removeChannel(channelRef.current);
       channelRef.current = null;
     }
     if (countdownRef.current) {
@@ -167,7 +168,8 @@ export default function TVPage() {
       const keys = await deriveKeys(syncKey);
       const spaceAddress = await computeStorageAddress(syncKey);
 
-      const sb = getSupabase(); if (!sb) return;
+      const sb = getSupabase();
+      if (!sb) return;
       const { data } = await sb.rpc("sync_pull", {
         space: spaceAddress,
         auth_hash: spaceAddress,

@@ -56,7 +56,8 @@ export default function DashboardPage() {
       const keys = await deriveKeys(key);
       const spaceAddress = await computeStorageAddress(key);
 
-      const sb = getSupabase(); if (!sb) return;
+      const sb = getSupabase();
+      if (!sb) return;
       const { data } = await sb.rpc("sync_pull", {
         space: spaceAddress,
         auth_hash: spaceAddress,

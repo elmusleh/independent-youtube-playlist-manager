@@ -1,5 +1,11 @@
 "use client";
-export function SyncKeyEntry({ onKeySubmit, onSave }: { onKeySubmit?: (key: string) => void; onSave?: (key: string) => void }) {
+export function SyncKeyEntry({
+  onKeySubmit,
+  onSave,
+}: {
+  onKeySubmit?: (key: string) => void;
+  onSave?: (key: string) => void;
+}) {
   const handler = onKeySubmit ?? onSave;
   return (
     <div className="space-y-2">

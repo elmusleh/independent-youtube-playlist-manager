@@ -1,5 +1,15 @@
 "use client";
-export function SyncStatus({ status, lastSynced, isLoading, onSync }: { status?: string; lastSynced?: Date | null; isLoading?: boolean; onSync?: () => Promise<void> }) {
+export function SyncStatus({
+  status,
+  lastSynced,
+  isLoading,
+  onSync,
+}: {
+  status?: string;
+  lastSynced?: Date | null;
+  isLoading?: boolean;
+  onSync?: () => Promise<void>;
+}) {
   return (
     <div className="text-sm text-muted-foreground">
       <span>{status ?? "Idle"}</span>

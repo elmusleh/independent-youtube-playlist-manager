@@ -20,7 +20,8 @@ export async function POST(request: Request) {
     }
 
     // Find the pairing code
-    const sb = getSupabase(); if (!sb) return NextResponse.json({ error: "Not configured" }, { status: 503 });
+    const sb = getSupabase();
+    if (!sb) return NextResponse.json({ error: "Not configured" }, { status: 503 });
     const { data: pairing, error: findError } = await sb
       .from("pairing_codes")
       .select("*")

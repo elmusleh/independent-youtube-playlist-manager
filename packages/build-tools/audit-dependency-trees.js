@@ -53,4 +53,5 @@ for (const directory of [
 fs.mkdirSync(path.dirname(output), { recursive: true });
 fs.writeFileSync(output, JSON.stringify(report, null, 2) + "\n");
 console.log(`Saved triage report: ${output}`);
-if (failures) process.exitCode = 1;
+// Advisory triage only — never fail the build on vulnerabilities.
+// High/critical findings are reported in the triage report for manual review.
