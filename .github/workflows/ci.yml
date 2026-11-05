@@ -39,6 +39,13 @@ jobs:
       - name: Install Mobile App Dependencies
         run: cd apps/mobile-app && npm ci
 
+      - name: Verify Root ESLint
+        run: |
+          if [ ! -d "node_modules/eslint" ]; then
+            echo "eslint not found in root node_modules, reinstalling..."
+            npm ci
+          fi
+
       - name: Run Full Quality Check (lint + format + test + svelte-check)
         run: npm run check
 

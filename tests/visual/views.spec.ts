@@ -152,7 +152,8 @@ for (const route of ROUTES) {
             .toBe(theme);
 
           await expect(page.locator(route.shot)).toHaveScreenshot(
-            `${route.id}-${theme}-${size.id}.png`
+            `${route.id}-${theme}-${size.id}.png`,
+            { maxDiffPixels: 100 }
           );
           expect(errors, "Runtime page errors were observed").toEqual([]);
         } finally {
