@@ -1,3 +1,10 @@
+## Camera permission denied recovery & diagnostic banner in QR scanner — verified 2026-11-05
+
+- [x] Create `camera-diagnostic.ts` and `camera-diagnostic.test.ts` to detect `NotAllowedError` and permission rejections.
+- [x] Create `SyncQrCameraBanner.svelte` with browser-tailored site settings recovery guidance (Firefox Android lock icon / site settings vs Chrome) and fallback upload button.
+- [x] Wire `SyncQrCameraBanner` into `SyncQrModal.svelte`, ensuring file size limit <= 350 lines (`SyncQrModal.svelte` at 331 lines).
+- [x] Verify `npm run check` (92 test files / 800 tests passing), `npm run build`, `npm run test:extension`, and `npm run test:visual`.
+
 ## Header mobile icon-only compacting, iconized Sync Key actions & remote sync space purge — verified 2026-11-05
 
 - [x] Compact ViewHeader action buttons on mobile screens `<= 768px` by hiding text spans (`.btn .content span:not(.refresh-icon)`) while keeping SVG icons and title/aria-labels.

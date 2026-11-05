@@ -12,7 +12,9 @@
   } from "@fortawesome/free-solid-svg-icons";
   import Modal from "../Modal.svelte";
   import SimpleButton from "../SimpleButton.svelte";
+  import SyncQrCameraBanner from "./SyncQrCameraBanner.svelte";
   import { generateSyncKeyQrSvg, detectQrFromImageData } from "../../services/sync/qr-service.js";
+  import { parseCameraError } from "../../services/sync/camera-diagnostic.js";
 
   let {
     open = $bindable(false),
@@ -32,6 +34,7 @@
   let fileInputEl = $state<HTMLInputElement | null>(null);
   let stream = $state<MediaStream | null>(null);
   let scanError = $state<string | null>(null);
+  let isPermissionDenied = $state(false);
   let isScanning = $state(false);
   let animationFrameId: number | null = null;
 
@@ -51,6 +54,7 @@
 
   async function startCamera() {
     scanError = null;
+    isPermissionDenied = false;
     isScanning = true;
     try {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -65,8 +69,10 @@
         await videoEl.play();
         scanLoop();
       }
-    } catch (err: any) {
-      scanError = err?.message || "Could not open camera. Try uploading an image instead.";
+    } catch (err: unknown) {
+      const diag = parseCameraError(err);
+      isPermissionDenied = diag.isPermissionDenied;
+      scanError = diag.message;
       isScanning = false;
     }
   }
@@ -186,10 +192,12 @@
         </p>
 
         {#if scanError}
-          <div class="scan-error-banner" role="alert">
-            <Fa icon={faCircleExclamation} />
-            <span>{scanError}</span>
-          </div>
+          <SyncQrCameraBanner
+            {isPermissionDenied}
+            errorMessage={scanError}
+            onRetry={startCamera}
+            onUploadClick={() => fileInputEl?.click()}
+          />
         {/if}
 
         <div class="camera-preview-wrapper">
@@ -206,15 +214,17 @@
             onchange={handleFileUpload}
             style="display: none"
           />
-          <SimpleButton secondary onclick={() => fileInputEl?.click()}>
-            <Fa icon={faUpload} />
-            <span>Upload QR image</span>
-          </SimpleButton>
-          {#if !isScanning}
-            <SimpleButton primary onclick={startCamera}>
-              <Fa icon={faCamera} />
-              <span>Retry Camera</span>
+          {#if !scanError}
+            <SimpleButton secondary onclick={() => fileInputEl?.click()}>
+              <Fa icon={faUpload} />
+              <span>Upload QR image</span>
             </SimpleButton>
+            {#if !isScanning}
+              <SimpleButton primary onclick={startCamera}>
+                <Fa icon={faCamera} />
+                <span>Retry Camera</span>
+              </SimpleButton>
+            {/if}
           {/if}
         </div>
       </div>
@@ -312,17 +322,6 @@
     gap: 12px;
     flex-wrap: wrap;
     justify-content: center;
-  }
-  .scan-error-banner {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 14px;
-    background: var(--danger-bg, #fee2e2);
-    color: var(--danger-color, #b91c1c);
-    border-radius: 8px;
-    font-size: 0.88rem;
-    max-width: 100%;
   }
   .modal-footer-actions {
     display: flex;

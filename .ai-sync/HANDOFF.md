@@ -1,3 +1,28 @@
+## 2026-11-05 — Camera permission denied recovery & diagnostic banner in QR scanner
+
+### Root Causes & Hardening Implemented
+
+1. **Camera Permission Denied / Blocked Diagnostic in `SyncQrModal.svelte` & `SyncQrCameraBanner.svelte`:**
+   - On mobile browsers (such as Firefox Android and mobile Chrome), when a user denied camera access or site permissions were blocked, the camera viewfinder would silently remain blank or output a generic error without recovery instructions.
+   - Added `parseCameraError()` in `camera-diagnostic.ts` to identify `NotAllowedError`, `PermissionDeniedError`, or permission rejection keywords.
+   - Created `SyncQrCameraBanner.svelte` (130 lines) rendering an informative diagnostic alert with platform-specific instructions (Firefox Android lock/site settings permission steps vs Chrome URL bar controls), along with 1-click fallback buttons to "Choose photo of QR" or "Try camera again".
+   - Verified that all components stay strictly under the 350-line limit (`SyncQrModal.svelte` is 331 lines).
+
+### Files Changed
+
+- `apps/browser-extension/playlist-manager/src/components/sync/SyncQrModal.svelte`
+- `apps/browser-extension/playlist-manager/src/components/sync/SyncQrCameraBanner.svelte`
+- `apps/browser-extension/playlist-manager/src/services/sync/camera-diagnostic.ts`
+- `apps/browser-extension/playlist-manager/src/services/sync/camera-diagnostic.test.ts`
+- `CHANGELOG.md`, `SUGGESTIONS.md`, `.ai-sync/HANDOFF.md`, `.ai-sync/PROGRESS.md`
+
+### Verification
+
+- `npm run check` (92 Vitest files / 800 tests passing, 0 ESLint errors, svelte-check 0 errors, file sizes <= 350 lines)
+- `npm run build` (Chrome, Firefox, and Edge bundles clean)
+- `npm run test:extension` (102 routes, 13 interaction groups, clean exit)
+- `npm run test:visual` (24/24 snapshots matching)
+
 ## 2026-11-05 — Header mobile icon-only compacting, iconized Sync Key actions & remote sync space purge
 
 ### Root Causes & Hardening Implemented

@@ -165,10 +165,7 @@ it is never repeated. After each implementation, append the new suggestions
 41. Add Network Bandwidth / Payload Size Tracking to `SyncRunReport`. [done] 2026-11-05
 42. Add Visual "Last Synced Time" Humanized Auto-Refresh Timer. [done] 2026-11-05
 43. Expose Schema Version Validation in Custom Supabase Connection Test. [done] 2026-11-05
-44. Add Camera Permission Denied / Blocked Diagnostic Recovery in `SyncQrModal.svelte` — Priority 82% (High value) [Professionalism]
-    What: If camera access is rejected by browser permission gates or OS privacy controls, show an actionable recovery tooltip with platform-specific instructions (e.g. Firefox Android Site Permissions vs Chrome Settings) alongside the "Choose image file instead" fallback.
-    Why: Prevents mobile users from getting stuck or thinking scanning is broken when browser permissions block the video stream.
-    How: Catch `NotAllowedError` in `startScanner()` and display an inline banner with browser-tailored unblocking steps.
+44. Add Camera Permission Denied / Blocked Diagnostic Recovery in `SyncQrModal.svelte`. [done] 2026-11-05
 45. Add Haptic Feedback on Successful QR Code Scan — Priority 76% (High value) [Professionalism]
     What: Trigger a gentle device vibration (`navigator.vibrate?.([40, 60, 40])`) the instant a valid sync key QR code is recognized.
     Why: Gives immediate physical confirmation on mobile devices so users know their scan succeeded without looking away from their target screen.
