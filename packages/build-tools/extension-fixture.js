@@ -4,10 +4,26 @@ function createFixture() {
   const ids = Array.from({ length: 205 }, (_, i) => `vid${String(i).padStart(8, "0")}`);
   return {
     local: {
+      "yph_capture_job:22222222-2222-4222-8222-222222222222": {
+        id: "22222222-2222-4222-8222-222222222222",
+        operation: "capture",
+        source: "menu",
+        mode: "new",
+        ids: ids.slice(0, 3),
+        tabs: [],
+        sourceTab: null,
+        position: "bottom",
+        closeTabs: false,
+        status: "ready",
+        addedIds: [],
+        inFlight: null,
+        expires: Date.now() + 30 * 60 * 1000,
+      },
       yph_local_playlists: [
         {
           id: "local-release",
-          title: "Large playlist with a long descriptive title for mobile layouts",
+          title:
+            "A deliberately very long pinned playlist title for verifying that the desktop sidebar truncates rather than scrolling horizontally",
           videos: ids,
           isLocal: true,
           saved: true,
@@ -41,6 +57,7 @@ function createFixture() {
       autoFetchMetadata: false,
       autoSaveEditor: false,
       watchLaterPlaylistId: "local-release",
+      favoritePlaylistIds: ["local-second"],
     },
     metadata: Object.fromEntries(
       ids.map((id) => [
@@ -64,17 +81,18 @@ async function seedExtension(fixture) {
 }
 
 const routes = [
+  "/capture?job=22222222-2222-4222-8222-222222222222",
   "/saved",
   "/playlist?id=local-release",
-  "/favorite",
+  "/favorites",
   "/new",
   "/playlist-builder",
   "/manage",
   "/history",
   "/settings",
+  "/sync",
   "/search",
   "/subscriptions",
-  "/share",
   "/shortcuts",
   "/api-setup",
   "/logs",

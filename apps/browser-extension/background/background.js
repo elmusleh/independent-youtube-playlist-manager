@@ -1,5 +1,9 @@
+import { mutateLibrary } from "./library-mutations.js";
+import { permittedUI } from "./message-access.js";
+import { parseYouTubeVideoId } from "../shared/tab-selection.js";
 /* eslint-disable no-console */
 import { isAndroid, playlistBuilderId, updateBadge } from "./utils.js";
+console.log("[Background] Module loaded, registering onMessage listener");
 import { buildContextMenus } from "./context-menus.js";
 import {
   saveHistory,
@@ -10,6 +14,8 @@ import {
   pruneStaleMetadataCache,
 } from "./history.js";
 import "./sync.js"; // registers alarms.onAlarm listener as side effect
+import "./capture-controller.js"; // registers message handlers as side effect
+import { enqueuePlaylistMutation, getPlaylistsRevision } from "./mutation-queue.js";
 
 // ---------------------------------------------------------------------------
 // init — run on install and every service worker restart
@@ -25,7 +31,6 @@ async function init() {
     try {
       if (window.logSystemEvent) await window.logSystemEvent("INFO", "Background: Initializing...");
       if (!isAndroid()) {
-        await browser.contextMenus.removeAll();
         const settings = await window.getSettings();
         await buildContextMenus(settings);
       }
@@ -52,7 +57,7 @@ async function clearAddVideoToPlaylistItems() {
 }
 
 async function clearContextMenus() {
-  if (!isAndroid()) await browser.contextMenus.removeAll();
+  // Reconciliation updates existing entries without a remove/recreate gap.
 }
 
 // ---------------------------------------------------------------------------
@@ -65,15 +70,9 @@ if (browser.commands?.onCommand) {
       try {
         const tabs = await browser.tabs.query({ active: true, currentWindow: true });
         if (tabs.length > 0 && tabs[0].url) {
-          const videoId = window.videoService
-            ? window.videoService.parseYoutubeId(tabs[0].url)
-            : null;
+          const videoId = tabs[0].incognito ? null : parseYouTubeVideoId(tabs[0].url);
           if (videoId) {
-            const items = await browser.storage.local.get(playlistBuilderId);
-            const playlistBuilder = items[playlistBuilderId] || [];
-            playlistBuilder.push(videoId);
-            updateBadge("" + playlistBuilder.length);
-            await browser.storage.local.set({ [playlistBuilderId]: playlistBuilder });
+            await mutateLibrary({ type: "builder-append", ids: [videoId] });
             const { alert } = await import("./utils.js");
             await alert(`Added video (${videoId}) to Playlist Builder!`, true);
           }
@@ -90,27 +89,48 @@ if (browser.commands?.onCommand) {
 // ---------------------------------------------------------------------------
 
 browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  console.log("[Background] onMessage received:", request?.cmd);
+  if (["create-playlist", "update-settings"].includes(request?.cmd) && !permittedUI(sender)) {
+    sendResponse({ error: "This page cannot change playlist settings or create playlists." });
+    return false;
+  }
   if (window.logSystemEvent)
     window.logSystemEvent("INFO", `Background: Received message: ${request.cmd}`);
 
   if (request.cmd === "get-playlist-builder") {
+    console.log("[Background] Handling get-playlist-builder");
     (async () => {
-      const items = await browser.storage.local.get(playlistBuilderId);
-      sendResponse(items[playlistBuilderId] || []);
+      try {
+        if (window.logSystemEvent) {
+          window.logSystemEvent("INFO", "Background: Received get-playlist-builder message");
+        }
+        const items = await browser.storage.local.get(playlistBuilderId);
+        console.log("[Background] Got playlist builder items:", items[playlistBuilderId] || []);
+        sendResponse(items[playlistBuilderId] || []);
+      } catch (error) {
+        console.error("[Background] get-playlist-builder error:", error);
+        sendResponse([]);
+      }
     })();
     return true;
-  } else if (request.cmd === "clear-playlist-builder") {
-    browser.storage.local.set({ [playlistBuilderId]: [] }).then(() => {
-      updateBadge("");
-      sendResponse(true);
-    });
-    return true;
-  } else if (request.cmd === "update-playlist-builder") {
-    const playlistBuilder = request.playlistBuilder;
-    browser.storage.local.set({ [playlistBuilderId]: playlistBuilder }).then(() => {
-      updateBadge("" + playlistBuilder.length);
-      sendResponse(true);
-    });
+  } else if (["clear-playlist-builder", "update-playlist-builder"].includes(request.cmd)) {
+    if (!permittedUI(sender)) {
+      sendResponse({ error: "Untrusted playlist page." });
+      return false;
+    }
+    // Consume only the IDs the editor saved. Concurrent additions remain in the builder.
+    const operation =
+      request.cmd === "clear-playlist-builder"
+        ? { type: "builder-consume", ids: request.savedIds || [] }
+        : {
+            type: "builder-replace",
+            ids: request.playlistBuilder,
+            expectedRevision: request.expectedRevision,
+          };
+    mutateLibrary(operation).then(
+      () => sendResponse(true),
+      (error) => sendResponse({ error: error.message })
+    );
     return true;
   } else if (request.cmd === "focus-playlist-builder") {
     (async () => {
@@ -196,37 +216,38 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
         sendResponse(false);
       });
     return true;
-  } else if (request.cmd === "supabase-trigger-sync") {
-    if (window.syncEngine) {
-      window.syncEngine
-        .triggerSync()
-        .then(sendResponse)
-        .catch((err) => sendResponse({ success: false, error: err.message }));
-    } else {
-      sendResponse({ success: false, error: "Sync engine not mounted" });
-    }
-    return true;
-  } else if (request.cmd === "supabase-get-session") {
-    if (window.supabaseGetSession) {
-      window
-        .supabaseGetSession()
-        .then(sendResponse)
-        .catch(() => sendResponse(null));
-    } else {
-      sendResponse(null);
-    }
-    return true;
   } else if (request.cmd === "log-event") {
     if (window.logSystemEvent) {
       window.logSystemEvent(request.level, request.message, request.details);
     }
     sendResponse(true);
     return true;
+  } else if (request.cmd === "get-playlists-revision") {
+    // For mutation queue revision checking
+    (async () => {
+      const revision = await getPlaylistsRevision();
+      sendResponse({ revision });
+    })();
+    return true;
+  } else if (request.cmd === "enqueue-playlist-mutation") {
+    // For SPA to enqueue mutations through the background queue
+    (async () => {
+      try {
+        const { mutationFn, expectedRevision } = request;
+        // Note: We can't serialize functions over message passing.
+        // This is a placeholder for future use if needed.
+        // For now, SPA mutations go directly through storage-service.ts
+        sendResponse({ success: false, error: "Function serialization not supported" });
+      } catch (e) {
+        sendResponse({ success: false, error: e.message });
+      }
+    })();
+    return true;
   }
 });
 
 // ---------------------------------------------------------------------------
-// createPlaylist
+// createPlaylist (used by keyboard shortcut and context menu)
 // ---------------------------------------------------------------------------
 
 /**
@@ -267,8 +288,8 @@ async function createPlaylist(videoIds, title) {
         );
       const isLocal = playlistId.startsWith("local-");
       const url = isLocal
-        ? `/editor/index.html?id=${playlistId}&local=true#/editor`
-        : `/editor/index.html?id=${playlistId}#/editor`;
+        ? `/editor/index.html#/playlist?id=${encodeURIComponent(playlistId)}`
+        : `/editor/index.html#/playlist?id=${encodeURIComponent(playlistId)}`;
 
       await browser.tabs.create({
         url: browser.runtime.getURL(url),
@@ -301,3 +322,9 @@ setTimeout(() => {
   pruneHistory();
   pruneStaleMetadataCache();
 }, 5000);
+
+// ---------------------------------------------------------------------------
+// Export mutation queue functions for other modules
+// ---------------------------------------------------------------------------
+
+export { enqueuePlaylistMutation, getPlaylistsRevision };

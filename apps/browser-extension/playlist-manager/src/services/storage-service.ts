@@ -1,3 +1,4 @@
+import { mutateLibrary, librarySnapshot } from "../../../shared/storage-client.js";
 /// <reference path="../../node_modules/@types/firefox-webext-browser/index.d.ts" />
 
 import type { Playlist, PlaylistExport, Settings } from "../types/model.js";
@@ -136,40 +137,19 @@ const getLocalPlaylists = window.getLocalPlaylists;
  * DataCloneError. Persist a plain snapshot so a playlist with reactive
  * `sortRules` (or any nested reactive array) still saves.
  */
-function toPlainPlaylists(playlists: Playlist[]): Playlist[] {
-  return JSON.parse(JSON.stringify(playlists)) as Playlist[];
-}
-
 async function saveLocalPlaylist(playlist: Playlist): Promise<string> {
-  // Browser storage uses structured cloning, which rejects nested Svelte proxies.
-  // A shallow spread leaves reactive arrays/objects (notably sortRules) intact.
-  playlist = JSON.parse(JSON.stringify(playlist)) as Playlist;
-  if (typeof browser === "undefined") return playlist.id;
-  const playlists = await getLocalPlaylists();
-  let id = playlist.id;
-
-  if (!id || id.startsWith("local-") === false) {
-    id = "local-" + Date.now();
-  }
-
-  const newPlaylist = { ...playlist, id, saved: true, isLocal: true };
-  const index = playlists.findIndex((p) => p.id === id);
-
-  if (index >= 0) {
-    playlists[index] = newPlaylist;
-  } else {
-    playlists.push(newPlaylist);
-  }
-
-  await browser.storage.local.set({ [LOCAL_PLAYLISTS_KEY]: toPlainPlaylists(playlists) });
+  const id = playlist.id?.startsWith("local-") ? playlist.id : `local-${crypto.randomUUID()}`;
+  const result = await mutateLibrary({
+    type: "put",
+    playlist: { ...playlist, id },
+    expectedRevision: playlist.revision || 0,
+  });
+  playlist.revision = result.revision;
   return id;
 }
 
-async function removeLocalPlaylist(id: string): Promise<void> {
-  if (typeof browser === "undefined") return;
-  const playlists = await getLocalPlaylists();
-  const filtered = playlists.filter((p) => p.id !== id);
-  await browser.storage.local.set({ [LOCAL_PLAYLISTS_KEY]: toPlainPlaylists(filtered) });
+async function removeLocalPlaylist(id: string, expectedRevision: number): Promise<void> {
+  await mutateLibrary({ type: "delete", id, expectedRevision });
 }
 
 window.ensureWatchLaterPlaylist = async (
@@ -255,7 +235,7 @@ window.ensureWatchLaterPlaylist = async (
       if (existingIndex !== -1) {
         if (forceCreate && local[existingIndex].title !== "Watch Later ⭐️") {
           local[existingIndex].title = "Watch Later ⭐️";
-          await browser.storage.local.set({ [LOCAL_PLAYLISTS_KEY]: local });
+          await saveLocalPlaylist(local[existingIndex]);
           notifyPlaylistsChanged();
           return { id: currentId, recreated: true };
         }
@@ -272,18 +252,7 @@ const SYNC_SNAPSHOTS_KEY = "yph_sync_snapshots";
 
 window._saveToLocalStorage = async (playlist: Playlist): Promise<void> => {
   if (playlist.isLocal || playlist.id.startsWith("local-")) {
-    if (typeof browser !== "undefined") {
-      const key = LOCAL_PLAYLISTS_KEY;
-      const result = await browser.storage.local.get(key);
-      const playlists: Playlist[] = result[key] || [];
-      const index = playlists.findIndex((p) => p.id === playlist.id);
-      if (index >= 0) {
-        playlists[index] = playlist;
-      } else {
-        playlists.push(playlist);
-      }
-      await browser.storage.local.set({ [key]: playlists });
-    }
+    await saveLocalPlaylist(playlist);
   }
   _cache.single.set(playlist.id, { data: playlist, ts: Date.now() });
   _cache.list = null;
@@ -586,7 +555,7 @@ window.removePlaylist = async (playlist: Playlist): Promise<void> => {
     playlistId: playlist.id,
   });
   if (playlist.id.startsWith("local-") || playlist.isLocal) {
-    await removeLocalPlaylist(playlist.id);
+    await removeLocalPlaylist(playlist.id, playlist.revision || 0);
   } else if (playlist.saved) {
     await window.ytDeletePlaylist(playlist.id);
   }
@@ -602,7 +571,7 @@ window.removePlaylists = async (playlists: Playlist[]): Promise<void> => {
   });
   for (const playlist of playlists) {
     if (playlist.id.startsWith("local-") || playlist.isLocal) {
-      await removeLocalPlaylist(playlist.id);
+      await removeLocalPlaylist(playlist.id, playlist.revision || 0);
     } else if (playlist.saved) {
       await window.ytDeletePlaylist(playlist.id);
       // Small delay to prevent hitting rate limits during bulk deletions
@@ -618,7 +587,12 @@ window.removePlaylists = async (playlists: Playlist[]): Promise<void> => {
 window.removeSavedPlaylists = async (): Promise<void> => {
   // Remove local
   if (typeof browser !== "undefined") {
-    await browser.storage.local.remove(LOCAL_PLAYLISTS_KEY);
+    const snapshot = await librarySnapshot();
+    await mutateLibrary({
+      type: "replace",
+      playlists: [],
+      expectedRevision: snapshot.revision,
+    });
   }
 
   // Remove YT if signed in
@@ -1067,12 +1041,17 @@ window.getSettings = async (): Promise<Settings> => {
       openSavedPlaylistAfterAdd: true,
       defaultEditorPage: "/saved",
       saveCreatedPlaylists: false,
+      disableContextMenu: false,
+      contextMenuDestination: null,
       disableContextBuilder: false,
       disableContextSaved: false,
       themeChoice: "device",
       defaultPageSize: 100,
+      playlistsPerPage: 20,
       cacheDuration: -1, // -1 = no expiration
       watchLaterPlaylistId: null, // null = use YouTube's Watch Later
+      favoritePlaylistIds: [], // ordered list of pinned favorites shown in the sidebar
+      maxVisibleFavorites: 0,
       maxLogLines: 500,
       defaultPrivacy: "private",
       autoRemoveDuplicates: false,
@@ -1090,7 +1069,7 @@ window.getSettings = async (): Promise<Settings> => {
       ruleHistoryRetentionDays: 30,
       ruleHistoryThrottleMs: 5000, // Minimum time between saves in milliseconds
       ruleHistoryDebounceMs: 1000, // Delay before saving after pause/unload in milliseconds
-      ruleTrackDuringPlayback: false, // Enable periodic position saves during active playback
+      ruleTrackDuringPlayback: true, // Periodic position saves during playback (required for mobile reliability)
       playAllChunkEnabled: false, // split large playlists into multiple tabs
       playAllChunkSize: 50, // max videos per tab when chunking is enabled
       enableLikedVideos: false,
@@ -1178,6 +1157,35 @@ async function migrateSettings(settings: Settings) {
       defaultEditorPage: settings.defaultEditorPage,
     });
   }
+  // Migrate old closeContextAddedTabs to unified closeAddedTabs
+  if (typeof (settings as any).closeContextAddedTabs === "boolean") {
+    const oldVal = (settings as any).closeContextAddedTabs;
+    settings.closeAddedTabs = oldVal;
+    await browser.storage.sync.set({
+      closeAddedTabs: oldVal,
+    });
+    // Remove both legacy copies so the next cache miss cannot reapply the old value.
+    await Promise.all([
+      browser.storage.sync.remove("closeContextAddedTabs"),
+      browser.storage.local.remove("closeContextAddedTabs"),
+    ]);
+    delete (settings as any).closeContextAddedTabs;
+  }
+  // Seed pinned favorites from the legacy single favorite (one-time, additive).
+  // Only seed when the setting was never present (undefined/null), so an explicitly
+  // cleared favorites list is not re-populated.
+  const favorites = settings.favoritePlaylistIds;
+  const neverMigrated = favorites === undefined || favorites === null;
+  if (
+    neverMigrated &&
+    typeof settings.watchLaterPlaylistId === "string" &&
+    settings.watchLaterPlaylistId
+  ) {
+    settings.favoritePlaylistIds = [settings.watchLaterPlaylistId];
+    await browser.storage.sync.set({
+      favoritePlaylistIds: settings.favoritePlaylistIds,
+    });
+  }
 }
 
 // ─── Data Management ────────────────────────────────────────────────────────
@@ -1198,6 +1206,8 @@ function notifyPlaylistsChanged() {
   if (typeof browser !== "undefined") {
     browser.runtime.sendMessage({ cmd: "update-saved-playlists" }).catch(() => {});
   }
+  // Schedule auto-sync after local changes (debounced)
+  // v1 sync-manager removed; sync is handled by the background engine.
 }
 
 window.invalidateCacheAndNotify = () => {

@@ -1,0 +1,14 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+#
+# CodeRabbit on this repository is on the free OSS plan, which only enables
+# automatic reviews once the repo has >= 10 stars. Until then every pull request
+# gets a "Review skipped" comment — an email per PR that says nothing useful.
+#
+# review_status: false silences exactly that ("when a review is skipped").
+# Reviews themselves are untouched: once the repo qualifies (or a review is
+# requested with `@coderabbitai review`), findings are still posted normally.
+language: en-US
+reviews:
+  profile: chill
+  review_status: false
+  review_info: false

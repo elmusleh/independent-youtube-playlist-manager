@@ -1,4 +1,5 @@
-import { beforeEach, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { libraryFixture } from "../test-support/library-fixture";
 import type { Playlist } from "../types/model";
 
 vi.mock("./logger-service.js", () => ({
@@ -8,17 +9,8 @@ vi.mock("./logger-service.js", () => ({
 let stored: Record<string, any>;
 beforeEach(async () => {
   vi.resetModules();
-  stored = { yph_meta_cache_migrated_v2: true };
-  vi.stubGlobal("browser", {
-    storage: {
-      local: {
-        get: vi.fn(async (key: string) => structuredClone({ [key]: stored[key] })),
-        set: vi.fn(async (value: object) => Object.assign(stored, structuredClone(value))),
-      },
-      onChanged: { addListener: vi.fn() },
-    },
-    runtime: { sendMessage: vi.fn().mockResolvedValue(undefined) },
-  });
+  const fixture = await libraryFixture({ yph_meta_cache_migrated_v2: true });
+  stored = fixture.stored;
   window.isSignedIn = vi.fn().mockResolvedValue(false);
   await import("./storage-service");
 });
@@ -42,6 +34,27 @@ it.each([1404, 14000])("saves %i sorted videos with nested reactive sort rules",
   expect(stored.yph_local_playlists[0].videos[0]).toBe("video000000");
 });
 
+it("removes both legacy copies after migrating close-added-tabs", async () => {
+  stored.closeContextAddedTabs = true;
+  const api = (globalThis as any).browser;
+  api.storage.sync = {
+    get: vi.fn(async () => structuredClone(stored)),
+    set: vi.fn(async (items: Record<string, any>) => Object.assign(stored, items)),
+    remove: vi.fn(async (key: string) => delete stored[key]),
+  };
+
+  const { invalidateSettingsCache } = await import("./storage-service");
+  const settings = await window.getSettings();
+
+  expect(settings.closeAddedTabs).toBe(true);
+  expect(stored).not.toHaveProperty("closeContextAddedTabs");
+  expect(api.storage.sync.remove).toHaveBeenCalledWith("closeContextAddedTabs");
+  expect(api.storage.local.remove).toHaveBeenCalledWith("closeContextAddedTabs");
+
+  invalidateSettingsCache();
+  expect((await window.getSettings()).closeAddedTabs).toBe(true);
+});
+
 it("preserves the saved playlist when storage fails and allows retry", async () => {
   const playlist = { id: "local-retry", title: "Retry", videos: ["video000000"], timestamp: 1 };
   await window.savePlaylist(playlist, { syncToYoutube: false });
@@ -54,3 +67,5 @@ it("preserves the saved playlist when storage fails and allows retry", async () 
   await window.savePlaylist({ ...playlist, title: "Changed" });
   expect(stored.yph_local_playlists[0].title).toBe("Changed");
 });
+
+afterEach(() => vi.unstubAllGlobals());

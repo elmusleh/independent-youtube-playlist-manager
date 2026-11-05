@@ -236,7 +236,8 @@
     <div class="toggle-info">
       <span>Track During Playback</span>
       <span class="sub-text"
-        >Periodically save position while video is playing (not just on pause).</span
+        >Periodically save position while playing — required for reliable resume on mobile
+        (m.youtube.com). Recommended to leave on.</span
       >
     </div>
     <ToggleSwitch

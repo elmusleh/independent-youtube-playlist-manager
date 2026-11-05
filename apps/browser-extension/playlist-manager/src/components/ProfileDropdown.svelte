@@ -1,6 +1,7 @@
 <script lang="ts">
   import {
     faRightFromBracket,
+    faRightToBracket,
     faPlus,
     faKeyboard,
     faGear,
@@ -11,7 +12,6 @@
     faComments,
     faEllipsisVertical,
     faKey,
-    faStar,
   } from "@fortawesome/free-solid-svg-icons";
   import Fa from "svelte-fa";
   import { push } from "svelte-spa-router";
@@ -24,19 +24,15 @@
     userProfile = null,
     channelInfo = { title: "User", thumbnail: "", handle: "" },
     missingCredentials = false,
-    githubStars = null,
     onSignOut = () => {},
     onSignIn = () => {},
-    onToggleReleaseNotes = () => {},
   }: {
     signedIn?: boolean;
     userProfile?: { title: string; thumbnail: string; handle?: string } | null;
     channelInfo?: { title: string; thumbnail: string; handle?: string };
     missingCredentials?: boolean;
-    githubStars?: string | null;
     onSignOut?: () => void;
     onSignIn?: () => void;
-    onToggleReleaseNotes?: () => void;
   } = $props();
 
   let open = $state(false);
@@ -80,7 +76,10 @@
   function openReleaseNotes(event: MouseEvent) {
     event.stopPropagation();
     closeDropdown();
-    onToggleReleaseNotes();
+    window.open(
+      "https://github.com/elmusleh/independent-youtube-playlist-manager/releases",
+      "_blank"
+    );
   }
 
   function handleAuthAction(event: MouseEvent) {
@@ -162,6 +161,18 @@
         <div class="divider"></div>
       {/if}
 
+      {#if !signedIn}
+        <div class="menu-section compact-only-auth">
+          <button class="menu-item auth-action" onclick={handleAuthAction}>
+            <div class="icon-box">
+              <Fa icon={faRightToBracket} fw />
+            </div>
+            <span>Sign in</span>
+          </button>
+        </div>
+        <div class="divider compact-only-auth"></div>
+      {/if}
+
       <div class="menu-section mobile-only-menu-item">
         <a href="#/new" class="menu-item" onclick={closeDropdown}>
           <div class="icon-box">
@@ -174,14 +185,11 @@
       <div class="divider mobile-only-menu-item"></div>
 
       <div class="menu-section">
-        <ThemePicker onClose={closeDropdown} onSubmenuToggle={setThemeSubmenuOpen} />
         <button class="menu-item" onclick={(e) => navigateTo("/shortcuts", e)}>
           <div class="icon-box"><Fa icon={faKeyboard} fw /></div>
           <span>Keyboard shortcuts</span>
         </button>
       </div>
-
-      <div class="divider"></div>
 
       <div class="menu-section">
         <button class="menu-item" onclick={(e) => navigateTo("/api-setup", e)}>
@@ -193,22 +201,18 @@
           </div>
           <span>API Setup</span>
         </button>
-        <button class="menu-item" onclick={(e) => navigateTo("/settings", e)}>
-          <div class="icon-box"><Fa icon={faGear} fw /></div>
-          <span>Settings</span>
-        </button>
-        <button class="menu-item" onclick={(e) => navigateTo("/logs", e)}>
-          <div class="icon-box"><Fa icon={faTerminal} fw /></div>
-          <span>System Logs</span>
-        </button>
+      </div>
+
+      <div class="menu-section">
+        <ThemePicker onClose={closeDropdown} onSubmenuToggle={setThemeSubmenuOpen} />
       </div>
 
       <div class="divider"></div>
 
       <div class="menu-section">
-        <button class="menu-item" onclick={(e) => navigateTo("/share", e)}>
-          <div class="icon-box"><Fa icon={faShareFromSquare} fw /></div>
-          <span>Share</span>
+        <button class="menu-item" onclick={(e) => navigateTo("/logs", e)}>
+          <div class="icon-box"><Fa icon={faTerminal} fw /></div>
+          <span>System Logs</span>
         </button>
         <button class="menu-item" onclick={openReleaseNotes}>
           <div class="icon-box"><Fa icon={faFileLines} fw /></div>
@@ -222,23 +226,6 @@
           <div class="icon-box"><Fa icon={faComments} fw /></div>
           <span>Discussions</span>
         </button>
-      </div>
-      <div class="divider"></div>
-
-      <div class="menu-section">
-        <a
-          href="https://github.com/elmusleh/independent-youtube-playlist-manager"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="menu-item"
-          title="GitHub Repository"
-        >
-          <div class="icon-box"><Fa icon={faGithub} size="lg" /></div>
-          {#if githubStars}
-            <span class="stars-count"><Fa icon={faStar} size="xs" /> {githubStars}</span>
-          {/if}
-          <span>GitHub Repository</span>
-        </a>
       </div>
     </div>
   {/if}
@@ -255,7 +242,9 @@
     background: none;
     border: none;
     cursor: pointer;
-    height: 34px;
+    height: var(--touch-target-min);
+    min-height: var(--touch-target-min);
+    margin: 0;
     display: flex;
     align-items: center;
     gap: 6px;
@@ -275,16 +264,24 @@
   }
 
   .avatar-btn.icon-only {
-    width: 34px;
-    height: 34px;
+    width: var(--header-control-size);
+    min-width: var(--header-control-size);
+    height: var(--header-control-size);
     border-radius: 50%;
     justify-content: center;
     padding: 0;
   }
 
+  .avatar-btn.icon-only :global(svg) {
+    width: var(--header-icon-size);
+    height: var(--header-icon-size);
+    flex-shrink: 0;
+  }
+
   .avatar-btn .avatar {
-    width: 30px;
-    height: 30px;
+    width: var(--icon-btn-size);
+    min-width: var(--icon-btn-size);
+    height: var(--icon-btn-size);
     border-radius: 50%;
     flex-shrink: 0;
     object-fit: cover;
@@ -345,7 +342,8 @@
     align-items: center;
     gap: 16px;
     padding: 0 16px;
-    height: 40px;
+    height: var(--touch-target-min);
+    min-height: var(--touch-target-min);
     background: none;
     border: none;
     color: var(--text-color);
@@ -357,6 +355,18 @@
 
   .mobile-only-menu-item {
     display: none;
+  }
+
+  /* The header keeps its dedicated Sign in button at >=1024px.
+     Below that the header button is hidden, so Sign in moves into this menu. */
+  .compact-only-auth {
+    display: none;
+  }
+
+  @media (max-width: 1023px) {
+    .compact-only-auth {
+      display: block;
+    }
   }
 
   .menu-item:hover {
@@ -372,14 +382,7 @@
     font-size: 18px;
   }
 
-  .divider {
-    height: 1px;
-    background: var(--border-color);
-    margin: 8px 16px;
-    flex-shrink: 0;
-  }
-
-  .warning-badge {
+  .icon-box .warning-badge {
     position: absolute;
     top: -4px;
     right: -4px;
@@ -394,22 +397,13 @@
     align-items: center;
     justify-content: center;
     border: 2px solid var(--background-color);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
   }
 
-  :global([data-theme="dark"]) .warning-badge {
-    border-color: #282828;
-  }
-
-  .stars-count {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 12px;
-    color: var(--text-muted);
-    border-left: 1px solid var(--border-color);
-    padding-left: 8px;
-    margin-left: 4px;
+  .divider {
+    height: 1px;
+    background: var(--border-color);
+    margin: 8px 16px;
+    flex-shrink: 0;
   }
 
   @media (max-width: 768px) {
@@ -419,7 +413,8 @@
     }
 
     .avatar-btn.logged-in {
-      height: 32px;
+      height: var(--touch-target-min);
+      min-height: var(--touch-target-min);
       padding-left: 2px;
       padding-right: 8px;
       border-radius: 16px;
@@ -435,8 +430,9 @@
     }
 
     .avatar-btn.icon-only {
-      width: 32px;
-      height: 32px;
+      width: var(--header-control-size);
+      min-width: var(--header-control-size);
+      height: var(--header-control-size);
     }
   }
 
@@ -458,10 +454,6 @@
   @media (max-width: 480px) {
     .mobile-only-menu-item {
       display: flex;
-    }
-
-    .stars-count {
-      display: none;
     }
 
     .avatar-btn.logged-in {

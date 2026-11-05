@@ -1,0 +1,246 @@
+/* Sync view — shared styles for the cross-device sync feature. Imported in main.ts. */
+
+.sync-page input[type="text"] {
+  padding: 0 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--bg-secondary, var(--color-bg-secondary));
+  color: var(--text-color);
+  font-size: 14px;
+  height: 42px;
+  box-sizing: border-box;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.sync-page input[type="text"]:focus {
+  border-color: var(--primary-color);
+}
+
+.sync-status-banner {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 24px;
+  border-radius: 16px;
+  border: 1px solid var(--border-color);
+  border-left: 4px solid var(--color-brand-warning);
+  background: linear-gradient(to bottom right, rgba(245, 124, 0, 0.06), transparent);
+  margin-bottom: 24px;
+}
+
+.sync-status-banner.active {
+  border-left-color: var(--color-brand-success);
+  background: linear-gradient(to bottom right, rgba(43, 166, 64, 0.09), transparent);
+}
+
+.sync-status-banner .status-icon {
+  font-size: 28px;
+  color: var(--color-brand-warning);
+  flex-shrink: 0;
+}
+
+.sync-status-banner.active .status-icon {
+  color: var(--color-brand-success);
+}
+
+.key-display {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  background: var(--bg-secondary, var(--color-bg-secondary));
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+}
+
+.key-value {
+  font-family: var(--font-family-mono, ui-monospace, monospace);
+  font-size: 1.1rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-align: center;
+  word-break: break-all;
+  color: var(--text-color);
+}
+
+.backend-option {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+}
+
+.backend-option.selected {
+  border-color: var(--primary-color);
+  background: var(--hover-color, var(--color-bg-hover));
+}
+
+.backend-option label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  flex-wrap: wrap;
+}
+
+.backend-option label svg {
+  color: var(--primary-color);
+}
+
+.backend-name {
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.sync-badge {
+  font-size: var(--font-size-xs, 12px);
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.sync-badge-yes {
+  background: var(--color-brand-success);
+  color: #fff;
+}
+
+.sync-badge-no {
+  background: var(--color-bg-tertiary, var(--color-bg-secondary));
+  color: var(--text-muted, var(--text-secondary));
+}
+
+.sync-badge-beta {
+  background: rgba(245, 124, 0, 0.15);
+  color: var(--color-brand-warning);
+  border: 1px solid var(--color-brand-warning);
+}
+
+.card.enabled {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 1px var(--primary-color) inset;
+}
+
+.backend-card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.backend-card-header > :global(svg) {
+  color: var(--primary-color);
+  font-size: 18px;
+}
+
+.backend-card-title {
+  flex: 1;
+  min-width: 0;
+}
+
+.backend-card-title h3 {
+  margin: 0;
+}
+
+.backend-card-title .sub-text {
+  display: block;
+  margin-top: 2px;
+}
+
+.backend-card-header input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--primary-color);
+  cursor: pointer;
+}
+
+.api-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--primary-color);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.api-link:hover {
+  text-decoration: underline;
+}
+
+.learn-more {
+  background: none;
+  border: none;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--primary-color);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  align-self: flex-start;
+}
+
+.learn-more:hover {
+  text-decoration: underline;
+}
+
+.backend-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: var(--bg-secondary, var(--color-bg-secondary));
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--text-color);
+  line-height: 1.5;
+}
+
+.backend-detail p {
+  margin: 0;
+}
+
+.conn-actions {
+  margin: 0.5rem 0;
+}
+
+.conn-result {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  margin: 0.5rem 0;
+  padding: 0.6rem 0.75rem;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  border: 1px solid var(--border, #e5e7eb);
+}
+
+.conn-result.ok {
+  background: rgba(16, 185, 129, 0.08);
+  border-color: rgba(16, 185, 129, 0.35);
+  color: var(--success, #10b981);
+}
+
+.conn-result.err {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.35);
+  color: var(--danger, #ef4444);
+}
+
+.conn-result-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  color: var(--foreground, #111);
+  min-width: 0;
+}
+
+.conn-meta {
+  font-size: 0.74rem;
+  color: var(--muted-foreground, #6b7280);
+}

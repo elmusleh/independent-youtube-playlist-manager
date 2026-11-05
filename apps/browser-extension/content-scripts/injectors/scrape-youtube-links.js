@@ -1,124 +1,29 @@
-(async function () {
-  // More flexible regex to match YouTube video IDs
-  const youtubeRegex =
-    /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
-  const videoIds = new Set();
+(function () {
+  // Scan only the current document. Never read cross-origin frame contents or log page data.
+  const ids = new Set();
   const links = [];
-
-  // Helper to extract video ID from URL
-  function extractVideoId(url) {
-    if (!url) return null;
-    const match = url.match(youtubeRegex);
-    return match ? match[1] : null;
-  }
-
-  // Helper to normalize URL (handle relative URLs)
-  function normalizeUrl(url) {
-    if (!url) return url;
-    if (url.startsWith("http://") || url.startsWith("https://")) {
-      return url;
-    }
-    if (url.startsWith("//")) {
-      return window.location.protocol + url;
-    }
-    if (url.startsWith("/")) {
-      return window.location.origin + url;
-    }
-    return url;
-  }
-
-  // Wait for dynamic content to load on YouTube pages
-  async function waitForContent() {
-    // If this is a YouTube watch page, wait a bit for related videos to load
-    if (window.location.hostname === "www.youtube.com" && window.location.pathname === "/watch") {
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      // Try to scroll to trigger lazy loading of related videos
-      const relatedSection = document.querySelector("#secondary");
-      if (relatedSection) {
-        relatedSection.scrollIntoView({ behavior: "auto" });
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-      }
+  function add(raw) {
+    try {
+      const url = new URL(raw, location.href);
+      if (!["http:", "https:"].includes(url.protocol)) return;
+      const host = url.hostname;
+      if (host !== "youtu.be" && host !== "youtube.com" && !host.endsWith(".youtube.com")) return;
+      const id =
+        host === "youtu.be"
+          ? url.pathname.match(/^\/([\w-]{11})\/?$/)?.[1]
+          : url.pathname === "/watch"
+            ? url.searchParams.get("v")
+            : url.pathname.match(/^\/(?:shorts|live|embed)\/([\w-]{11})\/?$/)?.[1];
+      if (!id || !/^[\w-]{11}$/.test(id) || ids.has(id) || ids.size >= 100000) return;
+      ids.add(id);
+      links.push({ id });
+    } catch {
+      /* Ignore malformed page links. */
     }
   }
-
-  await waitForContent();
-
-  // Scrape all links (a href)
-  try {
-    const allLinks = document.querySelectorAll("a[href]");
-    allLinks.forEach((link) => {
-      try {
-        const href = link.getAttribute("href");
-        const normalizedHref = normalizeUrl(href);
-        const videoId = extractVideoId(normalizedHref);
-        if (videoId && !videoIds.has(videoId)) {
-          videoIds.add(videoId);
-          links.push({
-            id: videoId,
-            url: normalizedHref,
-            text: link.textContent?.trim() || "",
-            source: "link",
-          });
-        }
-      } catch {
-        // Skip individual link errors
-      }
-    });
-  } catch {
-    // Continue if querySelectorAll fails
-  }
-
-  // Scrape iframes
-  try {
-    const iframes = document.querySelectorAll("iframe[src]");
-    iframes.forEach((iframe) => {
-      try {
-        const src = iframe.getAttribute("src");
-        const normalizedSrc = normalizeUrl(src);
-        const videoId = extractVideoId(normalizedSrc);
-        if (videoId && !videoIds.has(videoId)) {
-          videoIds.add(videoId);
-          links.push({
-            id: videoId,
-            url: normalizedSrc,
-            text: "",
-            source: "iframe",
-          });
-        }
-      } catch {
-        // Skip individual iframe errors
-      }
-    });
-  } catch {
-    // Continue if querySelectorAll fails
-  }
-
-  // Scrape text content for YouTube URLs
-  try {
-    const bodyText = document.body ? document.body.innerText : "";
-    const globalYoutubeRegex = new RegExp(youtubeRegex.source, "g");
-    let match;
-    while ((match = globalYoutubeRegex.exec(bodyText)) !== null) {
-      const videoId = match[1];
-      if (videoId && !videoIds.has(videoId)) {
-        videoIds.add(videoId);
-        links.push({
-          id: videoId,
-          url: match[0],
-          text: "",
-          source: "text",
-        });
-      }
-    }
-  } catch {
-    // Continue if body text extraction fails
-  }
-
-  return {
-    count: links.length,
-    links: links,
-    url: window.location.href,
-    title: document.title,
-  };
+  for (const node of document.querySelectorAll("a[href]")) add(node.getAttribute("href"));
+  for (const node of document.querySelectorAll("iframe[src]")) add(node.getAttribute("src"));
+  for (const match of (document.body?.innerText || "").matchAll(/https?:\/\/[^\s<>"']+/g))
+    add(match[0]);
+  return { count: links.length, links };
 })();

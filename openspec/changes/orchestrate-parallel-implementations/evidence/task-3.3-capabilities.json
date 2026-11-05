@@ -1,0 +1,58 @@
+{
+  "generatedAt": "2026-10-31T18:46:10.242Z",
+  "platform": "linux",
+  "adapters": [
+    {
+      "name": "hermes",
+      "available": true,
+      "reason": "verified",
+      "executable": "/home/steve/.local/bin/hermes",
+      "sha256": "83f398c9285aa271eb63476f7bceb7e57cbc8e8ea11ce4e1ef0a0d2d79e786e5",
+      "pinned": false,
+      "version": "Hermes Agent v0.22.5 (2026.9.24) · stable · local bf0203a794a0",
+      "capabilities": [
+        "dispatch"
+      ]
+    },
+    {
+      "name": "claude",
+      "available": true,
+      "reason": "verified",
+      "executable": "/home/steve/.local/bin/claude",
+      "sha256": "b73676430af12f97316a798b8371f81d640f90a58bdcb8f3ce56a835bb47df56",
+      "pinned": false,
+      "version": "2.1.310 (Claude Code)",
+      "capabilities": [
+        "dispatch"
+      ]
+    },
+    {
+      "name": "codex",
+      "available": false,
+      "reason": "not-installed",
+      "capabilities": []
+    }
+  ],
+  "verified": [
+    {
+      "name": "hermes",
+      "executable": "/home/steve/.local/bin/hermes",
+      "sha256": "83f398c9285aa271eb63476f7bceb7e57cbc8e8ea11ce4e1ef0a0d2d79e786e5",
+      "pinned": false,
+      "version": "Hermes Agent v0.22.5 (2026.9.24) · stable · local bf0203a794a0",
+      "forms": [
+        "-z PROMPT --in DIR [--skills ...]"
+      ]
+    },
+    {
+      "name": "claude",
+      "executable": "/home/steve/.local/bin/claude",
+      "sha256": "b73676430af12f97316a798b8371f81d640f90a58bdcb8f3ce56a835bb47df56",
+      "pinned": false,
+      "version": "2.1.310 (Claude Code)",
+      "forms": [
+        "-p PROMPT --add-dir DIR"
+      ]
+    }
+  ]
+}

@@ -137,13 +137,14 @@
   class="playlist-video"
   class:is-active={active}
   class:is-selected={selected}
+  class:selectable
   onclick={videoClicked}
   onkeydown={handleKeydown}
   role="button"
   tabindex="0"
 >
   {#if selectable}
-    <div class="check-cell">
+    <label class="check-cell">
       <input
         aria-label="Select video"
         type="checkbox"
@@ -151,7 +152,7 @@
         onchange={() => toggleSelect()}
         onclick={(e) => e.stopPropagation()}
       />
-    </div>
+    </label>
   {:else}
     <div class="drag-handle" title="Drag to reorder">
       <Fa icon={faGripVertical} />
@@ -303,7 +304,7 @@
 
   .playlist-video.is-active {
     background-color: var(--color-brand-primary);
-    color: var(--color-text-inverse);
+    color: #ffffff;
   }
 
   .drag-handle {
@@ -331,6 +332,15 @@
     flex-shrink: 0;
   }
 
+  .check-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: var(--touch-target-min);
+    min-height: var(--touch-target-min);
+    cursor: pointer;
+  }
+
   .check-cell input[type="checkbox"] {
     width: 18px;
     height: 18px;
@@ -340,6 +350,7 @@
 
   .thumbnail-wrapper {
     position: relative;
+    isolation: isolate;
     display: inline-block;
     width: var(--row-thumb-width);
     height: var(--row-thumb-height);
@@ -355,6 +366,7 @@
   }
 
   .duration-badge {
+    z-index: 1;
     position: absolute;
     bottom: var(--space-1);
     right: var(--space-1);
@@ -369,6 +381,7 @@
   }
 
   .status-badge {
+    z-index: 1;
     position: absolute;
     bottom: var(--space-1);
     right: var(--space-1);
@@ -546,6 +559,22 @@
         );
       padding: var(--space-2);
       gap: var(--space-3);
+    }
+
+    .drag-handle {
+      display: none;
+    }
+
+    .playlist-video:not(.selectable) {
+      grid-template-columns: minmax(0, var(--row-thumb-width-mobile)) minmax(0, 1fr);
+    }
+
+    .playlist-video:not(.selectable) .thumbnail-wrapper {
+      grid-column: 1;
+    }
+
+    .playlist-video:not(.selectable) .video-details {
+      grid-column: 2;
     }
 
     .thumbnail-wrapper {

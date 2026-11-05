@@ -1,0 +1,174 @@
+# Beta releases for the `next` integration branch.
+#
+# Independent of .github/workflows/release.yml (which builds official releases from
+# `v*` tags pushed off `main`). Every PR merged to `next` runs this workflow and cuts a
+# public GitHub *prerelease* so the extension can be tested before an official release.
+#
+# The beta version is DERIVED and never committed:
+#   - tag:            vX.Y.Z-beta.N   (N = commits since the last OFFICIAL v* tag;
+#                                      beta tags are excluded so N keeps growing)
+#   - manifest build: X.Y.Z.N         (Chrome's manifest only accepts numeric versions)
+# `sync-version.mjs --set X.Y.Z.N` patches the version inside this throwaway checkout
+# only; nothing is committed, so `next` keeps its canonical x.y.z version and never
+# churns version files or lockfiles. `main` and the official release flow are untouched.
+#
+# Promotion rule (see docs/RELEASING.md): because the beta manifest build X.Y.Z.N is
+# numerically HIGHER than its base X.Y.Z, cut the official release that supersedes a set
+# of betas at a strictly higher version (e.g. betas on 1.2.1.N -> ship the official at
+# 1.2.2 or later), otherwise Chrome/Edge treat the official as a downgrade and beta users
+# will not receive it as an auto-update.
+
+name: Beta Release (next)
+
+on:
+  push:
+    branches:
+      - next
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  beta:
+    name: Build beta and cut a prerelease
+    runs-on: ubuntu-latest
+    env:
+      BASE_VERSION: ""
+      BETA_N: ""
+      NUMERIC_VERSION: ""
+      BETA_TAG: ""
+    steps:
+      - name: Checkout (full history and tags)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "npm"
+
+      - name: Install Dependencies
+        run: |
+          npm ci
+          cd apps/browser-extension/playlist-manager && npm ci
+
+      - name: Derive the beta version
+        id: version
+        run: |
+          set -euo pipefail
+          BASE_VERSION="$(node -p "require('./apps/browser-extension/manifest.chrome.json').version")"
+          echo "Base (canonical) version: $BASE_VERSION"
+          # Only official `vX.Y.Z` tags: exclude our own `-beta.*` tags so the
+          # count keeps growing across successive betas instead of resetting
+          # (and colliding) against the previous beta tag.
+          LAST_TAG="$(git describe --tags --match 'v*' --exclude '*-beta.*' --abbrev=0 2>/dev/null || true)"
+          if [ -n "$LAST_TAG" ]; then
+            N="$(git rev-list --count "${LAST_TAG}..HEAD")"
+          else
+            # No release tag yet: fall back to the repo run number so it stays monotonic.
+            N="$GITHUB_RUN_NUMBER"
+          fi
+          [ "$N" -ge 1 ] || N=1
+          echo "Last release tag: ${LAST_TAG:-<none>} · commits since: $N"
+          echo "BASE_VERSION=$BASE_VERSION"            >> "$GITHUB_ENV"
+          echo "BETA_N=$N"                              >> "$GITHUB_ENV"
+          echo "NUMERIC_VERSION=${BASE_VERSION}.${N}"  >> "$GITHUB_ENV"
+          echo "BETA_TAG=${BASE_VERSION}-beta.${N}"    >> "$GITHUB_ENV"
+
+      - name: Patch the version for this build (throwaway checkout only)
+        run: |
+          node packages/build-tools/sync-version.mjs --set "$NUMERIC_VERSION"
+          node packages/build-tools/sync-version.mjs   # verify all trees agree
+
+      - name: Run All Checks
+        run: npm run check
+
+      - name: Package Chrome, Firefox and Edge Extensions
+        run: |
+          npm run build
+          npm run pack:firefox
+          # Beta ZIPs are for load-unpacked testing, so keep the manifest `key`
+          # (the store packers strip it, which would change the extension ID and
+          # break the OAuth redirect URL). Zip the built dirs directly.
+          (cd dist/chrome && zip -r -FS ../independent-youtube-playlist-manager-chrome.zip .)
+          (cd dist/edge && zip -r -FS ../independent-youtube-playlist-manager-edge.zip .)
+
+      - name: Verify Loaded Extension
+        run: |
+          npx playwright install --with-deps chromium
+          npm run test:extension
+
+      - name: Create and Move Source Code ZIP
+        run: |
+          git archive --format=zip --output=release-source.zip HEAD
+          mkdir -p dist
+          mv release-source.zip dist/source-code.zip
+
+      - name: Upload Beta ZIP Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: iypm-beta-${{ env.BETA_TAG }}
+          path: dist/*.zip
+          retention-days: 30
+
+      - name: Build the prerelease body
+        run: |
+          set -euo pipefail
+          SHA="$(git rev-parse HEAD)"
+          SHORT="$(git rev-parse --short HEAD)"
+          LAST_TAG="$(git describe --tags --match 'v*' --exclude '*-beta.*' --abbrev=0 2>/dev/null || echo 'none')"
+          if [ "$LAST_TAG" != "none" ]; then
+            CHANGE_RANGE="${LAST_TAG}..HEAD"
+            SINCE_LABEL="${LAST_TAG}"
+          else
+            CHANGE_RANGE="HEAD"
+            SINCE_LABEL="the first commit"
+          fi
+          {
+            echo "**Automated beta build — not an official release.**"
+            echo ""
+            echo "- Version (manifest build): \`${NUMERIC_VERSION}\`"
+            echo "- Prerelease tag: \`${BETA_TAG}\`"
+            echo "- Source: [\`${SHORT}\`](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${SHA})"
+            echo "- Base version: \`${BASE_VERSION}\` · commits since \`${SINCE_LABEL}\`: ${BETA_N}"
+            echo "- Generated: $(date -u '+%Y-%m-%d %H:%M UTC')"
+            echo ""
+            echo "## Install"
+            echo ""
+            echo "- **Chrome / Edge** — unzip \`independent-youtube-playlist-manager-chrome.zip\`, then load unpacked from that folder (\`chrome://extensions\` → Enable developer mode → Load unpacked)."
+            echo "- **Firefox** — install \`independent-youtube-playlist-manager-firefox.zip\` via \`about:debugging#/runtime/this-firefox\` (temporary) or drag the ZIP onto the page."
+            echo ""
+            echo "> Beta builds are for testing only. They may be unstable and are separate from the official release on \`main\`."
+            echo ""
+            echo "## Changes since \`${SINCE_LABEL}\`"
+            echo ""
+            echo '```'
+            git log --no-merges --max-count=100 --pretty='- %h %s' "$CHANGE_RANGE"
+            echo '```'
+          } > beta-notes.md
+          echo "Wrote beta-notes.md"
+
+      - name: Push the prerelease tag
+        run: |
+          # Annotated tags require an author identity; a fresh runner has none set.
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if ! git tag -l "$BETA_TAG" | grep -q .; then
+            git tag -a "$BETA_TAG" -m "Beta ${NUMERIC_VERSION} ($(git rev-parse --short HEAD))"
+            git push origin "refs/tags/$BETA_TAG"
+          else
+            echo "Tag $BETA_TAG already exists; reusing it."
+          fi
+
+      - name: Create GitHub Prerelease
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.BETA_TAG }}
+          prerelease: true
+          make_latest: false
+          body_path: beta-notes.md
+          files: dist/*.zip

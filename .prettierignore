@@ -9,3 +9,7 @@ apps/web-portal/out/
 .worktrees/
 apps/web-portal/playwright-report/
 apps/web-portal/test-results/
+.agents/
+.hermes/
+# Generated coordination evidence (written by scripts, not hand-edited)
+openspec/changes/*/evidence/*.json

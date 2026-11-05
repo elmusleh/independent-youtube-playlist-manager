@@ -26,13 +26,13 @@ The extension manifest requests the following permissions:
 
 - `storage` / `unlimitedStorage` — Save playlists, settings, and the local metadata cache without hitting storage quota limits.
 - `tabs` — Power the "add all open YouTube tabs" feature: enumerate open tabs (across windows) so you can select which YouTube videos to add. Tab data is read on demand and never transmitted.
-- `activeTab` / `scripting` — Extract video metadata or scrape video links from a page **only when you explicitly trigger it** (e.g., clicking the extension icon or a context-menu item).
+- `activeTab` / `scripting` — **Import from Page** scans YouTube links in the webpage you select after invoking the toolbar extension, including a non-YouTube article or blog. `activeTab` grants temporary access to that tab; it does not grant permanent access to all sites. The packaged extractors also read video/channel metadata from permitted YouTube pages. No remote code is executed. Local playback tracking uses its declared YouTube content script, not `activeTab`.
 - `contextMenus` — Provide the right-click "Add to Playlist Builder" menu item (desktop only).
 - `notifications` — Show local status notifications (e.g., sync or import results).
 - `alarms` — Schedule periodic background housekeeping (e.g., cache cleanup, optional background sync).
 - `identity` — Used **only** if you choose to sign in with Google OAuth for YouTube account sync. No sign-in is required to use the extension.
 
-A content script runs on `www.youtube.com/watch*` and `m.youtube.com/watch*` pages to support watch-progress tracking. Host access is limited to `https://*.youtube.com/*`.
+A content script runs on YouTube watch pages (`*.youtube.com/watch*` and bare `youtube.com/watch*`, including `www.` and `m.` subdomains) to support watch-progress tracking. Required host access is limited to `https://*.youtube.com/*`; user-invoked page import can temporarily access the selected page through `activeTab`. Thumbnail preservation separately requests optional `https://i.ytimg.com/*` access when enabled.
 
 ---
 
@@ -43,6 +43,9 @@ The extension is fully functional offline for editing and managing playlists. Wh
 - **YouTube / Google** (`youtube.com`): Innertube player endpoint, embed pages, and the public oEmbed API for zero-quota metadata lookups; the YouTube Data API v3 when you sign in or provide your own API key; and normal video playback links.
 - **Piped / Invidious instances** (optional fallback tier): Public privacy-frontend instances (e.g., `pipedapi.kavin.rocks`, `invidious.privacydev.net`) or custom instances you configure, used only as a metadata fallback. This tier can be disabled entirely in Settings.
 - **Supabase (optional cloud sync):** When you configure a project and sign in, account credentials and tokens are exchanged with that project. Cloud sync transmits playlist names, video IDs, ordering and video metadata. The shared video catalog can expose public video metadata to other users of that configured project. Local watch-progress logs are not uploaded by this sync service.
+- **Encrypted cross-device sync (v2, optional):** When you enable encrypted sync with a sync key, your playlists, settings, watch history, and device presence (device name + platform) are encrypted on-device with AES-256-GCM before upload. The relay (Supabase) stores only opaque encrypted records keyed by a derived storage address; it cannot read your data. Device names and platforms are part of the encrypted payload. No plaintext data leaves your device.
+
+The extension does not contact GitHub or any other service to fetch repository metadata (such as star counts); the GitHub link in the UI opens the repository page directly.
 
 Each metadata engine (Innertube, embed scraping, oEmbed, Piped/Invidious) can be individually toggled off in Settings.
 

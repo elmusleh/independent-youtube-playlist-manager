@@ -1,0 +1,68 @@
+{
+  "schemaVersion": "1.0.0",
+  "policyVersion": "1.0.0",
+  "target": "next",
+  "remote": "origin",
+  "maxActive": 2,
+  "mergeMode": "manual",
+  "allowedAdapters": [
+    {
+      "name": "hermes-dispatch",
+      "type": "hermes",
+      "capabilities": ["dispatch", "status", "cancel"],
+      "executable": "hermes",
+      "args": ["kanban", "dispatch"]
+    },
+    {
+      "name": "hermes-verify",
+      "type": "hermes",
+      "capabilities": ["verify", "review"],
+      "executable": "hermes",
+      "args": ["kanban", "verify"]
+    },
+    {
+      "name": "manual-handoff",
+      "type": "manual",
+      "capabilities": ["dispatch", "status", "cancel", "verify", "review"],
+      "executable": "echo",
+      "args": ["Manual handoff required - see assignment details"]
+    }
+  ],
+  "roles": {
+    "implementer": {
+      "name": "implementer",
+      "adapter": "hermes-dispatch",
+      "skills": ["openspec-apply-change", "software-development"]
+    },
+    "reviewer": {
+      "name": "reviewer",
+      "adapter": "hermes-verify",
+      "skills": ["code-review-and-quality", "software-development"]
+    },
+    "verifier": {
+      "name": "verifier",
+      "adapter": "hermes-verify",
+      "skills": ["testing", "software-development"]
+    }
+  },
+  "jobAuthority": {
+    "publication": {
+      "allowed": true,
+      "requiresOwnerOptIn": false
+    },
+    "merge": {
+      "mode": "manual",
+      "allowedTargets": ["next"],
+      "requiresOwnerOptIn": true,
+      "requiresNonAuthorReview": true,
+      "requiresResolvedThreads": true,
+      "requiresCurrentChecks": true,
+      "requiresEffectiveProtections": true
+    },
+    "cleanup": {
+      "preserveDirtyWork": true,
+      "preserveEvidence": true,
+      "requiresOwnerAuthority": true
+    }
+  }
+}

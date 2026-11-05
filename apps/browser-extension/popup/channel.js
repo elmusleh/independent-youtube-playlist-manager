@@ -2,8 +2,14 @@
 /// <reference path="../popup.d.ts" />
 /// <reference path="../../playlist-manager/src/types/services.d.ts" />
 
-import { getById, getErrorMessage, log, alert } from "./utils.js";
-import { getActiveTab, isYouTubeHost } from "./tabs.js";
+import { getById, getErrorMessage, log } from "./utils.js";
+import { isYouTubeHost } from "./tabs.js";
+import {
+  getPageImportTab,
+  importQuantity,
+  showPageImportError,
+  pageAccessError,
+} from "./page-import.js";
 
 /**
  * @typedef {import("webextension-polyfill").Tabs.Tab} Tab
@@ -88,10 +94,7 @@ export async function detectChannelFromDOM(tab) {
 
     const metadata = result[0]?.result;
     if (metadata && metadata.channelId && metadata.channelName) {
-      await log(
-        "INFO",
-        `Popup: Detected channel from DOM: ${metadata.channelName} (${metadata.channelId})`
-      );
+      await log("INFO", "Popup: Detected channel from DOM");
       return metadata;
     }
   } catch (e) {
@@ -164,25 +167,26 @@ export function isYoutubeChannelPage(url) {
  * Handle the channel import workflow
  * @param {any} videoService
  */
-export async function handleChannelImport(videoService) {
+export async function handleChannelImport(_videoService) {
   const confirmBtn = getById("confirm-import");
   const progressSection = getById("progress-section");
   const channelInfo = getById("channel-info");
 
   try {
+    showPageImportError();
     // Disable button during import
     if (confirmBtn) confirmBtn.disabled = true;
     if (progressSection) progressSection.style.display = "block";
 
     // Get selected options
-    const quantity = parseInt(getById("input-quantity").value, 10) || 25;
+    const quantity = importQuantity(getById("input-quantity").value);
     const order = getById("select-order").value;
 
     await log("INFO", `Popup: Starting page import - Quantity: ${quantity}, Order: ${order}`);
 
     // Get active tab
     updateProgress(10, "Detecting page...");
-    const activeTab = await getActiveTab();
+    const activeTab = await getPageImportTab();
     if (!activeTab) throw new Error("No active tab found");
     if (!activeTab.id) throw new Error("Active tab has no ID");
 
@@ -231,7 +235,6 @@ export async function handleChannelImport(videoService) {
           target: { tabId: activeTab.id },
           files: ["/content-scripts/injectors/scrape-youtube-links.js"],
         });
-        await log("INFO", `Popup: Script execution result: ${JSON.stringify(result)}`);
       } catch (e) {
         await log("ERROR", `Popup: Script execution failed: ${getErrorMessage(e)}`);
         throw new Error(`Failed to execute scraping script: ${getErrorMessage(e)}`, { cause: e });
@@ -243,15 +246,15 @@ export async function handleChannelImport(videoService) {
         url: activeTab.url,
         title: activeTab.title,
       };
-      await log("INFO", `Popup: Scrape result: ${JSON.stringify(scrapeResult)}`);
+
       await log("INFO", `Popup: Found ${scrapeResult.count} YouTube links on page`);
 
       videoIds = scrapeResult.links.map((link) => link.id);
-      pageTitle = scrapeResult.title || "Page Links";
+      pageTitle = activeTab.title || "Page Links";
 
       // Show page info
       if (channelInfo) {
-        channelInfo.textContent = `Found ${scrapeResult.count} YouTube link(s) on: ${scrapeResult.title}`;
+        channelInfo.textContent = `Found ${scrapeResult.count} YouTube link(s)`;
       }
     }
 
@@ -276,32 +279,29 @@ export async function handleChannelImport(videoService) {
     updateProgress(50, `Processing ${filteredIds.length} videos...`);
 
     // Create playlist
+    await getPageImportTab();
     updateProgress(60, "Creating playlist...");
     const playlistName = `${pageTitle}`;
-    const signedIn = await window.isSignedIn();
-
-    const playlist = await videoService.generatePlaylist(filteredIds);
-    playlist.title = playlistName;
-    playlist.timestamp = Date.now();
-
-    const id = await window.savePlaylist(playlist, { syncToYoutube: signedIn });
-    await log("INFO", `Popup: Playlist created with ID: ${id}`);
-    updateProgress(80, "Playlist created...");
-
-    updateProgress(100, "Import complete!");
-    await log("INFO", `Popup: Successfully imported ${filteredIds.length} videos`);
-
-    // Open the editor
-    const savedParam = id.startsWith("local-") ? "local=true" : "saved=true";
-    await browser.tabs.create({
-      url: browser.runtime.getURL(`/editor/index.html?id=${id}&${savedParam}#/editor`),
+    const response = await browser.runtime.sendMessage({
+      cmd: "capture",
+      action: "start",
+      args: {
+        ids: filteredIds,
+        mode: "new",
+        review: true,
+        title: playlistName,
+        sourceTabId: activeTab.id,
+        sourceTabUrl: activeTab.url,
+      },
     });
+    if (!response?.ok) throw new Error(response?.error || "Could not open import review.");
+    updateProgress(100, "Ready to review and save.");
 
     window.close();
   } catch (e) {
     const msg = getErrorMessage(e);
     await log("ERROR", "Popup: Page import failed", msg);
-    alert("Import failed: " + msg);
+    showPageImportError("Import failed: " + pageAccessError(e));
 
     // Re-enable button on error
     if (confirmBtn) confirmBtn.disabled = false;

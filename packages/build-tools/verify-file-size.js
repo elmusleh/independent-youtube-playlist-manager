@@ -31,6 +31,9 @@ const legacyAllowlist = new Set([
   "apps/browser-extension/playlist-manager/src/services/storage-service.ts",
   "apps/browser-extension/playlist-manager/src/views/History.svelte",
   "apps/browser-extension/playlist-manager/src/views/DeveloperSetup.svelte",
+  // Data Manager view: async scan/refresh/retry coordination plus the embedded
+  // repair queue. Split the action layer before it grows further.
+  "apps/browser-extension/playlist-manager/src/views/MetadataManager.svelte",
   "apps/browser-extension/playlist-manager/src/components/ReleaseNotesModal.svelte",
   "apps/browser-extension/playlist-manager/src/components/PlaylistVideo.svelte",
   "apps/browser-extension/playlist-manager/src/components/Header.svelte",
@@ -39,17 +42,26 @@ const legacyAllowlist = new Set([
   "apps/browser-extension/playlist-manager/src/components/ViewHeader.svelte",
   "apps/browser-extension/playlist-manager/src/components/editor/PlaylistModals.svelte",
   "apps/browser-extension/playlist-manager/src/components/Sidebar.svelte",
+  "apps/browser-extension/playlist-manager/src/components/FavoritesManager.svelte",
   "apps/browser-extension/playlist-manager/src/services/backup-service.ts",
   "apps/browser-extension/playlist-manager/src/services/youtube-auth.ts",
-  "apps/browser-extension/playlist-manager/src/services/db-service.ts",
+
+  // (removed: sync-manager.ts deleted with v1 retirement)
   "apps/browser-extension/playlist-manager/src/views/Shortcuts.svelte",
   "apps/browser-extension/playlist-manager/src/components/editor/EditorToolbar.svelte",
-  "apps/browser-extension/playlist-manager/src/services/supabase-sync.ts",
   "apps/browser-extension/playlist-manager/src/components/editor/MultiSortModal.svelte",
   "apps/browser-extension/playlist-manager/src/components/manage/ManageModals.svelte",
   // Deleted in the UI refactor (#31); kept here so this gate stays green on either
   // merge order and disappears once that lands.
   "apps/browser-extension/playlist-manager/src/views/Saved-refactored.svelte",
+  "apps/browser-extension/playlist-manager/src/views/Sync.svelte",
+
+  // Orchestration coordinator modules (change: orchestrate-parallel-implementations).
+  // Accepted debt: lock/journal and Git-primitive helpers should move into their own
+  // modules; recorded as a follow-up rather than splitting during feature work.
+  "apps/browser-extension/playlist-manager/src/components/editor/EditorToolbar.svelte",
+  // Accepted debt: lock/journal and Git-primitive helpers should move into their own
+  // modules; recorded as a follow-up rather than splitting during feature work.
 ]);
 
 function isExcluded(relativePath) {

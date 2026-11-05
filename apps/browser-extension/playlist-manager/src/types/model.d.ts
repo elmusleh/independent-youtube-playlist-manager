@@ -108,6 +108,11 @@ export interface ImportResult {
 }
 
 export interface Playlist {
+  /** Storage revision for atomic conflict detection. */
+  revision?: number;
+  /** Local cloud-sync bookkeeping; timestamps are ISO strings. */
+  syncStatus?: "pending" | "synced" | "deleted";
+  updatedAt?: string;
   id: string;
   title: string;
   loadedVideos?: Video[];
@@ -134,12 +139,17 @@ export interface Settings {
   openSavedPlaylistAfterAdd: boolean;
   defaultEditorPage: "/new" | "/saved";
   saveCreatedPlaylists: boolean;
+  disableContextMenu: boolean;
+  contextMenuDestination: string | null;
   disableContextBuilder: boolean;
   disableContextSaved: boolean;
   themeChoice: ThemeChoice;
   defaultPageSize: number;
+  playlistsPerPage: number;
   cacheDuration: number; // in minutes, -1 for no expiration
   watchLaterPlaylistId: string | null; // custom playlist ID to use instead of YouTube's Watch Later
+  favoritePlaylistIds: string[]; // ordered list of pinned favorites shown in the sidebar
+  maxVisibleFavorites: number; // max pinned items shown in sidebar (0 = unlimited)
   maxLogLines: number;
   defaultPrivacy: "private" | "unlisted" | "public";
   autoRemoveDuplicates: boolean;
@@ -147,6 +157,7 @@ export interface Settings {
   addToLatestPosition: "top" | "bottom";
   defaultQuickAddTarget: "favorite" | "latest" | "create";
   defaultTabScope:
+    | "selected"
     | "current"
     | "left"
     | "right"

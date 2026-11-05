@@ -1,11 +1,18 @@
 <script lang="ts">
   import Fa from "svelte-fa";
-  import { faHdd, faInfoCircle, faFolderOpen } from "@fortawesome/free-solid-svg-icons";
+  import {
+    faHdd,
+    faInfoCircle,
+    faFolderOpen,
+    faChevronDown,
+    faChevronUp,
+  } from "@fortawesome/free-solid-svg-icons";
   import SimpleButton from "./SimpleButton.svelte";
   import { storageManager } from "../services/storage-manager.js";
 
   let storageMode = $state("browser");
   let storageNeedsAuth = $state(false);
+  let expanded = $state(false);
   let isFileSystemSupported = "showDirectoryPicker" in window;
 
   function updateStorageUI() {
@@ -101,4 +108,58 @@
       {/if}
     </div>
   </div>
+
+  <button type="button" class="learn-more" onclick={() => (expanded = !expanded)}>
+    <Fa icon={expanded ? faChevronUp : faChevronDown} />
+    {expanded ? "Hide" : "Learn more"}
+  </button>
+  {#if expanded}
+    <div class="backend-detail">
+      <p>
+        <strong>Local Storage</strong> changes where the extension keeps its live database (<code
+          >extension_data.json</code
+        >) instead of browser storage. It is <strong>not</strong> cross-device sync by itself.
+      </p>
+      <p>
+        <strong>File sync (Syncthing)</strong> is a separate sync backend that writes an encrypted snapshot
+        file into a folder for transport between devices. You can use Syncthing/Dropbox to replicate that
+        folder.
+      </p>
+    </div>
+  {/if}
 </section>
+
+<style>
+  .learn-more {
+    background: none;
+    border: none;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--primary-color);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    align-self: flex-start;
+    margin-top: 8px;
+  }
+  .learn-more:hover {
+    text-decoration: underline;
+  }
+  .backend-detail {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+    background: var(--bg-secondary, var(--color-bg-secondary));
+    border-radius: 8px;
+    font-size: 13px;
+    color: var(--text-color);
+    line-height: 1.5;
+    margin-top: 8px;
+  }
+  .backend-detail p {
+    margin: 0;
+  }
+</style>

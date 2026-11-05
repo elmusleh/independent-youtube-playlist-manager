@@ -223,6 +223,7 @@
     flex: 1;
     min-width: 140px;
     height: 34px;
+    min-height: var(--input-height-mobile);
     padding: 0 10px;
     border-radius: 8px;
     border: 1px solid var(--border-color);
@@ -242,6 +243,7 @@
     align-items: center;
     gap: 6px;
     height: 34px;
+    min-height: var(--touch-target-min);
     padding: 0 10px;
     border-radius: 8px;
     border: 1px solid var(--border-color);
@@ -271,8 +273,9 @@
   }
 
   .icon-btn {
-    width: 30px;
-    height: 30px;
+    width: var(--icon-btn-size-touch);
+    min-width: var(--icon-btn-size-touch);
+    height: var(--icon-btn-size-touch);
     border-radius: 6px;
     border: none;
     background: none;

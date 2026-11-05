@@ -10,6 +10,8 @@
  * @property {((url: string) => string | null) | null} parseYoutubeId
  * @property {"favorite" | "latest" | "custom" | "create"} activeTargetMode
  * @property {string | null} selectedPlaylistId
+ * @property {boolean} targetUserSelected
+ * @property {boolean} scopeUserSelected
  */
 
 export const state = {
@@ -17,4 +19,8 @@ export const state = {
   parseYoutubeId: null,
   activeTargetMode: "latest",
   selectedPlaylistId: null,
+  // True once the user explicitly picks a target/scope before hydration finishes,
+  // so initTargetData()/loadDefaultTabScope() don't overwrite their choice.
+  targetUserSelected: false,
+  scopeUserSelected: false,
 };

@@ -4,10 +4,12 @@ import "./globals.css";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import Head from "next/head";
+import { SITE_URL } from "@/lib/site";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: "Independent YouTube Playlist Manager — Offline-First Playlist Editor",
   description:
     "Curate, bulk-reorder, and sync 500+ video playlists with zero quota limits. Local-first speed with multi-tier scraping, IndexedDB persistence, and cross-device cloud sync.",
@@ -31,9 +33,9 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "/icon.png",
-        width: 800,
-        height: 600,
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
         alt: "Independent YouTube Playlist Manager logo",
       },
     ],
@@ -43,7 +45,7 @@ export const metadata: Metadata = {
     title: "Independent YouTube Playlist Manager — Official Web Portal & Dashboard",
     description:
       "The offline-first, multi-device YouTube playlist powerhouse with zero API quota limits.",
-    images: [{ url: "/icon.png" }],
+    images: ["/og-image.png"],
   },
 };
 

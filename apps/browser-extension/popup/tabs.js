@@ -1,3 +1,4 @@
+import { parseYouTubeVideoId } from "../shared/tab-selection.js";
 /// <reference path="../popup.d.ts" />
 /// <reference path="../../playlist-manager/src/types/services.d.ts" />
 
@@ -46,19 +47,7 @@ export function isYoutubeTab(tab) {
 
 /** @param {Tab} tab @returns {boolean} */
 export function isYoutubeVideoTab(tab) {
-  try {
-    const url = new URL(tab.url || "");
-    if (!isYouTubeHost(url.hostname)) return false;
-    const id =
-      url.hostname === "youtu.be"
-        ? url.pathname.slice(1).split("/")[0]
-        : url.pathname === "/watch"
-          ? url.searchParams.get("v")
-          : url.pathname.match(/^\/(?:shorts|embed)\/([\w-]{11})(?:\/|$)/)?.[1];
-    return typeof id === "string" && /^[\w-]{11}$/.test(id);
-  } catch {
-    return false;
-  }
+  return !tab.incognito && !!parseYouTubeVideoId(tab.url);
 }
 
 // ---------------------------------------------------------------------------
@@ -79,6 +68,6 @@ export async function getVideoTabsInWindow(windowId, filterFn) {
  * @returns {Promise<Tab[]>}
  */
 export async function getAllVideoTabsAcrossWindows() {
-  const allTabs = await browser.tabs.query({});
+  const allTabs = await browser.tabs.query({ windowType: "normal" });
   return allTabs.filter(isYoutubeVideoTab);
 }

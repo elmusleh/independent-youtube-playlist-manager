@@ -39,12 +39,131 @@ jobs:
       - name: Run Full Quality Check (lint + format + test + svelte-check)
         run: npm run check
 
+      - name: Pull Docker images
+        run: |
+          echo "Pulling Postgres image..."
+          docker pull postgres:16-alpine@sha256:0cefaabd882e42bcb2a2f3dc56d3ce4770560ba62fd7f197f1a2e008fd5731ab
+          echo "Pulling PostgREST image..."
+          docker pull postgrest/postgrest:latest@sha256:1347d7552b88f17832912c06afbf7c43209af6eeeb60834b04aae12c9bd9d5cc
+        timeout-minutes: 10
+
+      - name: Start isolated sync relay fixture
+        run: |
+          echo "Starting Docker Compose..."
+          docker compose -f docker-compose.test.yml up -d
+          echo "Docker Compose up started"
+        timeout-minutes: 3
+
+      - name: Wait for Postgres to be healthy
+        run: |
+          echo "Waiting for Postgres healthcheck..."
+          for attempt in $(seq 1 60); do
+            if docker compose -f docker-compose.test.yml exec -T pg pg_isready -U postgres >/dev/null 2>&1; then
+              echo "Postgres is healthy"
+              exit 0
+            fi
+            echo "Attempt $attempt: Postgres not ready yet, waiting..."
+            sleep 2
+          done
+          echo "Postgres healthcheck timed out"
+          docker compose -f docker-compose.test.yml logs pg
+          exit 1
+        timeout-minutes: 5
+
+      - name: Wait for PostgREST
+        run: |
+          echo "Waiting for PostgREST..."
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:3312/ >/dev/null; then
+              echo "PostgREST is ready"
+              exit 0
+            fi
+            echo "Attempt $attempt: PostgREST not ready yet, waiting..."
+            sleep 2
+          done
+          echo "PostgREST timed out"
+          docker compose -f docker-compose.test.yml logs postgrest
+          exit 1
+        timeout-minutes: 3
+
+      - name: Simulate legacy relay table grants in the isolated fixture
+        run: docker compose -f docker-compose.test.yml exec -T pg psql -U postgres -v ON_ERROR_STOP=1 -c 'GRANT ALL ON TABLE public.sync_spaces, public.sync_records, public.sync_rate_limit TO PUBLIC, anon, authenticated'
+
+      - name: Apply relay hardening migration to the isolated fixture
+        run: docker compose -f docker-compose.test.yml exec -T pg psql -U postgres -v ON_ERROR_STOP=1 < docs/migrations/0002_rate_limit_and_push_validation.sql
+
+      - name: Apply trusted client IP rate limiting to the isolated fixture
+        run: docker compose -f docker-compose.test.yml exec -T pg psql -U postgres -v ON_ERROR_STOP=1 < docs/migrations/0003_trusted_ip_rate_limit.sql
+
+      - name: Run real sync relay E2E tests
+        run: npm run test:sync:relay
+
+      - name: Stop sync relay fixture
+        if: always()
+        run: docker compose -f docker-compose.test.yml down -v
+
+      - name: Orchestration safety harnesses
+        run: |
+          set -euo pipefail
+          git config --global user.email "ci@example.invalid"
+          git config --global user.name "CI"
+          node packages/build-tools/orchestration/evidence-preflight.js
+          node packages/build-tools/orchestration/demo-parallel.js
+
       - name: Audit Dependencies
         run: npm audit --audit-level=high
 
+  build-inventory:
+    name: Build & Bundle Inventory
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "npm"
+          cache-dependency-path: |
+            package-lock.json
+            apps/browser-extension/playlist-manager/package-lock.json
+
+      - name: Install Root Dependencies
+        run: npm ci
+
+      - name: Install Playlist Editor Dependencies
+        run: cd apps/browser-extension/playlist-manager && npm ci
+
+      # Build failures belong on their own check: a Rollup/CJS break used to surface only
+      # inside the heaviest E2E job, minutes later.
+      - name: Build All Targets
+        run: npm run build
+
+      - name: Generate Dependency Trees
+        run: npm run audit:all
+
+      - name: Verify Bundle Inventory
+        run: npm run audit:bundles
+
+      - name: Upload Build Evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-inventory
+          path: |
+            dist/verification/bundle-audit.json
+            dist/verification/dependency-audit.json
+            dist/chrome/editor/bundle-dependencies.json
+          retention-days: 7
+          if-no-files-found: warn
+
   test-web:
     name: Web & Extension E2E Integration (Typecheck, Build, E2E)
-    runs-on: ubuntu-latest
+    # Pinned (not ubuntu-latest): the visual-regression baselines are captured with
+    # DejaVu Sans, and the runner's default font set (fonts-dejavu-core) is part of the
+    # determinism contract. A future ubuntu-latest bump could swap fonts and flip baselines.
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       actions: write
@@ -70,14 +189,51 @@ jobs:
       - name: Build Extension (Chrome, Firefox & Edge Bundles)
         run: npm run build
 
+      - name: Pack Edge Store ZIP
+        run: npm run pack:edge
+
       - name: Install Web Dependencies
         run: npm --prefix apps/web-portal ci
 
-      - name: Install Playwright Browsers
+      # Browsers live in one shared cache (~/.cache/ms-playwright) keyed by Playwright
+      # version, so a tree whose version is not installed fails with a missing-executable
+      # error that looks like a flake. Install for BOTH trees: the portal runs the E2E
+      # suite, the root runs the extension regression suite. When the versions agree the
+      # second call is a cache hit; when they drift, both builds exist and neither suite
+      # breaks. `verify-tooling-versions.js` is what stops the drift in the first place.
+      #
+      # Playwright is pinned (root + portal both resolve to 1.62.1), so the Chromium
+      # revision is fixed and the visual-regression baselines stay byte-for-byte stable
+      # across runs. Cache the browsers (keyed on the root lockfile) so a sub-point
+      # browser re-download can't silently shift pixel rendering between CI runs.
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ms-playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ms-playwright-${{ runner.os }}-
+
+      - name: Install Playwright Browsers (Portal)
         run: npx --prefix apps/web-portal playwright install --with-deps chromium
+
+      - name: Install Playwright Browsers (Root — extension suite)
+        run: npx playwright install --with-deps chromium
 
       - name: Run Extension Regression Suite
         run: npm run test:extension
+
+      - name: Run Extension Visual Regression (primary views)
+        run: npm run test:visual
+
+      - name: Upload Visual Regression Diffs (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-regression-diffs
+          path: test-results/
+          retention-days: 7
+          if-no-files-found: ignore
 
       - name: Build Web Production Bundle
         run: npm --prefix apps/web-portal run build
@@ -85,7 +241,7 @@ jobs:
       - name: Run Playwright E2E Tests (Headed via Xvfb)
         env:
           HEADED: "true"
-        run: xvfb-run npm --prefix apps/web-portal run test:e2e
+        run: xvfb-run -a npm --prefix apps/web-portal run test:e2e:required
 
       - name: Upload Playwright Test Report (on failure)
         if: failure()

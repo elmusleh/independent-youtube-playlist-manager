@@ -72,6 +72,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    margin: 0;
     padding: 16px 20px;
     border-bottom: 1px solid var(--border-color);
     flex-shrink: 0;

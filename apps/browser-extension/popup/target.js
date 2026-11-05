@@ -6,12 +6,18 @@ import { state } from "./state.js";
 
 /**
  * Update the target-selection UI (favorite/latest/custom/create buttons)
- * to reflect the current `state.activeTargetMode`.
+ * to reflect the current `state.activeTargetMode`. Null-safe: the popup DOM
+ * may not be mounted (e.g. jsdom tests) or may have been torn down.
  */
 export function updateTargetUI() {
-  getById("btn-target-fav").classList.toggle("active", state.activeTargetMode === "favorite");
-  getById("btn-target-latest").classList.toggle("active", state.activeTargetMode === "latest");
+  const fav = getById("btn-target-fav");
+  const latest = getById("btn-target-latest");
   const select = getById("select-target-playlist");
+  if (!fav || !latest || !select) return;
+
+  fav.classList.toggle("active", state.activeTargetMode === "favorite");
+  latest.classList.toggle("active", state.activeTargetMode === "latest");
+
   if (state.activeTargetMode === "custom") {
     select.classList.add("active");
   } else if (state.activeTargetMode === "create") {
@@ -38,6 +44,7 @@ export async function initTargetData() {
 
     const playlists = await getPlaylists();
     const select = getById("select-target-playlist");
+    if (!select) return;
 
     // Sort by timestamp (newest first) - "My playlists" appears at top
     const sorted = [...playlists].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
@@ -47,15 +54,17 @@ export async function initTargetData() {
     const settingsObj = getSettings ? await getSettings() : null;
     const defaultMode = settingsObj?.defaultQuickAddTarget || "latest";
 
-    if (defaultMode === "create") {
-      state.activeTargetMode = "create";
-      state.selectedPlaylistId = null;
-    } else if (defaultMode === "favorite") {
-      state.activeTargetMode = "favorite";
-      state.selectedPlaylistId = null;
-    } else {
-      state.activeTargetMode = "latest";
-      state.selectedPlaylistId = null;
+    if (!state.targetUserSelected) {
+      if (defaultMode === "create") {
+        state.activeTargetMode = "create";
+        state.selectedPlaylistId = null;
+      } else if (defaultMode === "favorite") {
+        state.activeTargetMode = "favorite";
+        state.selectedPlaylistId = null;
+      } else {
+        state.activeTargetMode = "latest";
+        state.selectedPlaylistId = null;
+      }
     }
 
     select.innerHTML = "";
@@ -89,15 +98,18 @@ export async function initTargetData() {
 export async function loadDefaultTabScope() {
   try {
     const getSettings = await waitForGlobal("getSettings", 10);
+    const scopeSelect = getById("select-tab-scope");
+    if (!scopeSelect) return;
+    if (state.scopeUserSelected) return;
 
     if (getSettings) {
       const settings = await getSettings();
-      const defaultScope = settings.defaultTabScope || "all-this-window-include";
-      getById("select-tab-scope").value = defaultScope;
+      scopeSelect.value = settings.defaultTabScope || "all-this-window-include";
     } else {
-      getById("select-tab-scope").value = "all-this-window-include";
+      scopeSelect.value = "all-this-window-include";
     }
   } catch {
-    getById("select-tab-scope").value = "all-this-window-include";
+    const scopeSelect = getById("select-tab-scope");
+    if (scopeSelect) scopeSelect.value = "all-this-window-include";
   }
 }

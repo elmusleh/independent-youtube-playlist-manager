@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "inventorySha256": "e250d3da1f4ccf5e8649ec116db0656315f322555f716f9f03b975b0ac418cff",
+  "auditGeneratedAt": "2026-11-03T21:33:56.133Z",
+  "scope": "Rendered extension JavaScript; CSS, static scripts and portal require separate review",
+  "findings": [
+    {
+      "tree": ".",
+      "name": "@sveltejs/vite-plugin-svelte",
+      "severity": "low",
+      "classification": "not-observed-or-outside-inventory-scope",
+      "versions": [],
+      "chunks": []
+    },
+    {
+      "tree": ".",
+      "name": "deepmerge",
+      "severity": "low",
+      "classification": "not-observed-or-outside-inventory-scope",
+      "versions": [],
+      "chunks": []
+    },
+    {
+      "tree": "apps/browser-extension/playlist-manager",
+      "name": "@rollup/plugin-node-resolve",
+      "severity": "low",
+      "classification": "not-observed-or-outside-inventory-scope",
+      "versions": [],
+      "chunks": []
+    },
+    {
+      "tree": "apps/browser-extension/playlist-manager",
+      "name": "deepmerge",
+      "severity": "low",
+      "classification": "not-observed-or-outside-inventory-scope",
+      "versions": [],
+      "chunks": []
+    }
+  ]
+}

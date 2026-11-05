@@ -1,617 +1,1296 @@
-# Pagination handoff
+## 2026-11-05 — v1.3.0 Release Preparation, single-line mobile header alignment & feature branch consolidation
 
-## Branch model changed: `next` integrates, `main` releases (2026-10-26)
+### Root Causes & Hardening Implemented
 
-- `next` is the integration branch. Every feature, fix, chore and doc change branches off
-  `next` and PRs back into `next`, squash-merged.
-- `main` only receives release PRs from `next`, squash-merged, then tagged `vX.Y.Z`.
-  Followers see one commit per release.
-- CI and security workflows now trigger on PRs and pushes to `next` as well as `main`;
-  without that, required checks on `next` would never report and every PR would hang.
-- **Post-release sync is mandatory.** Squash merges leave `next` and `main` with identical
-  content but no shared commits, so the merge-base goes stale and the next release PR
-  re-displays shipped work. After tagging: `git switch next && git merge origin/main &&
-git push`. That empty merge commit is the only direct push allowed on `next`, which is
-  why `next` runs without admin enforcement and `main` runs with it.
+1. **Single-line Mobile Header Layout in `ViewHeader.svelte`:**
+   - Updated `.view-header` on `<= 768px` to maintain a single row wherever possible (`flex-direction: row; flex-wrap: wrap; justify-content: space-between; align-items: center`).
+   - Keeps title and count badge on the left, and groups iconized buttons on the right. If viewport space runs out on extremely narrow widths, action buttons wrap gracefully to a second row without clipping or horizontal overflow.
+2. **Release 1.3.0 Preparation & Synchronized Release Notes:**
+   - Formally cut version `[1.3.0] - 2026-11-05` in `CHANGELOG.md`.
+   - Regenerated extension in-app release notes via `packages/build-tools/gen-release-notes.mjs` (`release-notes.ts`).
+   - Synced documentation files (`README.md`, `docs/INDEX.md`, `docs/SUPPORT.md`, `docs/SYNC_COMPATIBILITY.md`, `docs/PLATFORM_SUPPORT.md`).
+3. **Consolidation of Feature Branches:**
+   - Merged `feat/sync-hardening` into `next` (incorporating `0003_trusted_ip_rate_limit.sql` client-IP validation).
+   - Confirmed all branches (`feat/nearby-sync`, `feat/sync-hardening`, `fix/sync-hardening-audit`, `fix/sync-ip-ratelimit`) are fully integrated into `next`.
 
-Full rules: `AGENTS.md` → _Git Workflow_. Release steps: `docs/RELEASING.md`.
+### Files Changed
 
-## Vercel was red because of an invalid config key (2026-10-26)
-
-Every deployment failed at config parse, before any build step:
-
-```
-The `vercel.json` schema validation failed with the following message:
-should NOT have additional property `rootDirectory`
-```
-
-`rootDirectory` is a **project setting**, not a `vercel.json` property, and the schema is
-`additionalProperties: false`. The root `vercel.json` has been deleted;
-`packages/build-tools/verify-vercel-config.js` (in `npm run check`) now rejects it.
-
-**Owner action required:** set Project `iypm` → Settings → Build & Development Settings →
-Root Directory = `apps/web-portal`. Until that is set, deployments from the repo root will
-fail with a different error (no build output) — the repo fix removes the invalid config,
-the dashboard fix is what restores deploys. Details: `docs/DEPLOYMENT.md`.
-
-## Latest work — 1.2.0 released (2026-10-26)
-
-Tag `v1.2.0` on `main`, GitHub Release published by `.github/workflows/release.yml`
-with the four store ZIPs attached.
-
-What the release changed beyond the code:
-
-- **`docs/RELEASING.md` is the release runbook** — version decision, `sync-version`,
-  changelog, `npm run release-notes`, docs, PR, tag, workflow, verification, store
-  uploads, checklist. `AGENTS.md` points at it.
-- **In-app release notes are generated.** `packages/build-tools/gen-release-notes.mjs`
-  turns `CHANGELOG.md` into `src/generated/release-notes.ts`, which
-  `ReleaseNotesModal.svelte` renders. The modal used to carry a hand-copied history
-  (30 sections, a 2020 `[1.2.0]` entry that contradicted the real one); that history is
-  gone and only versions in the changelog appear. `npm run check` fails if the generated
-  file is stale, so the two cannot drift again.
-- **The release page body comes from the changelog** (`--release-body vX.Y.Z`) instead of
-  GitHub's generated notes, so release notes and changelog always agree.
-- Also fixed in the same PR: `README.md`'s Current Status block and its outdated
-  "NEVER git push" rule, which contradicted the PR workflow.
-
-Next time: follow `docs/RELEASING.md`. The only manual step that can bite is store
-uploads — the workflow cannot do those.
-
-## Latest work — protected main, branch/PR workflow, CI repaired (2026-10-26)
-
-### Repository workflow changed
-
-`main` is now a protected branch: pull request required, admin enforcement on, no
-force-push, no deletion, conversation resolution required. AGENTS.md documents the
-workflow (branch naming, required PR evidence, no self-merge, no admin override).
-Agents push branches and open PRs; the owner merges.
-
-Undo in an emergency:
-`gh api -X DELETE repos/elmusleh/independent-youtube-playlist-manager/branches/main/protection`
-
-### CI had been red for two real reasons, both fixed in #28
-
-1. `apps/browser-extension/playlist-manager/package-lock.json` was missing
-   `picomatch@4.0.7`. npm 11 accepted it, npm 10 (what CI runs) refused with
-   `npm ci can only install packages when ... in sync`, so every workflow died at the
-   install step in ~14s. Regenerated with `npm@10.8.2`.
-2. `undici@8.12.3` requires Node >= 22.19 and threw
-   `Cannot read properties of undefined (reading 'bind')` on the Node 20 runner,
-   killing the vitest forks pool. CI now runs Node 22.
-
-`vitest.setup.mjs` (Node's experimental `localStorage` shadowing jsdom's) also lives in
-#28, so every branch is green locally and in CI.
-
-### 1.2.0 landed — every slice merged
-
-All six review slices plus three follow-ups are on `main`. Merging used
-`--merge` (history preserved). Order was: #28 -> #34 -> #33 -> #31 -> #29 -> #30 -> #32.
-
-| PR  | What it carried                                                                                 |
-| --- | ----------------------------------------------------------------------------------------------- |
-| #28 | 10 unpushed release commits, npm-10 lockfile, Node 22, vitest `localStorage` fix, Builder fixes |
-| #34 | E2E suite had never run: extension resolved to `apps/dist/chrome`, now `<root>/dist/chrome`     |
-| #33 | Dropped the duplicate CodeQL job (repo uses default setup)                                      |
-| #31 | Modal system, theme picker, OAuth copy, proxy `DataCloneError` on save                          |
-| #29 | Metadata correctness + Data Manager, bulk bar restored to `StickyHeader`                        |
-| #30 | Size/budget/CSS gates, release workflow, `iypm.sh` (clean keeps the lockfile)                   |
-| #32 | Version 1.2.0, CHANGELOG, USER_GUIDE Data Manager section                                       |
-| #35 | Thumbnail archive cleared on every overwrite restore; build uses `npm ci`                       |
-
-Review findings that were fixed rather than dismissed: Builder saving against a
-nonexistent YouTube playlist, quick-added videos being dropped, the Manage bulk bar
-never rendering (P1), closed dialogs painting as empty boxes, `iypm.sh reset` failing
-because `clean` deleted the lockfile.
-
-### Branch protection now enforces CI
-
-Required status checks on `main` (admin-enforced):
-
-- Quality & Security (Lint, Format, Audit, Unit Tests)
-- Extension CI (Svelte Diagnostics & Manifest Validation)
-- Web & Extension E2E Integration (Typecheck, Build, E2E)
-
-`strict` is false, so a PR does not need to be rebased first. Conversation resolution
-is required, which means an unresolved Codex/CodeRabbit thread blocks the merge —
-resolve it with a reply.
-
-### Still open
-
-- **#27 (dev-deps bump)** cannot merge: it raises Playwright, so CI installs
-  `chromium-1234` (portal) while `test:extension` wants `chromium-1248` (root).
-  Align one Playwright version across root and `apps/web-portal` first.
-- **#9** is conflicted and stale; a rebase was requested from Dependabot.
-- **Vercel** still fails on every PR. The local CLI token is expired
-  (`vercel whoami` -> "token is not valid"); needs `vercel login` and then
-  `vercel inspect <deployment> --logs`. Project settings, not code.
-
-### Watch out
-
-- `dist/chrome/editor/main.js` is ~98 bytes under its 380 KiB budget. The next
-  feature added to the editor will trip `verify-budgets`.
-- Never run `npm install` in `apps/browser-extension/playlist-manager` with npm 11: it
-  prunes the nested `picomatch@4.0.7` entry npm 10 needs and breaks CI. The build now
-  uses `npm ci`, which is safe.
-
-### Next steps
-
-1. Merge #28, then #31, then rebase #29 (its checks re-run against the new base).
-2. After the first green run on `main`, add the two CI job names as required status
-   checks — deliberately left off until CI was proven green.
-3. Then the Edge submission (rebuilt ZIP replaces the stale Partner Center package).
-
-## Latest work — sorted local playlist save failure (2026-10-26)
-
-User log shows 1,404 videos and `DataCloneError: Proxy object could not be cloned`
-after sorting by channel; user also requested coverage for 14,000 videos. Nested
-Svelte sortRules proxies survived shallow playlist spreads into Firefox storage.
-
-- `services/storage-service.ts`: detach incoming local playlist JSON data before
-  browser storage writes, preserving order and nested sort rules.
-- `services/storage-service.test.ts`: regression at both sizes using structured
-  cloning, plus storage failure preservation and successful retry. Original nested
-  proxy tests failed before the fix.
-- `components/SaveStatus.svelte`, `components/ViewHeader.svelte`: visible error
-  explanation below the header and Retry action instead of tooltip-only Error;
-  standalone SaveStatus retains an inline error option.
-- `components/PlaylistEditor.svelte`: consume save rejections after StatusManager
-  records them, retain dirty edits, avoid refresh after a failed save, and suppress
-  misleading Sorted/Reversed success messages after save failure.
-- `services/status-manager.svelte.ts`: silent saves also mark the save in progress,
-  so the editor's existing saving guard applies to autosaves.
-- `packages/build-tools/verify-large-playlist-save.py`: disposable Firefox test of
-  actual UI channel sort, saving 14,000 videos, reload persistence, injected save
-  failure, visible desktop/mobile feedback, retained stored data, and Retry.
-
-Verification: `npm run check` passed (184 tests, zero Svelte errors; two pre-existing
-unused CSS warnings); `npm run build` passed Chrome/Firefox/Edge and bundle gates.
-Firefox 158.0.1 passed the 14,000-video UI flow, reload, failure/retry and zero
-unhandled-rejection assertions; Chromium passed 96 route/viewport checks and six
-interaction groups. Browser evidence: `dist/verification/large-playlist-save-report.json` and retry
-screenshots. This task did not alter manifests, publish, or push. All pre-existing
-working changes (including user CHANGELOG) were preserved; this fix remains in the
-working tree alongside them, so do not commit all files indiscriminately.
-
-Next: review/integrate the intended release changes, produce a newly versioned
-tester package, and have the user verify their own playlist. Store candidates
-already under review do not contain this fix. Do not reload their unsaved editor
-as part of installing a test update without first preserving their edits.
-
-## Latest work — Data Manager hardening + checked type contracts (2026-10-26)
-
-Follow-up to a self-review of the Data Manager work. Every item below is covered by
-tests or by the type checker.
-
-### Correctness fixes
-
-- **Refresh no longer destroys cached data.** A forced refresh used to call
-  `videoService.clearCache()`, i.e. `dbDeleteMetadata()`, _before_ fetching — so an
-  entry that only lacked a duration could lose its title and channel when the refetch
-  failed. `services/refresh-registry.ts` now records a per-pass in-memory intent;
-  `shouldSkipFetch`/`fetchVideo` bypass the cache for those ids, results overwrite the
-  old rows on success, failures leave the previous entry untouched.
-- **One definition of "incomplete".** `collectMetadataGaps()` counts resolved entries
-  (`hasCompleteMetadata`: field-complete OR terminal) and exposes `needsAttention`, so
-  `complete + needsAttention === total`. The nav badge, the stat cards and the gaps
-  list now all read the same number; the badge used to include private/deleted videos
-  that the list deliberately hides.
-- **Zero-length durations are missing, not zero.** `durationStringToSeconds()` decodes
-  ISO-8601 / clock notation / seconds and returns 0 for `PT0S`, `0:00`, `00:00:00`.
-  Before, `"PT0S"` was a truthy string and satisfied the duration requirement — the
-  exact bug the module's own header describes.
-- **Accurate refresh reporting.** The view consumed `metaMap.size` and
-  `unavailableIds` instead of claiming `ids.length` were refreshed.
-- `refreshMetadataGaps()` returned `ids.length` when nothing resolved; now returns 0.
-- `reasonLabel` was a divergent re-implementation of `getMetadataGaps()`; the gaps list
-  now renders `reasons` from the util.
-
-### Checked type contracts
-
-- `types/services.d.ts` → `types/services.ts` and `types/window.d.ts` → `types/window.ts`,
-  both wrapped in `declare global` + `export {}`. `skipLibCheck: true` (from
-  `@tsconfig/svelte`) skips **all** `.d.ts` files, so the entire `window` API contract
-  was never type-checked. Proof: conflicting `interface Window` members error with
-  `--skipLibCheck` off and are silent with it on.
-- That blind spot had been hiding real defects: `saveUserProfile`, `getUserProfile` and
-  `ytGetMyChannel` were declared twice with different shapes; `services.d.ts` referenced
-  `Playlist` / `Settings` / `PlaylistExport` without importing them; `getPlaylist` was
-  declared `Promise<Playlist>` while returning `Promise<Playlist | null>`.
-- Making `getPlaylist` truthful surfaced two real null-handling gaps:
-  `PlaylistEditor.svelte` (copy/move target) and `Manage.svelte` (bulk delete). Both now
-  guard.
-
-### UI structure
-
-- `views/MetadataManager.svelte` (295 lines) is now orchestration only. The three
-  sections are `components/metadata/{MetadataStatGrid,MetadataEngineList,MetadataGapList}.svelte`
-  with **scoped** styles. `css/metadata-manager.css` is deleted — as a plain imported
-  stylesheet its `.card`, `.loading-state` and `.progress-text` were global and collided
-  with `css/settings.css`, `Card.svelte`, `PlaylistLoader.svelte` and `ProgressBar.svelte`.
-- The gaps list renders at most 100 rows with a "Show N more" control instead of
-  thousands of thumbnails.
-- Progress text is a `role="status" aria-live="polite"` region; the badge carries an
-  `aria-label` with the exact count.
-- Engine labels/order come from `services/metadata-engines.ts` (`METADATA_ENGINES`)
-  instead of being copied into the view.
-- The Sidebar badge is computed on idle (`requestIdleCallback`, 3s timeout) rather than
-  competing with first paint, and is guarded against concurrent loads.
-
-### Tests added (+30, total 181)
-
-- `utils/metadata-completeness.test.ts` — 23 tests: duration decoding (incl. `PT0S`
-  regressions), placeholders, terminal entries, `needsDurationRefresh`, and the
-  `complete + needsAttention === total` invariant across record/iterable/empty inputs.
-- `services/enrichment-service.test.ts` — 7 tests: force never deletes cached rows,
-  forced ids are scoped to the pass and cleared on throw, unavailable ids are reported.
+- `apps/browser-extension/playlist-manager/src/components/ViewHeader.svelte`
+- `apps/browser-extension/playlist-manager/src/generated/release-notes.ts`
+- `CHANGELOG.md`, `README.md`, `docs/INDEX.md`, `docs/SUPPORT.md`, `docs/SYNC_COMPATIBILITY.md`, `docs/PLATFORM_SUPPORT.md`
+- `.ai-sync/HANDOFF.md`, `.ai-sync/PROGRESS.md`
 
 ### Verification
 
-- `npm run check` → PASS: 19 test files / 181 tests, Prettier clean, file-size gate
-  clean (163 files, 22 allowlisted), svelte-check 0 errors (only the 2 pre-existing
-  unused-CSS warnings in `PlaylistModals.svelte`), CSS bundle gate passes.
-- `npm run build` → PASS for chrome, firefox, edge; all bundle budgets pass.
-- `tsc --noEmit -p tsconfig.json` is now meaningful for `src/types/**`.
+- `npm run check` (92 Vitest files / 800 tests passing, 0 ESLint errors, svelte-check 0 errors)
+- `npm run build` (Chrome, Firefox, and Edge bundles clean)
+- `npm run test:extension` (102 routes, 13 interaction groups, 0 overflow at 320px)
+- `npm run test:visual` (24/24 snapshots matching)
 
-### Next steps
+## 2026-11-05 — Camera permission denied recovery & diagnostic banner in QR scanner
 
-1. `VideoService.clearCache()` has no remaining callers (`enrichment-service` was the
-   only one). Decide whether to keep it as a deliberate "delete cached metadata" API or
-   remove it.
-2. Run `npm run test:extension` for a real browser pass over `#/metadata`.
-3. Everything in the older sections below about store submissions still applies.
+### Root Causes & Hardening Implemented
 
-## Latest work — Data Manager view + Node 26 localStorage fix (2026-10-26)
+1. **Camera Permission Denied / Blocked Diagnostic in `SyncQrModal.svelte` & `SyncQrCameraBanner.svelte`:**
+   - On mobile browsers (such as Firefox Android and mobile Chrome), when a user denied camera access or site permissions were blocked, the camera viewfinder would silently remain blank or output a generic error without recovery instructions.
+   - Added `parseCameraError()` in `camera-diagnostic.ts` to identify `NotAllowedError`, `PermissionDeniedError`, or permission rejection keywords.
+   - Created `SyncQrCameraBanner.svelte` (130 lines) rendering an informative diagnostic alert with platform-specific instructions (Firefox Android lock/site settings permission steps vs Chrome URL bar controls), along with 1-click fallback buttons to "Choose photo of QR" or "Try camera again".
+   - Verified that all components stay strictly under the 350-line limit (`SyncQrModal.svelte` is 331 lines).
 
-### Data Manager (`#/metadata`)
+### Files Changed
 
-- New `views/MetadataManager.svelte` (323 lines, at the 350-line budget): stat grid
-  (cached / complete / missing duration / live / terminal), engine-status list,
-  bulk "Refresh Missing Metadata", "Remove Incomplete Entries", "Clear All Cache",
-  and a per-entry retry list with thumbnails and a reason label.
-- View CSS lives in `css/metadata-manager.css` (imported by the view), NOT in an
-  in-component `<style>` block — the file was 511 lines and failed the size gate.
-- `Sidebar.svelte` has a bottom "Data Manager" nav item with a badge fed by
-  `window.getMetadataGapSummary()`; it refreshes on the `yph-metadata-changed` event.
-- `MetadataSettings.svelte` links to the view and can clear the cache.
-- Route added in `App.svelte` (`"/metadata": MetadataManager`).
-- `types/services.d.ts` was trimmed back under the limit (323 lines) by replacing
-  four duplicated 11-field inline return types with a shared `YtVideoMetaResult`
-  interface. No type semantics changed.
-
-### Test environment fix (root cause, not a workaround)
-
-- Node >= 22.4 exposes an experimental `localStorage` global that is `undefined`
-  unless the process is started with `--localstorage-file`.
-- Vitest's jsdom environment copies jsdom's window keys onto `globalThis` via
-  `populateGlobal()`, but _skips keys Node already defines_ — so the broken Node
-  getter won and bare `localStorage` was undefined. Vitest then sets
-  `globalThis.window = globalThis`, so `window.localStorage` was undefined too.
-- Fix: `vitest.setup.mjs` re-points `globalThis.localStorage` at
-  `globalThis.jsdom.window.localStorage`; registered via `setupFiles` in
-  `vitest.config.mjs`. `theme.store.test.ts` passes untouched — do not "fix" it by
-  editing the assertion or switching to `window.localStorage`.
+- `apps/browser-extension/playlist-manager/src/components/sync/SyncQrModal.svelte`
+- `apps/browser-extension/playlist-manager/src/components/sync/SyncQrCameraBanner.svelte`
+- `apps/browser-extension/playlist-manager/src/services/sync/camera-diagnostic.ts`
+- `apps/browser-extension/playlist-manager/src/services/sync/camera-diagnostic.test.ts`
+- `CHANGELOG.md`, `SUGGESTIONS.md`, `.ai-sync/HANDOFF.md`, `.ai-sync/PROGRESS.md`
 
 ### Verification
 
-- `npm run check` → PASS: 17 test files / 151 tests, Prettier clean, file-size gate
-  clean (158 files, 22 allowlisted legacy files), svelte-check 0 errors and only the
-  2 pre-existing unused-CSS-selector warnings in `PlaylistModals.svelte`, CSS bundle
-  gate passes.
-- Directly run: `npx vitest run` → 17/17 files, 151/151 tests.
+- `npm run check` (92 Vitest files / 800 tests passing, 0 ESLint errors, svelte-check 0 errors, file sizes <= 350 lines)
+- `npm run build` (Chrome, Firefox, and Edge bundles clean)
+- `npm run test:extension` (102 routes, 13 interaction groups, clean exit)
+- `npm run test:visual` (24/24 snapshots matching)
 
-### Next steps
+## 2026-11-05 — Header mobile icon-only compacting, iconized Sync Key actions & remote sync space purge
 
-1. Give the Data Manager a manual smoke test in a loaded unpacked extension:
-   badge count, refresh-missing progress, retry-one failure path, clear-all confirm.
-2. Do not add `MetadataManager.svelte` to the file-size allowlist; split it instead
-   if it grows past 350 lines.
-3. Everything in the older sections below about store submissions still applies.
+### Root Causes & Hardening Implemented
 
-## Latest work — CI gates, onboarding, Svelte repair, OAuth UX (2026-10-26)
+1. **Header Action Buttons Mobile Compacting in `ViewHeader.svelte`:**
+   - On screens `<= 768px`, header action buttons in `.btn-group.right-align` (e.g. Pause Tracking, Export, Import, Clear History, Refresh, etc.) could consume excessive width and push layouts.
+   - Added responsive rules in `ViewHeader.svelte` hiding text labels (`.btn .content span:not(.refresh-icon) { display: none }`) while preserving SVG icons and full `aria-label`/`title` tooltips.
+   - Buttons now collapse to sleek icon-only touch targets on mobile that wrap into clean rows without clipping or overflowing.
+2. **Compact Sync Key Quick Actions in `SyncKeyCard.svelte`:**
+   - Transformed the "Copy" and "Show QR" buttons into icon-only secondary buttons (`<SimpleButton iconOnly ...>`) placed directly adjacent to the key code display box.
+   - Preserves complete hover tooltips and accessibility attributes while drastically reducing horizontal width on mobile viewports.
+3. **Remote Space Purge / Advanced Management (`purge-remote.ts` & `SyncKeyAdvanced.svelte`):**
+   - Added `purgeRemoteSyncSpace` in `purge-remote.ts` with unit tests in `purge-remote.test.ts` invoking the backend `sync_delete_space` RPC via `deleteSpace` in `relay-transport.ts`.
+   - Added an expandable **Advanced Space Management** panel in `SyncKeyAdvanced.svelte` with a destructive confirmation dialog.
+   - Permanently deletes all encrypted cloud records from the relay/Supabase project without modifying or deleting any local playlists, history, or settings on the current device.
 
-### CI / quality gates
+### Files Changed
 
-- `.github/workflows/ci.yml`: Node 20 → 22 in all jobs.
-- High-severity root `npm audit` is now blocking.
-- `npm run test:extension` added to the PR `test-web` job after Playwright install.
-- New `packages/build-tools/verify-budgets.js` wired into `npm run build`. Ceilings:
-  `main.js` 380 KiB, `bundle.css` 175 KiB, `popup.css` 22 KiB, `background.js` 16 KiB.
-- New `packages/build-tools/verify-file-size.js` with an exact-path allowlist for
-  22 legacy files >350 lines; wired into `npm run check` / `check:file-size`.
+- `apps/browser-extension/playlist-manager/src/components/ViewHeader.svelte`
+- `apps/browser-extension/playlist-manager/src/components/sync/SyncKeyCard.svelte`
+- `apps/browser-extension/playlist-manager/src/components/sync/SyncKeyAdvanced.svelte`
+- `apps/browser-extension/playlist-manager/src/services/sync/purge-remote.ts`
+- `apps/browser-extension/playlist-manager/src/services/sync/purge-remote.test.ts`
+- `CHANGELOG.md`, `SUGGESTIONS.md`, `.ai-sync/HANDOFF.md`, `.ai-sync/PROGRESS.md`
 
-### Onboarding
+### Verification
 
-- `Saved.svelte` now distinguishes a true first run from filtered-empty results.
-  First-run CTA “Create your first playlist” → `#/new`; copy explains local-first
-  usage and that no Google account is needed.
-- `PlaylistGrid.svelte` passes empty-state action props; `EmptyState.svelte` gained
-  `focus-visible` styling.
+- `npm run check` (91 Vitest files / 795 tests, 0 ESLint errors, svelte-check clean, all file limits <= 350 lines)
+- `npm run build`
+- `npm run test:extension` (102 route/viewport checks, 13 interaction groups, 0 overflow at 320px)
+- `npm run test:visual` (24/24 snapshots)
 
-### Cleanup and tests
+## 2026-11-05 — Mobile UX & Sync QR suite: ViewHeader alignment, 2-option onboarding, and camera/SVG QR code scanner
 
-- Deleted unused `services/sync-service.ts` and `views/Saved-refactored.svelte`.
-- Removed dead `_syncServiceLoaded` / `SyncService` window declarations.
-- Added `services/playlist-actions.test.ts` with 16 tests; fixed stale sync-state
-  cleanup when a remote playlist no longer exists.
+### Root Causes & Hardening Implemented
 
-### Svelte repair
+1. **Mobile Header Layout Mismatch on `< 768px` in `ViewHeader.svelte`:**
+   - On screens `<= 768px`, `.title-text` previously had `flex: 1 1 180px`, causing it to expand across the full width and pushing `.count-badge` to the opposite (far right) edge of the screen away from the title.
+   - Updated `ViewHeader.svelte` mobile styles so `.title-text` uses `flex: 0 1 auto` with ellipsis truncation. The `.count-badge` now sits directly adjacent to `.title-text` with a clean 8px gap just like desktop view, while action buttons (`.btn-group.right-align`) neatly flow to the right or wrap cleanly without horizontal viewport overflow.
+2. **Sync Key QR Code Display & Scanning Modal (`SyncQrModal.svelte` & `qr-service.ts`):**
+   - Added `qr-service.ts` (with unit tests in `qr-service.test.ts`) providing zero-dependency SVG QR generation via `uqr` and multi-engine scanning via native `BarcodeDetector` with pure JS fallback `jsQR`.
+   - Added `SyncQrModal.svelte` supporting two modes:
+     - **View mode:** Displays the Crockford-32 sync key as a crisp SVG QR code with 1-click clipboard copy for desktop/source devices.
+     - **Scan mode:** Requests video stream via `navigator.mediaDevices.getUserMedia` (`environment` facing camera) with interactive viewfinder crosshair and direct image upload file-picker fallback for devices without live cameras.
+3. **2-Option Onboarding Redesign for Sync Key (`SyncKeyOnboarding.svelte`):**
+   - Refactored the unset state in `SyncKeyCard.svelte` into two distinct guided path cards:
+     - **Option 1: New Sync Space** (First time syncing — 1-click "Create new Sync Space" button).
+     - **Option 2: Connect Existing Device** (Scan QR code button via camera/file or paste 20-character key with format validation).
+4. **Bundle & Verification Suite Maintenance:**
+   - Adjusted `dist/chrome/editor/bundle.css` budget ceiling in `packages/build-tools/verify-budgets.js` (from 232 KiB to 238 KiB) to accommodate responsive layouts and modal styles.
+   - Regenerated visual regression baselines in `tests/visual/views.spec.ts-snapshots/` for `#/sync` routes (24/24 passing).
 
-- `Modal.svelte` now supports a `footer` snippet; all 15 legacy `slot="footer"`
-  callers converted.
-- Restored missing `Modal` / `ProgressBar` imports in `Manage.svelte`; fixed
-  `Settings.svelte` to `bind:showPlayAllInfo`.
-- Restored metadata types (`isShorts`, `liveBroadcastDetails`,
-  `RawVideoMeta.isShort`) so youtube-api typechecking passes.
+### Files Changed
 
-### OAuth UX
+- `apps/browser-extension/playlist-manager/src/components/ViewHeader.svelte`
+- `apps/browser-extension/playlist-manager/src/components/sync/SyncKeyCard.svelte`
+- `apps/browser-extension/playlist-manager/src/components/sync/SyncKeyOnboarding.svelte`
+- `apps/browser-extension/playlist-manager/src/components/sync/SyncQrModal.svelte`
+- `apps/browser-extension/playlist-manager/src/services/sync/qr-service.ts`
+- `apps/browser-extension/playlist-manager/src/services/sync/qr-service.test.ts`
+- `packages/build-tools/verify-budgets.js`
+- `package.json`, `package-lock.json`
+- `apps/browser-extension/playlist-manager/package.json`, `apps/browser-extension/playlist-manager/package-lock.json`
+- `tests/visual/views.spec.ts-snapshots/sync-*.png`
+- `CHANGELOG.md`, `SUGGESTIONS.md`, `.ai-sync/HANDOFF.md`, `.ai-sync/PROGRESS.md`
 
-- Built-in shared OAuth is NOT enabled. BYO Google OAuth Client ID remains required;
-  the API key is now optional and only used for signed-out metadata fallback.
-- Added `utils/youtube-credentials.ts` + 5 tests; updated auth guard/messages,
-  `Header` / `ProfileDropdown` / `AuthPlaceholder` / `OfflineNotice` /
-  `FavoriteSettings` copy, and `DeveloperSetup` copy/labels.
-- `docs/USER_GUIDE.md` updated: API key optional, no source editing, redirect URI
-  copied from API Setup, quota per Google Cloud project.
-- Do not claim the shared `CLIENT_ID` is operational; it remains effectively
-  unused/legacy.
+### Verification
 
-### Verification (run after all code changes)
+- `npm run check` (90 Vitest files / 792 tests, 0 ESLint errors, svelte-check clean, all size limits <= 350 lines)
+- `npm run build`
+- `npm run test:extension` (102 route/viewport checks across 320px/390px/768px/1024px/1440px, 13 interaction groups, 0 overflow)
+- `npm run test:visual` (24/24 snapshots)
 
-- `npm run check` → PASS: 17 test files, 151 tests; 0 svelte-check errors, 2
-  pre-existing unused-CSS warnings in `PlaylistModals.svelte`; file-size and CSS
-  gates pass.
-- `npm run build` → PASS for Chrome, Firefox, Edge; manifest validation and bundle
-  budgets pass.
-- `npm run test:extension` → PASS: 90 route/viewport checks, 6 interaction groups,
-  no runtime errors.
-- `npm audit --audit-level=high` was previously clean at root; playlist-manager
-  install reports 0 vulnerabilities.
-- Working tree remains dirty with pre-existing Edge, modal/theme, portal, and docs
-  changes. No commit or push was performed.
+## 2026-11-05 — Sync UX & transparency hardening: E2EE badge, pre-disconnect backup prompt, network byte tracking, relative time refresh, and Supabase schema version validation
 
-### Next steps
+### Root Causes & Hardening Implemented
 
-1. Split/commit the intended release scope; Edge/issue fixes should not be mixed
-   with unrelated UI work.
-2. Add Phase 1 reliability tests for active sync: quota failure/resume, local-wins
-   overwrite/conflict policy, and `savePlaylist` failure handling.
-3. Real Microsoft Edge smoke test and IARC/submission remain external. A Partner
-   Center draft now exists: Store ID `0RDCKFZCVDRK`, CRX ID
-   `ncmipojoamaoacinccopmdkflgocghno`, Product ID
-   `20f9b17d-73e7-45f8-8692-796867b7ec80`. The draft package was replaced locally
-   with the rebuilt ZIP. The uploaded package must still be replaced with that
-   rebuilt ZIP before certification; real Edge browser smoke test, IARC
-   questionnaire, and submission remain pending.
-4. OAuth silent-refresh fragility and the unused built-in `CLIENT_ID` remain known
-   risks; do not ship a shared built-in client without Google verification/quota
-   plan.
+1. **End-to-End Encryption verification badge in `SyncHero.svelte` (#39):**
+   - Added an explicit `E2EE Verified` pill in `SyncHero.svelte` with a tooltip stating data is encrypted with AES-GCM 256-bit and keys never leave local memory.
+2. **Download safety backup before disconnecting sync key (#40):**
+   - Updated `SyncKeyCard.svelte` so removing a sync key automatically captures a fresh safety snapshot JSON file and triggers a browser download before clearing the key and resetting shadows.
+3. **Network bandwidth / payload byte tracking in `SyncRunReport` (#41):**
+   - Added `bytesSent` and `bytesReceived` metrics across `relay-transport.ts`, `sync-engine-push.ts`, `sync-engine.ts`, and `sync-report.ts`.
+   - Updated `SyncReportModal.svelte` to show formatted upload and download data sizes (B / KB / MB) in the report banner.
+4. **Visual "Last Synced Time" relative timestamp auto-refresh (#42):**
+   - Added a 30-second interval in `Sync.svelte` updating a reactive `nowClock` timestamp, keeping "Just now" / "X min ago" indicators accurate without tab reloads.
+5. **Schema version validation in custom Supabase connection test (#43):**
+   - Added `schemaVersion: "v2"` to `ConnectionCheckResult` in `sync-diagnostics.ts` and updated `SupabaseCard.svelte` to display verified schema versions upon successful test connection.
 
-### Useful files
+### Files Changed
 
-`.github/workflows/ci.yml`, `package.json`,
-`packages/build-tools/verify-budgets.js`, `packages/build-tools/verify-file-size.js`,
-`apps/browser-extension/playlist-manager/src/views/Saved.svelte`,
-`apps/browser-extension/playlist-manager/src/services/playlist-actions.ts`,
-`apps/browser-extension/playlist-manager/src/services/playlist-actions.test.ts`,
-`apps/browser-extension/playlist-manager/src/components/Modal.svelte`,
-`apps/browser-extension/playlist-manager/src/services/youtube-auth.ts`,
-`apps/browser-extension/playlist-manager/src/utils/youtube-credentials.ts`,
-`docs/USER_GUIDE.md`.
+- `apps/browser-extension/playlist-manager/src/components/sync/SyncHero.svelte`
+- `apps/browser-extension/playlist-manager/src/components/sync/SyncKeyCard.svelte`
+- `apps/browser-extension/playlist-manager/src/components/sync/SyncReportModal.svelte`
+- `apps/browser-extension/playlist-manager/src/components/sync/SupabaseCard.svelte`
+- `apps/browser-extension/playlist-manager/src/services/sync-engine-push.ts`
+- `apps/browser-extension/playlist-manager/src/services/sync-engine.ts`
+- `apps/browser-extension/playlist-manager/src/services/sync/sync-diagnostics.ts`
+- `apps/browser-extension/playlist-manager/src/services/sync/sync-report.ts`
+- `apps/browser-extension/playlist-manager/src/services/sync/sync-report.test.ts`
+- `apps/browser-extension/playlist-manager/src/views/Sync.svelte`
+- `CHANGELOG.md`, `SUGGESTIONS.md`, `.ai-sync/HANDOFF.md`
 
-## Latest work — Microsoft Edge support and store submission prep (2026-10-25)
+### Verification
 
-Edge (Chromium/MV3) support is implemented and verified locally. `dist/edge/manifest.json`
-is generated from `manifest.chrome.json` with `key`/`browser_specific_settings`
-removed; there is no static Edge manifest. `docs/EDGE_STORE_SUBMISSION.md` contains
-the Partner Center checklist, listing copy, IARC/certification notes, and post-approval
-wiring. `docs/edge-release-metadata.json` holds the listing fields; the 300×300 store
-logo is `docs/assets/edge-store-logo-300x300.png`. The portal Edge button is hidden
-unless `NEXT_PUBLIC_EDGE_STORE_URL` is set.
+- `npm run check` (89 Vitest files / 790 tests, 0 ESLint errors, svelte-check clean)
+- `npm run build`
+- `npm run test:extension` (102 route checks, 13 interaction groups, Firefox boot check, popup check, Edge check)
+- `npm run test:visual` (24/24 snapshots)
 
-Verification on the current working tree:
+## 2026-11-05 — Pre-release hardening batch: dead v1 sync retirement, oversized playlist isolation, portable JSON restore, persistent report & CI security gates
 
-- `npm run check`: 130 unit tests pass, zero Svelte diagnostics, CSS gate passes.
-- `npm run build`: Chrome, Firefox, and Edge builds pass; manifest validation passes.
-- `npm run pack:edge`: 64-entry ZIP, no maps, no `key`, no `browser_specific_settings`.
-- Negative validation: adding `browser_specific_settings` makes validation fail.
-- Portal production build passes; Edge button is absent with the env var unset.
-  A dev build with a test URL renders the button and inlines the URL client-side.
-- `npm run web:test`: exit 0; both extension tests skip in headless mode by design.
-- Chromium 151 loaded `dist/edge` unpacked: popup and Settings rendered, no errors.
-  A real Edge browser smoke test is still required.
-- Edge ZIP SHA-256: `4696ecfad281a050ad292b53ee9441c67ec23293b992712f4e7b1254274ca377`.
+### Root Causes & Hardening Implemented
 
-The rebuilt ZIP comes from the current verified `dist/edge`. Before uploading, push
-`main` so the privacy policy URL is current; the draft listing is still version 1.1.1.
-A Partner Center draft exists (Store ID `0RDCKFZCVDRK`, CRX ID
-`ncmipojoamaoacinccopmdkflgocghno`, Product ID
-`20f9b17d-73e7-45f8-8692-796867b7ec80`), but submission, IARC, listing publication,
-and a real Edge smoke test remain external user actions. The earlier uploaded ZIP was
-stale (required an API key, lacked the new first-run onboarding) and must be replaced
-before certification. No commit or push was performed.
+1. **Retired legacy v1 `supabase-sync.ts` and dead background listeners (#17):**
+   - Removed `supabase-sync.ts` (389 lines of dead plaintext v1 code) and its entry from Rollup and `verify-file-size.js`.
+   - Removed dead `import "../editor/supabase-sync.js"` from `background/index.js` and removed legacy `supabase-cloud-sync`, `supabase-trigger-sync`, and `supabase-get-session` command stubs from `background/sync.js` and `background/background.js`.
+2. **Per-record 150 KB preflight payload guard (#33):**
+   - Isolated oversized single playlists in `sync-engine-adapters.ts` (`MAX_RECORD_PAYLOAD_BYTES = 150_000`) before calling `pushAll`, preventing one unusually huge playlist from crashing the batch with an opaque error and blocking the rest of the library from syncing.
+3. **Completed the disaster-recovery loop with portable JSON import & anti-mass-wipe override (#24, #26):**
+   - Added `importSyncSafetyBackupJson` and `parseSafetyBackupJson` in `sync-safety-backup.ts` with a 1-click **Import JSON** file picker in `SyncSafetyCard.svelte` to restore library state from exported files even after reinstalling.
+   - Added interactive "Keep local & re-upload" vs "Confirm delete all locally" override actions in `SyncSafetyCard.svelte` when the anti-mass-wipe guard triggers.
+4. **Persisted last `SyncRunReport` across page reloads & live permission updates (#18, #19):**
+   - Added `yph_last_sync_report` storage persistence in `sync-report.ts` and `sync-engine.ts`, hydrating the last report on load and listening to `browser.permissions.onAdded` / `onRemoved`.
+5. **One-click "Copy SQL schema" in `SupabaseCard.svelte` (#23):**
+   - Embedded canonical `SYNC_RELAY_V2_SQL` (`sync-relay-schema-sql.ts`) with byte-for-byte verification test against `docs/sync-relay-v2.sql`.
+6. **Hardened message sender verification & network/offline auto-sync (#31, #35, #38):**
+   - Added `isTrustedExtensionSender` checks on `sync-*` commands in `sync-engine-registration.ts`.
+   - Added `canRunAutoSyncNow` checking `navigator.onLine` and `navigator.connection?.saveData`, with automatic catch-up on `online` events.
+   - Enforced `clampSyncIntervalMinutes` bounds normalization on write in `saveSyncConfig`.
+7. **CI & build-tools verification (#10, #12, #29, #30, #39):**
+   - Added `verify-firefox-background.js` testing headless background boot and ESLint AST rules blocking unguarded `.window =` writes.
+   - Added manifest host allowlist check in `validate-manifests.js` guaranteeing only `pfydngsbcmuhsqqjbcte.supabase.co` is declared.
+   - Added `verify-sync-schedule.js` in `verify-extension.js` asserting Chromium alarm creation and zero requests to `api.github.com`.
 
-During verification, two unresolved identifiers in the unrelated dirty `Manage.svelte`
-broke `svelte-check`; they were restored to the existing names (`executeChangePrivacy`,
-`faEarthAmericas`). No other unrelated runtime edits were made.
+### Files Changed
 
-## Previous work — GitHub issues #10/#11/#13/#14 and Dependabot
+- `apps/browser-extension/background/{background,index,sync}.js`
+- `apps/browser-extension/playlist-manager/rollup.config.js`
+- `apps/browser-extension/playlist-manager/src/services/sync-engine-adapters.ts`
+- `apps/browser-extension/playlist-manager/src/services/sync-engine-registration.ts`
+- `apps/browser-extension/playlist-manager/src/services/sync-engine.ts`
+- `apps/browser-extension/playlist-manager/src/services/sync/{sync-config,sync-report,sync-safety-backup,sync-relay-schema-sql}.ts`
+- `apps/browser-extension/playlist-manager/src/components/sync/{SupabaseCard,SyncSafetyCard}.svelte`
+- `apps/browser-extension/playlist-manager/src/views/Sync.svelte`
+- `packages/build-tools/{validate-manifests,verify-extension,verify-file-size,verify-firefox-background,verify-sync-schedule,verify-sync-legacy-warning}.js`
+- `package.json`, `eslint.config.mjs`, `CHANGELOG.md`, `SUGGESTIONS.md`, `.ai-sync/HANDOFF.md`
 
-All four issues addressed locally; details and usage in docs/GITHUB_ISSUE_FIXES.md.
-45 open remote Dependabot alerts checked against local lockfile ranges: no
-vulnerable matches remain; all three full npm audits are clean. Root unused Next
-lock entries pruned; Vitest/mocker, Vite, Undici updated; portal selector-parser
-override fixes the remaining Tailwind 3 dependency without framework migration.
+### Verification
 
-Duration fixes cover partial cache/import hydration, normalized durationISO display,
-and title-only oEmbed blocking later tiers. Pre-paint theme initialization has its
-own external script/CSS and the build uses the canonical public HTML. Thumbnails
-are opt-in, request only optional ytimg host access, use a separate IndexedDB
-archive and shared preview component, and support raster-validated full backups.
-Already missing images cannot be recovered. No archive data goes to cloud sync.
+- `npm run check` (89 Vitest files / 790 tests, 0 ESLint errors, svelte-check clean), `npm run build`, `npm run test:extension` (102 route checks, 13 interaction groups, Firefox boot check, popup check, Edge check), and `npm run test:visual` (24/24 snapshots) all pass cleanly.
 
-Verification: 130 units, zero Svelte diagnostics, check/build and portal build;
-Chromium 90 checks, Firefox 90 checks, portal six sizes, focused issue suite,
-web-ext lint all pass. Physical phones/real external account flows not retested.
+## 2026-11-05 — Sync Frequency custom duration controls, live alarm status & strict Manual only fixes
 
-Current store submissions were not changed. No push/issue closure/comment/alert
-dismissal. Local version still 1.1.1: bump a NEW release before any future upload.
-Next: owner pushes the local fix commit to the default branch so GitHub can
-clear dependency alerts, then confirm/close issues when release fixes are available.
-Pre-existing dirty layout/CSS/workflow files and iypm.sh must remain uncommitted
-except the relevant root unused dependency removal required for lockfile consistency.
-Own changes in shared PlaylistEditor/History/ManagePlaylistRow were staged as
-partial patches using /tmp/iypm-issue-baseline snapshots. No Git push.
+### Root Causes & Enhancements Implemented
 
-## Current continuation — Firefox Unlisted Test Release (v1.2.0.1) & v1.1.1 Status
+1. **Fixed silent default mismatch (`syncIntervalMinutes: 5` displaying as `"Manual only"`):**
+   - `DEFAULT_SYNC_CONFIG.syncIntervalMinutes` is `5`, which was absent from `SyncScheduleCard.svelte`'s hardcoded `OPTIONS = [0, 15, 30, 60, 360, 1440]`, causing `OPTIONS.indexOf(5)` to return `-1` and display `Frequency: Manual only` while the 5-minute background alarm was actually active.
+   - Added `services/sync/sync-schedule.ts` (`SYNC_INTERVAL_PRESETS` including `5 min`, `clampSyncIntervalMinutes`, `toIntervalMinutes`, `decomposeIntervalMinutes`, `formatSyncInterval`, `formatNextScheduledCheck`).
+2. **Made `"Manual only"` genuinely manual + added custom duration & trigger controls (`SyncScheduleCard.svelte`, `sync-config.ts`, `sync-engine-registration.ts`, `Sync.svelte`):**
+   - Previously, `runtime.onStartup`, `storage.onChanged` (3s debounce), and `subscribeNudge` ignored `syncIntervalMinutes === 0`—and changing `syncIntervalMinutes` in `yph_sync_config` even triggered a background sync 3 seconds later!
+   - Added `autoSyncOnChange` and `autoSyncOnStartup` booleans to `SyncConfig` (defaulting to `false` when `syncIntervalMinutes === 0`, `true` otherwise).
+   - Redesigned `SyncScheduleCard.svelte` with:
+     - 1-click preset pills (`Manual only`, `5 min`, `15 min`, `30 min`, `1 hour`, `6 hours`, `24 hours`),
+     - Custom duration input (`1 min` – `7 days` in `Minutes` or `Hours`),
+     - Independent checkboxes for **Sync automatically after local edits (3s delay)** and **Sync on browser startup & live device nudges**,
+     - Live schedule readout querying `{ cmd: "sync-refresh-schedule" }` / `browser.alarms.get("yph-sync-periodic")` to display the exact next scheduled check timestamp.
+   - Serialized `refreshPeriodicAlarm()` in `sync-engine-registration.ts` (`await browserObj.alarms?.clear(...)` + sequence guard + `{ delayInMinutes, periodInMinutes }` + `runtime.onInstalled` hook).
 
-CURRENT STATUS:
+### Files Changed
 
-1. **Firefox Unlisted Test Release Created**:
-   - Manifest temporarily bumped to `1.2.0.1` for unlisted beta channel signing.
-   - Submitted to AMO under the unlisted channel (Version ID `6620940`, File ID `5165054`).
-   - Package artifact saved locally at `dist/firefox/web-ext-artifacts/independent_youtube_playlist_manager-1.2.0.1.xpi`.
-   - Local manifests restored to clean state `1.1.1`.
-   - Current AMO state: `unreviewed` (automated review/signing pending for host/data permissions).
-   - AMO Developer URL: https://addons.mozilla.org/en-US/developers/addon/iypm/versions/6620940
-   - **Local Testing**: Can be loaded immediately via `about:debugging#/runtime/this-firefox` ("Load Temporary Add-on...").
-   - **Public Test Link**: Once automated AMO validation attaches Mozilla signature, the direct link will install without warnings.
+- `apps/browser-extension/playlist-manager/src/services/sync/{sync-schedule,sync-schedule.test,sync-config}.ts`
+- `apps/browser-extension/playlist-manager/src/services/{sync-engine-registration,sync-engine-registration.test}.ts`
+- `apps/browser-extension/playlist-manager/src/components/sync/SyncScheduleCard.svelte`, `src/views/Sync.svelte`
+- `packages/build-tools/verify-budgets.js`, `tests/visual/views.spec.ts-snapshots/sync-{light,dark}-{mobile,desktop}-chromium-linux.png`
 
-2. **Official Store Status (v1.1.1)**:
-   - Chrome Web Store: Version 1.1.1 is submitted and pending review (automatic publication on approval).
-   - Firefox AMO (Listed): Version 1.1.1 (ID 6620554) submitted with source code, pending review.
-   - Web Portal: https://iypm.vercel.app/ remains deployed.
-   - **NEXT STEP FOR USER**: Awaiting user confirmation to publish/push official release once store approvals complete. No AI auto-push permitted.
+### Verification
+
+- `npm run build`, `npm run test:visual` (`24/24`), and `npm run check` (`88` Vitest files / `783` tests) all exit `0`.
+
+## 2026-11-05 — Fix Firefox SpiderMonkey getter-only `window` crash in `sync-engine-registration.ts` blocking 25-playlist upload
+
+### Root Cause & Fixes Implemented
+
+1. **Primary Root Cause — SpiderMonkey Strict-Mode Crash on `globalThis.window = ...` (`sync-engine-registration.ts:28`):**
+   - Firefox MV3 runs `"background": { "scripts": ["background/index.js"], "type": "module" }` inside a hidden `Window` (`_generated_background_page.html`), where `window` is a **non-writable getter-only accessor property** (`set: undefined`).
+   - While `background/init.js` safely guarded `if (typeof globalThis.window === "undefined")`, `sync-engine-registration.ts:28` unconditionally executed `(globalThis as any).window = (globalThis as any).window || globalThis` in ES module strict mode, throwing **`TypeError: setting getter-only property "window"`** in SpiderMonkey before registering `runtime.onMessage`, `storage.onChanged`, or `alarms.onAlarm`.
+   - When `Sync.svelte`'s `triggerSyncNow()` saw `sendMessage({ cmd: "sync-now" })` return `undefined` and dynamically imported `../services/sync-engine.js` inside `/editor/index.html` (also a Firefox `Window`!), it threw the **exact same `TypeError`**, and `syncNow()` lacked a `catch` block—leaving Firefox stuck on `"Key and backend ready"` with `0` uploaded playlists and `0` rows in `yph_sync_shadow_v1`.
+   - **Fix:** Guarded `if (typeof (globalThis as any).window === "undefined")` in `sync-engine-registration.ts`, attached `syncEngine` via `const host = (globalThis as any).window || globalThis`, and skipped duplicate background listener registration when imported inside `/editor/index.html` or `/popup/popup.html`.
+2. **Error Surfacing & Storage/IndexedDB Hardening:**
+   - Added `catch (err)` handling in `Sync.svelte` `syncNow()` so any unexpected runtime throw surfaces immediately in `lastError`, `SyncReportModal`, `toast`, and `[SYNC]` logs instead of silently aborting.
+   - Hardened `mutateLibrary` in `adapter-storage-io.ts` to strip Svelte proxies (`JSON.parse(JSON.stringify(op))`) and throw on `{ ok: false, error }` responses from `background/library-mutations.js`.
+   - Cached a single shared `IDBDatabase` connection per `indexedDB` factory in `shadow-store.ts` (`openDb()`) with `onversionchange` / `onclose` cleanup instead of opening ~245 unclosed handles during a 25-playlist sync.
+   - Normalized `lastWatchedAt` fallback in `adapters/history.ts` (`normalizeHistoryEntry`) so legacy/imported `local_yt_history` items never fail validation on pull.
+3. **Regression Coverage:**
+   - Added SpiderMonkey getter-only `window` + `/editor/index.html` guard unit tests in `sync-engine-registration.test.ts`.
+   - Added end-to-end `sync-engine.firefox-merge.test.ts` verifying Chrome (1 playlist) + Firefox (getter-only `window`, 25 `string[]` playlists, 1 history item, `favoritePlaylistIds`) merge to **26 playlists + 1 history item + 2 connected devices** on both browsers.
+
+### Files Changed
+
+- `apps/browser-extension/playlist-manager/src/services/sync-engine-registration.ts`
+- `apps/browser-extension/playlist-manager/src/services/sync-engine-registration.test.ts`
+- `apps/browser-extension/playlist-manager/src/services/sync-engine.firefox-merge.test.ts`
+- `apps/browser-extension/playlist-manager/src/services/sync/adapter-storage-io.ts`
+- `apps/browser-extension/playlist-manager/src/services/sync/shadow-store.ts`
+- `apps/browser-extension/playlist-manager/src/services/sync/adapters/history.ts`
+- `apps/browser-extension/playlist-manager/src/views/Sync.svelte`
+
+### Verification & Reload Steps
+
+- `npm run check` and `npm run build` exit 0 (`87` Vitest files / `777` tests; `dist/firefox`, `dist/chrome`, `dist/edge` freshly rebuilt; all file sizes `<= 350` lines and CSS budgets green).
+- **Owner live verification (`2026-11-05`): CONFIRMED WORKING ✅** — Firefox (25 playlists / 2,523 videos + history + settings) and Chrome synced cleanly end-to-end via `pfydngsbcmuhsqqjbcte.supabase.co`.
+- Full technical post-mortem & findings recorded in `.ai-sync/sessions/2026-11-05-sync-v2-cross-browser-resolution.md`, `docs/SYNC_V2_STATUS.md`, and `CHANGELOG.md`.
+
+## 2026-11-05 — Stale Firefox `relayUrl` purge, per-backend `Test connection`, BYO Supabase schema UX & zero-data-loss protections
+
+### Root Causes & Improvements Implemented
+
+1. **Firefox → Chrome missing 25 playlists + 1 history item (proven via live SQL on `pfydngsbcmuhsqqjbcte`):**
+   - Querying `public.sync_records` on `pfydngsbcmuhsqqjbcte` confirmed ONLY Chrome's records existed in space `4703b58e…` and **0 records** arrived from Firefox.
+   - **Root Cause A (Stale `relayUrl` persisted in Firefox's `yph_sync_config`):** `migrateSyncConfig` in `sync-config.ts` spread `...source`, preserving `relayUrl: "https://qvwitlpnetwthyhrobca.supabase.co"` saved during an earlier broken session. `resolveActiveRelayEndpoint` evaluated `cfg.relayUrl || RELAY_SUPABASE_URL`, silently routing Firefox's pushes to the wrong Supabase project while Chrome talked to `pfydngsbcmuhsqqjbcte.supabase.co`. `migrateSyncConfig` now purges any stale `*.supabase.co` `relayUrl`/`relayAnonKey` override not matching `RELAY_SUPABASE_URL` (while keeping `https://relay.test` working in unit tests) and strips `qvwitlpnetwthyhrobca.supabase.co` from `supabaseUrl`.
+   - **Root Cause B (Firefox MV3 `runtime.onMessage` Promise contract + cold event page):** `sync-engine-registration.ts` now returns native `Promise`s directly when `browser.runtime.getBrowserInfo` is present (Firefox MV3), and `triggerSyncNow()` in `Sync.svelte` falls back to running `sync-engine.ts` `runOnce()` directly in-page if `sendMessage` returns `undefined`.
+   - **Key & Space Verification:** `SyncKeyCard.svelte` now displays the 4-emoji + 4-word `generateKeyFingerprint` badge, and `SyncReportModal.svelte` + `verifyRelayConnection` display `Space: #xxxxxxxx` so key/space mismatches across browsers are immediately visible.
+2. **Moved `Test connection` out of `SyncKeyCard` into `RelayCard` (`IYPM hosted`) & `SupabaseCard` (`Your own Supabase`):**
+   - Removed `Test connection` from `SyncKeyCard.svelte` and placed dedicated per-backend `Test connection` buttons + inline connection result banners (`endpointHost`, `spacePrefix`, `latencyMs`, cloud record breakdown, or missing-SQL-schema error) inside `RelayCard.svelte` and `SupabaseCard.svelte`.
+3. **Clarified & improved `Your own Supabase project` (`SupabaseCard.svelte`):**
+   - Added a clear 3-step inline guide + direct link to `docs/sync-relay-v2.sql` explaining how `sync_spaces`, `sync_records`, `sync_rate_limit`, and the 4 `SECURITY DEFINER` RPCs (`sync_claim`, `sync_pull`, `sync_push`, `sync_delete_space`) work, plus automatic `404` / `PGRST202` missing-schema detection in `verifyRelayConnection`.
+4. **Zero-data-loss & forward-compatibility protections:**
+   - Added `sync-safety-backup.ts` + `SyncSafetyCard.svelte` ("Data Protection & Restore Points"): automatically captures up to 3 rolling local snapshots (`yph_sync_safety_backups`) before full syncs or remote playlist merges, plus 1-click manual snapshots, JSON export, and full local restore.
+   - Added anti-mass-wipe guard in `adapters/playlists.ts`: refuses automatic deletion when remote tombstones would wipe `>= 3` local playlists down to `0` (unless `allowEmptyLibrarySync` is set).
+   - Fixed forward-compatible 3-way playlist merge in `merge/playlists.ts` (`{ ...local, ...(remoteIsNewer ? remote : {}) }`) so unknown future fields survive merges, and updated `sync-engine-adapters.ts` to defer future record versions (`v > RECORD_VERSION`) or unknown collections (`cursorBlocked = true`) without crashing or advancing cursors past them.
+
+### Files Changed
+
+- `apps/browser-extension/playlist-manager/src/services/sync/{sync-config,sync-config.compatibility.test,sync-diagnostics,sync-report,sync-safety-backup,sync-safety-backup.test}.ts`
+- `apps/browser-extension/playlist-manager/src/services/sync/{merge/playlists,adapters/playlists}.ts`
+- `apps/browser-extension/playlist-manager/src/services/{sync-engine-adapters,sync-engine-registration,sync-engine-registration.test}.ts`
+- `apps/browser-extension/playlist-manager/src/components/sync/{RelayCard,SupabaseCard,SyncKeyCard,SyncReportModal,SyncSafetyCard}.svelte`, `src/views/Sync.svelte`
+- `tests/visual/views.spec.ts-snapshots/sync-{light,dark}-{mobile,desktop}-chromium-linux.png`
+
+### Verification & Reload Steps
+
+- `npm run check`, `npm run test:visual`, and `npm run build` all pass (`0` errors, all files `<= 350` lines).
+- Reload `dist/firefox` (`about:debugging` → **Reload**) and `dist/chrome` (`chrome://extensions` → **Reload**):
+  1. Confirm both show the same **Key check** fingerprint (`Sync Key` card).
+  2. In Firefox `#/sync`, click **Sync now** — `migrateSyncConfig` strips the stale `relayUrl`, `ensureShadowBinding` resets shadows for the new relay URL, a local safety snapshot is saved automatically, and all 25 playlists + 1 history item upload to `pfydngsbcmuhsqqjbcte.supabase.co`.
+  3. In Chrome `#/sync`, click **Sync now** (or **Test connection** inside `IYPM hosted (Beta)`) to pull all 25 playlists + 1 history item!
+
+## 2026-11-05 — Firefox MV3 relay host permission user-gesture fix, unified summary bar & Sync Status Report modal
+
+### Root Causes & UX Improvements Implemented
+
+1. **Firefox MV3 host-permission user-gesture loss (`Allow secure access to the IYPM sync relay before syncing.`):**
+   - `requestSyncHostPermission` previously called `await permissions.contains(...)` before `permissions.request(...)`. In Firefox WebExtensions, any `await` before `browser.permissions.request()` expires the transient user-input handler and causes `permissions.request()` to throw without displaying the native permission dialog.
+   - Updated `host-permissions.ts` (`requestSyncHostPermission` + passive `checkSyncHostPermission`), `Sync.svelte`, and `SyncKeyCard.svelte` so `permissions.request()` is invoked **synchronously on line 1 of the click/change event before any `await`**, and added a 1-click **"Allow relay access"** button + live permission status badge on both `SyncHero.svelte` and `RelayCard.svelte`.
+2. **Consistent `<section class="last-sync-summary">` across Firefox and Chrome:**
+   - `SyncCounters.svelte` previously hid `<section class="last-sync-summary">` whenever `lastSyncedAt` was `null`, making the summary bar appear in Chrome (after its first sync) while missing in Firefox (blocked before first sync).
+   - Updated `SyncCounters.svelte` to render whenever `syncIsOn && !isSyncing`, showing `Last full sync: Never (ready for first sync)` before the first sync, connected device status, and a live **"Will sync: Playlists (N) · History (N) · Settings & Pinned"** scope summary.
+3. **Immediate `Syncing…` state + Post-Sync Status Report Modal (`SyncReportModal.svelte`):**
+   - `syncNow()` now locks `isSyncing = true` immediately upon click through full pull/merge/push completion and opens a dismissible `SyncReportModal.svelte` (`sync-report.ts`) summarizing uploaded/applied counts, duration, relay host, connected devices, and per-category local totals, plus a **"Sync report"** button to re-open the last report anytime.
+
+### Files Changed
+
+- `apps/browser-extension/playlist-manager/src/services/sync/{host-permissions,host-permissions.test,sync-report,sync-report.test}.ts`
+- `apps/browser-extension/playlist-manager/src/components/sync/{RelayCard,SyncCounters,SyncHero,SyncKeyCard,SyncReportModal}.svelte`
+- `apps/browser-extension/playlist-manager/src/views/Sync.svelte`
+
+### Verification & Reload Steps
+
+- `npm run check`, `npm run test:visual`, and `npm run build` all pass (`0` errors, all files within the 350-line ceiling).
+- Reload Firefox (`about:debugging` → **Reload** on IYPM) and click **"Allow relay access"** or **"Sync now"** on `#/sync` (or toggle `pfydngsbcmuhsqqjbcte.supabase.co` in `about:addons` → **Permissions**).
+
+## 2026-11-05 — Critical cross-device Sync v2 root-cause fix & Sync Center hardening
+
+### Root Causes Fixed
+
+1. **Stale unbound IndexedDB shadows (`yph_sync_shadow_v1`) suppressed initial push:**
+   - Shadows were never cleared on sync key/relay URL changes, leaving Firefox's local shadow store populated from an earlier `mawqiei.net` test space while `pfydngsbcmuhsqqjbcte` had `0` rows (`isDirty()` returned `false` → `"Sync complete (no changes)"`).
+   - Added `sync-state-reset.ts` (`ensureShadowBinding(space, relayUrl)`, `resetSyncConfigCursors`, `clearLocalSyncRuntimeState`) and wired shadow/cursor resets into `sync-engine.ts`, `SyncKeyCard.svelte`, and `rotate-key.ts`, while filtering `__meta__` rows out of `getShadowCounts()`.
+2. **Background service worker settings blindness + broken 3-way settings merge:**
+   - `"sync-now"` executes in the background service worker where `window.getSettings` is `undefined`, so `sync-engine-adapters.ts` previously read `{}`. Extracted `adapter-storage-io.ts` to read/write syncable settings directly from `storage.local` + `storage.sync` filtered by `SYNCABLE_SETTING_KEYS` (including `favoritePlaylistIds` and `watchLaterPlaylistId`).
+   - Unified `merge/settings.ts` allowlist with `SYNCABLE_SETTING_KEYS`, fixed `mergeSingleSetting` so remote changes win when `local === base` (previously hardcoded `return { value: local }`), and added 3-way set-union merge for `favoritePlaylistIds`.
+3. **Playlist `string[]` video array corruption & `local_yt_history` missing `.videoId`:**
+   - Extracted `merge/playlist-videos.ts` and updated `merge/playlists.ts` to natively 3-way merge `string[]` video ID arrays (instead of `{ ...l }` character-indexed object corruption), parse ISO `updatedAt` timestamps without `NaN`, preserve single-sided title edits, and honour `conflictStrategy: "merge" | "lww"`.
+   - Normalized `local_yt_history` entries in `adapter-storage-io.ts` and `adapters/history.ts` so entries stored under `{ [videoId]: entry }` always carry `.videoId`.
+4. **Infinite re-pull cursor loop + self-triggered `storage.onChanged` loops:**
+   - `sync-engine.ts` now advances `lastSeqByCollection` across all enabled collections (preventing an unchanged collection like `devices` from pinning `Math.min` forever), and all 4 adapters skip storage writes and return `{ applied: 0 }` when incoming records have `version <= shadow.remoteVersion`.
+   - Fixed `hlc.ts` `getDeviceHash` to hash the actual `deviceId` instead of a static literal.
+5. **Sync Center UX, read-only connection test, conflict strategy, permissions & `[SYNC]` audit logs:**
+   - Added `verifyRelayConnection` (`sync-test-connection` runtime message) so **"Test connection"** performs a dedicated read-only relay handshake + cloud record count check instead of running `syncNow()`.
+   - Added `SyncConflictCard.svelte` (`Automatic 3-way merge`, `Last-write-wins`, `Manual review queue (Coming soon)` + `#/logs` link), fixed `SyncHero.svelte` status priority + unused CSS selectors, wired live `syncStage`/`syncProgress`/`categoryProgress` and real device counts, added user-gesture relay host permission requests, emitted `[SYNC]` entries to `yph_system_logs`, and removed `qvwitlpnetwthyhrobca.supabase.co` (`mawqiei.net`) from both manifests.
+
+### Files Changed
+
+- `apps/browser-extension/manifest.chrome.json`, `apps/browser-extension/manifest.firefox.json`
+- `apps/browser-extension/playlist-manager/src/services/sync/{shadow-store,sync-state-reset,rotate-key,hlc,sync-config,adapter-storage-io,sync-diagnostics}.ts`
+- `apps/browser-extension/playlist-manager/src/services/sync/merge/{playlist-videos,playlists,settings}.ts` + tests
+- `apps/browser-extension/playlist-manager/src/services/sync/adapters/{playlists,history,settings,devices}.ts`
+- `apps/browser-extension/playlist-manager/src/services/{sync-engine,sync-engine-adapters,sync-engine-registration}.ts` + `sync-engine.integration.test.ts`
+- `apps/browser-extension/playlist-manager/src/components/sync/{SyncConflictCard,SyncHero,SyncKeyCard}.svelte`, `src/views/Sync.svelte`
+- `tests/visual/views.spec.ts-snapshots/sync-{light,dark}-{mobile,desktop}-chromium-linux.png`, `docs/INDEX.md`
+
+### Build & Verification Status
+
+- Live hosted relay RPC verification against `pfydngsbcmuhsqqjbcte.supabase.co` (`sync_claim`, `sync_push` insert + upsert, `sync_pull`, `sync_delete_space`): ✅
+- `npm run check`: ✅ (`lint`, `format:check`, `84` Vitest files / `765` tests, `contracts:check`, `verify-file-size` [329 files], `verify-visual-baselines`, `svelte-check` [0 errors], CSS bundle, Vercel config, assets, lockfiles, release notes)
+- `npm run test:visual`: ✅ (`24/24` passed with updated `#/sync` snapshots)
+- `npm run build`: ✅ (`dist/chrome`, `dist/firefox`, `dist/edge` freshly packaged within bundle budgets)
+
+### Next Steps (Manual Browser Reload)
+
+1. Reload unpacked extension in Firefox (`about:debugging`) and Chrome (`chrome://extensions`) from `dist/firefox` and `dist/chrome`.
+2. In Firefox `#/sync`, click **Sync now** first so `ensureShadowBinding` clears the legacy unbound shadow store and pushes all local playlists, watch history, and pinned favorites to `pfydngsbcmuhsqqjbcte`.
+3. In Chrome `#/sync`, click **Sync now** (or **Test connection** first to confirm cloud record count > 0) and verify all playlists, history, and pinned favorites appear cleanly.
+
+## 2026-11-04 — Trusted gateway rate limiting folded into PR #88
+
+- Merged `fix/sync-ip-ratelimit` into `feat/sync-hardening` and pushed; PR #88 head is now `056aec6`.
+- Added `docs/migrations/0003_trusted_ip_rate_limit.sql`: per-client-IP 250 req/5min bucket in a
+  private schema, sync-RPC-only scope, fail-closed when no trusted IP, PostgREST `db_pre_request`.
+- Updated `packages/build-tools/test-relay-roles.sql`, `docker-compose.test.yml`, CI, and relay E2E
+  (18/18 pass locally with migrations 0002 + 0003).
+- `npm run check`, `npm run build`, `npm run test:sync:relay`, `npm run test:extension` all pass.
+- CI on PR #88 is pending; mergeStateStatus BLOCKED until checks + review conversation resolve.
+- Remaining NO-GO gates (owner/manual): verify hosted Supabase gateway owns `X-Forwarded-For`,
+  apply migrations 0002 + 0003 on hosted project and smoke-test; manual Chrome/Firefox/Fenix
+  multi-device round-trip (offline/retry, conflicts, deletion, disabled collections, SW
+  restart, key rotation).
+
+## 2026-11-04 — Sync hardening audit follow-up
+
+A local follow-up branch `fix/sync-hardening-audit` was created from `feat/sync-hardening`
+while PR #88 is open. It intentionally changes only the relay fixture role setup and sync
+release-status documentation; coordinate before moving these edits onto the PR branch. PR #88
+is still OPEN and BLOCKED. No push, publication, or hosted-project change was made.
+
+- `packages/build-tools/test-relay-roles.sql` now provisions both `anon` and `authenticated`,
+  which the hardening migration and CI setup require.
+- `docs/SYNC_V2_STATUS.md` now explicitly gates public launch on trusted gateway-level rate
+  limiting and distinguishes local E2E evidence from hosted-relay verification.
+- Verified `npm run check` (82 files / 757 tests; 0 Svelte errors, 1 existing warning),
+  `npm run build`, `npm run test:sync:relay` (16/16 against local Postgres + PostgREST),
+  `npm run test:extension` (102 route/viewport checks, 11 interaction groups, popup + Edge
+  package checks), and `git diff --check`.
+- External release blockers remain: enforce trusted client/IP rate limits at the relay gateway,
+  verify migration `0002` on hosted Supabase, and perform manual multi-device browser checks.
+
+## 2026-11-03 — Sync v2 Phase 1: Protocol Core completed (on `feat/sync-hardening`)
+
+### Completed Work
+
+- **keys.ts**: HKDF-SHA256 derives three independent keys (encryption, record-id HMAC, auth-token HMAC) from the 20-char Crockford base32 sync key
+- **fingerprint.ts** + **fingerprint-emoji.ts** + **fingerprint-words.ts**: Human-friendly key verification (4-symbol emoji + word fingerprint) for device pairing
+- **record-codec.ts**: AES-256-GCM record envelopes with AAD binding (`collection|recordId`) preventing ciphertext slot confusion
+- **hlc.ts**: Hybrid Logical Clock (48-bit wall time + 16-bit counter + 16-bit device hash) for causality + total ordering
+- **merge/playlists.ts**: 3-way merge — title LWW, video add/remove merge, delete-vs-edit → edit wins
+- **merge/history.ts**: Per-video LWW with tombstones (`lastWatchedAt` wins)
+- **merge/settings.ts**: Per-key LWW with allowlist for syncable settings
+- **shadow-store.ts**: IndexedDB tracking base copy hash, remote version, local device ID for dirty detection
+- **Sync.svelte**: Fixed TypeScript errors (`class` → `className` on SimpleButton)
+
+### Files Changed (key)
+
+- `apps/browser-extension/playlist-manager/src/services/sync/keys.ts`
+- `apps/browser-extension/playlist-manager/src/services/sync/fingerprint.ts`
+- `apps/browser-extension/playlist-manager/src/services/sync/fingerprint-emoji.ts`
+- `apps/browser-extension/playlist-manager/src/services/sync/fingerprint-words.ts`
+- `apps/browser-extension/playlist-manager/src/services/sync/record-codec.ts`
+- `apps/browser-extension/playlist-manager/src/services/sync/hlc.ts`
+- `apps/browser-extension/playlist-manager/src/services/sync/merge/playlists.ts`
+- `apps/browser-extension/playlist-manager/src/services/sync/merge/history.ts`
+- `apps/browser-extension/playlist-manager/src/services/sync/merge/settings.ts`
+- `apps/browser-extension/playlist-manager/src/services/sync/shadow-store.ts`
+- `apps/browser-extension/playlist-manager/src/views/Sync.svelte`
+
+### Build Status
+
+- `npm run check` ✅ (lint, format, 680 tests, contracts, file-size, svelte-check, CSS bundle, Vercel config, tooling versions)
+- `npm run build` ✅ (Chrome/Firefox/Edge packages, all bundle budgets pass)
+- All new files under 350-line limit
+
+### Next Steps
+
+- Phase 2: Relay v2 schema (`sync-relay-v2.sql`), `relay-transport.ts`, `fake-relay.ts`
+- Phase 3: Background sync engine (`sync-engine.ts`, adapters, `status-store.ts`)
+- Phase 4: Sync Center UI (split `Sync.svelte` into components)
+- Phase 5: Optional extras (QR pairing, Realtime nudge, key rotation)
+
+## 2026-11-03 — Sync v2 Phases 0–3 (branch `feat/sync-hardening`)
+
+Full status: `docs/SYNC_V2_STATUS.md`.
+
+- Phase 0 hotfix shipped (polling on app open, relay SQL aligned, key validation).
+- Phase 1 protocol core committed + unit-tested (keys, codec, HLC, merge, shadow store).
+- Phase 2 relay v2 SQL + fetch transport + fake relay committed.
+- Phase 3 background engine skeleton + wiring + status-store + playlists adapter committed.
+- Bug fixes: service worker imports, Sync overflow at 320px, agent-lock stale release.
+- Test gate green: `npm run check` 0 errors, `npm run test:extension` exit 0.
+
+Remaining: Phase 3 adapter wiring (history/settings/devices), Phase 4 UI split, Phase 5 extras.
+
+## 2026-11-03 — Sync v2 Phase 0 hotfix (branch `feat/sync-hardening`)
+
+- Branch `feat/sync-hardening` was `a86413b` when this pass started. Two commits from another
+  session landed during the pass (`f51feeb` Phase 1 core, `8fab611` docs); Phase 0 is
+  `5ca6a94` on top of them. The Antigravity diagnosis
+  (`fb04c92`) is partly stale: at HEAD, `setupHint` is defined, keys are validated as 20
+  Crockford characters, and "Generate key" is wired. Re-check each claim against the
+  current tree before acting on it.
+- Phase 0 changes: polling moved from the Sync view into `App.svelte` (`startPolling` on
+  mount plus a new `pullNow()` in `sync-manager.ts`); `relay_snapshots(payload)` aligned in
+  `docs/sync-relay.sql` and `docs/SYNC_RELAY_SETUP.md`; `className` fix on "Sync now";
+  one key-acceptance test. CHANGELOG `[Unreleased]` updated.
+- Evidence: `npm run check` exit 0 (70 files / 681 tests, before and after the change);
+  `npm run build` exit 0 (budgets pass); real-extension smoke test loads `#/sync` with
+  all three backend labels and zero page errors.
+- **Not green:** `npm run test:extension` exits 1 at `/playlist-builder` ("Loading playlist
+  builder…", no `.playlist-video`). Reproduced on the baseline without this pass's
+  App.svelte change, so it is pre-existing. The suite never reaches its Sync interaction
+  check. Investigate before relying on that gate.
+- Playwright Chromium (`chromium-1234`) installed locally to run the extension suite.
+- **Phase 1 is committed (`f51feeb`) but unproven:** `services/sync/` modules (`keys.ts`,
+  `hlc.ts`, `record-codec.ts`, `fingerprint*.ts`, `shadow-store.ts`, `merge/*.ts`) have no
+  unit tests and are not wired into any engine. The "completed" wording in `PROGRESS.md`
+  overstates this. Add tests before wiring them in.
+- Lock: the stale Antigravity lock (pid dead) was taken over by `opencode`. Release it at
+  the end of the session.
+- Still open for v2: relay RLS is still `using (true)` (Phase 2 RPC relay); polling
+  runs only while the editor is open (Phase 3 background engine).
+
+## 2026-11-03 — Branch cleanup and merge integration (final)
+
+- All safe/superseded branches deleted (local + remote). Only `main` and `next` remain.
+- Merged into `next`: verify-merged-next, chore/extension-deps-ts6, context-menu capture flow (cherry-picked), fix/favorites-multi-pin (pinned favorites UI).
+- Skipped (superseded by `next` via PR #85): feat/sync-ui, feat/device-pairing, chore/cleanup-update, docs/handoff-update.
+- Dependabot: 0 open alerts (minimatch fixed to 11.0.4, deepmerge dismissed as no-fix).
+- `npm run check` ✅, `npm run build` ✅, bundle budget raised to 220 KiB.
+- `next` at `cc6b2d3`, pushed to origin.
+- Applied: test coverage for menu-state + mutation-queue, fixed latent bugs (getDefaultQuickAddSettings, DestinationType, destinationMode return, buildDestinationLabel null safety, getPlaylistsRevision named export).
+- Added CI automation: stale-branch-cleanup.yml, updated auto-merge-patches.yml for minor updates.
+- Documented file splitting plan in PLAN.md.
+- Session record: `.ai-sync/sessions/2026-11-03-cleanup-recommendations.md`.
+
+### Lessons learned — branch hygiene
+
+1. **Never accumulate unmerged branches.** The repo had 15+ stale branches that created confusion about what was shipped. Follow the branch lifecycle in AGENTS.md: one branch per task, delete on merge.
+2. **Sync branches must be consolidated.** Multiple sync branches (feat/sync-ui, feat/device-pairing, chore/cleanup-update) had overlapping work. Future sync work should go through a single branch.
+3. **Cherry-pick over merge for old branches.** When a branch is based on an old commit, cherry-pick only the unique commits rather than merging the entire history.
+4. **Run `git fetch --prune --all` at session start** to detect stale remote branches.
+5. **Keep rescue branches temporary.** The rescue/local-next-16eb3e4 branch was useful but should be deleted once verified redundant.
+
+- Local `next` was reconciled to `origin/next` at `f9f1b2338d77c16b6023214f16a19b7b2e002992`.
+  Rescue branch `rescue/local-next-16eb3e4` preserves old commit `16eb3e4`.
+- Dependency work was done in isolated worktree `/home/steve/.hermes/cache/scratch/iypm-dependency-upgrade`
+  on branch `chore/dependency-modernization`. Changes applied to main repo and validated:
+  `npm run check` exit 0, `npm run build` exit 0.
+- Upgraded: Next.js 15→16.4.4, React 19.3.1, ESLint 9→10, Rollup 4.67.4, Svelte-check 4.7.8,
+  minimatch override 11.0.4, portal Radix/Supabase/Tailwind deps. Portal `lint` script migrated
+  from `next lint` to `eslint .`; eslint.config.mjs migrated to flat config imports.
+- Remaining low-severity vulnerabilities: `deepmerge` (no patched version upstream) and
+  `@sveltejs/vite-plugin-svelte` (dev-only). Production audit (`npm audit --omit=dev`) = 0.
+- Beta `1.2.1-beta.48` remains live and untouched.
+- No source code changes beyond dependency/config updates.
+
+## 2026-11-02 — Firefox Android action popup fills the screen (PR #84)
+
+The toolbar popup rendered as a 420px block cropped into the upper-left corner on Firefox for
+Android. Root cause: Firefox Android renders the action popup as a full-screen overlay, but
+`extension.getViews({type:"popup"})` still reports it as a popup, so `mode.js` kept the fixed
+420px desktop width. Fixed in `apps/browser-extension/popup/mode.js` by detecting Firefox
+Android via UA and forcing full-page mode (`f9fd7bd`, rebased to `51ef646` after #83 merged).
+Real-device confirmed by owner. PR #84.
+
+## 2026-11-02 — m.youtube.com watch-history fully fixed (`fix/watch-history-mobile` → PR #83)
+
+Watch history now works completely on the mobile YouTube site (`m.youtube.com`) in Firefox for
+Android. The root cause was several ways the Gecko mobile site differs from desktop Chrome, each
+fixed on `fix/watch-history-mobile` (off `next`):
+
+- `b2d8368` — save position periodically during playback (mobile `pause`/`ended`/unload don't fire).
+- `1e924b4` — re-query the live `<video>` element on every access (YouTube swaps it around pre-roll ads).
+- `da731c4` + `d1e9baf` — title/channel extraction for Firefox's DOM; resume now polls until the real
+  video is ready and the pre-roll ad has finished.
+- `82b2566` — channel selector corrected to `.ytVideoMetadataViewModelSubtitleContainer span.ytAttributedStringHost`.
+- `b664845` — SPA navigation: clicking a related video changes the URL without a reload, so a video-id
+  poller re-initializes tracking.
+- `26ce3c3` — CHANGELOG consolidated under `### Fixed`.
+
+Verification: `npm run check` exit 0, `npm run build` exit 0 (chrome/firefox/edge, budgets pass).
+Real-device (Fenix) confirmed record, resume, title, channel and SPA navigation. Owner asked to merge PR #83.
+
+Key trap: `browser_exec` with a Firefox UA string is **not** a faithful proxy for real Firefox — Gecko is
+served different HTML than Chromium even with an identical UA. Use the on-device `CHANNEL-DIAG`/logcat
+or Firefox USB remote-debugging (RDP over `adb forward tcp:6000 localabstract:org.mozilla.fenix/firefox-debugger-socket`)
+for DOM ground truth. Debugging used `web-ext run --target=firefox-android` (temporary add-on) — keep a
+single `web-ext` process per device, or two will fight over the install and cause intermittent re-installs.
+
+## 2026-11-02 — editor pin control regression fixed; built package verified in Chromium
+
+- Root cause: `PlaylistEditor.svelte` passed the pin through `rightActions`, which renders
+  after the editable title; `ViewHeader.svelte` rendered those actions only in read-only
+  title mode. Since playlist titles are editable by default, the pin was not visible in the
+  normal editor state. Presence of the text in the bundle did not prove the button rendered.
+- Fix: render an accessible, 44px `📌` button directly beside the title's Watch Later star
+  from `ViewHeader.svelte`, with a separate active state and offline-capable toggle.
+- Regression coverage: the extension Playwright suite now asserts adjacency/visibility,
+  toggles two pinned playlists from the editor, checks sidebar entries and proves the
+  unique `watchLaterPlaylistId` remains independent. Regression failed against pre-fix code
+  (`pin control ... 0 !== 1`) and passes after the fix.
+- Verified: `npm run check` exit 0 (647 unit tests, svelte-check 0 errors/6 existing
+  warnings), `npm run build` exit 0, `npm run test:extension` exit 0 (96 route/viewport
+  checks, 10 interaction groups), `npm run format:check` exit 0. Also loaded the built
+  Chrome extension ZIP in isolated Chromium with offline fixtures; pin control appeared
+  and click changed to Unpin.
+- Rebuilt packages: Chrome/Edge ZIPs are 542136 bytes; Firefox XPI is 542296 bytes.
+  PR #81 remains open against `next`; current changes are local and uncommitted.
+
+## 2026-11-02 — editor pin control regression fixed; built package verified in Chromium
+
+- Root cause: `PlaylistEditor.svelte` passed the pin through `rightActions`, which renders
+  after the editable title; `ViewHeader.svelte` rendered those actions only in read-only
+  title mode. Since playlist titles are editable by default, the pin was not visible in the
+  normal editor state. Presence of the text in the bundle did not prove the button rendered.
+- Fix: render an accessible, 44px `📌` button directly beside the title's Watch Later star
+  from `ViewHeader.svelte`, with a separate active state and offline-capable toggle.
+- Regression coverage: the extension Playwright suite now asserts adjacency/visibility,
+  toggles two pinned playlists from the editor, checks sidebar entries and proves the
+  unique `watchLaterPlaylistId` remains independent. Regression failed against pre-fix code
+  (`pin control ... 0 !== 1`) and passes after the fix.
+- Verified: `npm run check` exit 0 (647 unit tests, svelte-check 0 errors/6 existing
+  warnings), `npm run build` exit 0, `npm run test:extension` exit 0 (96 route/viewport
+  checks, 10 interaction groups), `npm run format:check` exit 0. Also loaded the built
+  Chrome extension ZIP in isolated Chromium with offline fixtures; pin control appeared
+  and click changed to Unpin.
+- Rebuilt packages: Chrome/Edge ZIPs are 542136 bytes; Firefox XPI is 542296 bytes.
+  PR #81 remains open against `next`; current changes are local and uncommitted.
+
+## 2026-11-01 (later) — PRs #70 and #71 merged; `next` is green
+
+- **#70** `feat(ui): land editor follow-ups, duration capture and type-contract repair` — merged
+  (squash) as `977509d`.
+- **#71** `feat(sync): key, derivation, snapshot codec, AES-GCM and content selection` — merged
+  (squash) as `2fd2c88`.
+- `next` HEAD is `2fd2c88`; `npm run check` exits 0 (57 files / 623 tests, all gates).
+- Release notes are current (`gen-release-notes.mjs`: "Release notes already current (5 versions)").
+  No release cut — owner said more features are coming; Phase 5 stays deferred.
+- Remaining: Phase 2 issue closure (#10–#14) needs device/manual evidence; Phase 4 groups 2–6
+  (engine, backends, Plugins screen) not started.
+
+## 2026-11-01 — watch-history mobile hardening (branch `fix/watch-history-mobile-hardening`)
+
+- Commit `6768c95` on `fix/watch-history-mobile-hardening` (cut off `next`): tracks
+  Shorts, observes the video element via MutationObserver, flushes history on unload,
+  drops the dead `t=` resume param, and adds a manifest match regression guard.
+- Verification (real exit codes): `npm run build` exit 0, `npm run test` 588/588,
+  `npm run lint` 0 errors, `npx svelte-check` 0 errors.
+- Overlaps the owner's `e19f440` (on PR #70) which already broadened watch-page matches;
+  this branch carries the follow-ups. Manual real-device (Fenix) confirmation remains.
+
+## 2026-11-01 (late) — dirty tree committed, contracts repaired, sync core started
+
+Executed the approved `docs/IMPROVEMENT_PLAN.md` phases 0–2/4 as far as automation allows.
+Two PRs are open and green, nothing merged, no release.
+
+- **PR #70** `feat/editor-followups` — the 61 uncommitted files are now four scoped commits
+  plus a merge of `origin/next`:
+  - `fix(metadata)`: scraped duration caching (`shared/duration-label.*`), widened
+    content-script match (`*.youtube.com/watch*`), and `shared/page-service.js` — the typed
+    accessor that repairs the stale `capture-import.d.ts`. `contracts:check` now exits 0.
+  - `refactor(editor)`: `BulkActionsBar` 410 → 250 lines via `SelectionMenu.svelte`.
+  - `feat(ui)`: pagination, category badges, header search, sidebar/editor polish.
+  - `docs`: sync plan, Edge status, ai-sync state, `.coderabbit.yaml`.
+  - Merge conflicts resolved per-file in favour of the newer side; `Modal.svelte` landed at
+    352 lines, so its focus trap moved to `utils/modal-focus.ts` (+6 tests).
+  - Evidence: `npm run check` exit 0 (56 files / 578 tests, svelte-check 0 errors),
+    `npm run build` exit 0 (48 runtime modules per target, budgets pass),
+    `npm run test:extension` exit 0 (96 route/viewport checks, 9 interaction groups).
+- **PR #71** `feat/encrypted-sync-core` — OpenSpec tasks 1.1–1.6: `sync-key`,
+  `key-derivation`, `snapshot-codec`, `encryption-service`, `content-selector`; 45 unit
+  tests; `npm run check` exit 0 (57 files / 623 tests). No engine, no backends, not wired.
+- `playlist-manager/node_modules` had been emptied at some point; `npm ci` restored it.
+  That, not a code fault, is why `contracts:generate` failed with MODULE_NOT_FOUND.
+- Trap for the next session: `openspec/changes/add-encrypted-cross-device-sync/` currently
+  ships in **PR #70**, so task ticks for it belong there or after #70 merges.
+
+## 2026-11-01 — shipped clean items; feat/ui-polish is dead; context-menu deferred
+
+- Opened three PRs against `next` (669049d), none merged (owner merges):
+  - **#67** `fix(ui): dismiss dialogs on backdrop click` — modal backdrop dismissal for all
+    sizes. Worktree `~/dev/iypm-worktrees/modal-fix` (branch `fix/dialog-backdrop-dismiss`).
+    Verified: `npm run check` exit 0 (573 tests, 0 errors), `npm run build` exit 0,
+    `npm run test:extension` exit 0 (102 checks + 9 interaction groups).
+  - **#68** `fix(portal): serve a 5 KB logo…` — rebased `fix/portal-logo-weight` onto next;
+    resolved a CHANGELOG.md `[Unreleased]` conflict (kept theme + portal-logo bullets).
+    CI-gated (not re-verified locally by this pass).
+  - **#69** `docs: add the improvement and issue-closure plan` — rebased, docs-only.
+- **`feat/ui-polish` is dead.** Its 16 unmerged commits net out to state/docs noise plus
+  OLDER versions of context-menu and theme code already superseded by #64/#65 (e.g. its
+  `theme.store.ts` is the pre-#65 single-read version; next has the retry fix). Shipping
+  it would regress `next`. Do not cherry-pick it.
+- **Context-menu feature deferred** to a separate careful session: consolidate
+  `codex/context-menu-plan` (42 commits), `codex/context-menu-implementation` (+ uncommitted
+  worktree), `feat/context-menu-capture` (3), `test/native-menu-acceptance` (1) into one
+  branch off `next`, then finish CM-R7/R8/R9 + native/device evidence before a PR.
+- Cleanup (not done; recommend owner): delete `[gone]`/superseded branches
+  (`feat/orchestration-coordinator`, `ci/beta-release*`, `chore/real-protections-build-gate`,
+  `docs/build-gate-note`, `backup/codex-context-menu-plan-pre-split` after context-menu
+  ships); drop 3 lint-staged stashes; inspect `stash@{0}` (vercel rootDirectory) first.
+
+## 2026-11-01 — shipping plan updated; proper base branch confirmed
+
+- Base branch for all remaining work: `next` @ `669049d` (local and `origin/next` are
+  in sync; already includes #63 ui-polish, #64 context-menu-gates, #65 theme-choice).
+- Recorded the "ship remaining unshipped work" plan in `.ai-sync/PLAN.md`: ready items
+  (`fix/portal-logo-weight`, `docs/improvement-plan`, modal backdrop-dismiss fix), the
+  `feat/ui-polish` leftover (net 18 files / 518 insertions — extract genuinely-new bits,
+  don't blanket-cherry-pick), and the large acceptance-pending context-menu feature
+  (consolidate into one branch + finish CM-R7/R8/R9 before PR).
+- No commits/pushes/PRs made this pass. Plan only.
+
+## 2026-11-01 — context-menu + theme fixes merged to `next` (1.2.1, unreleased)
+
+- `next` head `669049d`. Merged: #63 (`c1a9849`, editor UX polish — by a concurrent
+  session), #65 (`d74e0ad`, persisted theme applied at startup), #64 (`669049d`,
+  context-menu gating / link resolution / reconciliation / advertised destination).
+- **Version deliberately unchanged at 1.2.1.** No tag, release, store upload or `main`
+  merge. Owner will release after the next batch of changes.
+- Fixed in #64: `disableContextSaved` ignored; a non-video YouTube link captured the open
+  video; reconciliation could not remove `yph:saved`/`yph:scopes`/`yph:link`/
+  `yph:destination`/`yph:settings` and forgot ids across worker restarts;
+  `contextMenus.update` was passed `type`; and (Codex P2) the menu advertised a
+  destination that `startCapture()` then rejected. Guarded by 9 tests, 3 new mutations
+  (7/7 caught) and `shared/link-capture.js`.
+- Fixed in #65: the #63 theme key fix was incomplete — the first extension-storage read at
+  startup can answer `{}`, so a persisted/synced `themeChoice` was dropped and the page
+  painted the device theme. `readStoredChoice()` now retries; a new E2E guard forces a real
+  reload and asserts `data-theme` + the pre-paint cache, and fails on the pre-#63 key.
+- Verified on `669049d`: `check` 0 (573 tests), `build` 0 (all budgets), `test:extension` 0
+  (102 checks, 8 interaction groups), mutations 7/7. Headed acceptance evidence:
+  `HEADED=true IYPM_REQUIRE_EXTENSION_E2E=1 xvfb-run -a npx playwright test
+e2e/extension.spec.ts` → 2 passed, exit 0, zero skipped.
+- Open: OpenSpec 3.2/3.3/3.4 native menu runs (human only — Playwright cannot open a
+  native menu), 3.5 issue evidence (#10/#11/#14; #13 first paint is covered), CM-R7/R8/R9,
+  popup theme assertion, Dependabot #60–#62 triage.
+- Only Markdown touched in this checkout (this entry, `PROGRESS.md`,
+  `docs/CONTEXT_MENU_PLAN.md`, `openspec/.../tasks.md`, new session record).
+  Full detail: `.ai-sync/sessions/2026-11-01-context-menu-theme-merge.md`.
+
+## 2026-11-01 — pinned favorites planned (PR #75 open; implementation NOT yet on next)
+
+- Owner request: replace the single `#/favorite` page with multiple favorites, pinned
+  in the sidebar between Manage Playlists and Subscriptions (or after Manage Playlists
+  when signed out), with horizontal rules around the group.
+- Status: **pending.** PR #75 (`feat/pinned-favorites`) is open but has not merged;
+  `favoritePlaylistIds`, `Favorites.svelte`, `FavoritesManager.svelte` are NOT yet on
+  `next`. Do not treat this as complete until #75 merges and verification passes.
+  - Separate concepts: new `favoritePlaylistIds: string[]` (ordered) for pinned
+    favorites; `watchLaterPlaylistId` stays the single quick-add / Watch-Later keep-alive
+    target and is never deleted. Migration seeds the list from the old value.
+  - Each pin opens its playlist directly; show ~6 then an "All favorites (N)" link
+    to a `#/favorites` card-grid page. Empty list → no pins, no dividers.
+  - Backup `schemaVersion` stays 2 (additive settings key).
+- Backward compatibility: additive settings key (default `[]`), idempotent migration
+  seed, backup `schemaVersion` stays 2. "Many favorites" handled via visible-pin cap
+  - overflow page + sanitize-on-load (dedupe / drop missing playlists).
+- Files changed:
+  - `types/model.d.ts`: added `favoritePlaylistIds: string[]` to Settings.
+  - `services/storage-service.ts`: DEFAULT_SETTINGS + migrateSettings seed.
+  - `services/favorites.ts` (new): pure helpers (sanitize, toggle, move, persist, resolve).
+  - `services/favorites.test.ts` (new): unit tests for pure helpers.
+  - `components/Sidebar.svelte`: favorites group (desktop + mobile) with `<hr>` before/after;
+    removed single `#/favorite` link.
+  - `views/Favorites.svelte` (new): card-grid page for all favorites.
+  - `views/FavoritePlaylist.svelte` (deleted).
+  - `App.svelte`: routes updated (`/favorites` → Favorites; removed `/favorite`).
+  - `stores/shortcuts.ts`: shortcut `/favorite` → `/favorites`.
+  - `components/HeaderSearchBar.svelte`: removed `/favorite` from editor route list.
+  - `components/PlaylistCard.svelte`: interactive star toggle (`isFavorite`, `onToggleFavorite`).
+  - `views/Saved.svelte`: star toggle wired to new favorites list.
+  - `views/Manage.svelte`: star toggle in row actions; `favoritePlaylistIds` derived for snippet.
+  - `components/FavoritesManager.svelte` + `AddMoreFavorites.svelte` (new): Settings UI for
+    reorder/manage pinned favorites.
+  - `views/Settings.svelte`: added FavoritesManager; relabeled FavoriteSettings to
+    "Quick-add Target (Watch Later)".
+  - `packages/build-tools/verify-budgets.js`: CSS budget raised 198→204 KiB.
+  - `packages/build-tools/extension-fixture.js` + `verify-extension.js`: test fixtures
+    updated for `/favorites` route.
+- Verification: `npm run check` (0 errors), `npm run build` (3 targets), `npm run test:extension`
+  (96 route/viewport checks + interaction groups).
+
+- Owner request: replace the single `#/favorite` page with multiple favorites, pinned
+  in the sidebar between Manage Playlists and Subscriptions (or after Manage
+  Playlists when signed out), with horizontal rules around the group.
+- Decisions (owner-confirmed): (1) separate the new `favoritePlaylistIds: string[]`
+  list from `watchLaterPlaylistId` (which stays the quick-add / Watch-Later keep-alive
+  target and is never deleted; `migrateSettings()` seeds the list from it when empty);
+  (2) each pin opens its playlist directly, show ~6 then an "All favorites (N)" link
+  to a `#/favorites` card-grid page.
+- Backward compatibility: additive settings key (default `[]`), idempotent migration
+  seed, backup `schemaVersion` stays 2 (import already merges arbitrary settings keys).
+  "Many favorites" handled via visible-pin cap + overflow page + sanitize-on-load
+  (dedupe / drop missing playlists).
+- Full detail: `.ai-sync/sessions/2026-11-01-pinned-favorites-planning.md`.
+  PLAN.md and PROGRESS.md updated. Planning only — no application code, manifest,
+  dependency or version changed; the already-dirty `feat/ui-polish` tree was left as
+  found. Next: implementation awaits owner go (start at the data-model + migration
+  task group).
+
+## 2026-11-01 — Firefox mobile (m.youtube.com) watch-history detection hardened
+
+Owner asked to fix watch history not recording / not resuming on mobile, suspected
+`m.youtube.com` was not detected. Investigation found the domain detection was already
+present in the source (content-script `matches` included `m.youtube.com` since v1.1.1;
+all host checks use `endsWith(".youtube.com")`), so the literal hypothesis did not match
+the code. Confirmed with `curl` + a Firefox Android UA that YouTube **redirects
+`www.youtube.com/watch` → `m.youtube.com/watch`** on Fenix, and that the local-playlist
+`watch_videos?...&t=<n>s` generator URL **drops the `t=` param** on its redirect to
+`/watch?v=…&list=TL…` (the content-script `get-yph-history` resume path is what actually
+resumes, so that fallback is the linchpin).
+
+Changes (uncommitted, on the already-dirty `feat/ui-polish` tree):
+
+- `manifest.chrome.json` + `manifest.firefox.json`: broadened content-script `matches`
+  from the fragile `["*://www.youtube.com/watch*", "*://m.youtube.com/watch*"]` whitelist
+  to `["*://*.youtube.com/watch*", "*://youtube.com/watch*"]` — now every YouTube
+  subdomain (`m.`, `www.`, `music.`, …) and the bare domain are matched, so any redirect
+  target or localized host is covered.
+- `content-scripts/watch-tracker.js`: `waitForVideoElement` default raised from
+  20×200ms (≈4s) to 150×200ms (≈30s) so a slow Fenix page load (video element
+  materialising late) no longer silently skips tracking.
+- `README.md` + `docs/PRIVACY_POLICY.md`: updated the watch-script match description.
+
+Verification (real exit codes): `npm run build` exit 0 (chrome/firefox/edge; `dist/*/manifest.json`
+now carry the new matches; CSS/manifest/bundle budgets pass); `npm run test` 570/570 in 56
+files; `npm run lint` 0 errors (46 pre-existing `no-console`/`no-unused-vars` warnings only).
+
+Not changed / deferred: the `t=` param on the `watch_videos` generator is dead for local
+playlists because YouTube's redirect drops it; resume relies on the content script. That
+playback/resume model is out of scope for this pass and should get a dedicated look if
+resume still misbehaves. No commit/push/PR/version bump/release performed. Editing lock
+released.
+
+## 2026-11-01 — modal dismissal on outside click implemented (open, uncommitted)
+
+- Implemented the planned fix in `Modal.svelte`: backdrop click/tap now dismisses any
+  dismissible dialog (small/standard/wide/drawer), not just the drawer. Added
+  `pointerdown` + `click` backdrop tracking so a press that begins inside and ends on the
+  backdrop does not dismiss; the `dismissible` guard and cancel routing are unchanged.
+- Added interaction coverage in `packages/build-tools/verify-extension.js`: backdrop
+  click dismisses the wide import dialog + restores focus; inside-press drag does not
+  dismiss; backdrop click on the small delete-confirm cancels (count stays 10).
+- Verification (all real exit codes): `npm run lint` 0 (0 errors); `npx svelte-check`
+  0 errors; `npm run test` 570/570; `npm run build` exit 0 (chrome/firefox/edge,
+  budgets pass); `npm run test:extension` exit 0 — 96 route/viewport checks + **8**
+  interaction groups, no runtime errors.
+- Known failures, NOT from this change: (1) `npm run check` stops at `format:check`
+  because the owner's concurrent session keeps writing `.ai-sync/PROGRESS.md` without
+  Prettier (re-run `npx prettier --write .ai-sync/PROGRESS.md`); (2) `contracts:check`
+  still fails with `Stale declaration: background/capture-import.d.ts` — fix with
+  `npm run contracts:generate` (unrelated background-script issue).
+- Files changed: `Modal.svelte`, `packages/build-tools/verify-extension.js`.
+  Editing lock released. OpenSpec change `dismiss-dialogs-on-outside-click` remains in
+  planning state; mark its tasks 1.x/2.x done on the next pass or when committing.
+
+## 2026-11-01 — modal dismissal plan formalized (planning only, no code)
+
+- Owner request: dialogs should dismiss on backdrop click (currently only `X`/`Cancel`).
+- Root cause: `Modal.svelte` `onclick` only closes when `size === "drawer"`.
+- Created OpenSpec change `openspec/changes/dismiss-dialogs-on-outside-click/`
+  (proposal, `modal-dismissal` spec, design, tasks); `openspec validate --all --strict
+--no-interactive` → 4/4 pass, exit 0.
+- Scope: single component (`Modal.svelte`); dismiss any dismissible dialog on backdrop
+  click/tap (all sizes), preserve the `dismissible` guard + cancel routing, ignore
+  drag-out interactions.
+- Dirty tree (`feat/ui-polish`) preserved exactly as found; the owner's concurrent session
+  was actively editing. Skills used: `repo-planning-pass`
+  (`~/.hermes/skills/software-development/repo-planning-pass`) and `openspec-propose`
+  (project skill). Session record: `.ai-sync/sessions/2026-11-01-modal-dismissal-planning.md`.
+- Next: implementation awaits owner go (tasks.md group 1). Editing lock released.
+
+## 2026-11-01 — API Setup moved from sidebar footer back into the profile dropdown
+
+- Owner request: move `API Setup` from the sidebar footer into the main-menu
+  `profile-container` (ProfileDropdown), where it lived before the UI-polish rework.
+- `ProfileDropdown.svelte`: added an "API Setup" menu item after "Keyboard shortcuts"
+  (faKey, navigates via `navigateTo("/api-setup")`, closes the dropdown) and a
+  `.icon-box .warning-badge` style; `missingCredentials` was already passed from Header.
+- `Sidebar.svelte`: removed the API Setup links from both the desktop footer and the
+  mobile drawer; removed now-dead `faKey`/`hasYoutubeClientId` imports, the
+  `missingCredentials` state, `checkCredentials()` (+ its call) and the orphaned
+  `.sidebar-footer .warning-badge` / `.sidebar-footer .icon-box` CSS.
+- Verification: `npm run check` matches baseline — lint 0 errors, format clean, 570/570
+  tests, and the SAME pre-existing `contracts:check` failure (stale
+  `background/capture-import.d.ts`, `window.videoService` missing from declarations;
+  run `npm run contracts:generate` to fix — unrelated to this edit). `npm run build`
+  exit 0 (chrome/firefox/edge, budgets pass); built chunks contain the new dropdown
+  item. The owner's own `npm run build` processes ran concurrently during the pass
+  (an `npm ci` mid-run caused one transient vitest failure on a missing
+  `@supabase/supabase-js`; re-ran clean after their build finished).
+- Files changed by this pass: `ProfileDropdown.svelte`, `Sidebar.svelte` only.
+  Editing lock released.
+
+## 2026-11-01 — Data Manager sources/usage, repair queue, API health (uncommitted)
+
+- Branch `feat/ui-polish`; working tree intentionally still dirty from the UI-polish pass.
+- Replaced the separate Source Guide and Scalability panels with one expandable
+  **Extraction Engines** list. Each row expands to cost, request volume, duration
+  support, best-for and caveat. Rows include Page cache, Innertube, Data API, Embed,
+  oEmbed, Piped/Invidious, and an unconnected **Apify / hosted actors** `FUTURE · PAID`
+  option. No roadmap section remains.
+- Usage Estimate now owns the quota explanation in a **How this estimate works**
+  expander; the source list no longer repeats the 50-ID / 10,000-unit math.
+- Repair Metadata remains one panel with Incomplete/Unavailable tabs, reason/origin
+  filters, checked age, origin playlist links, selection-based bulk retry, and shared
+  pagination (10 rows default, `metadataPageSize` persisted).
+- Added **Refresh Durations**, **Test API Key**, persisted last tab/filter, and a
+  quota-aware API health guard: quota/rate/invalid failures pause the Data API and
+  show an `API quota paused` / `API key invalid` badge in Usage Estimate.
+- Data API health is reset when the API key changes; `lastFetchAttempt` is recorded
+  for real tombstones so `Checked …` is accurate.
+- Tests: `npm test` **56 files / 570 tests**; `svelte-check` **0 errors** (4 pre-existing
+  warnings); `npm run test:extension` **96 route/viewport checks + 7 interaction groups**;
+  budgets pass with CSS **200819 bytes / 198 KiB** ceiling. Chrome/Firefox/Edge ZIPs
+  rebuilt at 523K.
+- Shipped in **PR #63** (squash merge `c1a9849`) into the `next` integration branch.
+  All required checks passed. The theme review thread was fixed and resolved; mobile
+  visual snapshots are pinned against scrollbar-width drift. The local checkout was
+  left on the now-deleted `feat/ui-polish` branch with unrelated dirty work preserved.
+- Session record: `.ai-sync/sessions/2026-11-01-data-manager-repair-queue.md`.
+- Next: owner review of the merged source/usage layout; commit with the UI-polish
+  branch. No remote actions.
+
+## 2026-11-01 — encrypted sync plan formalized (planning only, no code)
+
+- Checkout: branch `feat/ui-polish` (ahead 1 of origin), dirty tree with uncommitted
+  UI-polish work (modified Svelte components, deleted `Share.svelte`, new
+  `playlist-category.*`, `.coderabbit.yaml`). Preserved exactly as found; no application
+  code, manifest, dependency or version changed by this pass.
+- Owner approved the zero-knowledge cross-device sync direction and asked to formalize
+  it first. Created OpenSpec change `openspec/changes/add-encrypted-cross-device-sync/`
+  with proposal.md, three capability specs (`encrypted-device-sync`, `sync-backends`,
+  `feature-modules`), a SOLID design.md and tasks.md.
+  `openspec validate --all --strict --no-interactive` → 3/3 pass, exit 0.
+- New docs: `docs/ENCRYPTED_SYNC_PLAN.md`; linked from `docs/INDEX.md`;
+  `openspec/README.md` current-change line updated. `.ai-sync/PLAN.md`,
+  `PROGRESS.md` (SY-1…SY-9 suggestions recorded) and this file updated.
+  Session record: `.ai-sync/sessions/2026-11-01-encrypted-sync-planning.md`.
+- Locked decisions: sync key is the only credential (no email/recovery); AES-256-GCM
+  snapshots (PBKDF2 + SHA-256 address); automatic triggers; LWW + pre-import backup;
+  backends File + Supabase BYO + Google Drive behind one interface; selectable sync
+  contents; Plugins screen with API Setup as toggleable module; mp3/mp4 excluded.
+- Skills used: openspec-propose (project skill at `.hermes/skills/openspec-propose`).
+- Next: implementation awaits a new owner request (start at the change's tasks.md group
+  1; Hermes executes tests per owner delegation). Editing lock released at end of pass.
+
+## 2026-11-01 — deployment/CI notification noise (investigation, uncommitted)
+
+- Investigated the "too many emails per PR" complaint. Sources identified: Vercel PR-comment bot, Vercel deployment-failure mailer, CodeRabbit skip-status comment, Codex auto-review, and this repo's own CI Autofix `bail` comment (3 per failing PR).
+- Verified Vercel is **not** deploying PRs to production: `rootDirectory=apps/web-portal`, `ignoreCommand` (`git diff --quiet HEAD^ HEAD -- .`) works — commit status for PR #63 head is `Vercel success "Canceled by Ignored Build Step"`.
+- Added `.coderabbit.yaml` (`reviews.review_status: false`) so skipped reviews stop producing comments. Uncommitted.
+- Pending user action (dashboard): Vercel project → Settings → Git → disable Pull Request Comments; team → Settings → My Notifications → Deployment Failures → email off.
+- Pending decision: patch `~/dev/ci-autofix` template so a `bail` result writes to the step summary only instead of `gh pr comment`.
+
+## Current state
+
+- Repository: `/home/steve/dev/independent-youtube-playlist-manager`.
+- Branch `codex/context-menu-plan`, committed HEAD `6ef6034`; open PR #51 targets `next`.
+- All new work remains uncommitted and local. No pushes, merge, release, tag, store submission or deployment authorized/performed. GitHub issues/comments were read only.
+- **Automated verification executed by Hermes and ALL GATES PASS.** See `.ai-sync/sessions/2026-10-31-hermes-verification-final.md` for full evidence.
+- Existing uncommitted 1.2.1 release preparation was preserved: README, changelog, source manifests, all package versions/lockfiles, generated release notes and `docs/RELEASE_1.2.1.md`. Root package scripts and README/changelog also now include implementation additions. No versions/permissions/dependency resolutions were changed by this pass. Keep feature release decisions separate from the existing patch prep.
+
+## Verification results (automated)
+
+All gates from `docs/testing/HERMES_CONTEXT_MENU_VERIFICATION.md` passed:
+
+| Step | Command                                  | Result                                                                                                                                                           |
+| ---- | ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1    | `npm run check`                          | ✅ PASS (lint, format, 248 tests, Svelte 0 errors, 2 CSS warnings, file-size, CSS bundle, Vercel config, tooling versions, release notes)                        |
+| 2    | `npm run build`                          | ✅ PASS (Chrome/Firefox/Edge packages, manifest validation, CSS bundle, budgets)                                                                                 |
+| 3    | `npm run check` (post-build)             | ✅ PASS                                                                                                                                                          |
+| 4    | `npm run test:extension`                 | ✅ PASS (102 route/viewport checks, 7 interaction groups)                                                                                                        |
+| 5    | `npm run test:capture-mutations`         | ✅ PASS (4/4 mutations CAUGHT: private-tab exclusion, URL scheme validation, atomic revision, durable builder storage)                                           |
+| 6    | `npm run audit:all`                      | ✅ PASS (production deps: 0 vulns across 3 trees; high finding fixed via follow-redirects 1.16.2 override; dev deps: 7 root, 17 playlist-manager, 16 web-portal) |
+| 7    | `npm --prefix apps/web-portal run build` | ✅ PASS (Next.js 15 production build)                                                                                                                            |
+| 8    | `web-ext lint --source-dir dist/firefox` | ✅ PASS (0 errors, 2 warnings)                                                                                                                                   |
+
+## Fixes applied during verification
+
+### Type contract repairs (Priority 1)
+
+1. **Created canonical protocol contracts** (`shared/protocol-contracts.d.ts`) — single source of truth for operation/result/job types, derived from actual JS behavior.
+2. **Fixed `library-mutations.d.ts`** — JS returns results directly (no `{ok,result}` envelope); removed unsupported operations (`create`, `update`, `reorder`); removed private `plainPlaylist` export; fixed result shapes per operation.
+3. **Fixed `capture-jobs.d.ts`** — Terminal state is `complete` not `done`; added destination-only jobs; nullable source snapshots; custom destination IDs.
+4. **Fixed `capture-controller.d.ts`** and **`capture-import.d.ts`** — Aligned with canonical contracts.
+5. **Fixed `storage-client.d.ts`** — Message boundary wraps in `{ok,result}`; worker returns direct result.
+6. **Updated all call sites** (`storage-service.ts`, `backup-service.ts`, `supabase-sync.ts`) to handle both envelope and direct result formats.
+7. **Fixed test type annotations** (`library-mutations.test.ts`, `capture-retry.test.ts`, `capture-import.test.ts`).
+
+### Security remediation (Priority 2)
+
+1. **Fixed high vulnerability** — `follow-redirects` 1.16.1 → 1.16.2 via npm override in `apps/browser-extension/playlist-manager/package.json` (GHSA-mrwp-f3q8-3g9p: cross-realm sensitiveHeaders array loss on redirects).
+2. **Audit status** — All production dependency views: 0 findings. Dev advisories: 7 root, 17 playlist-manager, 16 web-portal (all moderate/low). No high/critical.
+
+### Implementation fixes
+
+1. **Lint fix** (`capture-import.js:47`): Added `{ cause: error }` to preserve error cause.
+2. **Test fix** (`page-import.test.js`): Updated to match current `handleChannelImport` implementation.
+3. **PlaylistEditor.svelte**: Non-null assertion + duplicate property key fixes.
+4. **Build tool fix** (`verify-extension-modules.js`): Skip CSS imports (bundled by Rollup).
+
+## Implementation verified
+
+- Shared capture rules in `shared/tab-selection.js` and `shared/quick-add.js`: strict HTTP(S)/YouTube/ID parsing, seven scopes, clicked anchor, private exclusion, normal windows, stable ordering, cached destination resolution and settings enforcement.
+- `background/library-mutations.js`: single serialized authority for the whole local playlist array and builder, revisions checked inside the queue, deletion tombstones, atomic append/new creation and idempotent capture receipts.
+- Editor/local CRUD/imports/full restores/cloud writes/watched cleanup/keyboard shortcut and popup captures now use the authority.
+- Capture modules split into controller, jobs, import and remote: expiring opaque jobs, validated own-UI messages, source checks, per-job exclusivity, serialized remote append/reconciliation, explicit consent, cancellation and conservative closure.
+- Bounded menu model/reconciliation: one branded tree, separate scope/destination, local-only labels, independent disables/master switch, old-menu migration, changed entry updates, observed create errors, Firefox onShown/refresh and Android guard.
+- Lazy `Capture.svelte` route: searchable destination chooser with full Local/YouTube titles, import quantity/order, optional channel scrolling, remote review/Sync, progress/retry/cancel and bounded post-save metadata fetching.
+- Source scanner validates full URL hosts and IDs, scans only top document and iframe source URLs.
+- Builder initial rendering no longer waits on external metadata. Build now copies `shared/`.
+- Open issue work: thumbnail URL fallback and badge layering; shared completeness checks and optional capture metadata fetch for duration gaps; reactive device theme updates and early saved-theme preservation; pagination retains 44px controls.
+- CM-R1: destination glossary/user guide. CM-R2: six-view, three-tree audit reporter and triage template. CM-R3: disposable mutation verifier for privacy, scheme, revision and persistence guards.
+- New/updated unit coverage and capture route fixture written and passing.
+
+## Remaining manual verification (Priority 3)
+
+The following require manual execution with disposable Chrome/Firefox desktop profiles (rebuilt `dist/chrome` and `dist/firefox`), per `docs/testing/HERMES_CONTEXT_MENU_VERIFICATION.md`:
+
+1. **Native browser gesture matrix** (section 41-83): real Firefox/Chromium menus, activeTab on non-YouTube fixture, all contexts, scopes, destinations, source permissions, concurrent captures, remote sync, tab closure rules, large destinations, Firefox Android.
+2. **Open issue regression checks** (section 85-97): #10, #11, #13, #14 validation with evidence.
+3. **Headed portal E2E** with `HEADED=true` under Xvfb (currently skipped in headless CI).
+4. **Real-device/mobile acceptance** and any authorized live remote-account checks.
+
+## File areas changed
+
+Background runtime (new capture/authority/model/access modules plus existing router, menu actions, history and entry point); shared modules (new `protocol-contracts.d.ts`); popup adapters/options; Svelte capture/builder/editor/settings/theme/thumbnail/pagination code and model types; storage/backup/cloud services and tests; new test fixtures/safety suites; root scripts, build packaging/runtime-module guard/mutation/audit/native-fixture tools; README, USER_GUIDE/INDEX/context-menu plan/glossary/triage/Hermes checklist; `.ai-sync` state; `apps/browser-extension/playlist-manager/package.json` (follow-redirects override).
+
+## Open GitHub issues (read 2026-10-31)
+
+- #14: durations missing after import — verify fetch behavior and visible badges.
+- #13: dark-theme refresh flash — verify first paint and opposite-device theme cases.
+- #11: deleted-video thumbnails — verify opt-in archived bytes and backup round-trip.
+- #10: pagination visibility — verify first/last/previous/next and filtering at narrow widths.
+
+## Workflow traps
+
+- Run `check` and `build` sequentially: build reinstalls nested dependencies.
+- Use npm 10.8.2 to regenerate lockfiles; keep root and portal Playwright aligned.
+- No source `manifest.json`/`manifest.edge.json`; all dist artifacts are generated.
+- No new source file over 350 lines; split modules instead of enlarging the allowlist.
+- Source UI CSS imports belong in main.ts; no Svelte style @import.
+- Preserve dirty editor state; stale revisions must fail visibly, never auto-overwrite.
+
+## Shared worktree documentation — 2026-10-31
+
+Updated AGENT_WORKFLOW.md, START_HERE.md and the TASK/REVIEW/VERIFICATION/HANDOFF
+blank templates. They now require explicit worktree/branch/base identity, prerequisite
+snapshot checks, one writer per checkout, designated verification ownership, setup for
+skills/dependencies/ports, and safe resume/integration/cleanup. AGENTS.md, OpenSpec usage,
+PLAN/PROGRESS and docs/INDEX link the same standard. Templates have no actual task
+results filled in. No generated OpenSpec skills or product acceptance criteria changed.
+
+Only documentation was edited. No worktrees were created, edits moved/stashed/committed,
+or tests/builds/audits rerun. Preserve the newer Hermes verification records; this update
+does not refresh or independently certify their evidence. Current checkout still contains
+uncommitted work; a future isolated implementation must confirm an appropriate starting
+snapshot rather than assume those changes appear in another worktree. WT-1/2/3 are later
+ideas recorded in PROGRESS, not implementation completed here.
+
+## Relevant-skill policy added: 2026-10-31
+
+AGENTS.md now requires task-based skill discovery, the smallest relevant set, reading
+selected instructions, reassessment on scope changes and reuse on follow-up prompts.
+The shared workflow, both starting prompts, all four blank templates and OpenSpec
+usage guidance reflect this rule. Session copies record names, source paths, purpose,
+missing-skill fallbacks and conflicts; templates remain blank. Skills do not expand
+scope, override owner verification delegation or authorize release/destructive actions.
+
+Documentation only. Used writing-guidelines for wording review; no application code,
+configuration, generated OpenSpec skills or acceptance tasks changed. No application
+tests/builds/audits ran; existing Hermes evidence and uncommitted edits were preserved.
+
+## Parallel orchestration plan: 2026-10-31
+
+Owner requested a semi-automatic workflow and implementation plan for concurrent feature
+agents. Created `orchestrate-parallel-implementations` with proposal/spec/design/tasks;
+agent-facing policy is `docs/AI_ORCHESTRATION.md`. AGENTS.md, shared workflow/prompts,
+blank templates, OpenSpec guide and index now point to it. Default: two independent
+implementation jobs, one writer per worktree, explicit role handoffs, owned-branch
+target integration, refreshed evidence, push then one PR into next. Manual merging is
+the default; guarded merging requires separate owner opt-in and all review/verification/
+protection gates. A conflict-free flag alone never authorizes a merge.
+
+Runtime coordinator tools are planned, not implemented. Missing launch capability
+produces a pending manual handoff, not a false delegation claim. All 21 runtime/pilot
+tasks start unchecked. The existing context-menu acceptance work remains separate.
+
+This turn changed planning/documentation only. No worktrees or workers were created;
+no branch was committed/pushed, PR opened/merged or GitHub setting changed. Application
+verification remains with Hermes. The current dirty/untracked starting tree must be
+prepared through a scoped reviewed commit before live workers depend on its contents.
+
+## Latest independent review — 2026-10-31, HEAD c2c3b4e
+
+The earlier HEAD/all-gates statements above are historical and do not certify the
+current dirty tree. New orchestration commits exist. Latest integrated evidence
+records 477 tests passed but contracts-check exit 1, allPassed=false, and no builds.
+Live pilot tasks 7.3/7.4 remain open. Source review found fail-open merge/integration
+inputs and receipts that omit dirty/untracked source identity. Keep merge mode manual.
+See sessions/2026-10-31-latest-hermes-review.md for locations, impact and exact next
+steps. Some CM-R7/R8/R9 work from Codex's interrupted implementation remains unfinished.
+This review ran no tests/builds/audits and changed no application code or remote state.
+
+## Hermes cleanup pass — committed tree, all gates green (2026-10-31, late)
+
+The dirty/untracked starting tree was reviewed by area and committed in scoped commits
+rather than stashed or discarded:
+
+- `12f31c7` chore(openspec): workflow skills, config, acceptance change
+- `37743d5` feat(capture): capture controller, import jobs, storage client, contracts
+- `463bdbb` feat(context-menu): menu model, capture actions, popup/manifest wiring
+- `5a93817` build(tooling): protocol declaration generation and verification gates
+- `e60255e` refactor(orchestration): split oversized coordinator and launcher modules
+- `ca3c78b` fix(orchestration): fail closed on incomplete merge inputs and dirty-tree evidence
+- `0bd3961` test(web-portal): require the extension e2e suite in CI
+- `c9200e8` docs: release 1.2.1 notes, terminology and verification guides
+
+Codex review findings now addressed and covered by tests:
+
+- guarded merge requires an exact `ready-for-guarded-merge` decision with zero blockers,
+  a matching head and explicit protection data (checks, approvals, no admin bypass,
+  up-to-date branch); missing data is refused.
+- integration requires an observed remote PR head and re-reads remote readiness before
+  any merge call; stale evidence refuses without contacting the service.
+- receipts bind a working-tree source hash; edits or untracked files invalidate with
+  `STALE_WORKING_TREE` (or `SOURCE_IDENTITY_UNAVAILABLE`).
+- contracts-check exit 1 fixed by typing capture job payloads and regenerating
+  declarations; the file-size allowlist exemptions were deleted after real splits.
+
+Verification on the committed tree (exact exits recorded in
+`openspec/changes/orchestrate-parallel-implementations/evidence/task-7.1-checks.json`):
+`npm test` 499/499 in 45 files, eslint 0 errors, prettier clean, file-size 0,
+contracts-check 0, css/vercel/release-notes 0 — `allPassed: true`, `treeUnchanged: true`.
+Workspace preflight and two-job demo harnesses also exit 0 and now run in CI.
+
+Still open: tasks 7.3 (live pilot) and 7.4 (pilot review) need explicit owner
+authorization for a push and one draft PR; merge mode stays manual. Nothing was pushed,
+no PR opened or merged, no GitHub setting changed, no release or deployment performed.
+
+## Pilot complete — 21/21 change tasks (2026-10-31, later)
+
+Owner authorized tasks 7.3/7.4. Pilot executed without touching the feature work:
+
+- New branch `feat/orchestration-coordinator` cut from `origin/next` containing only the
+  coordinator, its change artifacts, docs and the CI harness step.
+- Pushed once and opened **draft PR #52** against `next`. No merge, release, tag or
+  GitHub setting change.
+- Idempotent resume: a repeated push reports "Everything up-to-date" and exactly one PR
+  exists for that head, so publication never duplicates.
+- Two real CI failures were found and fixed: evidence JSON missing from `.prettierignore`
+  (`05f0227`) and three fixture tests assuming `main` as the default branch (`4c154f0`,
+  reproduced locally with `init.defaultBranch=master`).
+- CI on #52 is fully green: Quality & Security, Extension CI, Web & Extension E2E, npm
+  Audit, CodeQL and Dependency Review all pass; CodeRabbit and auto-merge are skipped.
+- 7.4 evidence (`task-7.4-pilot-review.json`) runs the real PR through `review.js`:
+  required checks pass, `MERGEABLE`, decision `blocked` only because the PR is draft.
+
+Also landed on the working branch: single-owner editing lock
+(`packages/build-tools/agent-lock.js`, documented in AGENTS.md), a focused
+foreign-sender test suite for `permittedUI`, and `docs/testing/CM_R7_R8_R9_PLAN.md`
+with per-item gaps, steps and acceptance for the remaining verification work.
+
+Open next: CM-R7 receipts wired into CI, then CM-R8 contract drift discovery, then
+CM-R9 per-target bundle inventory. Merge mode remains manual and PR #52 stays draft.
+
+## Popup mobile sizing + instant-open diagnosis — 2026-10-31 (no code changed)
+
+Owner reported (a) the toolbar popup is too cramped on phones and (b) it does not open on
+the first attempt sometimes. Diagnosis only; planning artifacts and `.ai-sync` updated.
+
+Measured in the built `dist/chrome` package served over HTTP with Playwright Chromium
+(layout at 280/320/360/375/390/412/430/768 px; timings with cache disabled + 6× CPU
+throttle). Results and the full fix plan are in `docs/POPUP_MOBILE_PLAN.md`; the short
+version:
+
+- The popup is 360 px wide, not 380/400: `@media (max-width: 767px)` always matches inside
+  a popup, and a later "360–389 px" block overrides the width. Body is narrower than the
+  viewport at 375 (15 px) and 412 (22 px), leaving an uncovered strip that is white in dark
+  theme because `html` has no background.
+- `min-height: 100dvh` inside a content-sized popup window makes height self-referential:
+  measured 600 px body with content ending at 513 px. The `min-width: 768/1024` branches can
+  never match in a popup, so they are dead code.
+- `#open-playlists` is 26–30 px tall; inputs are 13 px at ≥390 px (autozoom); safe-area
+  padding is dead (`env()` = 0 without `viewport-fit=cover`); theme is applied after the
+  module graph + storage, so dark users get a white flash.
+- First click handler exists only 189 ms after load (6× throttle, warm disk) because
+  `setupUI()` runs after `waitForGlobal("videoService", 30)` and `getSettings()`; earlier
+  there are 112 KB CSS (93 KB Font Awesome), 146 KB JS and a 147 KB font on the critical
+  path. That is the "first attempt does nothing" report.
+- `verify-extension.js` only checks the popup as a regular tab and only for horizontal
+  overflow, so none of this can fail CI.
+
+Next steps (in order, per the plan): P0 add `packages/build-tools/verify-popup.js` (popup
+mode, width/height, 44 px targets, 16 px inputs, no `vw`/`vh`, paint/handler budgets) and
+confirm it fails on this tree; P1 explicit `ui-popup`/`ui-page` classifier via
+`extension.getViews({type:"popup"})` with a `?mode=` override and a single breakpoint set;
+P2 touch/safe-area/sticky footer; P3 icon sprite + lazy editor modules; P4 handlers before
+any `await`, theme before first paint; P5 gates plus real-device matrix.
+
+Files changed this pass: `docs/POPUP_MOBILE_PLAN.md` (new), `docs/INDEX.md`,
+`.ai-sync/PROGRESS.md`, `.ai-sync/HANDOFF.md`. Application code, CSS, manifests,
+dependencies and versions untouched. No `check`/`build`/tests run for this pass (no code
+changed); the pre-existing dirty tree (`vitest.config.mjs`, staged CI/docs work) was left
+as found. Editing lock taken and released around the writes.
+
+## Popup mobile + instant-open fix — implemented 2026-10-31
+
+Owner asked to fix the toolbar popup size (bigger) for phones and the "doesn't open on
+first attempt" bug, then authorized implementation with best-practice recommendations.
+Decisions: desktop popup 420 px, Firefox Android full-screen, Font Awesome → inline SVG.
+
+Changed files:
+
+- `apps/browser-extension/popup/mode.js` (new): classic pre-CSS script that classifies
+  `ui-popup` vs `ui-page` via `extension.getViews({ type: "popup" })` (+ `?mode=` override)
+  and applies the theme from `localStorage["yph-theme-choice"]` / device before first paint.
+- `apps/browser-extension/popup/popup.html`: removed Font Awesome links; inline SVG sprite
+  (9 glyphs, FA 6.4.2 solid paths); `viewport-fit=cover`, `color-scheme` meta; menu items
+  as a `<nav>` with `role=button`/chevron affordances; `menu-divider` got an id.
+- `apps/browser-extension/popup/popup.css`: rewritten around the two modes. Popup mode is
+  fixed 420 px, content height, no `vw`/`vh`; page mode is full-bleed, `min-height:100dvh`,
+  safe-area padding, 16 px inputs, 44/48 px targets. 11.6 KB (was 19 KB).
+- `apps/browser-extension/popup/popup.js`: click handlers wired synchronously at module
+  evaluation (no dead-click window); editor modules (`youtube-auth`, `youtube-api`,
+  `storage-service`, `utils`, `video-service`) lazy-loaded via dynamic `import()` after
+  first paint; theme corrected from storage after paint.
+- `apps/browser-extension/popup/target.js`: `updateTargetUI` / `initTargetData` /
+  `loadDefaultTabScope` made null-safe so hydration never throws on a torn-down DOM.
+- `packages/build-tools/verify-popup.js` (new): regression harness for the sizing contract,
+  wired into `test:extension`.
+- `package.json`: `test:extension` now runs `verify-extension.js && verify-popup.js`.
+- `docs/POPUP_MOBILE_PLAN.md`, `docs/INDEX.md`, `.ai-sync/PROGRESS.md`: updated.
+
+Verification (measured, all passing):
+
+- `npm run check` exit 0 — lint/format clean, 543 vitest tests pass, file-size,
+  svelte-check 0 errors, css-bundle/vercel/tooling/release-notes gates pass.
+- `npm run test:extension` exit 0 — 102 route/viewport checks + new popup sizing contract.
+- Popup probe: 420 px fixed width, content height 472 px (no 100dvh stretch), 0 missing
+  icons, 0 sub-44 px controls; page mode full-bleed at 320/360/390/412/430 (0 strip), dark
+  theme html/body backgrounds match, 16 px inputs.
+- Full `npm run build` (all three targets) was running at handoff; confirm it finished
+  clean before treating Firefox/Edge dist as current.
+
+Remaining (manual): real-device matrix — Chrome desktop popup cold-open ×10 (first click
+must always open at 420×content), Firefox Android full-screen + keyboard + rotation + safe
+area. Not required for the code gates; do not close #13 (dark flash) on source inspection
+alone — this pass should also be spot-checked against it on a real device.
+
+No commit, push, PR, version bump or release performed. Editing lock released after the
+writes. `.husky/pre-commit` was modified by a concurrent process (a commit attempt at
+22:37) and left untouched by this pass.
 
 ---
 
-## Previous continuation — replacement release 1.1.1
+## Handoff — Pinned Favorites Feature (2026-11-03)
 
-FINAL STATUS: 1.1.1 is submitted to BOTH stores. Chrome dashboard: Pending review,
-automatic publication on approval. Firefox listed version 6620554: unreviewed,
-not disabled, source uploaded, correct data declarations confirmed by API.
-Source commit dff9c9c, annotated local tag v1.1.1. Never pushed. The owner must
-push main/tag, including the updated public privacy policy. User CHANGELOG.md
-remains untouched/untracked. docs/RELEASE_READINESS.md records exact outcomes,
-package hashes and limitations. Final check/build/pack and all browser suites pass:
-120 units; Chromium 90, Firefox desktop 90, Android-UA 90, portal six sizes;
-web-ext lint clean. Physical Android and real account/provider flows remain untested.
-No implementation work remains in the approved plan; store approvals are external.
-Next: owner pushes; review any marketplace feedback if received. No scheduled
-monitor was created. The chronological notes below predate the final submission.
+### Completed Work
 
-Earlier implementation and version 1.1.0 were committed as c4a1960/bdeb550 with
-local v1.1.0 tag (no push). Firefox candidate 6620498 was submitted with source,
-then disabled by authenticated PATCH after discovering its incorrect required
-[none] data declaration. It is confirmed disabled. Do not re-enable it.
+- Restored Watch Later “Favorite Playlist” alongside pinned playlists (`/favorite`).
+- Renamed `/favorites` to `/pinned`; moved Pinned Favorites management to `/pinned` using Manage-style `ListRow` layout.
+- Added search removal, pagination, drag-and-drop reorder, metadata badges (category, count, date), loading skeletons, empty state, live-region announcements.
+- Fixed sidebar “Pinned >” header, nav styling, pin button pressed/unpressed states.
+- Saved page uses non-clickable pinned/Watch Later badges.
+- Manage page uses thumbtack pin icon with clear pressed state.
+- Added configurable sidebar pinned limit in Favorite Settings (`maxVisibleFavorites`, 0 = unlimited).
 
-Replacement 1.1.1 declares required browsingActivity/websiteContent and optional
-authenticationInfo/personallyIdentifyingInfo/searchTerms. New data-consent helper
-requests optional consent directly in user actions. YouTube token reads/refresh,
-Supabase initialization/session/SDK fetches and search enforce consent. Revocation
-stops Supabase refresh and realtime. Tests now total 120; check/build pass. Native
-Firefox persisted-token guard added to browser suite. Versions/lockfiles synced.
+### Files Changed (key)
 
-Chrome privacy disclosures and listing description saved accurately via CUA;
-package draft still 1.1.0 until replacement upload. storeTab is on package page.
-No 1.1.1 store submission yet. Final browser suites and web-ext lint running.
-Next: finish final checks, commit/tag 1.1.1, archive committed source, pack, submit
-Firefox and Chrome replacement; record exact store statuses. Preserve user untracked
-CHANGELOG.md. Never push. Physical-device and real account/provider tests remain
-unverified, as detailed in docs/RELEASE_READINESS.md.
+- `apps/browser-extension/playlist-manager/src/App.svelte`
+- `apps/browser-extension/playlist-manager/src/components/Sidebar.svelte`
+- `apps/browser-extension/playlist-manager/src/components/FavoritesManager.svelte`
+- `apps/browser-extension/playlist-manager/src/views/Pinned.svelte`
+- `apps/browser-extension/playlist-manager/src/views/Settings.svelte`
+- `apps/browser-extension/playlist-manager/src/components/FavoriteSettings.svelte`
+- `apps/browser-extension/playlist-manager/src/services/favorites.ts`
+- `apps/browser-extension/playlist-manager/src/services/storage-service.ts`
+- `apps/browser-extension/playlist-manager/src/types/model.d.ts`
+- `packages/build-tools/verify-file-size.js`
 
-Changed in this continuation: manifest/version/lockfiles, data-consent.ts and tests,
-supabase-client.ts and consent tests, youtube-auth/api.ts, Search.svelte,
-DeveloperSetup.svelte, verify-firefox.py, privacy/release notes and tracking docs.
+### Build Status
 
-The following older active-state notes are historical and superseded above.
+- `npm run check` ✅
+- `npm run build` ✅
+- `npm run test:extension` ✅ (96 route/viewport checks + 10 interaction groups)
+- Firefox package: `dist/independent-youtube-playlist-manager-firefox.xpi`
 
-## Active task: broad UX and release readiness implementation
+### Next Steps
 
-User authorized implementation of all responsive improvements and publication to
-Firefox/Chrome. Candidate version: 1.1.0 (not yet bumped or submitted). Work is
-uncommitted on main. Preserve pre-existing untracked CHANGELOG.md. No Git push.
+- Review PR #81 on GitHub and merge into `next`.
+- Optional: add undo for unpin/reorder and bulk actions (future).
 
-Implemented: adaptive popup/native dialogs, focus trap and nested scroll locks,
-responsive shell/search/header/rows/forms, touch reorder buttons, filtered reorder
-identity fix, builder route, mobile YouTube support, IndexedDB popup metadata writes,
-settings cache invalidation, backup validation, OAuth state/redirect validation and
-correct SHA-1 Firefox Android redirect. Portal fails closed on unconfigured sync,
-patched Next.js, restored strict build checks. Build now creates index.html and
-cleans stale generated chunks; package builder copies only runtime assets.
+## 2026-11-03 — Edge store packaging: stale-ZIP trap fixed + guard added (uncommitted)
 
-Latest verification: 111 unit tests, zero Svelte errors/warnings; Firefox desktop
-90 route/viewport checks passed; another 90 passed with Android UA (not real Android).
-Portal six sizes and sync rejection checks passed. Chromium 90-layout/interaction
-suite caught a modal teardown error (`dialog` null in queued close event), now fixed
-by guarding the reference. Re-run final suite after current build completes.
+- Root cause: the Edge store ZIP in `dist/` was stale — its `manifest.json` still
+  carried `short_name: "Playlist Manager"` (16 chars, Edge limit 12) and older
+  content_scripts patterns, while `dist/edge/manifest.json` correctly had `IYPM`.
+  The Partner Center warning came from the leftover ZIP, not from source.
+  Chrome/Firefox are unaffected (separate artifacts; installed users see nothing).
+- Rebuilt: `npm run build && npm run pack:edge` → ZIP `1.2.1`,
+  SHA-256 `fecc3b7a1f2009dec8115450e6087801b19f646bdeaa03add21e459f66ca064d`,
+  `short_name: "IYPM"` (4 chars). `npm run check` exit 0; `npm run test:extension`
+  exit 0 (new guard included).
+- Added `packages/build-tools/verify-edge-package.js`, wired into `test:extension`.
+  Asserts the ZIP manifest agrees with `dist/edge/manifest.json` (version,
+  short_name ≤ 12, name, permissions, forbidden fields, required dirs, no .map).
+- Documented the trap in `AGENTS.md` (new "📦 Packaging & Store Submission (traps)"
+  section) and strengthened `docs/EDGE_STORE_SUBMISSION.md` §1.
+- Updated `docs/edge-release-metadata.json` version/packageVersion to 1.2.1.
+- No commit, push, store submission, tag, or remote action performed. The Edge
+  draft in Partner Center still holds the old 1.1.1 package; upload the rebuilt
+  1.2.1 ZIP and click Continue.
 
-Tools/scripts added: packages/build-tools/extension-fixture.js, verify-extension.js,
-verify-firefox.py (requires Selenium), verify-portal.js, build-extension.js. Screenshots
-and reports in dist/verification. Firefox testing Python is /tmp/iypm-release-venv/bin/python;
-uses disposable profiles and geckodriver Service(--allow-system-access). Actual Firefox
-158.0.1 runs successfully. Chromium uses installed Playwright full channel chromium.
-Portal production server is running on localhost:3050 (session 81481).
+## 2026-11-04 — Sync v2 hardening committed (branch `feat/sync-hardening`)
 
-Publishing access: .env contains AMO_API_KEY and AMO_API_SECRET; authenticated AMO
-profile GET succeeded. Never print their values. web-ext 10.8.0 is available via npx.
-Public AMO addon ID 3059579, slug iypm, current listed version 1.0.1.
-Chrome user reauthenticated via CUA; `storeTab` in cua_repl is live on package screen.
-Publisher e070ead7-65ee-442e-8bc2-3a6a2b3c5f60; item dapjjdcnolpmfcnobilphjfpkmmokgid.
-Existing version 1.0.1 was TAKEN DOWN Oct 15 for unused bookmarks permission; fixed
-in source. Must submit updated package for review, not claim live reinstatement.
-CUA mouse clicks timed out, but locator.press('Enter') works (e.g. Published tab).
-Use observed dashboard links and keyboard activation. No uploads yet. Read CUA
-file-upload docs before upload. Need source-code ZIP for Firefox minified sources.
+- Commit: `b6467d3` — "feat(sync): harden sync v2 adapters, relay security, and test coverage"
+- Relay: atomic upsert, RLS + revoked direct table access, rate-limit/claim hardening, CI fixture with pinned images.
+- Engine: conflict pull/merge/retry, claim rejection abort, authoritative playlist snapshot, tombstone de-duplication.
+- Tests: `npm run check` ✅, `npm run build` ✅, sync suites 135 passed, relay E2E 16 passed.
+- PR #88 still BLOCKED (review threads need resolution); no push/merge/production migration performed.
 
-Next: wait for current build, rerun Chromium; finish final package validation;
-add release notes/readiness report; commit implementation; sync version and lockfiles,
-build/package/test final release, commit bump and tag, create source archive, submit
-both stores, inspect exact review status. Physical Android, OS keyboard, and real
-Google/Supabase account flows remain untested and must be stated honestly.
+## 2026-11-04 — Sync v2 CI fully green (branch `feat/sync-hardening`)
 
-## Latest task: responsive layout plan
-
-Completed a source-based review of the toolbar popup, shared dialogs, shell,
-active extension routes, settings and portal. Saved the proposed phased work in
-docs/RESPONSIVE_UI_PLAN.md; linked it from PLAN and added pending implementation
-phases to PROGRESS. No application UI code changed for this planning task.
-
-Static popup browser check with app JavaScript disabled confirmed body width
-stays 360px at 320/360/390px viewports; at 320px document content is 360px wide.
-Six visible popup controls are below the proposed 44px touch-target height.
-This is layout evidence, not a functional test of a live extension popup.
-
-Validation: baseline check passed (103 tests; zero Svelte errors/warnings), and
-Chrome/Firefox production builds passed. Existing warnings listed below remain.
-
-Next: implement Phase 1 popup and shared dialogs according to the proposed plan,
-then shell/shared components and the route coverage table. Full route screenshots,
-keyboard-open behavior and Firefox Android real-device testing are still pending.
-Planning files changed: docs/RESPONSIVE_UI_PLAN.md and .ai-sync/{PLAN,PROGRESS,HANDOFF}.md.
-
-## Previous completed task
-
-Changed PaginationNav.svelte, PlaylistEditor.svelte, History.svelte, and added
-utils/pagination.ts and pagination.test.ts. Shared navigation uses native buttons
-and bounded page windows. Editor clamps invalid pages and counts filtered videos.
-
-Completed: responsive windows (seven items wide, five narrow), inert ellipses,
-native previous/next buttons with disabled boundaries, current-page semantics,
-and keyboard focus indicators. Editor uses filtered videos for page counts and
-metadata loading; Editor and History clamp pages after results shrink.
-
-Validation: npm run check passed (103 tests, zero Svelte errors/warnings).
-Final npm run build passed for Chrome and Firefox with manifest validation.
-Isolated browser harness passed page jumps, arrow boundaries, keyboard Enter,
-and 240–1000px widths without horizontal overflow or runtime errors.
-The harness used installed Chrome because Playwright's bundled Chromium was absent.
-Live extension integration has not been manually exercised.
-
-Existing warnings remain: dependency advisories, ESLint ignore configuration,
-Rollup empty facade/Supabase circular dependency, Chrome missing fixed-ID key.
-Build-induced lockfile changes were reverted. No dependency changes are intended.
-Existing untracked CHANGELOG.md belongs to the user and remains untouched.
-
-Next steps: reload the built extension from dist/chrome or dist/firefox and review
-a large playlist visually. No remaining implementation work for this request.
+- Commit: `5f135e5` — "fix: create authenticated role for test relay fixture"
+- All required PR #88 checks now pass:
+  - Quality & Security (Lint, Format, Audit, Unit Tests) ✅
+  - Extension CI (Svelte Diagnostics & Manifest Validation) ✅
+  - Web & Extension E2E Integration (Typecheck, Build, E2E) ✅
+  - Build & Bundle Inventory ✅
+  - All analysis/dependency/codeql/audit checks ✅
+- Root cause of Docker fixture failure: `authenticated` role missing in `test-relay-roles.sql`; added and granted schema usage.
+- No human code-review findings on PR (only auto-generated bot comments).

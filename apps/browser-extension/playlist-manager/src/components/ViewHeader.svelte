@@ -9,6 +9,7 @@
     faLock,
     faLockOpen,
     faStar as faStarSolid,
+    faThumbTack,
   } from "@fortawesome/free-solid-svg-icons";
   import { faStar as faStarRegular } from "@fortawesome/free-regular-svg-icons";
   import { faYoutube } from "@fortawesome/free-brands-svg-icons";
@@ -49,6 +50,9 @@
     isFavorite = false,
     favoriteReadOnly = false,
     onToggleFavorite = undefined,
+    showPinButton = false,
+    isPinned = false,
+    onTogglePin = undefined,
   }: {
     icon: any;
     title: string;
@@ -81,6 +85,9 @@
     /** When true, the star is a non-interactive indicator (used on the Favorite Playlist page) */
     favoriteReadOnly?: boolean;
     onToggleFavorite?: () => void | Promise<void>;
+    showPinButton?: boolean;
+    isPinned?: boolean;
+    onTogglePin?: () => void | Promise<void>;
   } = $props();
 
   let originalTitle = $state("");
@@ -171,6 +178,18 @@
               <Fa icon={isFavorite ? faStarSolid : faStarRegular} />
             </button>
           {/if}
+        {/if}
+        {#if showPinButton && !editingTitle}
+          <button
+            type="button"
+            class="pin-playlist-btn"
+            class:active={isPinned}
+            onclick={onTogglePin}
+            title={isPinned ? "Unpin playlist from sidebar" : "Pin playlist to sidebar"}
+            aria-label={isPinned ? "Unpin playlist from sidebar" : "Pin playlist to sidebar"}
+          >
+            <Fa icon={faThumbTack} />
+          </button>
         {/if}
         {@render children?.()}
       {:else}
@@ -353,46 +372,82 @@
     margin-right: 4px;
   }
 
-  .favorite-star-btn {
-    background: none;
-    border: none;
-    padding: 0;
-    margin-left: 8px;
-    cursor: pointer;
-    font-size: 20px;
+  .pin-playlist-btn,
+  .favorite-star-btn,
+  .edit-title-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    color: var(--text-muted, #888);
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    margin-left: 8px;
+    border: 0;
+    background: none;
+    font-size: 20px;
+    cursor: pointer;
+    flex: 0 0 auto;
     transition:
-      transform 0.2s,
-      color 0.2s;
+      color 0.2s,
+      transform 0.2s;
+  }
+
+  .pin-playlist-btn,
+  .edit-title-btn {
+    color: var(--text-muted, #888);
+    opacity: 0.45;
+  }
+
+  .pin-playlist-btn.active {
+    opacity: 1;
+    color: var(--primary-color);
+  }
+
+  .pin-playlist-btn:hover,
+  .favorite-star-btn:hover,
+  .edit-title-btn:hover {
+    transform: scale(1.2);
+  }
+
+  .pin-playlist-btn:hover,
+  .pin-playlist-btn.active,
+  .edit-title-btn:hover {
+    color: var(--primary-color);
+    opacity: 1;
+  }
+
+  .favorite-star-btn {
+    color: var(--text-muted, #888);
   }
 
   .favorite-star-btn:hover {
-    transform: scale(1.2);
     color: #ffc107;
   }
 
-  .edit-title-btn {
-    background: none;
-    border: none;
-    padding: 0;
-    margin-left: 8px;
-    cursor: pointer;
-    font-size: 18px;
+  .favorite-star-indicator {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    color: var(--text-muted, #888);
-    transition:
-      transform 0.2s,
-      color 0.2s;
+    width: 24px;
+    height: 24px;
+    margin-left: 8px;
+    color: #ffc107;
+    font-size: 20px;
+    flex: 0 0 auto;
+    pointer-events: none;
+    user-select: none;
   }
 
-  .edit-title-btn:hover {
-    transform: scale(1.2);
-    color: var(--primary-color);
+  .pin-playlist-btn:focus-visible,
+  .favorite-star-btn:focus-visible,
+  .edit-title-btn:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
+
+  .edit-title-btn {
+    font-size: 18px;
   }
 
   .favorite-star-btn.active {
@@ -401,48 +456,63 @@
 
   /* Read-only star shown on the Favorite Playlist page — not a button */
   .favorite-star-indicator {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    margin-left: 8px;
-    font-size: 20px;
-    color: #ffc107;
     pointer-events: none;
     user-select: none;
   }
 
   @media (max-width: 768px) {
-    .top-left {
-      width: 100%;
-    }
-    h1 {
-      width: 100%;
-    }
-    .title-text {
-      flex: 1 1 180px;
-      min-width: 0;
-    }
     .view-header {
-      flex-direction: column;
-      align-items: flex-start;
+      flex-direction: row;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
       padding: 12px 16px;
-      gap: 12px;
+      gap: 8px 12px;
       min-height: auto;
     }
 
-    .btn-group.right-align {
-      width: 100%;
-      flex-wrap: wrap;
+    .top-left {
+      flex: 1 1 auto;
+      min-width: 0;
     }
 
     h1 {
+      display: flex;
+      align-items: center;
       font-size: 20px;
       gap: 8px;
+      flex-wrap: nowrap;
+    }
+
+    .title-text {
+      flex: 0 1 auto;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .btn-group.right-align {
+      flex: 0 1 auto;
+      margin-left: auto;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 6px;
+    }
+
+    /* On mobile / small screens, hide text labels inside buttons to save space and fit all actions */
+    .btn-group.right-align :global(.btn .content span:not(.refresh-icon)) {
+      display: none;
+    }
+
+    .btn-group.right-align :global(.btn) {
+      padding: 0 8px;
     }
 
     :global(h1 svg) {
       width: 20px;
       height: 20px;
+      flex-shrink: 0;
     }
 
     .edit-input {
@@ -453,6 +523,7 @@
     .count-badge {
       font-size: 12px;
       padding: 3px 10px;
+      flex-shrink: 0;
     }
   }
 </style>

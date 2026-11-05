@@ -1,0 +1,421 @@
+import { afterEach, describe, expect, it, vi } from "vitest";
+import type { SyncStatus } from "./sync-engine";
+import { registerSyncEngine } from "./sync-engine-registration";
+
+const status: SyncStatus = {
+  phase: "idle",
+  lastRunAt: null,
+  lastError: null,
+  lastSummary: "ready",
+  pendingCount: 0,
+  incomingCount: 0,
+  failedCount: 0,
+  pushedCount: 0,
+  pulledCount: 0,
+  startedAt: null,
+  estimatedMs: null,
+  categoryProgress: {
+    playlists: { processed: 0, applied: 0, total: 0 },
+    settings: { processed: 0, applied: 0, total: 0 },
+    history: { processed: 0, applied: 0, total: 0 },
+    devices: { processed: 0, applied: 0, total: 0 },
+  },
+};
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
+
+describe("sync engine runtime registration", () => {
+  it("routes runtime commands to the supplied engine handlers", async () => {
+    let onMessage:
+      ((request: any, sender: any, sendResponse: (value: unknown) => void) => unknown) | null =
+      null;
+    const runOnce = vi.fn().mockResolvedValue(status);
+    const getStatus = vi.fn().mockReturnValue(status);
+    const browserApi = {
+      runtime: {
+        onStartup: { addListener: vi.fn() },
+        onMessage: {
+          addListener: vi.fn((listener) => {
+            onMessage = listener;
+          }),
+        },
+      },
+      storage: {
+        local: { get: vi.fn().mockResolvedValue({}) },
+        onChanged: { addListener: vi.fn() },
+      },
+      alarms: {
+        clear: vi.fn(),
+        create: vi.fn(),
+        onAlarm: { addListener: vi.fn() },
+      },
+    };
+    vi.stubGlobal("browser", browserApi);
+
+    registerSyncEngine({
+      runOnce,
+      scheduleRun: vi.fn(),
+      pause: vi.fn(),
+      resume: vi.fn(),
+      getStatus,
+      isRunning: () => false,
+    });
+
+    expect((globalThis as any).window.syncEngine.runOnce).toBe(runOnce);
+    expect(browserApi.runtime.onMessage.addListener).toHaveBeenCalledOnce();
+    const sendResponse = vi.fn();
+    expect((onMessage as any)?.({ cmd: "sync-status" }, {}, sendResponse)).toBe(false);
+    expect(sendResponse).toHaveBeenCalledWith(status);
+    expect((onMessage as any)?.({ cmd: "sync-now" }, {}, sendResponse)).toBe(true);
+    await Promise.resolve();
+    expect(runOnce).toHaveBeenCalledOnce();
+    expect(sendResponse).toHaveBeenLastCalledWith(status);
+  });
+
+  it("returns a native Promise in Firefox MV3 when browser.runtime.getBrowserInfo exists", async () => {
+    let onMessage: any = null;
+    const runOnce = vi.fn().mockResolvedValue(status);
+    vi.stubGlobal("browser", {
+      runtime: {
+        getBrowserInfo: vi.fn(),
+        onStartup: { addListener: vi.fn() },
+        onMessage: {
+          addListener: vi.fn((listener) => {
+            onMessage = listener;
+          }),
+        },
+      },
+      storage: {
+        local: { get: vi.fn().mockResolvedValue({}) },
+        onChanged: { addListener: vi.fn() },
+      },
+    });
+
+    registerSyncEngine({
+      runOnce,
+      scheduleRun: vi.fn(),
+      pause: vi.fn(),
+      resume: vi.fn(),
+      getStatus: () => status,
+      isRunning: () => false,
+    });
+
+    const returned = onMessage({ cmd: "sync-now" }, {}, vi.fn());
+    expect(returned).toBeInstanceOf(Promise);
+    await expect(returned).resolves.toEqual(status);
+  });
+
+  it("does not throw in Firefox Window contexts where globalThis.window is a getter-only property", async () => {
+    const winDescriptor = Object.getOwnPropertyDescriptor(globalThis, "window");
+    const firefoxWindow: Record<string, any> = {};
+    Object.defineProperty(globalThis, "window", {
+      get: () => firefoxWindow,
+      set: undefined,
+      configurable: true,
+    });
+    let onMessage: any = null;
+    const runOnce = vi.fn().mockResolvedValue(status);
+    vi.stubGlobal("browser", {
+      runtime: {
+        getBrowserInfo: vi.fn(),
+        onStartup: { addListener: vi.fn() },
+        onMessage: {
+          addListener: vi.fn((listener) => {
+            onMessage = listener;
+          }),
+        },
+      },
+      storage: {
+        local: { get: vi.fn().mockResolvedValue({}) },
+        onChanged: { addListener: vi.fn() },
+      },
+    });
+
+    try {
+      expect(() =>
+        registerSyncEngine({
+          runOnce,
+          scheduleRun: vi.fn(),
+          pause: vi.fn(),
+          resume: vi.fn(),
+          getStatus: () => status,
+          isRunning: () => false,
+        })
+      ).not.toThrow();
+
+      expect(firefoxWindow.syncEngine.runOnce).toBe(runOnce);
+      const returned = onMessage({ cmd: "sync-now" }, {}, vi.fn());
+      await expect(returned).resolves.toEqual(status);
+      expect(runOnce).toHaveBeenCalledOnce();
+    } finally {
+      if (winDescriptor) {
+        Object.defineProperty(globalThis, "window", winDescriptor);
+      } else {
+        delete (globalThis as any).window;
+      }
+    }
+  });
+
+  it("skips background listener registration when imported inside /editor/index.html", () => {
+    const onMessageAdd = vi.fn();
+    vi.stubGlobal("location", { pathname: "/editor/index.html" });
+    vi.stubGlobal("browser", {
+      runtime: {
+        onStartup: { addListener: vi.fn() },
+        onMessage: { addListener: onMessageAdd },
+      },
+      storage: {
+        local: { get: vi.fn().mockResolvedValue({}) },
+        onChanged: { addListener: vi.fn() },
+      },
+    });
+
+    const runOnce = vi.fn().mockResolvedValue(status);
+    registerSyncEngine({
+      runOnce,
+      scheduleRun: vi.fn(),
+      pause: vi.fn(),
+      resume: vi.fn(),
+      getStatus: () => status,
+      isRunning: () => false,
+    });
+
+    expect((globalThis as any).window.syncEngine.runOnce).toBe(runOnce);
+    expect(onMessageAdd).not.toHaveBeenCalled();
+  });
+
+  it("schedules custom periodic intervals via sync-refresh-schedule and respects Manual only", async () => {
+    vi.useFakeTimers();
+    try {
+      let onMessage: any = null;
+      let onStorageChanged: any = null;
+      let onStartup: any = null;
+      const storedConfig: Record<string, any> = {
+        syncKey: "ABCDEFGHIJKLMNOPQRST",
+        backends: ["relay"],
+        syncIntervalMinutes: 10,
+        autoSyncOnChange: true,
+        autoSyncOnStartup: true,
+        syncConfigVersion: 2,
+        syncProtocolVersion: 2,
+      };
+      let currentAlarm: any = null;
+      const runOnce = vi.fn().mockResolvedValue(status);
+      const alarmsApi = {
+        clear: vi.fn(async () => {
+          currentAlarm = null;
+          return true;
+        }),
+        create: vi.fn((name: string, info: any) => {
+          currentAlarm = {
+            name,
+            scheduledTime: 1_700_000_600_000,
+            periodInMinutes: info.periodInMinutes,
+          };
+        }),
+        get: vi.fn(async () => currentAlarm),
+        onAlarm: { addListener: vi.fn() },
+      };
+
+      vi.stubGlobal("browser", {
+        runtime: {
+          getBrowserInfo: vi.fn(),
+          onStartup: {
+            addListener: vi.fn((cb) => {
+              onStartup = cb;
+            }),
+          },
+          onMessage: {
+            addListener: vi.fn((cb) => {
+              onMessage = cb;
+            }),
+          },
+        },
+        storage: {
+          local: {
+            get: vi.fn(async () => ({ yph_sync_config: structuredClone(storedConfig) })),
+          },
+          onChanged: {
+            addListener: vi.fn((cb) => {
+              onStorageChanged = cb;
+            }),
+          },
+        },
+        alarms: alarmsApi,
+      });
+
+      registerSyncEngine({
+        runOnce,
+        scheduleRun: vi.fn(),
+        pause: vi.fn(),
+        resume: vi.fn(),
+        getStatus: () => status,
+        isRunning: () => false,
+      });
+
+      const scheduleRes = await onMessage({ cmd: "sync-refresh-schedule" }, {}, vi.fn());
+      expect(alarmsApi.create).toHaveBeenLastCalledWith("yph-sync-periodic", {
+        delayInMinutes: 10,
+        periodInMinutes: 10,
+      });
+      expect(scheduleRes).toEqual({
+        ok: true,
+        scheduledTime: 1_700_000_600_000,
+        periodInMinutes: 10,
+      });
+
+      // Switch to Manual only (0 min + triggers disabled)
+      const prevConfig = structuredClone(storedConfig);
+      storedConfig.syncIntervalMinutes = 0;
+      storedConfig.autoSyncOnChange = false;
+      storedConfig.autoSyncOnStartup = false;
+
+      onStorageChanged(
+        { yph_sync_config: { oldValue: prevConfig, newValue: structuredClone(storedConfig) } },
+        "local"
+      );
+      await vi.advanceTimersByTimeAsync(3_500);
+      expect(runOnce).not.toHaveBeenCalled();
+
+      const manualRes = await onMessage({ cmd: "sync-refresh-schedule" }, {}, vi.fn());
+      expect(manualRes.periodInMinutes).toBeNull();
+
+      // Local playlist edits & startup must NOT auto-sync while Manual only is active
+      onStorageChanged({ yph_local_playlists: { newValue: [] } }, "local");
+      await vi.advanceTimersByTimeAsync(3_500);
+      onStartup();
+      await vi.advanceTimersByTimeAsync(50);
+      expect(runOnce).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("rejects untrusted content-script or foreign senders on sync-* commands (#31)", async () => {
+    let onMessage: any = null;
+    const runOnce = vi.fn().mockResolvedValue(status);
+    vi.stubGlobal("browser", {
+      runtime: {
+        id: "iypm-ext-id",
+        getURL: (p = "") => `chrome-extension://iypm-ext-id/${String(p).replace(/^\//, "")}`,
+        onStartup: { addListener: vi.fn() },
+        onMessage: {
+          addListener: vi.fn((cb) => {
+            onMessage = cb;
+          }),
+        },
+      },
+      storage: {
+        local: { get: vi.fn().mockResolvedValue({}) },
+        onChanged: { addListener: vi.fn() },
+      },
+    });
+
+    registerSyncEngine({
+      runOnce,
+      scheduleRun: vi.fn(),
+      pause: vi.fn(),
+      resume: vi.fn(),
+      getStatus: () => status,
+      isRunning: () => false,
+    });
+
+    const sendResponse = vi.fn();
+    expect(
+      onMessage(
+        { cmd: "sync-now" },
+        { id: "foreign-ext", url: "chrome-extension://foreign-ext/page.html" },
+        sendResponse
+      )
+    ).toBeUndefined();
+    expect(
+      onMessage(
+        { cmd: "sync-now" },
+        { id: "iypm-ext-id", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ" },
+        sendResponse
+      )
+    ).toBeUndefined();
+    expect(runOnce).not.toHaveBeenCalled();
+
+    expect(
+      onMessage(
+        { cmd: "sync-now" },
+        { id: "iypm-ext-id", url: "chrome-extension://iypm-ext-id/editor/index.html#/sync" },
+        sendResponse
+      )
+    ).toBe(true);
+    await Promise.resolve();
+    expect(runOnce).toHaveBeenCalledOnce();
+  });
+
+  it("skips automatic alarm sync while offline and runs catch-up sync when online (#35)", async () => {
+    let onAlarm: any = null;
+    let onlineHandler: (() => void) | null = null;
+    const runOnce = vi.fn().mockResolvedValue(status);
+    let onlineState = false;
+
+    vi.stubGlobal("navigator", {
+      get onLine() {
+        return onlineState;
+      },
+    });
+    const origAdd = globalThis.addEventListener;
+    vi.spyOn(globalThis, "addEventListener").mockImplementation(((type: string, fn: any) => {
+      if (type === "online") onlineHandler = fn;
+      else origAdd?.call(globalThis, type, fn);
+    }) as any);
+
+    vi.stubGlobal("browser", {
+      runtime: {
+        onStartup: { addListener: vi.fn() },
+        onMessage: { addListener: vi.fn() },
+      },
+      storage: {
+        local: {
+          get: vi.fn().mockResolvedValue({
+            yph_sync_config: {
+              syncKey: "ABCDEFGHIJKLMNOPQRST",
+              backends: ["relay"],
+              syncIntervalMinutes: 15,
+              autoSyncOnChange: true,
+              autoSyncOnStartup: true,
+              syncConfigVersion: 2,
+              syncProtocolVersion: 2,
+              legacyV2AcknowledgedAt: 1000,
+            },
+          }),
+        },
+        onChanged: { addListener: vi.fn() },
+      },
+      alarms: {
+        clear: vi.fn().mockResolvedValue(true),
+        create: vi.fn(),
+        onAlarm: {
+          addListener: vi.fn((cb) => {
+            onAlarm = cb;
+          }),
+        },
+      },
+    });
+
+    registerSyncEngine({
+      runOnce,
+      scheduleRun: vi.fn(),
+      pause: vi.fn(),
+      resume: vi.fn(),
+      getStatus: () => status,
+      isRunning: () => false,
+    });
+
+    onAlarm({ name: "yph-sync-periodic" });
+    await Promise.resolve();
+    expect(runOnce).not.toHaveBeenCalled();
+
+    onlineState = true;
+    (onlineHandler as any)?.();
+    await new Promise((r) => setTimeout(r, 10));
+    expect(runOnce).toHaveBeenCalledOnce();
+  });
+});

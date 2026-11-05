@@ -47,8 +47,11 @@ let canonicalVersion = chromeManifest.version;
 
 if (setIndex !== -1 && args[setIndex + 1]) {
   canonicalVersion = args[setIndex + 1];
-  if (!/^\d+\.\d+\.\d+$/.test(canonicalVersion)) {
-    console.error(`ERROR: Invalid version format: ${canonicalVersion}. Expected x.y.z`);
+  // A trailing numeric part (x.y.z.n) is allowed for derived CI beta builds, which
+  // patch the version in the workflow's throwaway checkout only — see
+  // .github/workflows/beta-release.yml. Official releases stay strict x.y.z.
+  if (!/^\d+\.\d+\.\d+(\.\d+)?$/.test(canonicalVersion)) {
+    console.error(`ERROR: Invalid version format: ${canonicalVersion}. Expected x.y.z or x.y.z.n`);
     process.exit(1);
   }
   console.log(`Setting new canonical version: ${canonicalVersion}`);

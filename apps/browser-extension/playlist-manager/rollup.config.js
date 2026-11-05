@@ -1,3 +1,4 @@
+import { bundleInventory } from "../../../packages/build-tools/bundle-inventory.mjs";
 import commonjs from "@rollup/plugin-commonjs";
 import resolve from "@rollup/plugin-node-resolve";
 import replace from "@rollup/plugin-replace";
@@ -21,7 +22,7 @@ export default {
     utils: "src/services/utils.ts",
     "sync-state-service": "src/services/sync-state-service.ts",
     "supabase-client": "src/services/supabase-client.ts",
-    "supabase-sync": "src/services/supabase-sync.ts",
+    "sync-engine": "src/services/sync-engine.ts",
   },
   onwarn: (warning, handler) => {
     if (
@@ -106,6 +107,7 @@ export default {
       inlineSources: !production,
     }),
     production && terser(),
+    production && bundleInventory(),
     production &&
       copy({
         targets: [

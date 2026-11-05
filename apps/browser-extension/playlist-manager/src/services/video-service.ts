@@ -11,10 +11,11 @@ import {
   dbGetStats,
   dbGetAllMetadata,
 } from "./db-service.js";
-import { normalizeVideoMeta, sanitizeVideoId } from "./schema-normalizer.js";
+import { normalizeVideoMeta, sanitizeVideoId, isoToSecs } from "./schema-normalizer.js";
 import {
   collectMetadataGaps,
   hasCompleteMetadata,
+  isTerminalEntry,
   needsDurationRefresh,
 } from "../utils/metadata-completeness.js";
 import type { MetadataGapSummary } from "../utils/metadata-completeness.js";
@@ -54,6 +55,28 @@ window.getMetadataGaps = async (): Promise<NormalizedVideoMeta[]> => {
     }
     // Most actionable first: duration-only gaps, then the rest.
     return gaps.sort((a, b) => Number(needsDurationRefresh(b)) - Number(needsDurationRefresh(a)));
+  } catch {
+    return [];
+  }
+};
+
+/**
+ * Terminal entries (deleted, private, unplayable, or confirmed unavailable).
+ * These are kept as tombstones so playlist loads do not retry them forever, but
+ * the Data Manager still lists them with their video id and origin.
+ */
+window.getUnavailableMetadata = async (): Promise<NormalizedVideoMeta[]> => {
+  try {
+    const all = await dbGetAllMetadata();
+    const items: NormalizedVideoMeta[] = [];
+    for (const [id, meta] of Object.entries(all)) {
+      if (meta && isTerminalEntry(meta)) items.push(normalizeVideoMeta(meta, id));
+    }
+    return items.sort((a, b) => {
+      const unavailable = Number(b.isUnavailable) - Number(a.isUnavailable);
+      if (unavailable !== 0) return unavailable;
+      return (a.title || a.videoId).localeCompare(b.title || b.videoId);
+    });
   } catch {
     return [];
   }
@@ -139,7 +162,8 @@ function hasValidData(entry: any): boolean {
     entry.isLive ||
     entry.isDeleted ||
     entry.isPrivate ||
-    entry.isBroken
+    entry.isBroken ||
+    entry.isUnavailable
   );
   return hasTitle || hasChannel || hasDuration;
 }
@@ -435,6 +459,52 @@ class VideoService {
     }
   }
 
+  /**
+   * Merge page-scraped metadata (title/channel/duration) into the cache without
+   * dropping fields that a different source already resolved.
+   *
+   * Playlist/channel DOM rows often have a duration but no channel, while a
+   * previous oEmbed fetch has the channel but no duration. A blind `put` would
+   * replace the good row with the incomplete one.
+   */
+  async cacheScrapedMetadata(metadata: Record<string, any>) {
+    if (typeof browser === "undefined") return;
+    const ids = Object.keys(metadata || {}).filter(Boolean);
+    if (!ids.length) return;
+    try {
+      const previous = await dbGetMetadataBatch(ids);
+      const merged: Record<string, any> = {};
+      for (const id of ids) {
+        const before = previous[id] || null;
+        const next = metadata[id] || {};
+        const durationISO = next.durationISO || before?.durationISO || "";
+        const title = next.title || before?.title || "";
+        const channel = next.channel || before?.channel || "";
+        if (!title && !channel && !durationISO) continue;
+        merged[id] = normalizeVideoMeta(
+          {
+            ...before,
+            ...next,
+            videoId: id,
+            title,
+            channel,
+            durationISO,
+            durationSeconds:
+              next.durationSeconds ||
+              before?.durationSeconds ||
+              (durationISO && durationISO !== "LIVE" ? isoToSecs(durationISO) : 0),
+            isLive: next.isLive ?? before?.isLive ?? false,
+            lastCachedAt: Date.now(),
+          },
+          id
+        );
+      }
+      if (Object.keys(merged).length) await dbPutMetadataBatch(merged);
+    } catch (e) {
+      /* Metadata caching must never break a capture/import flow. */
+    }
+  }
+
   getVideoThumbnailUrl(videoId: string) {
     if (!videoId) {
       return null;
@@ -484,25 +554,10 @@ class VideoService {
         `[VIDEO-SERVICE] Opening playlist with ${videoIds.length} videos`
       );
 
-    let t = 0;
-    if (playlistId && playlistId.startsWith("local-") && typeof browser !== "undefined") {
-      try {
-        const history = await browser.runtime.sendMessage({
-          cmd: "get-yph-history",
-          videoId: videoIds[0],
-        });
-        if (history && history.t) {
-          t = Math.floor(history.t);
-          if (window.logSystemEvent)
-            await window.logSystemEvent(
-              "INFO",
-              `[VIDEO-SERVICE] Resuming ${videoIds[0]} at ${t}s from history`
-            );
-        }
-      } catch (e) {
-        console.error("Failed to fetch history:", e);
-      }
-    }
+    // Resume-from-history is delegated to the watch-tracker content script
+    // (get-yph-history → currentTime). The watch_videos generator below redirects to
+    // /watch?v=…&list=TL… and discards any t= query param, so a timestamp in the URL
+    // would be dropped — the content script performs the seek instead.
 
     const settings = await window.getSettings();
     const signedIn = await window.isSignedIn();
@@ -545,10 +600,6 @@ class VideoService {
       }
 
       if (idx === 0 && playlistId && playlistId.startsWith("local-")) {
-        if (t > 0) {
-          const separator = url.includes("?") ? "&" : "?";
-          url += `${separator}t=${t}s`;
-        }
         url = url.split("#")[0] + `#yph_local_list=${playlistId}`;
       }
 

@@ -4,9 +4,169 @@
 
 ---
 
+## 📍 Start here — reading order
+
+Read in this order, and stop when you have what you need:
+
+| #   | File                   | Why                                                                                                                  |
+| --- | ---------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| 1   | `.ai-sync/HANDOFF.md`  | Current state: branches, SHAs, what is pending, known traps. **Verified facts — trust it until the repo disagrees.** |
+| 2   | `.ai-sync/PLAN.md`     | What is being built next, and the sequencing rules.                                                                  |
+| 3   | `.ai-sync/PROGRESS.md` | Open tasks and what "done" means for each.                                                                           |
+| 4   | `docs/INDEX.md`        | Map of every other document.                                                                                         |
+| 5   | `.ai-sync/HISTORY.md`  | Only when you need the reasoning behind an old decision. Frozen.                                                     |
+
+**On start, pin the session identity and take the editing lock — before touching anything:**
+
+```bash
+git fetch --prune --all                                          # ALWAYS first
+node packages/build-tools/agent-lock.js acquire --agent hermes --branch "$(git branch --show-current)"
+git branch --show-current && git rev-parse --short HEAD          # record both — the session's identity
+gh pr list --state open                                          # note any PR already touching your planned files
+```
+
+Re-check `git branch --show-current` + `git rev-parse HEAD` before **every** commit. If
+either moved (a concurrent session switched the checkout), stop, re-read `HANDOFF.md`,
+and tell the owner before continuing. If an open PR already owns files you plan to edit,
+coordinate first (declare files + branch in `PLAN.md`) — do not discover the overlap at
+merge time.
+
+**The repo is the truth, not these files.** If a document disagrees with code, tests or
+`git log`, the document is stale: fix it in the same PR rather than working around it.
+
+**On stop, update `.ai-sync/HANDOFF.md`** — state, not narrative — and tick off
+`PROGRESS.md`. Append to `HISTORY.md` only when retiring detail from `HANDOFF.md`.
+Update these shared files **once, at stop, under the editing lock** — they are
+single-writer. Mid-session detail belongs in `.ai-sync/sessions/<date>-<slug>.md`; two
+sessions editing `HANDOFF`/`PROGRESS` concurrently is what produces their merge conflicts.
+
+**Every session MUST end with a commit — never leave implementation work uncommitted.**
+After implementing: (1) run `npm run check` and `npm run build` (evidence, not
+assertion); (2) commit on a feature branch off `next` (see _Git Workflow_); (3) update
+`AGENTS.md` + `.ai-sync/HANDOFF.md`/`PLAN.md`/`PROGRESS.md` to record what changed and
+the commit SHA; and (4) explicitly warn the owner of any branch change you observed
+(e.g. a concurrent session moved the checkout) and of the current PR status. Leaving
+edits in the working tree across sessions risks losing them to — or clobbering — a
+parallel agent.
+
+`AGENTS.md` is owner-approval-gated: writing it may require explicit consent. If a merge
+conflict involves `AGENTS.md`, resolve it **before** the merge and flag it to the owner —
+never leave it to mid-merge.
+
+## Supabase MCP access
+
+The Supabase MCP server (`https://mcp.supabase.com/mcp`) is **enabled** in
+`~/.hermes/config.yaml` (auth: oauth, enabled: true). The OAuth token lives at
+`~/.hermes/mcp-tokens/supabase.json` and has `database:read`/`database:write` scope.
+
+**This project's Supabase instance:** `independent-youtube-playlist-manager`
+(project ref: `pfydngsbcmuhsqqjbcte`, region: eu-west-1, status: ACTIVE_HEALTHY).
+
+**Sync relay:** This project (`pfydngsbcmuhsqqjbcte`) hosts the sync relay.
+Tables: `sync_spaces`, `sync_records`, `sync_rate_limit`. RPCs: `sync_claim`,
+`sync_pull`, `sync_push`, `sync_delete_space`. Migration `0004_fix_seq_default.sql`
+applied (seq = DEFAULT for GENERATED ALWAYS identity column).
+
+**Other projects (do NOT use for extension sync):** `mawqiei.net`
+(ref: `qvwitlpnetwthyhrobca`), `go-fish` (ref: `moiajtcnyimeqllextxn`, INACTIVE).
+
+- At session start, verify the Supabase MCP tools are loaded (search for "supabase"
+  tools). If present, use them directly to run SQL, inspect schema, manage RLS, etc.
+- If the MCP tools are NOT loaded, check `~/.hermes/config.yaml` for
+  `mcp.servers.supabase.enabled`. If it is `false`, tell the user to set it to
+  `true` and restart the session — do NOT silently fall back without informing them.
+- Fallback (if MCP truly unavailable): use the Supabase Management API with the
+  OAuth token from `~/.hermes/mcp-tokens/supabase.json`:
+  `POST https://api.supabase.com/v1/projects/pfydngsbcmuhsqqjbcte/database/query`
+- Other Supabase projects under the same account: `mawqiei.net`
+  (ref: `qvwitlpnetwthyhrobca`), `go-fish` (ref: `moiajtcnyimeqllextxn`, INACTIVE).
+
+## UI consistency
+
+- Reuse existing UI patterns and shared components across views for visual and behavioral consistency; prefer extending shared components over bespoke markup.
+
+## Shared workflow across agents
+
+OpenSpec is configured for Codex and Hermes. Read `openspec/README.md` and
+`openspec/config.yaml` for the workflow. Active change:
+`openspec/changes/complete-context-menu-acceptance/`. Planning artifacts do not prove
+acceptance; keep its tasks pending until their evidence exists.
+
+Read [`.ai-sync/AGENT_WORKFLOW.md`](.ai-sync/AGENT_WORKFLOW.md) for the shared task,
+review, evidence and handoff standard. Blank templates live in `.ai-sync/templates/`;
+copy them to session files, never overwrite current state with an empty template.
+Use `.ai-sync/START_HERE.md` when switching agents. The owner's current instructions,
+including delegation of test execution, take precedence over the default commands below.
+
+## Relevant skills
+
+Before starting a task, inspect the available skill catalog and load the skills directly
+relevant to the requested work. Reassess when the scope changes. For follow-up prompts
+in the same task, reuse loaded guidance unless it changed or a new skill becomes relevant.
+
+Use the smallest useful set. Do not load unrelated skills or several overlapping skills
+without a clear reason. Read each selected SKILL.md before applying it, then load only
+its supporting references needed for the task. Briefly name the skills used and their
+purpose; record the names and source paths in the session record.
+
+Follow the owner's instructions and project rules when applying skills. If a required
+skill is unavailable, report the limitation. Use an appropriate fallback when possible;
+ask for input only when the missing skill prevents authorized work. If none fits, proceed
+using project guidance and record that no relevant skill was available or needed.
+
+Skill instructions do not authorize additional scope, override delegated verification,
+or permit merging, publishing or destructive actions. Resolve conflicts using the
+applicable instruction hierarchy. A skill's presence does not prove it was loaded or
+followed, and it does not guarantee a correct result.
+
+## Parallel implementation orchestration
+
+Follow `docs/AI_ORCHESTRATION.md` for assigned feature worktrees, coordinator/worker
+roles and the push-then-PR lifecycle. Runtime orchestration is not implemented yet;
+its plan is `openspec/changes/orchestrate-parallel-implementations/`. Use manual
+handoffs when an agent cannot launch another agent. Start with two independent jobs.
+
+Merge mode is manual by default. Guarded automatic merging needs explicit per-job
+owner opt-in plus current required checks/review, resolved threads, manual acceptance
+and effective server protections. Conflict-free status is not merge authority. This
+policy qualifies the older Git workflow examples below; those are not instructions to
+switch another worker's checkout or merge the current unfinished feature.
+
+## Worktree coordination
+
+Follow `.ai-sync/AGENT_WORKFLOW.md` for independent implementation worktrees and
+cross-agent handoffs. **Concurrent agents work in separate worktrees, never a shared
+checkout — that is the default.** The editing lock below is the fallback when a shared
+checkout is unavoidable. Reuse a suitable worktree for the same change; keep one writer
+per worktree, and verify prerequisites exist in its starting commit. Uncommitted and
+untracked work does not transfer automatically. Record the absolute path/branch/base
+and owners in the templates; reviewers and Hermes must use that exact checkout.
+Use app-managed worktree creation/archive tools where available. Preserve existing
+edits, configure dependencies/skills/ports for each checkout, and do not force removal
+or interpret worktree isolation as permission to merge/release.
+
+### One editor per tree
+
+Two agents editing the same checkout produced a duplicated import and a duplicated
+object key that only surfaced later. Take the editing lock before writing:
+
+```bash
+node packages/build-tools/agent-lock.js status            # exit 3 means a live owner
+node packages/build-tools/agent-lock.js run -- npm test    # lock, run, always release
+node packages/build-tools/agent-lock.js acquire --agent hermes --branch <branch>
+node packages/build-tools/agent-lock.js release [--force]
+```
+
+The marker is `.agents/EDITING` (git-ignored) and records pid, agent, branch and start
+time. A marker whose owner process is gone is stale and may be taken over; a live owner
+is never overridden. Release refuses a foreign pid unless `--force` is explicit.
+
 ## ⚡ Quick Reference (first 30 seconds of any session)
 
 ```bash
+git fetch --prune --all   # ALWAYS first. Drops refs to branches deleted on the remote.
+node packages/build-tools/agent-lock.js acquire --agent hermes --branch "$(git branch --show-current)"
+git branch --show-current && git rev-parse --short HEAD   # pin identity; re-check before every commit
 npm run check          # ALWAYS run this first. Lint → format:check → test → file-size → svelte-check. All clear? Proceed.
 npm run format         # Auto-format everything before committing.
 npm run lint:fix       # ESLint auto-fix (handles unused-var prefix, console cleanup).
@@ -17,16 +177,16 @@ npm run web            # Web portal dev server (localhost:3000).
 
 ### File Map
 
-| Path                                           | Contains                          | Notes                                                                                                                          |
-| ---------------------------------------------- | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| `apps/browser-extension/background/`           | Service worker entry point        | `index.js` → imports modules: `background.js` (~300 lines), `utils.js`, `context-menus.js`, `history.js`, `sync.js`, `init.js` |
-| `apps/browser-extension/content-scripts/`      | Page-injected scripts             | `watch-tracker.js`, `injectors/` (5 small files)                                                                               |
-| `apps/browser-extension/popup/`                | Quick-add popup toolbar           | ES modules: `popup.js` (~346 lines entry), `utils.js`, `tabs.js`, `state.js`, `target.js`, `channel.js`, `quick-add.js`        |
-| `apps/browser-extension/playlist-manager/src/` | Svelte SPA (TypeScript)           | `App.svelte`, `components/` (~38 files), `services/` (17 files), `views/`, `stores/`, `types/`                                 |
-| `apps/web-portal/`                             | Next.js 15 marketing + dashboard  | App Router, Tailwind, shadcn/ui, Playwright e2e                                                                                |
-| `packages/build-tools/`                        | Build/CI scripts (Node.js)        | `build-extension.js`, `validate-manifests.js`, `package-chrome-store.js`, `package-edge-store.js`, `verify-css-bundle.js`      |
-| `docs/`                                        | All documentation + screenshots   | `USAGE_EXAMPLES.md`, `RELEASE_SPEC.md`, `USER_GUIDE.md`                                                                        |
-| Root                                           | Lint, format, test, deploy config | `eslint.config.mjs`, `.prettierrc`, `vitest.config.mjs`, `jsconfig.json`, `vercel.json`                                        |
+| Path                                           | Contains                         | Notes                                                                                                                                                                                               |
+| ---------------------------------------------- | -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `apps/browser-extension/background/`           | Service worker entry point       | `index.js` → imports modules: `background.js` (~300 lines), `utils.js`, `context-menus.js`, `history.js`, `sync.js`, `init.js`                                                                      |
+| `apps/browser-extension/content-scripts/`      | Page-injected scripts            | `watch-tracker.js`, `injectors/` (5 small files)                                                                                                                                                    |
+| `apps/browser-extension/popup/`                | Quick-add popup toolbar          | ES modules: `popup.js` (~346 lines entry), `utils.js`, `tabs.js`, `state.js`, `target.js`, `channel.js`, `quick-add.js`                                                                             |
+| `apps/browser-extension/playlist-manager/src/` | Svelte SPA (TypeScript)          | `App.svelte`, `components/` (~38 files), `services/` (17 files), `views/`, `stores/`, `types/`                                                                                                      |
+| `apps/web-portal/`                             | Next.js 15 marketing + dashboard | App Router, Tailwind, shadcn/ui, Playwright e2e                                                                                                                                                     |
+| `packages/build-tools/`                        | Build/CI scripts (Node.js)       | Build + package scripts, and the guards wired into `npm run check`: `verify-file-size.js`, `verify-css-bundle.js`, `verify-vercel-config.js`, `verify-tooling-versions.js`, `gen-release-notes.mjs` |
+| `docs/`                                        | Documentation + screenshots      | Start at `docs/INDEX.md` — it maps every document. `RELEASING.md` is the release runbook.                                                                                                           |
+| Root                                           | Lint, format, test config        | `eslint.config.mjs`, `.prettierrc`, `vitest.config.mjs`, `jsconfig.json`. **No root `vercel.json`** — see `docs/DEPLOYMENT.md`.                                                                     |
 
 ---
 
@@ -95,6 +255,17 @@ Rollup uses `rollup-plugin-css-only` to bundle all CSS into `editor/bundle.css`.
 3. **Automated Enforcement:**
    - Both `npm run check` and `npm run build` run `packages/build-tools/verify-css-bundle.js`.
    - Any component containing `@import` or any build resulting in stray `@import` in `bundle.css` will trigger a **hard build failure**.
+
+---
+
+## 📦 Packaging & Store Submission (traps)
+
+- **`dist/` is gitignored and drifts.** The Edge/Chrome/Firefox ZIPs in `dist/` are build artifacts, never committed. A ZIP left over from a previous session can be stale even when `dist/edge/` is fresh — `package-edge-store.js` copies `dist/edge` into a temp dir, but if you point it at an old temp dir or skip the build, the ZIP's manifest disagrees with source. **Always** `npm run build && npm run pack:edge` (or `npm run pack`) immediately before uploading, then verify the ZIP's manifest matches `dist/edge/manifest.json`.
+- **Verification guard:** `packages/build-tools/verify-edge-package.js` (wired into `npm run test:extension`) asserts version, `short_name` (≤ 12 chars — Edge's hard limit), name, permissions, forbidden fields, required directories and no `.map` files all agree between the ZIP and `dist/edge`. Run it; do not upload a ZIP that fails it.
+- **`short_name` ≤ 12 characters.** Edge rejects longer values (error: "The string … has exceeded the maximum length of 12"). Both manifests use `"IYPM"`. Do not lengthen it.
+- **Chrome `key` must be stripped** for the store ZIP (`package-chrome-store.js` does this); the dev build keeps it. Never upload `dist/chrome` directly.
+- **Edge manifest is generated** from `manifest.chrome.json` minus `key`/`browser_specific_settings` (`build-extension.js edge`). Never create `manifest.edge.json`.
+- **First Edge submission is manual** (Partner Center API only updates already-published products). From the second release, publishing is API-driven. See `docs/EDGE_STORE_SUBMISSION.md` and `docs/edge-release-metadata.json`.
 
 ---
 
@@ -209,6 +380,26 @@ npm run web             # Web portal dev server (localhost:3000)
 npm run web:build       # Web portal production build
 ```
 
+### Shared toolchain versions (Playwright)
+
+There are no npm workspaces: root, `apps/web-portal` and the playlist manager each install
+their own tree. **Playwright does not follow that rule** — its browsers live in one cache
+(`~/.cache/ms-playwright`) keyed by version, so whichever tree installed them is the only
+one that can launch a browser.
+
+Bump `playwright` and `@playwright/test` in **every** tree in the same PR, then `npm ci` in
+each so the lockfiles agree. `verify-tooling-versions.js` (part of `npm run check`) fails
+with this instruction if the trees drift apart. Skipping it produces this, fifteen minutes
+later, in E2E — which reads like a flake and is not one:
+
+```
+browserType.launchPersistentContext: Executable doesn't exist at
+/home/runner/.cache/ms-playwright/chromium-1248/chrome-linux64/chrome
+```
+
+CI installs browsers for both trees so a drift cannot break the build either, but the guard
+is what keeps a single browser version to debug against.
+
 ---
 
 ## 🤖 AI Agent Workflow (mandatory)
@@ -290,8 +481,8 @@ git push -u origin fix/duration-zero-length
 gh pr create --base next --fill
 ```
 
-Merge with `gh pr merge --squash --delete-branch` once the required checks are green.
-Squash keeps `next` readable and makes reverting a change a single-commit operation.
+Apply the merge authority and gates in `docs/AI_ORCHESTRATION.md` before merging.
+Green checks alone do not enable default automatic merging. Squash keeps `next` readable and makes reverting a change a single-commit operation.
 
 ### Release loop
 
@@ -327,13 +518,41 @@ That sync is the **one** direct push allowed on `next`, and the reason `next` do
 use `enforce_admins`: a PR cannot carry it, because its diff is empty. Nothing else is
 pushed to `next` directly.
 
+### Branch lifecycle
+
+One branch per task, deleted the moment it is merged. Nothing lingers.
+
+```
+git fetch --prune --all                 # before starting anything
+git switch next && git pull --ff-only
+git switch -c fix/whatever              # isolated branch, off next
+
+# ... PR, review, squash merge ...
+
+git switch next && git pull --prune
+git branch -d fix/whatever              # local: -d refuses unless merged
+git push origin --delete fix/whatever   # only if it still exists remotely
+```
+
+`gh pr merge --squash --delete-branch` removes both the local and the remote branch.
+Repo-level auto-delete covers merges performed in the web UI, which have no local context.
+If a local branch still survives a merge, clean up in bulk:
+
+```bash
+git branch --merged next | grep -vE '^\*|^\s*(main|next)$' | xargs -r git branch -d
+```
+
+**Never delete `main` or `next`.** They are permanent. `-d` (not `-D`) on everything else
+so an unmerged branch is refused rather than silently lost; if `-d` refuses, the branch
+holds work that was never merged — investigate it, do not force.
+
 ### Agents MAY
 
 - push branches and open PRs against `next`
 - push follow-up commits to their own branch, and force-push **their own** branch before
   review starts when rebasing onto `next`
-- squash-merge their own PR into `next` once the required checks pass — the integration
-  branch is not the release gate
+- squash-merge an owned PR into `next` only with recorded owner merge authority and
+  the orchestration review/check/protection gates satisfied; default mode is manual
 
 ### Agents MUST NOT
 
@@ -354,6 +573,18 @@ npm run test:extension # when the change touches a view, route or shared compone
 
 The PR body must state: what changed, why, the exact commands run and their real result,
 and anything that was **not** verified. "Tests pass" without output is not evidence.
+
+### Before merging a PR
+
+`next` has required status checks **and** required conversation resolution, so a PR can
+be `BLOCKED` while still `MERGEABLE`. Check the gate before attempting a merge:
+
+```bash
+gh pr view <n> --json mergeStateStatus   # must be CLEAN; BLOCKED = resolve below first
+gh pr checks <n>                          # every required check green
+# required_conversation_resolution is on → resolve every review thread (fix the
+# finding, push, then resolve via UI/API). Never admin-bypass a failing check.
+```
 
 ### Review loop
 
@@ -378,7 +609,7 @@ All project releases follow [docs/RELEASING.md](docs/RELEASING.md). A release is
 ### Current Release & Testing State:
 
 - **Chrome Web Store**: Version 1.1.1 pending review.
-- **Microsoft Edge Add-ons**: Version 1.1.1 package builds and validates locally; submission is pending a Microsoft Partner Center listing and Product ID. See `docs/EDGE_STORE_SUBMISSION.md`.
+- **Microsoft Edge Add-ons**: 1.2.1 package builds and validates locally. A Partner Center draft exists (Store ID `0RDCKFZCVDRK`, Product ID `20f9b17d-73e7-45f8-8692-796867b7ec80`) holding the older 1.1.1 package; it was never submitted for certification. Upload the 1.2.1 ZIP and submit — see `docs/EDGE_STORE_SUBMISSION.md`.
 - **Firefox AMO (Listed)**: Version 1.1.1 (ID 6620554) pending review.
 - **Firefox Unlisted Test Release**:
   - Version `1.2.0.1` (AMO ID `6620940`) signed under unlisted channel for external tester distribution.
@@ -396,3 +627,7 @@ Every release follows `docs/RELEASING.md`. Short version: bump with
 stale), update `docs/RELEASE_X.Y.Z.md` and the README status block, merge the release PR,
 then push an annotated `vX.Y.Z` tag — the release workflow builds the ZIPs and publishes
 the GitHub Release with the changelog section as its body.
+
+## Post-Implementation Suggestions
+
+After each implementation, give the user up to 9 NEW potential improvements or next-step suggestions for this project, each with a priority percentage (how critical it is) and a plain-English what/why/how so a non-expert can judge them. Must not repeat already-done/suggested items; mention each for reference. See `~/dev/AGENTS.md` § Post-Implementation Suggestions.

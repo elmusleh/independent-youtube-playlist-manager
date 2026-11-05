@@ -2,6 +2,7 @@ import { dbPutMetadataBatch } from "./db-service.js";
 import { normalizeVideoMeta } from "./schema-normalizer.js";
 import type { NormalizedVideoMeta, RawVideoMeta } from "../types/model.js";
 import { requireDataConsent } from "../utils/data-consent";
+import { isDataApiPaused, markDataApiFailure, markDataApiSuccess } from "./data-api-health";
 import { hasCompleteMetadata, needsDurationRefresh } from "../utils/metadata-completeness";
 
 // Guard to prevent duplicate declarations on SPA navigation
@@ -753,38 +754,29 @@ const INNERTUBE_API_KEY = ["AIzaSyA8eiZmM1", "FaDVjRy-df2KTy", "Q_vz_yYM39w"].jo
 const INNERTUBE_BASE_URL = "https://www.youtube.com/youtubei/v1/player";
 
 // Multi-Client Contexts for Innertube (bypasses bot verification by using mobile/web/TV player profiles)
-// Order matters: the most duration-reliable clients are tried first. TVHTML5 and iOS
-// return `videoDetails.lengthSeconds` far more consistently than WEB/MWEB, which is
-// what makes duration metadata survive without a Data API quota.
+// Order matters: Android VR currently returns a normal OK response with
+// videoDetails.lengthSeconds; the web clients can still supply duration from a
+// soft-UNPLAYABLE response, and the legacy TV client is kept last.
 const INNERTUBE_CLIENTS = [
+  // Android VR currently returns a normal OK player response with
+  // videoDetails.lengthSeconds. Put it first so ordinary videos resolve without
+  // inheriting the UNPLAYABLE soft-errors from the web clients.
   {
-    name: "TVHTML5_SIMPLY_EMBEDDED_PLAYER",
+    name: "ANDROID_VR",
     context: {
       client: {
-        clientName: "TVHTML5_SIMPLY_EMBEDDED_PLAYER",
-        clientVersion: "2.0",
-        clientScreen: "EMBED",
-        hl: "en",
-        gl: "US",
-      },
-      thirdParty: {
-        embedUrl: "https://www.youtube.com",
-      },
-    },
-  },
-  {
-    name: "IOS",
-    context: {
-      client: {
-        clientName: "IOS",
-        clientVersion: "19.45.4",
-        deviceModel: "iPhone16,2",
-        userAgent: "com.google.ios.youtube/19.45.4 (iPhone16,2; U; CPU iOS 18_4_0 like Mac OS X;)",
+        clientName: "ANDROID_VR",
+        clientVersion: "1.60.19",
+        deviceModel: "Quest 3",
+        androidSdkVersion: 32,
         hl: "en",
         gl: "US",
       },
     },
   },
+  // Web clients still carry title/channel/length even when their playability
+  // status is UNPLAYABLE ("reload"/"unavailable"). They are useful fallbacks
+  // for metadata, not for playback.
   {
     name: "MWEB",
     context: {
@@ -808,15 +800,32 @@ const INNERTUBE_CLIENTS = [
     },
   },
   {
-    name: "ANDROID_VR",
+    name: "IOS",
     context: {
       client: {
-        clientName: "ANDROID_VR",
-        clientVersion: "1.60.19",
-        deviceModel: "Quest 3",
-        androidSdkVersion: 32,
+        clientName: "IOS",
+        clientVersion: "19.45.4",
+        deviceModel: "iPhone16,2",
+        userAgent: "com.google.ios.youtube/19.45.4 (iPhone16,2; U; CPU iOS 18_4_0 like Mac OS X;)",
         hl: "en",
         gl: "US",
+      },
+    },
+  },
+  // YouTube now rejects this legacy TV client with "no longer supported".
+  // Keep it last as a last-resort probe for older embedded contexts.
+  {
+    name: "TVHTML5_SIMPLY_EMBEDDED_PLAYER",
+    context: {
+      client: {
+        clientName: "TVHTML5_SIMPLY_EMBEDDED_PLAYER",
+        clientVersion: "2.0",
+        clientScreen: "EMBED",
+        hl: "en",
+        gl: "US",
+      },
+      thirdParty: {
+        embedUrl: "https://www.youtube.com",
       },
     },
   },
@@ -827,6 +836,11 @@ const INNERTUBE_CLIENTS = [
  * Inferring it from `lengthSeconds === 0` used to mark ordinary videos as live,
  * which in turn made them look "complete" and stopped all later tiers from
  * recovering the missing duration.
+ */
+/**
+ * Detects whether a video is a live stream from Innertube player response data.
+ * @param data - The Innertube player response object
+ * @returns true if the video is currently live or an upcoming premiere
  */
 export function detectLiveStream(data: InnertubeResponse | undefined): boolean {
   if (!data) return false;
@@ -842,6 +856,11 @@ export function detectLiveStream(data: InnertubeResponse | undefined): boolean {
 }
 
 /** Shorts are served through a different UI; flag them so the UI can label them. */
+/**
+ * Detects whether a video is a YouTube Short from Innertube player response data.
+ * @param data - The Innertube player response object
+ * @returns true if the video duration is ≤ 60 seconds (Shorts threshold)
+ */
 export function detectShort(data: InnertubeResponse | undefined): boolean {
   if (!data) return false;
   const details = data.videoDetails;
@@ -912,7 +931,11 @@ async function fetchMetadataFromYouTubeDataAPI(
     if (!hasAuth && !apiKey) {
       return result;
     }
+    if (await isDataApiPaused()) {
+      return result;
+    }
 
+    let sawSuccess = false;
     const BATCH_SIZE = 50;
     for (let i = 0; i < videoIds.length; i += BATCH_SIZE) {
       const batch = videoIds.slice(i, i + BATCH_SIZE);
@@ -932,10 +955,23 @@ async function fetchMetadataFromYouTubeDataAPI(
           );
           if (res.ok) {
             data = await res.json();
+          } else {
+            const error: any = await res.json().catch(() => null);
+            const reason = error?.error?.errors?.[0]?.reason;
+            const message = error?.error?.message || `HTTP ${res.status}`;
+            await markDataApiFailure(reason, res.status, message);
+            break;
           }
         }
+        sawSuccess = true;
       } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
         console.warn("[YPH] YouTube Data API batch fetch failed:", err);
+        await markDataApiFailure(
+          /quota/i.test(message) ? "quotaExceeded" : undefined,
+          undefined,
+          message
+        );
         break;
       }
 
@@ -970,6 +1006,7 @@ async function fetchMetadataFromYouTubeDataAPI(
         }
       }
     }
+    if (sawSuccess) await markDataApiSuccess();
   } catch (e) {
     console.warn("[YPH] YouTube Data API metadata fetch error:", e);
   }
@@ -1010,6 +1047,10 @@ window.fetchVideoMetadataInnertube = async (
         credentials: "omit",
         headers: {
           "Content-Type": "text/plain",
+          // YouTube rejects requests whose Origin is chrome-extension:// with a
+          // 403 "Sorry..." page. Present the same origin a normal YouTube page
+          // would use; host permissions still gate the request.
+          Origin: "https://www.youtube.com",
         },
         body: JSON.stringify(requestBody),
         signal: controller.signal,
@@ -1038,6 +1079,7 @@ window.fetchVideoMetadataInnertube = async (
       let isBroken = false;
       let title = videoDetails.title || "";
       let channel = videoDetails.author || "";
+      const hasUsableDetails = Boolean(title) && lengthSeconds > 0;
 
       if (playabilityStatus) {
         if (playabilityStatus.status === "LOGIN_REQUIRED") {
@@ -1054,6 +1096,11 @@ window.fetchVideoMetadataInnertube = async (
           channel = channel || "Unplayable channel";
         }
       }
+
+      // UNPLAYABLE is often a soft web-client error (reload/unavailable) even
+      // when videoDetails and lengthSeconds are valid. Do not mark that entry
+      // terminal, or the Data Manager stops trying to repair it.
+      if (isBroken && hasUsableDetails) isBroken = false;
 
       if (title === "Deleted video" || title === "Private video") {
         if (title === "Private video") isPrivate = true;
@@ -1204,6 +1251,8 @@ window.fetchVideoMetadataOEmbed = async (
   isDeleted?: boolean;
   isBroken?: boolean;
   isLive?: boolean;
+  /** The video is gone (404/410), not merely blocked or rate-limited. */
+  isUnavailable?: boolean;
 } | null> => {
   try {
     const controller = new AbortController();
@@ -1216,6 +1265,26 @@ window.fetchVideoMetadataOEmbed = async (
       }
     );
     clearTimeout(timeoutId);
+
+    // oEmbed is the cheapest authoritative "does this video still exist?"
+    // check. A 400/404/410 is a terminal tombstone (the id was well formed but
+    // the video is gone); 401/403/429 may be transient (private, age-gated, or
+    // rate-limited), so leave those retryable.
+    if (res.status === 400 || res.status === 404 || res.status === 410) {
+      return {
+        title: "",
+        channel: "",
+        duration: "",
+        lengthSeconds: 0,
+        viewCount: undefined,
+        publishedAt: undefined,
+        isPrivate: false,
+        isDeleted: false,
+        isBroken: false,
+        isLive: false,
+        isUnavailable: true,
+      };
+    }
     if (!res.ok || res.status === 401 || res.status === 403 || res.status === 429) return null;
     const json = await res.json();
     if (json && json.title) {
@@ -1461,6 +1530,7 @@ window.ytFetchVideoDurations = async (
             raw.durationSeconds ||
             raw.lengthSeconds ||
             (raw.duration || raw.durationISO ? undefined : previous?.durationSeconds),
+          lastFetchAttempt: Date.now(),
         },
         id
       );
@@ -1631,11 +1701,14 @@ window.ytFetchVideoDurations = async (
       await runOEmbed();
       await runInvidious();
     } else {
-      // Default: Free / Zero-Quota First (Saves API Quota)
+      // Default: free sources first. Innertube is zero-quota; the Data API uses
+      // a tiny amount of the free daily quota (1 unit per 50 videos) and is the
+      // reliable duration fallback, so try it before the legacy embed/oEmbed
+      // tiers. Both helpers return immediately when unavailable.
       await runInnertube();
+      await runDataAPI();
       await runEmbed();
       await runOEmbed();
-      await runDataAPI();
       await runInvidious();
     }
 

@@ -97,6 +97,24 @@ export async function getSupabaseClient(): Promise<SupabaseClient> {
   return _supabaseInstance;
 }
 
+/**
+ * A consent-free, session-free Supabase client for the encrypted (zero-knowledge) sync.
+ *
+ * The sync table is anonymous (anon key + RLS) and only *ciphertext* is transmitted, so it
+ * must NOT be gated behind the `authenticationInfo` / `personallyIdentifyingInfo` data
+ * consent that guards OAuth login. On Firefox that consent prompt would otherwise block the
+ * background sync entirely.
+ */
+export function createAnonClient(url: string, anonKey: string): SupabaseClient {
+  return createClient(url, anonKey, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+      detectSessionInUrl: false,
+    },
+  });
+}
+
 export function isAndroidPlatform(): boolean {
   return typeof navigator !== "undefined" && /Android/i.test(navigator.userAgent);
 }

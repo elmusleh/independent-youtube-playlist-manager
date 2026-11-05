@@ -1,0 +1,45 @@
+name: Stale Branch Cleanup
+
+on:
+  schedule:
+    - cron: "0 9 * * 1" # Every Monday at 9 AM UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Find stale branches
+        id: stale
+        run: |
+          git fetch --prune --all
+          echo "Stale branches (no PR, older than 30 days):"
+          git for-each-ref --sort=-committerdate refs/heads/ --format='%(refname:short) %(committerdate:iso8601)' | \
+            awk -v cutoff="$(date -d '30 days ago' +%s)" '
+            {
+              cmd = "date -d \"" $2 " " $3 " " $4 "\" +%s"
+              cmd | getline ts
+              close(cmd)
+              if (ts < cutoff && $1 != "main" && $1 != "next") print $1
+            }' > stale_branches.txt
+          cat stale_branches.txt
+
+      - name: Report stale branches
+        run: |
+          if [ -s stale_branches.txt ]; then
+            echo "::warning::Stale branches found:"
+            cat stale_branches.txt
+            # Optionally create an issue
+            gh issue create --title "Stale branches detected" --body "$(cat stale_branches.txt | sed 's/^/- /')" --label "chore" || true
+          else
+            echo "No stale branches found."
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

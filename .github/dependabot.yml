@@ -1,5 +1,18 @@
 version: 2
+
+# Three independent npm trees, three entries. There are no npm workspaces: root, the
+# portal and the extension each carry their own package.json + lockfile, and Dependabot
+# only ever sees the directory it is pointed at. Pointing it at "/" alone left the portal
+# and the extension completely unmonitored.
+#
+# Each directory is grouped separately: one PR per directory per week, and a broken
+# lockfile in one tree cannot take the others down.
+
 updates:
+  # Root: shared tooling — eslint, prettier, vitest, playwright, husky, lint-staged.
+  # The old svelte/vite/esbuild ignores are gone: none of those three is declared here,
+  # so they were guarding dependencies this directory does not have. The svelte rule now
+  # lives next to svelte.
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
@@ -8,13 +21,36 @@ updates:
       npm_and_yarn:
         patterns:
           - "*"
+
+  # Web portal: Next.js 15 + React 19.
+  - package-ecosystem: "npm"
+    directory: "/apps/web-portal"
+    schedule:
+      interval: "weekly"
+    groups:
+      portal:
+        patterns:
+          - "*"
     ignore:
-      # Svelte 5 requires full migration from Svelte 4 (runes syntax breaking change)
+      # Framework majors are migrations, not weekly chores. A major PR that cannot pass
+      # CI teaches nobody anything — bump these deliberately, by hand, when ready.
+      - dependency-name: "next"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react-dom"
+        update-types: ["version-update:semver-major"]
+
+  # Browser extension: Svelte 5 + TypeScript, its own lockfile.
+  - package-ecosystem: "npm"
+    directory: "/apps/browser-extension/playlist-manager"
+    schedule:
+      interval: "weekly"
+    groups:
+      extension:
+        patterns:
+          - "*"
+    ignore:
+      # Svelte 6 would require a full runes migration.
       - dependency-name: "svelte"
-        update-types: ["version-update:semver-major"]
-      # Vite 6/7 has breaking config API changes; pin to v5.x until ready
-      - dependency-name: "vite"
-        update-types: ["version-update:semver-major"]
-      # esbuild major bumps often need explicit vite/rollup compatibility checks
-      - dependency-name: "esbuild"
         update-types: ["version-update:semver-major"]

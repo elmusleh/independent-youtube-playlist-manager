@@ -122,19 +122,22 @@ describe("terminal entries", () => {
     expect(isTerminalEntry({ isPrivate: true })).toBe(true);
     expect(isTerminalEntry({ isDeleted: true })).toBe(true);
     expect(isTerminalEntry({ isBroken: true })).toBe(true);
+    expect(isTerminalEntry({ isUnavailable: true })).toBe(true);
     expect(isTerminalEntry({})).toBe(false);
     expect(isTerminalEntry(null)).toBe(false);
   });
 
   it("treats a terminal entry as resolved even when fields are empty", () => {
     expect(hasCompleteMetadata({ isPrivate: true })).toBe(true);
-    expect(needsAttention({ isPrivate: true })).toBe(false);
+    expect(hasCompleteMetadata({ isUnavailable: true })).toBe(true);
+    expect(needsAttention({ isUnavailable: true })).toBe(false);
     // …but it is still not "complete" field-by-field:
     expect(getMetadataGaps({ isPrivate: true }).complete).toBe(false);
   });
 
   it("never asks for a duration refresh on a terminal entry", () => {
     expect(needsDurationRefresh({ title: "t", channel: "c", isDeleted: true })).toBe(false);
+    expect(needsDurationRefresh({ title: "t", channel: "c", isUnavailable: true })).toBe(false);
   });
 });
 

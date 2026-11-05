@@ -27,6 +27,7 @@
     requestSyncConfirm,
     syncPlaylist,
   } from "../services/playlist-actions";
+  import { toggleFavorite, persistFavoriteIds } from "../services/favorites";
 
   let signedIn = $state(false);
   let loading = $state(true);
@@ -281,10 +282,15 @@
               : p.isTagged
                 ? "synced"
                 : "online"}
-          showFavoriteBadge={!!(settings && p.id === settings.watchLaterPlaylistId)}
+          isPinned={settings?.favoritePlaylistIds?.includes(p.id) ?? false}
+          isWatchLater={settings?.watchLaterPlaylistId === p.id}
           onOpen={() => openInEditor(p)}
           actions={getCardActions(p)}
           category={p.category}
+          onCategoryClick={(cat) => {
+            if (cat === "local") activeChip = "Local";
+            else if (cat === "youtube" || cat === "account") activeChip = "YouTube";
+          }}
         />
       {/each}
     </PlaylistGrid>

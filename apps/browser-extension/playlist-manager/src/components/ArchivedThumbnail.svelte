@@ -13,7 +13,7 @@
   let failed = $state(false);
   $effect(() => {
     const id = videoId || src?.match(/\/vi\/([\w-]{11})\//)?.[1] || "";
-    resolved = src || undefined;
+    resolved = src || (id ? `https://i.ytimg.com/vi/${id}/hqdefault.jpg` : undefined);
     failed = false;
     let cancelled = false;
     if (id)

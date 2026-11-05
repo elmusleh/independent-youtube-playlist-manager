@@ -43,21 +43,25 @@
   font-weight: 700;
 }
 
+/* LAYOUT: cards use CSS multi-column masonry (NOT CSS Grid).
+   Grid's default align-items: stretch makes cards equal-height "cubes" with empty space.
+   Keep column-count so each card keeps its own content height. See UI_DESIGN_GUIDELINES.md §5. */
 .settings-grid {
-  display: block;
-  column-width: 400px;
+  column-count: 1;
   column-gap: 24px;
   width: 100%;
+  max-width: 100%;
+  overflow: hidden;
 }
 
-@media (max-width: 500px) {
+@media (min-width: 768px) {
   .settings-grid {
-    column-count: 1;
+    column-count: 2;
   }
 }
 
 .card {
-  display: inline-flex; /* inline for columns, flex for internal layout */
+  display: flex;
   flex-direction: column;
   width: 100%;
   break-inside: avoid;
@@ -313,7 +317,6 @@ input[type="number"]:focus {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 24px;
 }
 
 .modal-header h3 {

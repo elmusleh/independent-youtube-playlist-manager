@@ -3,23 +3,27 @@
   import Header from "./components/Header.svelte";
   import Sidebar from "./components/Sidebar.svelte";
   import PlaylistEditor from "./components/PlaylistEditor.svelte";
+  import { wrap } from "svelte-spa-router/wrap";
   import New from "./views/New.svelte";
   import Builder from "./views/Builder.svelte";
   import Saved from "./views/Saved.svelte";
-  import Share from "./views/Share.svelte";
+  import FavoritePlaylist from "./views/FavoritePlaylist.svelte";
   import Settings from "./views/Settings.svelte";
+  import Sync from "./views/Sync.svelte";
   import DeveloperSetup from "./views/DeveloperSetup.svelte";
   import Logs from "./views/Logs.svelte";
   import Manage from "./views/Manage.svelte";
   import History from "./views/History.svelte";
-  import FavoritePlaylist from "./views/FavoritePlaylist.svelte";
+  import Pinned from "./views/Pinned.svelte";
   import PlaylistView from "./views/PlaylistView.svelte";
   import Shortcuts from "./views/Shortcuts.svelte";
   import Subscriptions from "./views/Subscriptions.svelte";
   import Search from "./views/Search.svelte";
   import OpenById from "./views/OpenById.svelte";
   import MetadataManager from "./views/MetadataManager.svelte";
+  import ChooseDestination from "./views/ChooseDestination.svelte";
   import ConfirmationModal from "./components/ConfirmationModal.svelte";
+  import BackToTop from "./components/BackToTop.svelte";
   import ToastContainer from "./components/ToastContainer.svelte";
   import "./stores/shortcuts";
   import { logger } from "./services/logger";
@@ -98,14 +102,16 @@
   }
 
   const routes = {
+    "/capture": wrap({ asyncComponent: () => import("./views/Capture.svelte") }),
     "/new": New,
     "/playlist-builder": Builder,
     "/saved": Saved,
+    "/pinned": Pinned,
     "/favorite": FavoritePlaylist,
     "/playlist": PlaylistView,
     "/editor": PlaylistView,
-    "/share": Share,
     "/settings": Settings,
+    "/sync": Sync,
     "/shortcuts": Shortcuts,
     "/api-setup": DeveloperSetup,
     "/logs": Logs,
@@ -115,6 +121,7 @@
     "/search": Search,
     "/open-by-id": OpenById,
     "/metadata": MetadataManager,
+    "/choose-destination": ChooseDestination,
     "/*": Saved,
   };
 
@@ -134,7 +141,11 @@
   const mobileLayout = window.matchMedia("(max-width: 768px)");
   mobileLayout.addEventListener("change", handleLayoutChange);
 
-  import { onDestroy } from "svelte";
+  import { onDestroy, onMount } from "svelte";
+  onMount(() => {
+    // Polling is handled by the background sync engine (sync-engine.ts).
+    // No v1 sync-manager dependency.
+  });
   onDestroy(() => {
     mobileLayout.removeEventListener("change", handleLayoutChange);
   });
@@ -156,6 +167,7 @@
   </div>
   <ConfirmationModal />
   <ToastContainer />
+  <BackToTop />
 </div>
 
 <style>
@@ -244,8 +256,8 @@
     }
   }
 
-  /* Improved tablet layout (768px - 1023px) */
-  @media (min-width: 768px) and (max-width: 1023px) {
+  /* Improved tablet layout (769px - 1023px) */
+  @media (min-width: 769px) and (max-width: 1023px) {
     :global(.sidenav) {
       width: 220px;
     }

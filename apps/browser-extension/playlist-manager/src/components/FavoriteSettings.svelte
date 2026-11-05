@@ -5,7 +5,12 @@
   import type { Settings } from "../types/model.js";
   import { requestConfirm } from "../stores/confirmation.js";
   import Fa from "svelte-fa";
-  import { faStar, faInfoCircle, faCircleCheck } from "@fortawesome/free-solid-svg-icons";
+  import {
+    faStar,
+    faInfoCircle,
+    faCircleCheck,
+    faThumbTack,
+  } from "@fortawesome/free-solid-svg-icons";
   import { StatusManager } from "../services/status-manager.svelte";
   import { logger } from "../services/logger";
 
@@ -148,14 +153,14 @@
   }
 </script>
 
-<!-- Favorite Playlist -->
+<!-- Quick-add Target (Watch Later) -->
 <section class="card">
-  <h3><Fa icon={faStar} /> Favorite Playlist</h3>
+  <h3><Fa icon={faStar} /> Quick-add Target (Watch Later)</h3>
   <div class="field">
     <label for="watchLaterPlaylist">Target Playlist</label>
     <p class="sub-text">
-      Pick a managed playlist to be your favorite. It will always be kept alive (recreated if
-      deleted) and is used for quick-add shortcuts.
+      Pick a managed playlist to be your quick-add target. It will always be kept alive (recreated
+      if deleted) and is used for quick-add shortcuts and keyboard shortcuts.
     </p>
     {#if settings!.watchLaterPlaylistId === null && !signedIn}
       <div class="status-warning">
@@ -200,6 +205,24 @@
         </SimpleButton>
       </div>
     {/if}
+  </div>
+</section>
+
+<!-- Sidebar Pinned Limit -->
+<section class="card">
+  <h3><Fa icon={faThumbTack} /> Sidebar Pinned Limit</h3>
+  <div class="field">
+    <label for="maxVisibleFavorites">Max pinned items shown in sidebar</label>
+    <p class="sub-text">
+      Set how many pinned playlists appear directly in the sidebar. Use 0 for unlimited (default).
+    </p>
+    <input
+      id="maxVisibleFavorites"
+      type="number"
+      min="0"
+      bind:value={settings!.maxVisibleFavorites}
+      onchange={() => save("maxVisibleFavorites", settings?.maxVisibleFavorites ?? 0)}
+    />
   </div>
 </section>
 

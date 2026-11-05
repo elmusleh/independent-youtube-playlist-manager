@@ -4,12 +4,52 @@
 
 # Independent YouTube Playlist Manager
 
-**IYPM** is an open-source, privacy-first **browser extension** that lets you save, organize, and sync YouTube playlists across devices — entirely client-side, with **no servers, no API quotas, and no login required**.
+**IYPM** is an open-source, local-first **browser extension** for saving and organizing YouTube playlists without signing in. Metadata lookups contact external services; optional Google sign-in and configured cloud sync support account features and cross-device use.
 
 <a href="https://chromewebstore.google.com/detail/dapjjdcnolpmfcnobilphjfpkmmokgid"><img alt="Chrome Web Store" src="https://img.shields.io/badge/Chrome-141e24.svg?&style=for-the-badge&logo=google-chrome&logoColor=white" /></a>
 <a href="https://addons.mozilla.org/en-US/firefox/addon/iypm/"><img alt="Firefox Add-ons" src="https://img.shields.io/badge/Firefox-141e24.svg?&style=for-the-badge&logo=firefox-browser&logoColor=white" /></a>
+<a href="https://github.com/elmusleh/independent-youtube-playlist-manager/stargazers"><img alt="GitHub stars" src="https://img.shields.io/github/stars/elmusleh/independent-youtube-playlist-manager?style=for-the-badge&color=141e24&labelColor=141e24" /></a>
+<a href="https://github.com/elmusleh/independent-youtube-playlist-manager/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/github/license/elmusleh/independent-youtube-playlist-manager?style=for-the-badge&color=141e24&labelColor=141e24" /></a>
 
 </div>
+
+## 🌐 Supported browsers
+
+Install IYPM on any browser that supports WebExtensions. Chromium-based browsers all run the same build.
+
+| Browser                           | Status                        | Install                                                                                       |
+| --------------------------------- | ----------------------------- | --------------------------------------------------------------------------------------------- |
+| Google Chrome                     | ✅ Live                       | [Chrome Web Store](https://chromewebstore.google.com/detail/dapjjdcnolpmfcnobilphjfpkmmokgid) |
+| Mozilla Firefox (desktop)         | ✅ Live                       | [Firefox Add-ons](https://addons.mozilla.org/en-US/firefox/addon/iypm/)                       |
+| Mozilla Firefox (Android / Fenix) | ✅ Live (unlisted test build) | [AMO unlisted](https://addons.mozilla.org/en-US/firefox/addon/iypm/)                          |
+| Microsoft Edge                    | 🚧 Coming soon                | Link will be added once the Partner Center review finishes                                    |
+| Opera / Brave / Vivaldi / Arc     | ✅ Use the Chrome build       | [Chrome Web Store](https://chromewebstore.google.com/detail/dapjjdcnolpmfcnobilphjfpkmmokgid) |
+| Apple Safari (macOS / iOS)        | 🔜 Planned                    | Tracking in the roadmap; not yet available                                                    |
+
+> **Coming soon** rows are placeholders: when a platform goes live, only the status emoji and the install link need to change — no README restructuring required.
+
+---
+
+## 📱 Platform Roadmap (Coming Soon)
+
+> **Client-only platforms:** These are companion apps that **consume your synced playlists** but **cannot capture from YouTube pages** (no right-click menus, no auto-fetch, no history tracking). You create/manage playlists on desktop, then watch them on these platforms.
+
+| Platform                      | Target                                                        | Sync            | Playback                   | Status                  |
+| ----------------------------- | ------------------------------------------------------------- | --------------- | -------------------------- | ----------------------- |
+| **Web Portal (TV & Tablet)**  | Smart TV browsers, tablets, any browser                       | Supabase        | Deep-link → YouTube app    | **Design complete**     |
+| **Native Android App**        | Android phones, tablets, **Android TV / Google TV / Fire TV** | Supabase        | Deep-link → YouTube app    | **Architecture ready**  |
+| **iOS / iPadOS App**          | iPhone, iPad                                                  | Supabase        | `youtube://` → YouTube app | Free with Android build |
+| **Desktop Companion (Tauri)** | Windows, macOS, Linux (native app)                            | Supabase / File | System browser             | Low priority            |
+
+**How pairing works (no typing on TV remote!):**
+
+1. Desktop Extension → Sync → "Pair New Device" → Shows QR code + 6-digit code
+2. On TV/Tablet/Phone → Open Web Portal or Native App → "Pair Device"
+3. Scan QR with phone camera OR enter 6-digit code on phone
+4. Phone sends encrypted sync key to TV/app via secure channel
+5. Done — playlists appear automatically
+
+See [`docs/PLATFORM_SUPPORT.md`](docs/PLATFORM_SUPPORT.md) for full architecture and [`docs/SYNC_COMPATIBILITY.md`](docs/SYNC_COMPATIBILITY.md) for the user-facing compatibility table.
 
 ---
 
@@ -75,16 +115,59 @@ A comprehensive, side-by-side comparison of every capability — the single sour
 
 ### Privacy, Openness & Platform
 
-| Capability        | IYPM                                              | Native YouTube Playlists         |
-| ----------------- | ------------------------------------------------- | -------------------------------- |
-| Data collection   | ✅ Zero telemetry, zero tracking                  | ❌ Google collects usage data    |
-| Login required    | ✅ Not required for basic use                     | ❌ Google account required       |
-| Open source       | ✅ MIT license, fully auditable                   | ❌ Proprietary, closed source    |
-| Permissions scope | ✅ Strictly youtube.com watch pages               | ⚠️ Broad Google account scope    |
-| Platform support  | ✅ Chrome, Edge, Firefox Desktop, Firefox Android | ⚠️ Web + mobile apps only        |
-| Cost              | ✅ 100% free & open source                        | ✅ Free (ad-supported ecosystem) |
+| Capability        | IYPM                                                  | Native YouTube Playlists         |
+| ----------------- | ----------------------------------------------------- | -------------------------------- |
+| Data collection   | ✅ Zero telemetry, zero tracking                      | ❌ Google collects usage data    |
+| Login required    | ✅ Not required for basic use                         | ❌ Google account required       |
+| Open source       | ✅ MIT license, fully auditable                       | ❌ Proprietary, closed source    |
+| Permissions scope | ✅ YouTube host access and user-invoked page scanning | ⚠️ Broad Google account scope    |
+| Platform support  | ✅ Chrome, Edge, Firefox Desktop, Firefox Android     | ⚠️ Web + mobile apps only        |
+| Cost              | ✅ 100% free & open source                            | ✅ Free (ad-supported ecosystem) |
 
 ---
+
+## Permissions and privacy
+
+The Chrome and Firefox editions declare the permissions below. They support
+existing features in both signed-out/local use and optional account use; signing
+in is not required for local playlist creation or watch-progress storage.
+
+| Permission                                    | Why it is used                                                                                                                                                                                                                                                                                                |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `activeTab`                                   | Temporary access to the selected webpage after you invoke the extension. **Import from Page** uses it with `scripting` to extract YouTube links from an ordinary blog, article or other supported page, without permanent access to every website. It is not needed for continuous YouTube playback tracking. |
+| `tabs`                                        | Read tab URLs/titles to collect YouTube videos across windows, including `youtu.be` links, find existing editor/builder tabs, and observe the tab-based authentication redirect used on Firefox Android. This is separate from the browser's history API.                                                     |
+| `scripting`                                   | Run packaged link/channel/video extractors in the selected page or permitted YouTube tabs. No remotely downloaded scripts are executed.                                                                                                                                                                       |
+| `storage`                                     | Store playlists, settings, account tokens and local watch-progress records in extension storage.                                                                                                                                                                                                              |
+| `unlimitedStorage`                            | Support large local IndexedDB metadata/image archives beyond normal extension storage limits. Browser-data deletion and uninstalling can still remove data.                                                                                                                                                   |
+| `notifications`                               | Display local import, error, sync and retry notifications.                                                                                                                                                                                                                                                    |
+| `contextMenus`                                | Add right-click playlist actions where supported.                                                                                                                                                                                                                                                             |
+| `identity`                                    | Run optional Google/Supabase OAuth flows on supported desktop browsers. Local features do not require an account; Firefox Android uses its supported tab/email alternatives.                                                                                                                                  |
+| `alarms`                                      | Schedule sync retries and background housekeeping.                                                                                                                                                                                                                                                            |
+| Host access: `https://*.youtube.com/*`        | Fetch metadata and run extractors on YouTube pages. The watch-tracking content script matches every YouTube watch page (`*.youtube.com/watch*` and bare `youtube.com/watch*`), including `www.` and `m.` subdomains.                                                                                          |
+| Optional host access: `https://i.ytimg.com/*` | Only requested when you enable saving thumbnail image bytes on this device. The current source includes this unreleased feature; the pending 1.1.1 store packages do not include it.                                                                                                                          |
+
+**Playback timestamps:** the YouTube watch-page content script reads playback
+position/duration and sends records to local extension storage. This does not
+require the browser's `history` permission or Google sign-in, and does not rely
+on `activeTab`. The extension does not request `bookmarks` or `history` access.
+
+**Import from Page:** open the extension using its toolbar button on the source
+page, choose **Import from Page**, then select a limit and order. `0` imports all
+videos found by the scan. YouTube channel scanning is bounded and can only find
+videos the page makes available. Protected browser/store pages may block scanning.
+Opening `popup.html` as a normal tab or programmatically does not itself grant
+temporary access. Reopen the toolbar popup if the source page navigates.
+
+Local watch history and page scans are not sent to analytics. Metadata requests,
+optional account features and cloud sync have their own network behavior and data
+handling, described in the [privacy policy](docs/PRIVACY_POLICY.md). Firefox also
+shows data-transmission declarations and separate optional account/search consent.
+Marketplace packages can lag behind this source branch; store submission is not
+proof of approval or publication.
+
+Browser references: [Chrome activeTab](https://developer.chrome.com/docs/extensions/develop/concepts/activeTab),
+[Chrome tabs permissions](https://developer.chrome.com/docs/extensions/reference/api/tabs#permissions),
+and [Firefox activeTab](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/activeTab_permission).
 
 ## 🛠️ Development Quickstart
 
@@ -134,9 +217,18 @@ npm run lint:fix
 - 14 token categories: colors, typography, spacing, breakpoints, layout, touch targets, z-index, transitions, viewport, component-specific, responsive contracts, utilities, print
 - Backward compatible via legacy aliases (`--app-bg`, `--yt-blue`, `--primary-color`)
 
+### Documentation map
+
+Every document, and who each one is for: [`docs/INDEX.md`](docs/INDEX.md).
+
 ### Release Workflow
 
-See `docs/RELEASE_SPEC.md` — AI agents handle all steps up to `git push` (human only).
+See `docs/RELEASING.md` — the single release runbook: semver decision, version sync,
+changelog, release PR `next` → `main`, tag, store uploads.
+
+Day-to-day: `next` is the integration branch, `main` holds releases only. Agents may push
+branches, open PRs and squash-merge into `next`; a release PR into `main` is merged when the
+owner asks for that release.
 
 ### 🛠️ Developer & Control CLI
 
@@ -153,7 +245,7 @@ Use `./iypm.sh` at repository root for quick overview and operations:
 
 ### AI Agent Rules (from AGENTS.md)
 
-1. **Push a branch and open a PR** — `main` is protected; never commit directly to it and do not merge without explicit instruction
+1. **Branch from `next`, PR into `next`** — squash-merged, branch deleted on merge. `main` only takes release PRs from `next`; never push to either directly
 2. **ALWAYS `npm run check` before AND after edits**
 3. **ALWAYS `npm run build` after edits** — verifies `dist/`
 4. **No file > 350 lines** — Split using established module pattern
@@ -161,18 +253,32 @@ Use `./iypm.sh` at repository root for quick overview and operations:
 
 ---
 
-## 📊 Current Status (2026-10-25)
+## 📊 Current Status
 
-- **Version**: 1.2.0 — tagged `v1.2.0`, release assets published
+> Live state (branches, SHAs, pending work) is in [`.ai-sync/HANDOFF.md`](.ai-sync/HANDOFF.md).
+> The block below records store submission status as of the 1.2.0 release cycle.
+
+- **Version**: 1.2.0 on `main` (tagged `v1.2.0`); 1.2.1 prep on `next`
 - **Chrome**: 1.1.1 in review (auto-publish on approval); 1.2.0 package ready
-- **Microsoft Edge**: 1.2.0 package ready; Partner Center listing pending
-- **Firefox Listed**: 1.1.1 (ID 6620554); 1.2.0 package ready
+- **Microsoft Edge**: 1.2.0 submitted for certification (Product ID `20f9b17d-73e7-45f8-8692-796867b7ec80`); listing will appear at `https://microsoftedge.microsoft.com/addons/detail/<slug>/20f9b17d-73e7-45f8-8692-796867b7ec80` after approval. **Install button on the web portal auto-appears once `NEXT_PUBLIC_EDGE_STORE_URL` is set in Vercel.**
+- **Firefox Listed**: 1.1.1 (ID 6620554) in review; 1.2.0 package ready
 - **Firefox Unlisted Test**: v1.2.0.1 (ID 6620940)
-- **All checks pass**: 187 tests, zero Svelte errors, clean builds, 90 E2E route checks
+- **All checks pass**: 658 tests, zero Svelte errors, clean builds, E2E route checks
 - **Enforced on `main`**: quality, extension diagnostics and E2E must pass before merge
 - **Cutting a release**: see [docs/RELEASING.md](docs/RELEASING.md)
 
 ---
+
+## ⚠️ Known limitations
+
+- **Shorts tracking records only the initial Short.** Scrolling to the next Short in
+  the reel is a same-page SPA transition (no URL change the current
+  `yt-navigate-finish` hook catches), so per-Short watch-history is not recorded as you
+  swipe through a reel.
+- **Real-device confirmation still needed.** Automated coverage runs on desktop browsers
+  and a Firefox Android user-agent only; recording/resuming history on a physical
+  Firefox for Android (Fenix) device remains a manual check — see
+  [`docs/testing/HERMES_CONTEXT_MENU_VERIFICATION.md`](docs/testing/HERMES_CONTEXT_MENU_VERIFICATION.md).
 
 ## 🔗 Links
 
@@ -180,3 +286,21 @@ Use `./iypm.sh` at repository root for quick overview and operations:
 - [Firefox Add-ons](https://addons.mozilla.org/en-US/firefox/addon/iypm/)
 - [Web Portal](https://iypm.vercel.app/)
 - [GitHub Repository](https://github.com/elmusleh/independent-youtube-playlist-manager)
+
+### Desktop right-click capture (under development)
+
+The native Playlist Manager menu collects YouTube videos from seven tab scopes, with
+local destinations and an explicit review before YouTube Sync. Choose a destination
+without adding videos; Import from Page scans links only after a menu click. Protected
+pages may block scanning. Private tabs are excluded. Native captures keep tabs open by
+default; optional closing only affects newly saved, unchanged, unpinned video tabs.
+Firefox Android uses popup/extension-page equivalents rather than native page menus.
+
+This feature uses the existing tabs, context-menu, storage, activeTab, scripting and
+notification permissions. It adds no all-sites access. Destination search and remote
+review run in the extension's own page. Capture jobs expire after 30 minutes. Titles,
+source URLs, raw page contents and credentials are not placed in capture links.
+
+The implementation is awaiting the [Hermes verification matrix](docs/testing/HERMES_CONTEXT_MENU_VERIFICATION.md),
+including actual Firefox and Chromium native menu gestures. It is not release-ready.
+See [destination terminology](docs/PLAYLIST_TERMINOLOGY.md) for behavior details.

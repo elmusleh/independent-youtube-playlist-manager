@@ -16,6 +16,8 @@
   --color-brand-danger-hover: #cc0000;
   --color-brand-success: #2ba640;
   --color-brand-warning: #f57c00;
+  --color-brand-pink: #e91e63;
+  --color-brand-purple: #9c27b0;
 
   /* Light Theme (Default) */
   --color-bg-primary: #ffffff;
@@ -74,6 +76,16 @@
   --text-color: var(--color-text-primary);
   --border-color: var(--color-border-primary);
   --hover-color: var(--color-bg-hover);
+
+  /* Sync view / modern UI aliases */
+  --card: var(--color-bg-secondary);
+  --accent: var(--color-brand-primary);
+  --foreground: var(--color-text-primary);
+  --muted-foreground: var(--color-text-muted);
+  --muted: var(--color-bg-tertiary);
+  --success: var(--color-brand-success);
+  --danger: var(--color-brand-danger);
+  --warning: var(--color-brand-warning);
 }
 
 /* ============================================================================
@@ -228,6 +240,10 @@
   --touch-target-min: 44px;
   --touch-target-comfortable: 48px;
   --touch-target-large: 56px;
+
+  /* Shared header action sizing: one control size, one icon size. */
+  --header-control-size: var(--touch-target-min);
+  --header-icon-size: 18px;
 
   /* Icon button sizing */
   --icon-btn-size: 36px;
@@ -439,9 +455,6 @@
 
 /* Short screens (landscape phone, split view) */
 @media (max-height: 480px) and (max-width: 1024px) {
-  .sticky-header-container {
-    position: static;
-  }
   dialog {
     max-height: calc(100dvh - 16px);
   }
@@ -491,10 +504,14 @@ html {
   scrollbar-gutter: stable;
 }
 
-/* Text wrapping safety */
+/* Text wrapping safety + the box-sizing reset that the whole token system
+   (--icon-btn-size, --input-height, …) assumes. Without border-box, any element
+   that combines padding/border with a fixed width/height renders larger than the
+   token intends, which is what misaligns row icons (drag handle, sync badge). */
 *,
 *::before,
 *::after {
+  box-sizing: border-box;
   overflow-wrap: anywhere;
   word-break: break-word;
 }

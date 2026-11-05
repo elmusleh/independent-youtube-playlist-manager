@@ -10,12 +10,10 @@
     gaps,
     retrying,
     onRetry,
-    pageSize = 100,
   }: {
     gaps: NormalizedVideoMeta[];
     retrying: Record<string, boolean>;
     onRetry: (videoId: string) => void;
-    pageSize?: number;
   } = $props();
 
   const REASON_LABELS: Record<MetadataGapReason, string> = {
@@ -24,13 +22,6 @@
     missing_duration: "no duration",
     empty: "empty",
   };
-
-  let showAll = $state(false);
-
-  // A cache can hold thousands of gaps; render a bounded window so opening the
-  // view never stalls on hundreds of thumbnails.
-  let visible = $derived(showAll ? gaps : gaps.slice(0, pageSize));
-  let hidden = $derived(Math.max(0, gaps.length - visible.length));
 
   function reasonLabel(g: NormalizedVideoMeta): string {
     const reasons = getMetadataGaps(g).reasons;
@@ -45,7 +36,7 @@
 </p>
 
 <div class="gap-list">
-  {#each visible as g (g.videoId)}
+  {#each gaps as g (g.videoId)}
     <div class="gap-row">
       <img
         class="gap-thumb"
@@ -68,14 +59,6 @@
   {/each}
 </div>
 
-{#if hidden > 0}
-  <SimpleButton onclick={() => (showAll = true)}>
-    Show {hidden} more {hidden === 1 ? "entry" : "entries"}
-  </SimpleButton>
-{:else if showAll && gaps.length > pageSize}
-  <SimpleButton onclick={() => (showAll = false)}>Show first {pageSize}</SimpleButton>
-{/if}
-
 <style>
   .sub-text {
     color: var(--color-text-secondary, var(--text-muted));
@@ -97,7 +80,7 @@
     gap: var(--space-3, 12px);
     padding: var(--space-2, 8px);
     border: 1px solid var(--color-border-secondary, var(--border-color));
-    border-radius: var(--radius-button, 8px);
+    border-radius: var(--radius-card, 10px);
   }
 
   .gap-thumb {
