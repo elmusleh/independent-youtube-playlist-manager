@@ -57,7 +57,13 @@ async function verifySyncSchedule(page, worker, base, requestUrls) {
   assert.equal(activeAlarm.periodInMinutes, 120, "Periodic alarm periodInMinutes must equal 120");
 
   assert(
-    !requestUrls.some((url) => url.includes("api.github.com")),
+    !requestUrls.some((url) => {
+      try {
+        return new URL(url).hostname.toLowerCase() === "api.github.com";
+      } catch {
+        return false;
+      }
+    }),
     "Extension must never issue outbound requests to api.github.com"
   );
 }
