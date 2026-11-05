@@ -4,12 +4,14 @@
     faShieldHalved,
     faCopy,
     faTrash,
-    faKey,
     faInfoCircle,
     faArrowsRotate,
     faFingerprint,
+    faQrcode,
   } from "@fortawesome/free-solid-svg-icons";
   import SimpleButton from "../SimpleButton.svelte";
+  import SyncQrModal from "./SyncQrModal.svelte";
+  import SyncKeyOnboarding from "./SyncKeyOnboarding.svelte";
   import {
     generateSyncKey,
     isValidSyncKey,
@@ -48,6 +50,8 @@
   let keyInput = $state("");
   let keyError = $state<string | null>(null);
   let fingerprint = $state<KeyFingerprint | null>(null);
+  let qrModalOpen = $state(false);
+  let qrModalMode = $state<"view" | "scan">("view");
 
   const hasSyncKey = $derived(!!config.syncKey);
 
@@ -78,16 +82,15 @@
     return requestSyncHostPermission(RELAY_SUPABASE_URL, permissions);
   }
 
-  async function handleKeySave() {
-    if (isValidSyncKey(keyInput)) {
-      const formatted = formatSyncKey(keyInput);
+  async function applySyncKey(rawKey: string) {
+    if (isValidSyncKey(rawKey)) {
+      const formatted = formatSyncKey(rawKey);
       const changed = config.syncKey !== formatted;
       config.syncKey = formatted;
       config.syncConfigVersion = 2;
       config.syncProtocolVersion = 2;
       config.legacyV2AcknowledgedAt = null;
       if (config.backends.length === 0 && isRelayConfigured()) config.backends = ["relay"];
-      // Start permission request synchronously before any await so Firefox preserves user gesture.
       const permissionPromise = requestRelayAccessIfNeeded();
       if (changed) {
         resetSyncConfigCursors(config, null);
@@ -106,9 +109,9 @@
 
   function handleGenerateKey() {
     requestConfirm({
-      title: "Create a new sync key?",
+      title: "Create a new sync space?",
       message:
-        "Only do this on your FIRST device. Every other device must paste this same key — a second generated key creates a separate, unconnected sync space.",
+        "Only do this on your FIRST device. Every other device must scan or paste this same key to join.",
       color: "primary",
       confirmLabel: "Create key",
       onConfirm: async () => {
@@ -117,14 +120,13 @@
         config.syncProtocolVersion = 2;
         config.legacyV2AcknowledgedAt = null;
         if (config.backends.length === 0 && isRelayConfigured()) config.backends = ["relay"];
-        // Start permission request synchronously on modal confirm click before any await.
         const permissionPromise = requestRelayAccessIfNeeded();
         resetSyncConfigCursors(config, null);
         await clearLocalSyncRuntimeState(null);
         await permissionPromise;
         keyError = null;
         await onPersist();
-        onLog("New sync key created — copy it to your other devices", "success");
+        onLog("New sync key created — view QR or copy it to other devices", "success");
       },
     });
   }
@@ -150,7 +152,7 @@
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     } catch {
-      // non-fatal if browser environment lacks DOM download primitives
+      // non-fatal if browser lacks download primitives
     }
   }
 
@@ -166,7 +168,7 @@
           const snap = await captureSyncSafetyBackup("Before removing sync key", { force: true });
           if (snap) downloadBackupFile(snap);
         } catch {
-          // Proceed with removal even if snapshot capture fails
+          // ignore error
         }
         await removeKey();
       },
@@ -188,10 +190,8 @@
 <section class="card sync-key-section">
   <h3><Fa icon={faShieldHalved} /> Sync Key</h3>
   <p class="sub-text">
-    One key links every device. <strong>Generate once</strong> on your first device, then paste the
-    <strong>same key</strong>
-    on all others.
-    <span class="warning">Keep it secret — losing it means synced data cannot be recovered.</span>
+    One encrypted key links all your devices into a shared sync space.
+    <span class="warning">Keep it secret — losing it means remote data cannot be recovered.</span>
   </p>
 
   {#if hasSyncKey}
@@ -201,6 +201,16 @@
           <code class="key-value">{config.syncKey}</code>
           <SimpleButton secondary onclick={copyKey}>
             <Fa icon={faCopy} /> Copy
+          </SimpleButton>
+          <SimpleButton
+            secondary
+            onclick={() => {
+              qrModalMode = "view";
+              qrModalOpen = true;
+            }}
+            title="Show QR code for phone scanning"
+          >
+            <Fa icon={faQrcode} /> Show QR
           </SimpleButton>
         </div>
         {#if fingerprint}
@@ -216,50 +226,44 @@
         {/if}
       </div>
       <p class="key-hint">
-        <Fa icon={faInfoCircle} /> This key is set. Paste it into other devices to link them, then click
-        <strong>Sync now</strong>.
+        <Fa icon={faInfoCircle} /> Key is active. Click <strong>Show QR</strong> to connect mobile devices
+        instantly without typing.
       </p>
-      <SimpleButton secondary className="danger" onclick={handleRemoveKey}>
-        <Fa icon={faTrash} /> Remove key from this device
-      </SimpleButton>
-      {#if onRotate}
-        <SimpleButton
-          secondary
-          title="Creates a new sync key and space from this device; the previous remote space is kept"
-          onclick={() => onRotate?.()}
-        >
-          <Fa icon={faArrowsRotate} /> Rotate sync key
+      <div class="key-manage-actions">
+        <SimpleButton secondary className="danger" onclick={handleRemoveKey}>
+          <Fa icon={faTrash} /> Remove key from this device
         </SimpleButton>
-      {/if}
+        {#if onRotate}
+          <SimpleButton
+            secondary
+            title="Creates a new sync key and space from this device; previous space is kept"
+            onclick={() => onRotate?.()}
+          >
+            <Fa icon={faArrowsRotate} /> Rotate sync key
+          </SimpleButton>
+        {/if}
+      </div>
     </div>
   {:else}
-    <div class="key-input-wrapper">
-      <div class="key-input-group">
-        <input
-          type="text"
-          bind:value={keyInput}
-          placeholder="Paste sync key here (e.g. ABCDE-FGHJK-MNPQR-STVWX)"
-          class="key-input"
-          onkeydown={(e) => {
-            if (e.key === "Enter") handleKeySave();
-          }}
-        />
-        <SimpleButton primary onclick={handleKeySave}>
-          <Fa icon={faKey} /> Save Key
-        </SimpleButton>
-      </div>
-      {#if keyError}
-        <p class="error-text" role="alert">{keyError}</p>
-      {/if}
-      <p class="sub-text">
-        First device? Create a key here, then paste the same key on every other device.
-      </p>
-      <SimpleButton secondary onclick={handleGenerateKey}>
-        <Fa icon={faShieldHalved} /> Create a new sync key
-      </SimpleButton>
-    </div>
+    <SyncKeyOnboarding
+      bind:keyInput
+      {keyError}
+      onCreateSpace={handleGenerateKey}
+      onScanQr={() => {
+        qrModalMode = "scan";
+        qrModalOpen = true;
+      }}
+      onSaveKey={() => applySyncKey(keyInput)}
+    />
   {/if}
 </section>
+
+<SyncQrModal
+  bind:open={qrModalOpen}
+  mode={qrModalMode}
+  syncKey={config.syncKey || ""}
+  onScannedKey={(scanned) => applySyncKey(scanned)}
+/>
 
 <style>
   .sync-key-section .key-display {
@@ -268,7 +272,7 @@
   .key-value-container {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 0.5rem;
     flex-wrap: wrap;
     margin-bottom: 0.5rem;
   }
@@ -284,9 +288,15 @@
     letter-spacing: 0.02em;
   }
   .key-hint {
-    margin: 0.5rem 0 0;
+    margin: 0.5rem 0 0.75rem;
     font-size: 0.8rem;
     color: var(--muted-foreground, #6b7280);
+  }
+  .key-manage-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-top: 0.5rem;
   }
   .fingerprint-pill {
     display: inline-flex;
@@ -303,37 +313,8 @@
     font-size: 0.95rem;
     letter-spacing: 0.08em;
   }
-  .key-input-group {
-    display: flex;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-    margin-top: 1rem;
-  }
-  .key-input {
-    flex: 1 1 220px;
-    min-width: 0;
-    padding: 0.5rem 0.75rem;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    font-size: 0.875rem;
-    border: 1px solid var(--border, #d1d5db);
-    border-radius: 6px;
-    background: var(--card, #fff);
-    color: var(--foreground, #111);
-  }
-  .key-input:focus {
-    outline: none;
-    border-color: var(--accent, #3b82f6);
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
-  }
   :global(.danger) {
     color: var(--danger, #ef4444);
     border-color: var(--danger, #ef4444);
-  }
-  :global(.danger:hover) {
-    background: rgba(239, 68, 68, 0.1);
-  }
-  .error-text {
-    color: var(--danger, #ef4444);
-    font-weight: 500;
   }
 </style>

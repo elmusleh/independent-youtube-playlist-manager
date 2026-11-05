@@ -34,6 +34,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   an E2EE verified badge in `SyncHero.svelte`; automatic safety snapshot file download before disconnecting a sync key;
   network bandwidth upload/download payload byte tracking in `SyncRunReport`; visual relative time auto-refresh (30s interval);
   schema version validation reporting in Supabase connection tests;
+  QR code generation (`uqr`) and camera/file scanning (`jsQR`) for seamless mobile/desktop Sync Key pairing without manual typing;
+  a two-option onboarding redesign for new vs existing sync spaces;
+  and responsive mobile layout alignments ensuring count badges sit next to playlist titles without pushing buttons offscreen;
   and automated CI guards for Firefox MV3 background reliability, message sender validation, and manifest
   domain allowlists.
 - Moved "Local Storage" and "Database Backup & Portable Restore" cards from the Settings page to

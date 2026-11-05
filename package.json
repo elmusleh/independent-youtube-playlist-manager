@@ -79,5 +79,9 @@
     "*.{json,css,md,html,svelte}": [
       "prettier --write"
     ]
+  },
+  "dependencies": {
+    "jsqr": "^1.4.0",
+    "uqr": "^0.1.3"
   }
 }

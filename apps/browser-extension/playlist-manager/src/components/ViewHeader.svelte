@@ -461,37 +461,47 @@
   }
 
   @media (max-width: 768px) {
-    .top-left {
-      width: 100%;
-    }
-    h1 {
-      width: 100%;
-    }
-    .title-text {
-      flex: 1 1 180px;
-      min-width: 0;
-    }
     .view-header {
       flex-direction: column;
       align-items: flex-start;
       padding: 12px 16px;
       gap: 12px;
       min-height: auto;
+      max-width: 100%;
+      box-sizing: border-box;
+    }
+
+    .top-left {
+      width: 100%;
+      min-width: 0;
+    }
+
+    h1 {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      font-size: 20px;
+      gap: 8px;
+    }
+
+    .title-text {
+      flex: 0 1 auto;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .btn-group.right-align {
       width: 100%;
       flex-wrap: wrap;
-    }
-
-    h1 {
-      font-size: 20px;
-      gap: 8px;
+      justify-content: flex-start;
     }
 
     :global(h1 svg) {
       width: 20px;
       height: 20px;
+      flex-shrink: 0;
     }
 
     .edit-input {
@@ -502,6 +512,7 @@
     .count-badge {
       font-size: 12px;
       padding: 3px 10px;
+      flex-shrink: 0;
     }
   }
 </style>

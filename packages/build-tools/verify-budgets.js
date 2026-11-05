@@ -29,7 +29,9 @@ const budgets = [
   // issue queue tabs, filters, and pagination.
   // 230 KiB → 232 KiB (Sync Center v2 controls): SyncReportModal, SyncSafetyCard,
   // SyncConflictCard, and SyncScheduleCard preset pills + custom duration inputs.
-  { artifact: "dist/chrome/editor/bundle.css", maxBytes: 232 * 1024 },
+  // 232 KiB → 238 KiB (Mobile UX & Sync QR suite): ViewHeader responsive layout fix,
+  // 2-option onboarding choices in SyncKeyCard, and SyncQrModal camera/SVG styles (~3.5 KiB).
+  { artifact: "dist/chrome/editor/bundle.css", maxBytes: 238 * 1024 },
   { artifact: "dist/chrome/popup/popup.css", maxBytes: 22 * 1024 },
   { artifact: "dist/chrome/background/background.js", maxBytes: 16 * 1024 },
 ];

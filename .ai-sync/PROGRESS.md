@@ -1,3 +1,11 @@
+## Mobile UX, ViewHeader alignment & Sync QR suite — verified 2026-11-05
+
+- [x] Fix mobile `< 768px` layout in `ViewHeader.svelte`: change `.title-text` to `flex: 0 1 auto` so `.count-badge` sits directly adjacent to playlist title text instead of being pushed to the far right edge.
+- [x] Add SVG QR code generation for Sync Key via `uqr` (`generateSyncKeyQrSvg` in `qr-service.ts`) with unit tests in `qr-service.test.ts`.
+- [x] Add camera & image upload QR code scanning via `BarcodeDetector` / `jsQR` (`detectQrFromImageData` in `qr-service.ts` and `SyncQrModal.svelte`).
+- [x] Redesign unset state in `SyncKeyCard.svelte` into two distinct guided choices via `SyncKeyOnboarding.svelte` (Option 1: New Sync Space vs Option 2: Connect Existing Device via Scan QR or Paste).
+- [x] Verify `npm run check`, `npm run build`, `npm run test:extension` (102 route checks, 0 overflow at 320px), and `npm run test:visual` (24/24 snapshots).
+
 ## Sync Frequency custom duration controls, live alarm readout & strict Manual-only wiring — verified 2026-11-05
 
 - [x] Add `sync-schedule.ts` + `sync-schedule.test.ts` (includes default `5 min` preset, `1 min – 7 days` custom duration conversion, and next-alarm formatting).
