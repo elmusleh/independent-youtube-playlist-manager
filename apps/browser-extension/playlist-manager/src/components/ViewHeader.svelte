@@ -467,16 +467,13 @@
       justify-content: space-between;
       align-items: center;
       padding: 12px 16px;
-      gap: 10px 12px;
+      gap: 8px 12px;
       min-height: auto;
-      max-width: 100%;
-      box-sizing: border-box;
     }
 
     .top-left {
       flex: 1 1 auto;
       min-width: 0;
-      max-width: 100%;
     }
 
     h1 {
