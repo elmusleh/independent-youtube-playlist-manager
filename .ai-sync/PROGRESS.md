@@ -5,6 +5,7 @@
 - [x] Add `catch (err)` error surfacing in `Sync.svelte` `syncNow()`, proxy-stripping + `{ ok: false, error }` handling in `adapter-storage-io.ts` `mutateLibrary`, connection reuse in `shadow-store.ts` `openDb()`, and `lastWatchedAt` normalization in `adapters/history.ts`.
 - [x] Add SpiderMonkey getter-only `window` tests (`sync-engine-registration.test.ts`) and 25-playlist Firefox ↔ Chrome relay merge integration test (`sync-engine.firefox-merge.test.ts`).
 - [x] Verify `npm run check` and `npm run build` exit 0.
+- [x] Owner live Firefox ↔ Chrome sync round-trip verified (`2026-11-05`), and all findings/changes documented in `CHANGELOG.md`, `docs/SYNC_V2_STATUS.md`, and `.ai-sync/sessions/2026-11-05-sync-v2-cross-browser-resolution.md`.
 
 ## Stale Firefox `relayUrl` fix, per-backend `Test connection`, BYO Supabase UX & zero-data-loss protections — verified 2026-11-05
 
@@ -30,7 +31,7 @@
 - [x] Fix `lastSeqByCollection` cursor advancement across all enabled collections, skip no-op storage writes on already-applied versions, and hash actual `deviceId` in `hlc.ts`.
 - [x] Add read-only `verifyRelayConnection` (`Test connection`), `SyncConflictCard.svelte`, live stage/category progress, `[SYNC]` `yph_system_logs` audit entries, user-gesture host permission requests, and remove `qvwitlpnetwthyhrobca.supabase.co` from manifests.
 - [x] Add unit + end-to-end Firefox → Relay → Chrome regression tests (`84` files / `765` tests), update `#/sync` Playwright visual baselines (`24/24`), and verify `npm run check` + `npm run build` exit 0.
-- [ ] Owner reloads `dist/firefox` + `dist/chrome` and runs live Firefox → Chrome sync round-trip.
+- [x] Owner reloads `dist/firefox` + `dist/chrome` and runs live Firefox → Chrome sync round-trip.
 
 ## Sync hardening audit follow-up — local fixes verified 2026-11-04
 

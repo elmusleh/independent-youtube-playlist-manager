@@ -28,8 +28,9 @@
 
 ### Verification & Reload Steps
 
-- `npm run check` and `npm run build` exit 0 (`dist/firefox`, `dist/chrome`, `dist/edge` freshly rebuilt, all file sizes `<= 350` lines and CSS budgets green).
-- Reload `dist/firefox` (`about:debugging` → **Reload** on IYPM), open `#/sync`, and click **Sync now** to upload all 25 playlists + 1 history item + settings, then click **Sync now** in Chrome to pull all 26 merged playlists.
+- `npm run check` and `npm run build` exit 0 (`87` Vitest files / `777` tests; `dist/firefox`, `dist/chrome`, `dist/edge` freshly rebuilt; all file sizes `<= 350` lines and CSS budgets green).
+- **Owner live verification (`2026-11-05`): CONFIRMED WORKING ✅** — Firefox (25 playlists / 2,523 videos + history + settings) and Chrome synced cleanly end-to-end via `pfydngsbcmuhsqqjbcte.supabase.co`.
+- Full technical post-mortem & findings recorded in `.ai-sync/sessions/2026-11-05-sync-v2-cross-browser-resolution.md`, `docs/SYNC_V2_STATUS.md`, and `CHANGELOG.md`.
 
 ## 2026-11-05 — Stale Firefox `relayUrl` purge, per-backend `Test connection`, BYO Supabase schema UX & zero-data-loss protections
 

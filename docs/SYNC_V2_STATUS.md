@@ -1,33 +1,20 @@
 # Sync v2 — Implementation Status
 
-Branch: `feat/sync-hardening`. Last updated: 2026-11-04.
+Branch: `next` (latest sync commit: `1601fec`). Last updated: 2026-11-05.
 
-## Release gate — 2026-11-04 (NO-GO until verified)
+## Release gate — 2026-11-05
 
-**Hosted migration: VERIFIED ✅**
-
-- Migration 0002 applied (RLS, regex validation, service-wide rate limit)
-- Migration 0003 applied (trusted IP rate limit via pre-request hook)
-- Gateway XFF ownership: VERIFIED ✅ — Cloudflare overwrites `cf-connecting-ip` with real client IP; spoofing does not work
-- Rate limit uses real client IP (93.254.16.169 confirmed in `private.sync_ip_rate_limit`)
-- Pre-request hook active: `public.check_sync_client_ip_rate_limit` on `authenticator` role
-
-**Remaining gate:** Manual multi-device verification (Chrome/Firefox/Fenix) — see `docs/MULTI_DEVICE_SYNC_TEST.md`
-
-## Release gate — verified 2026-11-04
-
-**Do not mark the relay ready for public release yet.** The relay applies a service-wide
-limit of 100 new-space claims per minute, but it does not enforce a trusted per-client or
-per-IP limit. That service-wide limit can be evaded over time by claiming unique spaces.
-Before public launch, enforce rate limiting at a trusted gateway using trusted request
-metadata; never trust client-supplied forwarding headers. This requirement is also called
-out in `docs/migrations/0002_rate_limit_and_push_validation.sql` and remains an operations
-gate, not something the local SQL fixture proves.
-
-Local verification on 2026-11-04: `npm run test:sync:relay` passed 16/16 against the
-repository's Postgres/PostgREST fixture with migration `0002` applied. This does not verify
-that migration `0002` or gateway-level protections are active on the hosted relay. Manual
-Chrome/Firefox/Fenix multi-device verification is still required.
+- **Hosted relay (`pfydngsbcmuhsqqjbcte.supabase.co`): VERIFIED ✅**
+  - `docs/sync-relay-v2.sql` + migrations `0002` (RLS, regex validation, service-wide rate limit) and `0003` (trusted IP rate limit via PostgREST `db_pre_request` hook) active.
+  - Gateway `cf-connecting-ip` ownership verified; direct anon reads on `sync_spaces` / `sync_records` rejected (HTTP 401).
+  - Foreign Supabase project `qvwitlpnetwthyhrobca.supabase.co` (`mawqiei.net`) purged from extension manifests and runtime config migrations (`migrateSyncConfig`).
+- **Desktop multi-device verification (Firefox MV3 ↔ Chrome MV3): OWNER-VERIFIED ✅ (2026-11-05)**
+  - Real 25-playlist (2,523 videos) + watch-history + pinned-favorites library synced end-to-end between desktop Firefox and desktop Chrome over `pfydngsbcmuhsqqjbcte.supabase.co`.
+- **Automated engine, adapter & relay suites: VERIFIED ✅**
+  - `npm run check`: 87 test files / 777 tests passing (including `sync-engine.integration.test.ts`, `sync-engine.firefox-merge.test.ts`, `sync-safety-backup.test.ts`, `host-permissions.test.ts`, `sync-config.compatibility.test.ts`, `sync-engine-registration.test.ts`).
+- **Remaining manual checks before stable `main` cut:**
+  - Real-device Firefox for Android (Fenix) sync smoke check (`docs/MULTI_DEVICE_SYNC_TEST.md`).
+  - Legacy v1 `relay_snapshots` notice remains active (`needsV2RelayAcknowledgement`) so any pre-v2 config pauses safely until acknowledged.
 
 ## Legacy v1 relay recovery — release blocker
 
@@ -124,59 +111,28 @@ error | offline | paused`), single-flight guard, exponential backoff, status per
 - HLC combined value overflowed the 32-bit bitwise range; ordering now uses the
   `(wall, counter, deviceHash)` tuple.
 
-## What still needs to be done
+### 2026-11-05 Cross-Browser Root Causes & Hardening (`cfdef5e`, `156f7c5`, `1405024`, `1601fec`)
 
-- **Relay SQL + encryption**: verified against live Postgres 16 (9/9 E2E pass).
-- **Engine + adapters**: NOT verified end-to-end. No test runs `runOnce` or the adapters.
-- **Deletion tombstones**: IMPLEMENTED. Local deletions now emit `deleted: true`
-  tombstones and remote tombstones are applied (playlists/history/settings).
-- **status-store.ts**: WIRED into `runOnce()` (restore points saved pre-sync).
-- `docs/migrations/0003_trusted_ip_rate_limit.sql`: trusted gateway client-IP limiter (250 requests / 5 minutes per IP, sync-RPC-only, fail-closed when IP unavailable, PostgREST `db_pre_request`). Hosted gateway must own `X-Forwarded-For`; direct client headers must not be trusted.
-- Local relay E2E now exercises per-IP limits and missing-IP behavior: 18/18 tests pass.
-
-### Phase 3 follow-up (adapter wiring) — DONE
-
-- `runOnce` now pulls via relay-transport, merges per collection (playlists,
-  history, settings, devices), pushes dirty records, and updates lastSeq.
-- Adapter pass extracted to `sync-engine-adapters.ts` (file-size gate).
-- `storage.onChanged` triggers already wired in the engine (debounced push).
-- `yph_sync_status` consumption by the UI is via the existing `getSyncStatus` path.
-
-### Phase 4 — Sync Center UI (remaining)
-
-- Split `Sync.svelte` into `components/sync/*`: `SyncHero`, `SyncCounters`,
-  `SyncKeyCard`, `SyncContents`, `SyncActivity`, `SyncAdvanced` (DONE).
-- `SyncStatusIndicator.svelte` (header) driven by `yph_sync_status` with a badge
-  when changes are waiting or a run failed (DONE).
-
-### Phase 5 — Extras (optional, DONE)
-
-- Pairing link (`26a9dfb`): "Copy pairing link" button in `SyncKeyCard` (base64url
-  key in `#/sync?join=...`); `Sync.svelte` imports & validates on mount, saves key,
-  shows toast.
-- Realtime nudge (`161fbf6`): `services/sync/realtime-nudge.ts` subscribes to
-  `sync-<space>` broadcast channel (handles `nudge`/`sync-nudge`), debounced,
-  triggers `pullNow()`; wired in `Sync.svelte` with cleanup.
-- Key rotation (`4a3b60e`): "Rotate key (advanced)" button → confirm dialog →
-  `rotate-key.ts` generates new key, pushes all data to new space, updates config,
-  deletes old space; refreshes UI + resubscribes.
-
-### Backend / ops (DONE)
-
-- `docs/sync-relay-v2.sql` applied to hosted Supabase (`pfydngsbcmuhsqqjbcte`):
-  tables `sync_spaces`, `sync_records`, RLS enabled, RPCs `sync_claim`,
-  `sync_pull`, `sync_push`, `sync_delete_space` — all verified.
-- A read-only endpoint probe returns 404 for `relay_snapshots`; whether it previously held user rows or a recoverable Supabase backup exists is unknown.
-- `PRIVACY_POLICY.md` updated to document encrypted v2 sync.
+1. **Firefox SpiderMonkey getter-only `window` crash (`1601fec`):** Firefox MV3 runs background scripts in a hidden `Window` (`_generated_background_page.html`) where `window` is a getter-only accessor (`set: undefined`). `sync-engine-registration.ts` previously assigned `(globalThis as any).window = ...` unconditionally in strict mode, throwing `TypeError: setting getter-only property "window"` on module load in both the background page and `#/sync`'s dynamic `import()` fallback. Guarded with `if (typeof (globalThis as any).window === "undefined")` and skipped duplicate listener registration inside `/editor/index.html` and `/popup/popup.html`.
+2. **Firefox MV3 `runtime.onMessage` Promise contract (`1405024`):** Returned native `Promise`s directly when `browser.runtime.getBrowserInfo` exists, plus in-page `runOnce()` fallback and `catch` error surfacing in `Sync.svelte`.
+3. **Firefox MV3 host-permission user-gesture loss (`156f7c5`):** Removed `await permissions.contains(...)` before `browser.permissions.request(...)` in `host-permissions.ts` so Firefox's transient click gesture is preserved when requesting `https://pfydngsbcmuhsqqjbcte.supabase.co/*`.
+4. **Stale `relayUrl` override & unbound IndexedDB shadows (`cfdef5e`, `1405024`):** Purged stale foreign `*.supabase.co` `relayUrl` overrides in `migrateSyncConfig` and bound `yph_sync_shadow_v1` to `space|relayUrl` (`ensureShadowBinding`) so changing Sync Keys or relay endpoints automatically resets local dirty-tracking shadows and cursors.
+5. **Data model & storage bridges (`cfdef5e`, `1601fec`):**
+   - Added 3-way `string[]` video ID array merging (`merge/playlist-videos.ts`) instead of object-spread corruption.
+   - Added background-safe `storage.local` + `storage.sync` settings reader/writer (`adapter-storage-io.ts`) filtered by `SYNCABLE_SETTING_KEYS` (including `favoritePlaylistIds` and `watchLaterPlaylistId`), plus proxy-stripping and `{ ok: false, error }` handling in `mutateLibrary`.
+   - Normalized `local_yt_history` `.videoId` and `lastWatchedAt` fields (`adapters/history.ts`).
+   - Cached a single shared `IDBDatabase` connection in `shadow-store.ts` (`openDb()`).
+6. **Transparency, BYO Supabase UX & Zero-Data-Loss Safeguards (`156f7c5`, `1405024`):**
+   - Added `SyncReportModal.svelte` (`sync-report.ts`), unified `SyncCounters.svelte` pre-first-sync summary (`Will sync: Playlists · History · Settings & Pinned`), and 4-emoji + 4-word `SyncKeyCard.svelte` fingerprint badge.
+   - Moved `Test connection` into `RelayCard.svelte` and `SupabaseCard.svelte` with `404`/`PGRST202` missing-schema detection and inline `docs/sync-relay-v2.sql` setup instructions.
+   - Added `sync-safety-backup.ts` + `SyncSafetyCard.svelte` (rolling pre-sync local snapshots + JSON export/restore), anti-mass-wipe guard (`adapters/playlists.ts`), and forward-compatible unknown-field/future-version preservation (`merge/playlists.ts`, `sync-engine-adapters.ts`).
 
 ## Test status
 
-- `npm run check`: exit 0 (82 files / 757 tests).
+- `npm run check`: exit 0 (`87` Vitest files / `777` tests, `svelte-check` 0 errors, `verify-file-size` 333 files within limits, visual baselines verified).
 - `npm run test:sync:relay`: 18/18 with migrations 0002 and 0003.
-- `npm run build`: exit 0 (all budgets pass).
-- `npm run test:extension`: exit 0 after `npm run pack:edge`.
-- `git diff --check` / formatting passed.
-- Trusted gateway rate limiting is implemented locally but hosted gateway behavior remains unverified.
+- `npm run build`: exit 0 (`dist/chrome`, `dist/firefox`, `dist/edge` all within bundle budgets).
+- Desktop Firefox ↔ Chrome live sync round-trip: verified by owner on 2026-11-05.
 
 ## Open questions (from the original plan)
 

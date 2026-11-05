@@ -18,6 +18,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Cross-device sync UI with device pairing, capability-aware backend selection, encrypted
   file and Supabase transports, and explicit conflict reporting when a backend rejects stale
   writes. Custom HTTPS Supabase hosts are requested only when the user starts a sync.
+- Sync Center transparency, diagnostics, and data-protection safeguards: a post-sync
+  **Sync Status Report** dialog (`SyncReportModal.svelte`) with per-category uploaded/applied
+  totals and cloud space ID; per-backend **Test connection** checks inside both `IYPM hosted`
+  and `Your own Supabase project` (including missing `docs/sync-relay-v2.sql` schema detection
+  and inline setup instructions); a 4-emoji + 4-word **Key check** fingerprint badge; a
+  configurable conflict policy card (`Automatic 3-way merge` vs `Last-write-wins`); automatic
+  rolling pre-sync local restore points (`SyncSafetyCard.svelte`) with one-click JSON export
+  and full local restore; and an anti-mass-wipe safety guard blocking automatic deletion if
+  remote tombstones would wipe three or more local playlists down to zero.
 - Moved "Local Storage" and "Database Backup & Portable Restore" cards from the Settings page to
   the Sync page; Sync Key card promoted to a full-width block at the top of Sync. Sync page now
   shares the masonry card layout with Settings.
@@ -56,6 +65,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Cross-browser Sync v2 reliability across Firefox MV3 and Chrome MV3 (`cfdef5e`, `156f7c5`,
+  `1405024`, `1601fec`): guarded `globalThis.window` in `sync-engine-registration.ts` against
+  SpiderMonkey's getter-only `Window` accessor (which crashed `sync-engine.js` on load in
+  Firefox's MV3 background page and `#/sync` fallback); returned native `Promise`s from Firefox
+  MV3 `runtime.onMessage` listeners; invoked `browser.permissions.request()` synchronously on
+  click before any `await` so Firefox preserves the transient user gesture for relay host
+  permissions; bound IndexedDB shadows (`yph_sync_shadow_v1`) to `space|relayUrl` and purged
+  stale foreign `*.supabase.co` `relayUrl` overrides on config load; fixed 3-way playlist merge
+  for `string[]` video ID arrays (`merge/playlist-videos.ts`); wired background worker settings
+  sync against `storage.local` + `storage.sync` (`SYNCABLE_SETTING_KEYS`, including
+  `favoritePlaylistIds` and `watchLaterPlaylistId`); normalized `local_yt_history` `.videoId`
+  and `lastWatchedAt` fields; advanced `lastSeqByCollection` across all enabled collections;
+  and reused a single `IDBDatabase` connection in `shadow-store.ts`.
 - Sync: the "Sync now" button's styling prop is passed as `className`, so it is no longer
   dropped. The sync-relay SQL and setup guide now create `relay_snapshots(payload)`, matching
   the extension. Background polling and one pull start when the editor opens, not only on
