@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-11-05
+
 ### Added
 
 - Zero-knowledge sync core (first slice of `add-encrypted-cross-device-sync`): a
@@ -287,6 +289,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Release Notes
 
+- **v1.3.0**: Cross-device zero-knowledge encrypted sync (Sync v2), pairing via QR code generation and live camera scanner, responsive mobile layout alignments, and remote sync space purge
 - **v1.1.1**: Production release submitted to both extension stores
 - **v1.1.0**: Major UI overhaul with design tokens and responsive system
 - **Unreleased**: CSS architecture enforcement, developer tooling, test expansion, Microsoft Edge support

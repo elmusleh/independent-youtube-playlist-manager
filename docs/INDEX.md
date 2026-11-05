@@ -54,6 +54,8 @@ shared capture design, permissions and browser tests; implementation pending.
 | `../README.md`                                                           | What the project is, install, current status.                                                                                                   |
 | `USER_GUIDE.md`                                                          | End-user manual, including the Data Manager.                                                                                                    |
 | `USAGE_EXAMPLES.md`                                                      | Worked examples.                                                                                                                                |
+| `SYNC_COMPATIBILITY.md`                                                  | **User-facing sync compatibility** — what works on each browser/device, plus coming-soon platforms.                                             |
+| `PLATFORM_SUPPORT.md`                                                    | **Full platform architecture** — why WebExtension runtime matters, client-only model, roadmap, developer guide.                                 |
 | `SUPPORT.md`, `PRIVACY_POLICY.md`, `TERMS_OF_SERVICE.md`, `IMPRESSUM.md` | Legal and support pages.                                                                                                                        |
 | `../CHANGELOG.md`                                                        | **Single source of truth** for release notes and GitHub Release bodies. The in-app release-notes file is generated from it — never hand-edited. |
 

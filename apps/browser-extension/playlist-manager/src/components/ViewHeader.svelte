@@ -462,26 +462,29 @@
 
   @media (max-width: 768px) {
     .view-header {
-      flex-direction: column;
-      align-items: flex-start;
+      flex-direction: row;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
       padding: 12px 16px;
-      gap: 12px;
+      gap: 10px 12px;
       min-height: auto;
       max-width: 100%;
       box-sizing: border-box;
     }
 
     .top-left {
-      width: 100%;
+      flex: 1 1 auto;
       min-width: 0;
+      max-width: 100%;
     }
 
     h1 {
-      width: 100%;
       display: flex;
       align-items: center;
       font-size: 20px;
       gap: 8px;
+      flex-wrap: nowrap;
     }
 
     .title-text {
@@ -493,10 +496,11 @@
     }
 
     .btn-group.right-align {
-      width: 100%;
+      flex: 0 1 auto;
+      margin-left: auto;
       flex-wrap: wrap;
-      justify-content: flex-start;
-      gap: 8px;
+      justify-content: flex-end;
+      gap: 6px;
     }
 
     /* On mobile / small screens, hide text labels inside buttons to save space and fit all actions */
@@ -505,7 +509,7 @@
     }
 
     .btn-group.right-align :global(.btn) {
-      padding: 0 10px;
+      padding: 0 8px;
     }
 
     :global(h1 svg) {

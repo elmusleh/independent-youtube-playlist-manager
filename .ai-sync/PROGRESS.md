@@ -1,3 +1,10 @@
+## v1.3.0 Release Preparation, single-line mobile header alignment & feature branch consolidation — verified 2026-11-05
+
+- [x] Configure single-line mobile layout in `ViewHeader.svelte` (`flex-direction: row; flex-wrap: wrap; justify-content: space-between`) with title left and iconized action buttons right.
+- [x] Cut `1.3.0` release notes in `CHANGELOG.md` and generate synchronized `release-notes.ts`.
+- [x] Merge `feat/sync-hardening` into `next` and verify all feature branches are fully incorporated.
+- [x] Verify `npm run check`, `npm run build`, `npm run test:extension`, and `npm run test:visual`.
+
 ## Camera permission denied recovery & diagnostic banner in QR scanner — verified 2026-11-05
 
 - [x] Create `camera-diagnostic.ts` and `camera-diagnostic.test.ts` to detect `NotAllowedError` and permission rejections.

@@ -1,3 +1,32 @@
+## 2026-11-05 — v1.3.0 Release Preparation, single-line mobile header alignment & feature branch consolidation
+
+### Root Causes & Hardening Implemented
+
+1. **Single-line Mobile Header Layout in `ViewHeader.svelte`:**
+   - Updated `.view-header` on `<= 768px` to maintain a single row wherever possible (`flex-direction: row; flex-wrap: wrap; justify-content: space-between; align-items: center`).
+   - Keeps title and count badge on the left, and groups iconized buttons on the right. If viewport space runs out on extremely narrow widths, action buttons wrap gracefully to a second row without clipping or horizontal overflow.
+2. **Release 1.3.0 Preparation & Synchronized Release Notes:**
+   - Formally cut version `[1.3.0] - 2026-11-05` in `CHANGELOG.md`.
+   - Regenerated extension in-app release notes via `packages/build-tools/gen-release-notes.mjs` (`release-notes.ts`).
+   - Synced documentation files (`README.md`, `docs/INDEX.md`, `docs/SUPPORT.md`, `docs/SYNC_COMPATIBILITY.md`, `docs/PLATFORM_SUPPORT.md`).
+3. **Consolidation of Feature Branches:**
+   - Merged `feat/sync-hardening` into `next` (incorporating `0003_trusted_ip_rate_limit.sql` client-IP validation).
+   - Confirmed all branches (`feat/nearby-sync`, `feat/sync-hardening`, `fix/sync-hardening-audit`, `fix/sync-ip-ratelimit`) are fully integrated into `next`.
+
+### Files Changed
+
+- `apps/browser-extension/playlist-manager/src/components/ViewHeader.svelte`
+- `apps/browser-extension/playlist-manager/src/generated/release-notes.ts`
+- `CHANGELOG.md`, `README.md`, `docs/INDEX.md`, `docs/SUPPORT.md`, `docs/SYNC_COMPATIBILITY.md`, `docs/PLATFORM_SUPPORT.md`
+- `.ai-sync/HANDOFF.md`, `.ai-sync/PROGRESS.md`
+
+### Verification
+
+- `npm run check` (92 Vitest files / 800 tests passing, 0 ESLint errors, svelte-check 0 errors)
+- `npm run build` (Chrome, Firefox, and Edge bundles clean)
+- `npm run test:extension` (102 routes, 13 interaction groups, 0 overflow at 320px)
+- `npm run test:visual` (24/24 snapshots matching)
+
 ## 2026-11-05 — Camera permission denied recovery & diagnostic banner in QR scanner
 
 ### Root Causes & Hardening Implemented

@@ -30,6 +30,29 @@ Install IYPM on any browser that supports WebExtensions. Chromium-based browsers
 
 ---
 
+## 📱 Platform Roadmap (Coming Soon)
+
+> **Client-only platforms:** These are companion apps that **consume your synced playlists** but **cannot capture from YouTube pages** (no right-click menus, no auto-fetch, no history tracking). You create/manage playlists on desktop, then watch them on these platforms.
+
+| Platform                      | Target                                                        | Sync            | Playback                   | Status                  |
+| ----------------------------- | ------------------------------------------------------------- | --------------- | -------------------------- | ----------------------- |
+| **Web Portal (TV & Tablet)**  | Smart TV browsers, tablets, any browser                       | Supabase        | Deep-link → YouTube app    | **Design complete**     |
+| **Native Android App**        | Android phones, tablets, **Android TV / Google TV / Fire TV** | Supabase        | Deep-link → YouTube app    | **Architecture ready**  |
+| **iOS / iPadOS App**          | iPhone, iPad                                                  | Supabase        | `youtube://` → YouTube app | Free with Android build |
+| **Desktop Companion (Tauri)** | Windows, macOS, Linux (native app)                            | Supabase / File | System browser             | Low priority            |
+
+**How pairing works (no typing on TV remote!):**
+
+1. Desktop Extension → Sync → "Pair New Device" → Shows QR code + 6-digit code
+2. On TV/Tablet/Phone → Open Web Portal or Native App → "Pair Device"
+3. Scan QR with phone camera OR enter 6-digit code on phone
+4. Phone sends encrypted sync key to TV/app via secure channel
+5. Done — playlists appear automatically
+
+See [`docs/PLATFORM_SUPPORT.md`](docs/PLATFORM_SUPPORT.md) for full architecture and [`docs/SYNC_COMPATIBILITY.md`](docs/SYNC_COMPATIBILITY.md) for the user-facing compatibility table.
+
+---
+
 ## ⚖️ IYPM vs Native YouTube Playlists
 
 A comprehensive, side-by-side comparison of every capability — the single source of truth for what IYPM offers over YouTube's built-in playlists.

@@ -14,6 +14,30 @@ When reporting a bug, please include:
 3. **Steps to reproduce** — what you did, what you expected, what happened.
 4. **Screenshots** or error messages, if any.
 
+## Platform Support Overview
+
+See [`SYNC_COMPATIBILITY.md`](SYNC_COMPATIBILITY.md) for the full compatibility table and [`PLATFORM_SUPPORT.md`](PLATFORM_SUPPORT.md) for architecture and future platforms.
+
+### Currently Supported
+
+| Platform                | Extension | Sync                      | Notes            |
+| ----------------------- | --------- | ------------------------- | ---------------- |
+| Chrome Desktop          | ✅        | Supabase + File           | Full capture     |
+| Edge Desktop            | ✅        | Supabase + File           | Full capture     |
+| Firefox Desktop         | ✅        | Supabase + File (partial) | Full capture     |
+| Firefox Android (Fenix) | ✅        | Supabase only             | No context menus |
+
+### Coming Soon (Client-Only)
+
+| Platform       | Target                            | Sync            | Playback                   | Status             |
+| -------------- | --------------------------------- | --------------- | -------------------------- | ------------------ |
+| Web Portal     | TV browsers, tablets, any browser | Supabase        | Deep-link → YouTube app    | Design complete    |
+| Native Android | Phone, tablet, **Android TV**     | Supabase        | Deep-link → YouTube app    | Architecture ready |
+| iOS / iPadOS   | iPhone, iPad                      | Supabase        | `youtube://` → YouTube app | Free with Android  |
+| Tauri Desktop  | Windows, macOS, Linux             | Supabase + File | System browser             | Low priority       |
+
+**Client-only =** View/play synced playlists only. No YouTube page capture, no context menus, no auto-fetch.
+
 ## Frequently Asked Questions
 
 ### The extension can't fetch video titles/durations (only thumbnails load)
@@ -49,11 +73,24 @@ Yes — Firefox for Android (Fenix) is supported. Chrome for Android does not su
 
 Context menus are desktop-only. On Android/Fenix they are skipped by design.
 
+### Will there be a TV app / Android TV app / iOS app?
+
+**Yes — they're planned as "client-only" companion apps.** See [`PLATFORM_SUPPORT.md`](PLATFORM_SUPPORT.md) for the full roadmap.
+
+**Short version:**
+
+- **Web Portal (TV browsers):** Opens `iypm.vercel.app` on your TV browser → pair via QR code from desktop → play playlists → opens YouTube app. **Design complete.**
+- **Native Android TV app:** Capacitor wrapper around our Svelte UI → Play Store → same pairing → deep-links to YouTube app. **Architecture ready.**
+- **iOS/iPadOS:** Same Capacitor build → App Store.
+- **All are client-only:** They show your synced playlists and play them. They **cannot** capture from YouTube pages (no right-click menus, no auto-fetch). You manage playlists on desktop.
+
 ## Documentation
 
 - **Setup & API configuration:** [`USER_GUIDE.md`](USER_GUIDE.md) in the repository.
 - **Architecture & build:** [`AGENTS.md`](../AGENTS.md).
 - **Release history:** [`RELEASE_NOTES.md`](RELEASE_NOTES.md).
+- **Platform support & roadmap:** [`PLATFORM_SUPPORT.md`](PLATFORM_SUPPORT.md).
+- **Sync compatibility:** [`SYNC_COMPATIBILITY.md`](SYNC_COMPATIBILITY.md).
 
 ## Still stuck?
 
