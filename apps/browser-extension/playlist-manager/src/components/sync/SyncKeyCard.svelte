@@ -49,13 +49,12 @@
 
   const hasSyncKey = $derived(!!config.syncKey);
 
-  async function requestRelayAccessIfNeeded() {
-    if (!config.backends.includes("relay")) return;
+  function requestRelayAccessIfNeeded(): Promise<boolean> {
+    if (!config.backends.includes("relay")) return Promise.resolve(true);
     const permissions =
       (globalThis as any).browser?.permissions || (globalThis as any).chrome?.permissions;
-    if (permissions) {
-      await requestSyncHostPermission(RELAY_SUPABASE_URL, permissions);
-    }
+    if (!permissions) return Promise.resolve(true);
+    return requestSyncHostPermission(RELAY_SUPABASE_URL, permissions);
   }
 
   async function handleKeySave() {
@@ -67,11 +66,13 @@
       config.syncProtocolVersion = 2;
       config.legacyV2AcknowledgedAt = null;
       if (config.backends.length === 0 && isRelayConfigured()) config.backends = ["relay"];
+      // Start permission request synchronously before any await so Firefox preserves user gesture.
+      const permissionPromise = requestRelayAccessIfNeeded();
       if (changed) {
         resetSyncConfigCursors(config, null);
         await clearLocalSyncRuntimeState(null);
       }
-      await requestRelayAccessIfNeeded();
+      await permissionPromise;
       keyInput = "";
       keyError = null;
       await onPersist();
@@ -95,9 +96,11 @@
         config.syncProtocolVersion = 2;
         config.legacyV2AcknowledgedAt = null;
         if (config.backends.length === 0 && isRelayConfigured()) config.backends = ["relay"];
+        // Start permission request synchronously on modal confirm click before any await.
+        const permissionPromise = requestRelayAccessIfNeeded();
         resetSyncConfigCursors(config, null);
         await clearLocalSyncRuntimeState(null);
-        await requestRelayAccessIfNeeded();
+        await permissionPromise;
         keyError = null;
         await onPersist();
         onLog("New sync key created — copy it to your other devices", "success");

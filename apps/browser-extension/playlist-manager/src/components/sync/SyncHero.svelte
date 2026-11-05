@@ -21,6 +21,10 @@
     lastSyncSummary,
     getStageLabel,
     onSyncNow,
+    onGrantPermission,
+    onOpenReport,
+    needsRelayPermission = false,
+    hasReport = false,
     estimatedRemaining,
     categoryProgress,
   }: {
@@ -36,6 +40,10 @@
     getStageLabel: (stage: string) => string;
     onSyncNow: () => void;
     onTestConnection?: () => void;
+    onGrantPermission?: () => void;
+    onOpenReport?: () => void;
+    needsRelayPermission?: boolean;
+    hasReport?: boolean;
     estimatedRemaining: number | null;
     categoryProgress: {
       playlists: { processed: number; applied: number; total: number };
@@ -80,6 +88,11 @@
       <p class="status-message">
         {#if isSyncing}
           {syncStageDetail || getStageLabel(syncStage)}
+        {:else if needsRelayPermission}
+          <span class="error-text">
+            <Fa icon={faCircleExclamation} /> Browser permission needed: click "Allow relay access" or
+            "Sync now" to approve secure access to the IYPM sync relay.
+          </span>
         {:else if lastError}
           <span class="error-text"><Fa icon={faCircleExclamation} /> {lastError}</span>
         {:else if lastSyncSummary}
@@ -119,8 +132,18 @@
     </div>
   </div>
   <div class="banner-actions">
+    {#if needsRelayPermission && onGrantPermission}
+      <SimpleButton onclick={onGrantPermission} className="sync-now-btn">
+        Allow relay access
+      </SimpleButton>
+    {/if}
+    {#if hasReport && !isSyncing && onOpenReport}
+      <SimpleButton secondary onclick={onOpenReport} className="sync-now-btn">
+        Sync report
+      </SimpleButton>
+    {/if}
     <SimpleButton
-      secondary
+      secondary={!needsRelayPermission}
       onclick={onSyncNow}
       disabled={isSyncing || !syncIsOn}
       className="sync-now-btn"
@@ -290,6 +313,10 @@
   }
   .banner-actions {
     flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
   }
   :global(.sync-now-btn) {
     min-width: 0;

@@ -12,6 +12,7 @@
   import SyncCounters from "../components/sync/SyncCounters.svelte";
   import SyncKeyCard from "../components/sync/SyncKeyCard.svelte";
   import SyncConflictCard from "../components/sync/SyncConflictCard.svelte";
+  import SyncReportModal from "../components/sync/SyncReportModal.svelte";
   import SyncAdvanced from "../components/sync/SyncAdvanced.svelte";
   import SyncScheduleCard from "../components/sync/SyncScheduleCard.svelte";
   import SyncOfflineCard from "../components/sync/SyncOfflineCard.svelte";
@@ -31,21 +32,33 @@
     LEGACY_SYNC_RECOVERY_NOTICE,
     needsV2RelayAcknowledgement,
   } from "../services/sync/sync-config-compatibility.js";
-  import { requestSyncHostPermission } from "../services/sync/host-permissions.js";
+  import {
+    checkSyncHostPermission,
+    requestSyncHostPermission,
+  } from "../services/sync/host-permissions.js";
   import { verifyRelayConnection } from "../services/sync/sync-diagnostics.js";
+  import {
+    buildSyncRunReport,
+    readLocalSyncInventory,
+    type LocalSyncInventory,
+    type SyncRunReport,
+  } from "../services/sync/sync-report.js";
   import { rotateSyncKey } from "../services/sync/rotate-key.js";
   import { subscribeToSyncNudge } from "../services/sync/realtime-nudge.js";
   import { toast } from "../stores/toast.js";
   import { requestConfirm } from "../stores/confirmation";
 
-  function triggerSyncNow() {
+  async function triggerSyncNow(): Promise<any> {
     const b = (window as any).browser || (window as any).chrome;
     if (b?.runtime?.sendMessage) {
-      return b.runtime.sendMessage({ cmd: "sync-now" }).catch(() => Promise.resolve());
+      return b.runtime.sendMessage({ cmd: "sync-now" }).catch((err: unknown) => ({
+        phase: "error",
+        lastError: err instanceof Error ? err.message : String(err),
+      }));
     }
     const engine = (window as any).syncEngine;
     if (engine?.runOnce) return engine.runOnce();
-    return Promise.resolve();
+    return {};
   }
 
   const caps = detectCapabilities();
@@ -62,7 +75,12 @@
   let lastSyncSummary = $state<string | null>(null);
   let knownDevices = $state(0);
   let isSyncing = $state(false);
+  let manualSyncActive = $state(false);
   let isTestingConnection = $state(false);
+  let relayPermissionGranted = $state<boolean | null>(null);
+  let localInventory = $state<LocalSyncInventory | null>(null);
+  let lastSyncReport = $state<SyncRunReport | null>(null);
+  let reportModalOpen = $state(false);
   let syncStage = $state<string>("idle");
   let syncStageDetail = $state<string>("");
   let syncProgress = $state<number>(0);
@@ -76,6 +94,9 @@
   let estimatedRemaining = $state<number | null>(null);
 
   const syncIsOn = $derived(!!(config.syncKey && config.backends.length > 0));
+  const needsRelayPermission = $derived(
+    syncIsOn && config.backends.includes("relay") && relayPermissionGranted === false
+  );
 
   function hintFor(c: SyncConfig): string | null {
     if (!c.syncKey)
@@ -112,19 +133,32 @@
     }
   }
 
+  async function refreshPermissionState() {
+    const permissions =
+      (globalThis as any).browser?.permissions || (globalThis as any).chrome?.permissions;
+    if (!permissions?.contains) {
+      relayPermissionGranted = null;
+      return;
+    }
+    relayPermissionGranted = await checkSyncHostPermission(RELAY_SUPABASE_URL, permissions);
+  }
+
   async function persist() {
     await status.save(() => saveSyncConfig(config));
+    await refreshPermissionState();
   }
 
   async function refresh() {
     await status.refresh(async () => {
       config = await loadSyncConfig();
       localDeviceId = await getOrCreateDeviceId().catch(() => null);
+      localInventory = await readLocalSyncInventory();
+      await refreshPermissionState();
       await refreshStatus();
     });
   }
 
-  async function refreshStatus() {
+  async function refreshStatus(): Promise<any> {
     const b = (window as any).browser || (window as any).chrome;
     let s: any = {};
     let deviceList: Array<{ deviceId?: string }> = [];
@@ -152,20 +186,23 @@
     knownDevices = uniqueDevices.size;
 
     const activePhase = s.phase ?? "idle";
-    isSyncing = activePhase === "pulling" || activePhase === "merging" || activePhase === "pushing";
-    syncStage = activePhase;
-    syncProgress = phaseProgress[activePhase] ?? 0;
-    syncStageDetail =
-      activePhase === "pulling"
-        ? `Downloading encrypted records${s.incomingCount ? ` (${s.incomingCount} fetched)` : ""}…`
-        : activePhase === "merging"
-          ? "Merging playlists, watch history & settings…"
-          : activePhase === "pushing"
-            ? `Uploading ${s.pendingCount || ""} changed record${s.pendingCount === 1 ? "" : "s"}…`.replace(
-                "Uploading  ",
-                "Uploading "
-              )
-            : "";
+    const engineRunning =
+      activePhase === "pulling" || activePhase === "merging" || activePhase === "pushing";
+    isSyncing = manualSyncActive || engineRunning;
+    if (engineRunning) {
+      syncStage = activePhase;
+      syncProgress = phaseProgress[activePhase] ?? 25;
+      syncStageDetail =
+        activePhase === "pulling"
+          ? `Downloading encrypted records${s.incomingCount ? ` (${s.incomingCount} fetched)` : ""}…`
+          : activePhase === "merging"
+            ? "Merging playlists, watch history & settings…"
+            : `Uploading${s.pendingCount ? ` ${s.pendingCount}` : ""} changed record${s.pendingCount === 1 ? "" : "s"}…`;
+    } else if (!manualSyncActive) {
+      syncStage = activePhase;
+      syncProgress = 0;
+      syncStageDetail = "";
+    }
 
     if (s.categoryProgress) categoryProgress = s.categoryProgress;
     if (s.startedAt && s.estimatedMs) {
@@ -173,6 +210,7 @@
     } else {
       estimatedRemaining = null;
     }
+    return s;
   }
 
   function addLogEntry(message: string, type: "info" | "success" | "error" | "warning" = "info") {
@@ -182,26 +220,59 @@
     }
   }
 
+  async function grantRelayPermission(): Promise<boolean> {
+    const permissions =
+      (globalThis as any).browser?.permissions || (globalThis as any).chrome?.permissions;
+    if (!permissions) return true;
+    // Invoked synchronously inside user click handler before any await!
+    const granted = await requestSyncHostPermission(RELAY_SUPABASE_URL, permissions);
+    relayPermissionGranted = granted;
+    if (granted) {
+      if (lastError?.includes("Allow secure access")) lastError = null;
+      addLogEntry("Relay host permission granted", "success");
+      toast.show('Relay access granted — click "Sync now" to sync.', "success");
+    } else {
+      lastError =
+        "Relay permission was declined. Click 'Allow relay access' or enable pfydngsbcmuhsqqjbcte.supabase.co under about:addons → Permissions.";
+      addLogEntry("Relay host permission was not granted", "error");
+      toast.show("Relay host permission is required before syncing.", "error");
+    }
+    return granted;
+  }
+
   async function ensureEndpointPermissions(): Promise<boolean> {
     const permissions =
       (globalThis as any).browser?.permissions || (globalThis as any).chrome?.permissions;
     if (!permissions) return true;
-    if (config.backends.includes("relay")) {
-      const granted = await requestSyncHostPermission(RELAY_SUPABASE_URL, permissions);
+
+    // Kick off host permission request synchronously on the user click (Firefox MV3 requirement).
+    const relayReq = config.backends.includes("relay")
+      ? requestSyncHostPermission(RELAY_SUPABASE_URL, permissions)
+      : null;
+    const byoReq = config.backends.includes("supabase-byo")
+      ? requestSyncHostPermission(config.supabaseUrl, permissions)
+      : null;
+
+    if (relayReq) {
+      const granted = await relayReq;
+      relayPermissionGranted = granted;
       if (!granted) {
-        lastError = "Allow secure access to the IYPM sync relay before syncing.";
+        lastError =
+          "Allow secure access to the IYPM sync relay (or approve it in about:addons → Permissions) before syncing.";
         lastSyncSummary = "Relay host permission was not granted.";
         addLogEntry(lastSyncSummary, "error");
+        toast.show(lastError, "error");
         return false;
       }
     }
-    if (config.backends.includes("supabase-byo")) {
-      const granted = await requestSyncHostPermission(config.supabaseUrl, permissions);
+    if (byoReq) {
+      const granted = await byoReq;
       if (!granted) {
         lastError =
           "Allow secure access to your Supabase project before syncing. Check its HTTPS URL and try again.";
         lastSyncSummary = "Supabase permission was not granted.";
         addLogEntry(lastSyncSummary, "error");
+        toast.show(lastError, "error");
         return false;
       }
     }
@@ -213,9 +284,9 @@
     if (enabled) set.add(backend);
     else set.delete(backend);
     config.backends = [...set];
-    if (enabled && backend === "relay") {
-      await ensureEndpointPermissions();
-    }
+    // Request permission synchronously before awaiting storage save!
+    const permCheck = enabled && backend === "relay" ? ensureEndpointPermissions() : null;
+    if (permCheck) await permCheck;
     await persist();
   }
 
@@ -246,11 +317,44 @@
       addLogEntry(lastSyncSummary, "warning");
       return;
     }
+    // Must be the VERY FIRST async call in syncNow() so Firefox sees the direct click gesture!
     if (!(await ensureEndpointPermissions())) return;
+
+    const startedMs = Date.now();
+    manualSyncActive = true;
+    isSyncing = true;
+    syncStage = "pulling";
+    syncProgress = 20;
+    syncStageDetail = "Connecting to IYPM hosted relay…";
     lastError = null;
     addLogEntry("Manual sync started…", "info");
-    await triggerSyncNow();
+
+    let directStatus: any = {};
+    try {
+      directStatus = await triggerSyncNow();
+      const elapsed = Date.now() - startedMs;
+      if (elapsed < 400) {
+        await new Promise((r) => setTimeout(r, 400 - elapsed));
+      }
+    } finally {
+      manualSyncActive = false;
+    }
+
     await refresh();
+    const latestStatus = await refreshStatus();
+    const mergedStatus = { ...latestStatus, ...(directStatus ?? {}) };
+    const inv = localInventory ?? (await readLocalSyncInventory());
+    lastSyncReport = buildSyncRunReport({
+      config,
+      statusSnapshot: mergedStatus,
+      inventoryAfter: inv,
+      knownDevices,
+      durationMs: Date.now() - startedMs,
+      fallbackError: lastError,
+      fallbackSummary: lastSyncSummary,
+    });
+    reportModalOpen = true;
+
     addLogEntry(lastSyncSummary || "Sync finished", lastError ? "error" : "success");
     if (lastError) toast.show(lastError, "error");
     else if (lastSyncSummary) toast.show(lastSyncSummary, "success");
@@ -339,10 +443,15 @@
         refreshStatus();
       }
     };
+    const onFocus = () => {
+      refreshPermissionState();
+    };
+    window.addEventListener("focus", onFocus);
     b?.storage?.onChanged?.addListener?.(storageListener);
     refresh().then(() => subscribeNudge());
     return () => {
       clearInterval(timer);
+      window.removeEventListener("focus", onFocus);
       b?.storage?.onChanged?.removeListener?.(storageListener);
       if (nudgeUnsubscribe) nudgeUnsubscribe();
     };
@@ -376,11 +485,23 @@
       {getStageLabel}
       onSyncNow={syncNow}
       onTestConnection={testConnection}
+      onGrantPermission={grantRelayPermission}
+      onOpenReport={() => (reportModalOpen = true)}
+      {needsRelayPermission}
+      hasReport={!!lastSyncReport}
       {estimatedRemaining}
       {categoryProgress}
     />
 
-    <SyncCounters {syncIsOn} {isSyncing} {lastSyncedAt} {knownDevices} {formatWhen} />
+    <SyncCounters
+      {syncIsOn}
+      {isSyncing}
+      {lastSyncedAt}
+      {knownDevices}
+      {formatWhen}
+      inventory={localInventory}
+      content={config.content}
+    />
 
     <div class="settings-grid">
       <SyncKeyCard
@@ -394,7 +515,9 @@
       <RelayCard
         enabled={config.backends.includes("relay")}
         ready={isRelayConfigured()}
+        permissionGranted={relayPermissionGranted}
         onToggle={(v) => toggleBackend("relay", v)}
+        onRequestPermission={grantRelayPermission}
       />
 
       <SupabaseCard
@@ -423,3 +546,5 @@
     </div>
   </div>
 </main>
+
+<SyncReportModal bind:open={reportModalOpen} report={lastSyncReport} />

@@ -1,3 +1,27 @@
+## 2026-11-05 — Firefox MV3 relay host permission user-gesture fix, unified summary bar & Sync Status Report modal
+
+### Root Causes & UX Improvements Implemented
+
+1. **Firefox MV3 host-permission user-gesture loss (`Allow secure access to the IYPM sync relay before syncing.`):**
+   - `requestSyncHostPermission` previously called `await permissions.contains(...)` before `permissions.request(...)`. In Firefox WebExtensions, any `await` before `browser.permissions.request()` expires the transient user-input handler and causes `permissions.request()` to throw without displaying the native permission dialog.
+   - Updated `host-permissions.ts` (`requestSyncHostPermission` + passive `checkSyncHostPermission`), `Sync.svelte`, and `SyncKeyCard.svelte` so `permissions.request()` is invoked **synchronously on line 1 of the click/change event before any `await`**, and added a 1-click **"Allow relay access"** button + live permission status badge on both `SyncHero.svelte` and `RelayCard.svelte`.
+2. **Consistent `<section class="last-sync-summary">` across Firefox and Chrome:**
+   - `SyncCounters.svelte` previously hid `<section class="last-sync-summary">` whenever `lastSyncedAt` was `null`, making the summary bar appear in Chrome (after its first sync) while missing in Firefox (blocked before first sync).
+   - Updated `SyncCounters.svelte` to render whenever `syncIsOn && !isSyncing`, showing `Last full sync: Never (ready for first sync)` before the first sync, connected device status, and a live **"Will sync: Playlists (N) · History (N) · Settings & Pinned"** scope summary.
+3. **Immediate `Syncing…` state + Post-Sync Status Report Modal (`SyncReportModal.svelte`):**
+   - `syncNow()` now locks `isSyncing = true` immediately upon click through full pull/merge/push completion and opens a dismissible `SyncReportModal.svelte` (`sync-report.ts`) summarizing uploaded/applied counts, duration, relay host, connected devices, and per-category local totals, plus a **"Sync report"** button to re-open the last report anytime.
+
+### Files Changed
+
+- `apps/browser-extension/playlist-manager/src/services/sync/{host-permissions,host-permissions.test,sync-report,sync-report.test}.ts`
+- `apps/browser-extension/playlist-manager/src/components/sync/{RelayCard,SyncCounters,SyncHero,SyncKeyCard,SyncReportModal}.svelte`
+- `apps/browser-extension/playlist-manager/src/views/Sync.svelte`
+
+### Verification & Reload Steps
+
+- `npm run check`, `npm run test:visual`, and `npm run build` all pass (`0` errors, all files within the 350-line ceiling).
+- Reload Firefox (`about:debugging` → **Reload** on IYPM) and click **"Allow relay access"** or **"Sync now"** on `#/sync` (or toggle `pfydngsbcmuhsqqjbcte.supabase.co` in `about:addons` → **Permissions**).
+
 ## 2026-11-05 — Critical cross-device Sync v2 root-cause fix & Sync Center hardening
 
 ### Root Causes Fixed

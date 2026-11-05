@@ -1,3 +1,11 @@
+## Firefox relay permission user-gesture fix & Sync Status Report dialog — verified 2026-11-05
+
+- [x] Invoke `browser.permissions.request` synchronously before any `await` in `host-permissions.ts`, `Sync.svelte`, and `SyncKeyCard.svelte` so Firefox MV3 displays the native relay permission prompt on click.
+- [x] Add passive `checkSyncHostPermission` status indicator and 1-click **"Allow relay access"** button in `SyncHero.svelte` and `RelayCard.svelte`.
+- [x] Always show `<section class="last-sync-summary">` in `SyncCounters.svelte` when `syncIsOn && !isSyncing` (including `Never` state + live **"Will sync"** local inventory scope).
+- [x] Hold `isSyncing = true` immediately on manual **Sync now** and open `SyncReportModal.svelte` (`sync-report.ts`) with full per-category sync report on completion.
+- [x] Verify `npm run check`, `npm run test:visual`, and `npm run build` exit 0.
+
 ## Cross-device Sync v2 bugfix & Sync Center hardening — verified 2026-11-05
 
 - [x] Bind IndexedDB shadow store (`yph_sync_shadow_v1`) to `space|relayUrl` (`ensureShadowBinding`) and reset shadows/cursors on key save, generate, remove, or rotate so legacy `mawqiei.net` shadows never suppress initial push to `pfydngsbcmuhsqqjbcte`.

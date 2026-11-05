@@ -14,7 +14,30 @@ export type HostPermissionsApi = {
   request(details: { origins: string[] }): Promise<boolean>;
 };
 
-/** Request access only to the configured origin; call directly from a user gesture. */
+/** Passively check whether host access is already granted (safe outside user gestures). */
+export async function checkSyncHostPermission(
+  endpoint: string,
+  permissions: HostPermissionsApi | undefined
+): Promise<boolean> {
+  const origin = syncHostPermissionPattern(endpoint);
+  if (!origin || !permissions?.contains) return false;
+  try {
+    return await permissions.contains({ origins: [origin] });
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Request access to the configured origin.
+ *
+ * IMPORTANT (Firefox MV3): `permissions.request()` MUST be invoked synchronously
+ * during the user click/change event with ZERO preceding `await` calls. Calling
+ * `await permissions.contains()` beforehand breaks Firefox's transient user-input
+ * handler and causes `permissions.request()` to reject without showing the prompt.
+ * In both Firefox and Chrome, `permissions.request()` resolves to `true` immediately
+ * without prompting when access has already been granted.
+ */
 export async function requestSyncHostPermission(
   endpoint: string,
   permissions: HostPermissionsApi | undefined
@@ -23,9 +46,15 @@ export async function requestSyncHostPermission(
   if (!origin || !permissions) return false;
 
   try {
-    if (await permissions.contains({ origins: [origin] })) return true;
-    return await permissions.request({ origins: [origin] });
+    const requestPromise = permissions.request({ origins: [origin] });
+    const granted = await requestPromise;
+    if (granted) return true;
+    return (await permissions.contains?.({ origins: [origin] })) ?? false;
   } catch {
-    return false;
+    try {
+      return (await permissions.contains?.({ origins: [origin] })) ?? false;
+    } catch {
+      return false;
+    }
   }
 }

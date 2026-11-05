@@ -102,6 +102,49 @@ it is never repeated. After each implementation, append the new suggestions
     Sync v2 engine. How: grep for imports across `apps/browser-extension`, delete
     both files plus unused types, remove `supabase-sync.ts` from
     `packages/build-tools/verify-file-size.js`, and run `npm run check`.
+18. Persist the last `SyncRunReport` in `chrome.storage.local` across page reloads.
+    Priority 84% (High value) [Professionalism]. What: save the most recent
+    `SyncRunReport` object (`yph_last_sync_report`) in `storage.local` from both
+    manual and background scheduled sync runs so the "Sync report" button on
+    `#/sync` works even after closing and reopening the tab. Why: lets users inspect
+    what a background or startup sync changed earlier in the day without having to
+    trigger another manual sync. How: write `yph_last_sync_report` at the end of
+    `runOnce()` in `sync-engine.ts` and hydrate `lastSyncReport` inside `refresh()`
+    in `Sync.svelte`.
+19. Listen to `browser.permissions.onAdded` / `onRemoved` for live permission updates.
+    Priority 79% (High value) [Best practices]. What: subscribe to WebExtension
+    `permissions.onAdded` and `permissions.onRemoved` events in `Sync.svelte` so
+    toggling relay permissions in `about:addons` updates the Sync banner immediately
+    without even switching focus. Why: prevents stale "permission needed" warnings if
+    a Firefox user grants or revokes host access in a side-by-side `about:addons`
+    window. How: register `permissions.onAdded.addListener(refreshPermissionState)`
+    and `permissions.onRemoved.addListener(refreshPermissionState)` inside `onMount`
+    with cleanup on unmount.
+20. Add a pre-sync "Dry-run preview" option before first sync on a second device.
+    Priority 72% (High value) [Security]. What: add a read-only "Preview incoming
+    changes" button that decrypts remote record headers in memory and shows how many
+    playlists, videos, and settings will be added or merged before writing anything
+    locally. Why: gives hesitant users 100% confidence when pairing a second browser
+    with an existing library for the first time. How: reuse `pullAll` +
+    `decryptRecord` in a read-only helper without calling adapter `save*` methods,
+    and render the diff summary inside `SyncReportModal.svelte`.
+21. Split `Sync.svelte` orchestration state into `sync-controller.svelte.ts` to drop
+    `Sync.svelte` under 350 lines. Priority 66% (Nice to have) [Best practices].
+    What: move the reactive sync state, permission helpers, and polling timers out
+    of the 490-line `Sync.svelte` view into a dedicated Svelte 5 rune controller
+    module (`sync-controller.svelte.ts`) and remove `Sync.svelte` from the legacy
+    `verify-file-size.js` allowlist. Why: keeps the view declarative, makes
+    controller state unit-testable without mounting DOM components, and pays down
+    another allowlisted legacy file. How: extract state + action methods into a
+    factory class/function under `src/services/sync/`, keep both files ≤ 300 lines,
+    and delete `Sync.svelte` from `legacyAllowlist`.
+22. Add a one-click "Copy Sync Report" button inside `SyncReportModal.svelte`.
+    Priority 48% (Nice to have) [Professionalism]. What: add a "Copy summary" action
+    in the Sync Status Report dialog footer that copies the plain-text category
+    table, duration, and status (with zero keys or sensitive IDs) to the clipboard.
+    Why: makes sharing bug reports or verifying multi-device test runs effortless.
+    How: format `report.rows` + `report.summary` into a short markdown/text block
+    and pass it to `navigator.clipboard.writeText` with a confirmation toast.
 
 ## Done
 
