@@ -1,3 +1,311 @@
+## 2026-11-05 — v1.4 Android TV & Native Android Support (NEW PLAN)
+
+> **Branch:** `feat/v1.4-android-tv-support` (off `next` @ 1807a0f)
+> **Target Release:** 1.4.0
+> **Status:** Planning phase — implementation not started
+
+---
+
+### 🎯 Release Goal
+
+Deliver **Native Android App (Phone + Android TV)** and **Web Portal TV Interface** as **client-only companion apps** that consume synced playlists from the existing Supabase backend.
+
+#### Core Principle: Client-Only
+
+| These Apps WILL HAVE                                 | These Apps Will NOT Have                  |
+| ---------------------------------------------------- | ----------------------------------------- |
+| View synced playlists                                | Right-click "Add to Playlist" on YouTube  |
+| Sort/filter/search playlists                         | Auto-capture watch history                |
+| Play playlist → opens YouTube app (`vnd.youtube://`) | Auto-fetch metadata while browsing        |
+| Manual sync (pull-to-refresh)                        | "Import from this page"                   |
+| Pair new device (QR / 6-digit code)                  | Keyboard shortcuts / commands API         |
+| See sync status (last synced, device count)          | Content script injection                  |
+| Choose what syncs (playlists/settings/history)       | Background auto-sync (platform-dependent) |
+| Offline cache (Room/SQLite)                          |                                           |
+
+---
+
+### 📦 Platform Targets for v1.4
+
+| Platform                    | Target                  | Tech                                 | Priority | Status          |
+| --------------------------- | ----------------------- | ------------------------------------ | -------- | --------------- |
+| **Native Android (Phone)**  | Play Store              | Capacitor + Svelte SPA               | **P0**   | Not started     |
+| **Native Android TV**       | Play Store (Leanback)   | Same Capacitor project, TV variant   | **P0**   | Not started     |
+| **Web Portal `/tv` route**  | Any TV browser          | Next.js + Tailwind (existing portal) | **P1**   | Design complete |
+| **Web Portal `/dashboard`** | Desktop/Tablet browsers | Next.js (full management UI)         | **P1**   | Not started     |
+
+> **Firefox Android (Fenix):** Already supported (extension). No new work needed.
+
+---
+
+### 🏗️ Architecture Overview
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         SUPABASE SYNC BACKEND (Existing)                    │
+│  Collections: playlists, history, settings, devices                         │
+│  Protocol: AES-256-GCM, HLC versioning, LWW conflicts                      │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    ▲
+                    ┌───────────────┼───────────────┐
+                    │               │               │
+                    ▼               ▼               ▼
+            ┌─────────────┐ ┌─────────────┐ ┌─────────────┐
+            │  Desktop    │ │  Firefox    │ │  Web Portal │
+            │  Extension  │ │  Android    │ │  (Next.js)  │
+            │  (MV3)      │ │  (Fenix)    │ │  /tv, /dash │
+            └─────────────┘ └─────────────┘ └─────────────┘
+                    ▲               ▲               ▲
+                    │               │               │
+                    └───────────────┼───────────────┘
+                                    │
+                    ┌───────────────┼───────────────┐
+                    ▼               ▼               ▼
+            ┌─────────────┐ ┌─────────────┐ ┌─────────────┐
+            │  Native     │ │  Native     │ │  Shared     │
+            │  Android    │ │  Android TV │ │  Crypto     │
+            │  (Phone)    │ │  (Leanback) │ │  Package    │
+            └─────────────┘ └─────────────┘ └─────────────┘
+                    │               │
+                    └───────┬───────┘
+                            ▼
+                   ┌─────────────────┐
+                   │  Capacitor      │
+                   │  Single Project │
+                   └─────────────────┘
+```
+
+#### Shared Components
+
+| Package                                        | Contents                                                                                                          | Consumers                               |
+| ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | --------------------------------------- |
+| `packages/sync-crypto`                         | `deriveKeys`, `encryptEnvelope`, `decryptEnvelope`, `encodeSnapshot`, `decodeSnapshot`, `SyncTransport` interface | Extension, Web Portal, Native Android   |
+| `apps/browser-extension/playlist-manager/src/` | Svelte 5 SPA (components, stores, views)                                                                          | Native Android (via Capacitor `webDir`) |
+| `apps/web-portal/`                             | Next.js 15 + Tailwind + shadcn/ui                                                                                 | Web Portal TV & Dashboard               |
+
+---
+
+### 📋 Implementation Phases
+
+#### Phase 0: Foundation (Week 1) — **Do First**
+
+| Task                                         | Description                                                                                                | Acceptance                                             |
+| -------------------------------------------- | ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| **0.1** Extract shared crypto package        | Move `sync/*.ts` from extension → `packages/sync-crypto/` with proper exports, tests, `package.json`       | `npm run check` passes; extension imports from package |
+| **0.2** Add Capacitor to repo                | `npm i -D @capacitor/cli @capacitor/core @capacitor/android`; `npx cap init`                               | `capacitor.config.ts` created                          |
+| **0.3** Configure Capacitor Android          | `npx cap add android`; set `webDir: '../../apps/browser-extension/playlist-manager/editor'`                | Android project generates; `cap sync android` works    |
+| **0.4** Android TV manifest config           | Add Leanback launcher, banner, `android.software.leanback` feature, `android.hardware.touchscreen`="false" | `AndroidManifest.xml` has TV activity                  |
+| **0.5** Shared crypto polyfill for Capacitor | Ensure `crypto.subtle` works in Capacitor WebView (Android 7+ has it; polyfill for older)                  | Crypto tests pass on Android emulator                  |
+
+#### Phase 1: Native Android Phone App (Week 2-3)
+
+| Task                                | Description                                                                                                            | Acceptance                                                    |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| **1.1** Mobile-first UI adaptations | Extend `RESPONSIVE_UI_PLAN.md` patterns: bottom nav, touch targets 48dp, safe-area insets, pull-to-refresh             | Works on 360-430px viewports; Playwright mobile matrix passes |
+| **1.2** Secure sync key storage     | `EncryptedSharedPreferences` (Android) / Keychain (iOS later) via Capacitor plugin                                     | Key survives app restart; not in plaintext                    |
+| **1.3** Background sync             | `WorkManager` periodic worker (15 min min interval) → calls `SyncTransport.pull()`                                     | Sync runs in background; battery-aware                        |
+| **1.4** Deep-link to YouTube app    | `vnd.youtube://playlist?list={id}` intent with fallback to `https://youtube.com/playlist?list={id}`                    | Opens YouTube app on phone; fallback works                    |
+| **1.5** Pairing flow (QR scanner)   | ML Kit barcode scanning / `zxing` → reads QR from desktop extension → sends key via Supabase Realtime or local channel | Phone scans QR → playlists appear without typing              |
+| **1.6** Offline cache               | Room database for playlists + metadata; sync status persisted                                                          | App works offline; shows "last synced" timestamp              |
+| **1.7** Play Store prep             | App signing config, store listing assets, privacy policy URL, content rating                                           | `bundleRelease` produces signed AAB                           |
+
+#### Phase 2: Android TV Variant (Week 3-4)
+
+| Task                               | Description                                                                                   | Acceptance                                        |
+| ---------------------------------- | --------------------------------------------------------------------------------------------- | ------------------------------------------------- |
+| **2.1** Leanback launcher activity | Separate `MainActivity` for TV with `CATEGORY_LEANBACK_LAUNCHER`                              | App appears in "Apps" row on Android TV home      |
+| **2.2** 10-foot UI                 | D-pad navigation focus management, 32px+ text, 96dp+ touch targets, grid layout (3-5 columns) | Navigable with TV remote; focus visible           |
+| **2.3** TV banner & assets         | 320x180 banner, 1280x720 splash, app icon variants                                            | Meets Play Store TV requirements                  |
+| **2.4** YouTube deep-link on TV    | `vnd.youtube://playlist?list={id}` → opens YouTube TV app                                     | Verified on Android TV emulator + physical device |
+| **2.5** Pairing via 6-digit code   | TV shows code → user enters on phone web portal → phone pushes key                            | No QR scanning needed on TV (no camera)           |
+| **2.6** Background sync on TV      | `WorkManager` with `setRequiresCharging(true)` + `setRequiresDeviceIdle(true)`                | Sync runs when TV idle/charging                   |
+
+#### Phase 3: Web Portal TV & Dashboard (Week 4-5)
+
+| Task                                         | Description                                                                            | Acceptance                                                  |
+| -------------------------------------------- | -------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| **3.1** `/tv` route (TV-optimized)           | Large text, grid layout, D-pad focus styles, no hover-only UI                          | Works on TV browser (tested on Fire TV, Android TV browser) |
+| **3.2** `/dashboard` route (full management) | Create/edit/delete playlists, reorder, sync settings, device list                      | Feature parity with extension playlist management           |
+| **3.3** Pairing API                          | `POST /api/pair` — generates 6-digit code; `POST /api/pair/verify` — phone submits key | QR code + 6-digit code both work                            |
+| **3.4** Supabase Realtime for pairing        | Phone pushes encrypted key to TV via Realtime channel                                  | Key delivered in <2s                                        |
+| **3.5** Shared crypto in Next.js             | `packages/sync-crypto` as workspace dependency; client-side decryption                 | No server-side key exposure                                 |
+
+#### Phase 4: Polish & Release (Week 5-6)
+
+| Task                          | Description                                                                  | Acceptance                           |
+| ----------------------------- | ---------------------------------------------------------------------------- | ------------------------------------ |
+| **4.1** E2E tests             | Playwright: mobile, TV, desktop viewports; sync flow; pairing; playback      | All tests pass in CI                 |
+| **4.2** Visual regression     | Chromatic/Percy baselines for mobile, TV, desktop                            | No unintended visual changes         |
+| **4.3** Accessibility         | TalkBack (Android), VoiceOver (iOS later), screen reader labels, contrast    | axe-core passes; manual verification |
+| **4.4** Store submissions     | Play Store (phone + TV tracks), Edge Store (extension already submitted)     | Packages uploaded; review started    |
+| **4.5** Documentation updates | `USER_GUIDE.md`, `SYNC_COMPATIBILITY.md`, `PLATFORM_SUPPORT.md` reflect v1.4 | Docs match shipped features          |
+| **4.6** Changelog & release   | `CHANGELOG.md` [Unreleased] → [1.4.0]; version sync; tag; build              | Release PR ready                     |
+
+---
+
+### 🔑 Technical Decisions (Locked In)
+
+| Decision                            | Rationale                                                                                        |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------ |
+| **Capacitor over Tauri/RN**         | Reuses existing Svelte SPA (`editor/`) directly; single codebase for phone + TV; web team skills |
+| **Shared crypto package**           | Zero-knowledge encryption must be identical across all clients; single source of truth           |
+| **Supabase only for mobile/TV**     | File/Syncthing transport requires File System Access API (Chromium desktop only)                 |
+| **Leanback for Android TV**         | Native TV experience; required for Play Store TV track; D-pad navigation built-in                |
+| **WorkManager for background sync** | Battery-aware, survives reboots, works on all Android 5.0+                                       |
+| **QR + 6-digit code pairing**       | TV has no camera; phone has keyboard; avoids TV remote typing                                    |
+| **`vnd.youtube://` deep-link**      | Opens native YouTube app on Android/TV; best playback experience                                 |
+| **Room for offline cache**          | SQLite-based; type-safe; reactive via Flow/LiveData                                              |
+
+---
+
+### 📁 File Structure (Target)
+
+```
+independent-youtube-playlist-manager/
+├── apps/
+│   ├── browser-extension/
+│   │   └── playlist-manager/
+│   │       └── src/
+│   │           └── services/
+│   │               └── sync/           → NOW IMPORTS FROM packages/sync-crypto
+│   ├── web-portal/
+│   │   ├── app/
+│   │   │   ├── tv/                     → NEW: /tv route (TV UI)
+│   │   │   │   ├── page.tsx
+│   │   │   │   ├── components/
+│   │   │   │   └── lib/
+│   │   │   ├── dashboard/              → NEW: /dashboard route (full mgmt)
+│   │   │   │   ├── page.tsx
+│   │   │   │   ├── playlists/
+│   │   │   │   ├── settings/
+│   │   │   │   └── components/
+│   │   │   └── api/
+│   │   │       ├── pair/
+│   │   │       │   ├── route.ts        → Generate 6-digit code
+│   │   │       │   └── verify/route.ts → Phone submits key
+│   │   │       └── sync/               → Supabase proxy (optional)
+│   │   └── lib/
+│   │       └── crypto.ts               → Imports from packages/sync-crypto
+│   └── mobile-app/                     → NEW: Capacitor project
+│       ├── capacitor.config.ts
+│       ├── android/
+│       │   ├── app/
+│       │   │   ├── src/main/
+│       │   │   │   ├── AndroidManifest.xml (phone + TV activities)
+│       │   │   │   ├── res/
+│       │   │   │   │   ├── xml/backup_rules.xml
+│       │   │   │   │   ├── drawable/    → TV banner, icons
+│       │   │   │   │   └── values/
+│       │   │   │   └── java/.../MainActivity.kt (phone)
+│       │   │   │   └── java/.../TvMainActivity.kt (TV)
+│       │   │   └── build.gradle
+│       │   └── build.gradle
+│       ├── src/                        → Symlink to ../browser-extension/playlist-manager/editor
+│       └── package.json
+├── packages/
+│   ├── sync-crypto/                    → NEW: Shared crypto package
+│   │   ├── src/
+│   │   │   ├── index.ts
+│   │   │   ├── key-derivation.ts
+│   │   │   ├── encryption.ts
+│   │   │   ├── snapshot-codec.ts
+│   │   │   ├── transport.ts
+│   │   │   └── types.ts
+│   │   ├── package.json
+│   │   ├── tsconfig.json
+│   │   └── vitest.config.ts
+│   └── build-tools/                    (unchanged)
+├── .ai-sync/
+│   ├── HANDOFF.md                      → Update with v1.4 state
+│   ├── PROGRESS.md                     → Track v1.4 tasks
+│   └── PLAN.md                         → This file
+├── docs/
+│   ├── PLATFORM_SUPPORT.md             (already updated)
+│   ├── SYNC_COMPATIBILITY.md           (already updated)
+│   └── ...                             (others updated)
+└── package.json                        → Add workspaces for packages/sync-crypto
+```
+
+---
+
+### 🔄 Git Workflow for This Feature
+
+```
+git switch next && git pull origin next
+git switch -c feat/v1.4-android-tv-support   ← DONE
+
+# Phase 0: Foundation
+# ... commits ...
+git push -u origin feat/v1.4-android-tv-support
+gh pr create --base next --title "feat: v1.4 foundation - shared crypto + Capacitor setup"
+
+# Phase 1: Android Phone
+# ... commits ...
+gh pr create --base next --title "feat: v1.4 Android phone app"
+
+# Phase 2: Android TV
+# ... commits ...
+gh pr create --base next --title "feat: v1.4 Android TV variant"
+
+# Phase 3: Web Portal TV + Dashboard
+# ... commits ...
+gh pr create --base next --title "feat: v1.4 Web Portal TV & Dashboard"
+
+# Phase 4: Polish & Release
+# ... commits ...
+gh pr create --base next --title "release: v1.4.0"
+```
+
+**Each phase = one PR** (squash-merged into `next`). Do not combine phases.
+
+---
+
+### ✅ Definition of Done for v1.4
+
+| Criterion                                    | Verification                                                    |
+| -------------------------------------------- | --------------------------------------------------------------- |
+| Native Android app installs & runs on phone  | `adb install` + manual test                                     |
+| Native Android TV app appears on TV launcher | Emulator + physical device                                      |
+| Both apps show synced playlists from desktop | Pair via QR → verify playlists appear                           |
+| Play button opens YouTube app (phone + TV)   | `vnd.youtube://` intent verified                                |
+| Web Portal `/tv` works on TV browser         | Test on Fire TV / Android TV browser                            |
+| Web Portal `/dashboard` manages playlists    | Create/edit/delete/reorder works                                |
+| Pairing flow works (QR + 6-digit)            | End-to-end test                                                 |
+| Background sync runs on phone + TV           | Wait 15+ min; verify `last_synced` updates                      |
+| Offline cache works                          | Airplane mode → playlists still visible                         |
+| `npm run check` + `npm run build` pass       | CI green                                                        |
+| Play Store AABs build & validate             | `bundleRelease` + `verify-edge-package` equivalent              |
+| Docs updated                                 | `SYNC_COMPATIBILITY.md`, `PLATFORM_SUPPORT.md`, `USER_GUIDE.md` |
+
+---
+
+### 🚨 Risks & Mitigations
+
+| Risk                                                   | Likelihood | Impact | Mitigation                                                  |
+| ------------------------------------------------------ | ---------- | ------ | ----------------------------------------------------------- |
+| Capacitor WebView crypto.subtle missing on old Android | Medium     | High   | Polyfill with `@peculiar/webcrypto`; min SDK 24 (Android 7) |
+| Play Store TV track rejection (banner, leanback)       | Medium     | High   | Follow Google TV checklist exactly; test on emulator first  |
+| Supabase Realtime pairing latency                      | Low        | Medium | Fallback: polling `/api/pair/status`                        |
+| Svelte SPA not TV-friendly (focus management)          | High       | Medium | Dedicated TV focus wrapper component; test early            |
+| WorkManager 15-min minimum interval                    | Low        | Low    | Accept; manual pull-to-refresh always available             |
+| `vnd.youtube://` not working on some TVs               | Medium     | Medium | Fallback to `https://youtube.com/tv#/playlist?id=`          |
+
+---
+
+### 📝 Next Immediate Actions
+
+1. **Create `packages/sync-crypto/`** — extract from extension, add tests, publish as workspace package
+2. **Initialize Capacitor** — `npx cap init iypm com.elmusleh.iypm` in `apps/mobile-app/`
+3. **Configure Android project** — `webDir` pointing to `../../apps/browser-extension/playlist-manager/editor`
+4. **Update `package.json` workspaces** — add `packages/sync-crypto`, `apps/mobile-app`
+5. **Run `npm run check`** — verify baseline still passes
+
+---
+
+_This plan is the single source of truth for v1.4. Update it as decisions are made. Do not let it go stale._
+
+---
+
 ## 2026-11-04 — Sync hardening audit follow-up
 
 - Follow-up branch: `fix/sync-hardening-audit`, based on `feat/sync-hardening` while PR #88 is open.

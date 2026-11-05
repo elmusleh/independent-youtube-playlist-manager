@@ -1,3 +1,57 @@
+## 2026-11-05 — v1.4 Android TV & Native Android Support Planning (NEW)
+
+### Plan Created
+
+- **Branch:** `feat/v1.4-android-tv-support` (off `next` @ 1807a0f)
+- **Target Release:** 1.4.0
+- **Plan Document:** `.ai-sync/PLAN.md` (prepended with full v1.4 plan)
+- **Progress Tracking:** `.ai-sync/PROGRESS.md` (updated with v1.4 tasks)
+
+### Scope
+
+Deliver **Native Android App (Phone + Android TV)** and **Web Portal TV Interface** as **client-only companion apps** consuming synced playlists from existing Supabase backend.
+
+### Platform Targets
+
+| Platform                | Target                  | Tech                                 | Priority | Status          |
+| ----------------------- | ----------------------- | ------------------------------------ | -------- | --------------- |
+| Native Android (Phone)  | Play Store              | Capacitor + Svelte SPA               | **P0**   | Not started     |
+| Native Android TV       | Play Store (Leanback)   | Same Capacitor project, TV variant   | **P0**   | Not started     |
+| Web Portal `/tv` route  | Any TV browser          | Next.js + Tailwind (existing portal) | **P1**   | Design complete |
+| Web Portal `/dashboard` | Desktop/Tablet browsers | Next.js (full management UI)         | **P1**   | Not started     |
+
+### Core Principle: Client-Only
+
+These apps **consume** synced playlists only — no YouTube page capture, no context menus, no auto-fetch, no history tracking.
+
+### Implementation Phases (6 weeks)
+
+- **Phase 0 (Week 1):** Shared crypto package (`packages/sync-crypto`), Capacitor init, Android project config
+- **Phase 1 (Week 2-3):** Android Phone app — mobile UI, secure storage, WorkManager sync, YouTube deep-link, QR pairing, Room cache
+- **Phase 2 (Week 3-4):** Android TV variant — Leanback launcher, 10-foot UI, TV banner, 6-digit code pairing
+- **Phase 3 (Week 4-5):** Web Portal `/tv` + `/dashboard` routes, pairing API, Supabase Realtime, shared crypto
+- **Phase 4 (Week 5-6):** E2E tests, visual regression, accessibility, Play Store submission, docs, release
+
+### Key Technical Decisions (Locked)
+
+- Capacitor over Tauri/RN (reuses Svelte SPA directly)
+- Shared crypto package (single source of truth for zero-knowledge encryption)
+- Supabase only for mobile/TV (File/Syncthing requires File System Access API)
+- Leanback for Android TV (Play Store TV track requirement)
+- WorkManager for background sync (battery-aware, survives reboots)
+- QR + 6-digit code pairing (TV has no camera)
+- `vnd.youtube://` deep-link (opens native YouTube app)
+- Room for offline cache (SQLite-based, reactive)
+
+### Files to Create/Modify (Phase 0)
+
+- `packages/sync-crypto/` — new workspace package
+- `apps/mobile-app/` — new Capacitor project
+- `package.json` — add workspaces
+- `apps/web-portal/app/tv/`, `apps/web-portal/app/dashboard/` — new routes
+
+---
+
 ## 2026-11-05 — v1.3.0 Release Preparation, single-line mobile header alignment & feature branch consolidation
 
 ### Root Causes & Hardening Implemented
