@@ -24,44 +24,37 @@ const scanRoots = [
 
 const extensions = new Set([".js", ".ts", ".svelte"]);
 
-const legacyAllowlist = new Set([
-  "apps/browser-extension/playlist-manager/src/views/Manage.svelte",
-  "apps/browser-extension/playlist-manager/src/components/PlaylistEditor.svelte",
-  "apps/browser-extension/playlist-manager/src/services/youtube-api.ts",
-  "apps/browser-extension/playlist-manager/src/services/storage-service.ts",
-  "apps/browser-extension/playlist-manager/src/views/History.svelte",
-  "apps/browser-extension/playlist-manager/src/views/DeveloperSetup.svelte",
+/**
+ * Legacy files allowed over MAX_LINES with exact ratchet limits.
+ * If an allowlisted file grows beyond its recorded line count, verification fails.
+ */
+const legacyAllowlist = new Map([
+  ["apps/browser-extension/playlist-manager/src/views/Manage.svelte", 2144],
+  ["apps/browser-extension/playlist-manager/src/components/PlaylistEditor.svelte", 1930],
+  ["apps/browser-extension/playlist-manager/src/services/youtube-api.ts", 1770],
+  ["apps/browser-extension/playlist-manager/src/services/storage-service.ts", 1230],
+  ["apps/browser-extension/playlist-manager/src/views/History.svelte", 746],
+  ["apps/browser-extension/playlist-manager/src/views/DeveloperSetup.svelte", 743],
   // Data Manager view: async scan/refresh/retry coordination plus the embedded
   // repair queue. Split the action layer before it grows further.
-  "apps/browser-extension/playlist-manager/src/views/MetadataManager.svelte",
-  "apps/browser-extension/playlist-manager/src/components/ReleaseNotesModal.svelte",
-  "apps/browser-extension/playlist-manager/src/components/PlaylistVideo.svelte",
-  "apps/browser-extension/playlist-manager/src/components/Header.svelte",
-  "apps/browser-extension/playlist-manager/src/components/ProfileDropdown.svelte",
-  "apps/browser-extension/playlist-manager/src/services/video-service.ts",
-  "apps/browser-extension/playlist-manager/src/components/ViewHeader.svelte",
-  "apps/browser-extension/playlist-manager/src/components/editor/PlaylistModals.svelte",
-  "apps/browser-extension/playlist-manager/src/components/Sidebar.svelte",
-  "apps/browser-extension/playlist-manager/src/components/FavoritesManager.svelte",
-  "apps/browser-extension/playlist-manager/src/services/backup-service.ts",
-  "apps/browser-extension/playlist-manager/src/services/youtube-auth.ts",
-
-  // (removed: sync-manager.ts deleted with v1 retirement)
-  "apps/browser-extension/playlist-manager/src/views/Shortcuts.svelte",
-  "apps/browser-extension/playlist-manager/src/components/editor/EditorToolbar.svelte",
-  "apps/browser-extension/playlist-manager/src/components/editor/MultiSortModal.svelte",
-  "apps/browser-extension/playlist-manager/src/components/manage/ManageModals.svelte",
-  // Deleted in the UI refactor (#31); kept here so this gate stays green on either
-  // merge order and disappears once that lands.
-  "apps/browser-extension/playlist-manager/src/views/Saved-refactored.svelte",
-  "apps/browser-extension/playlist-manager/src/views/Sync.svelte",
-
-  // Orchestration coordinator modules (change: orchestrate-parallel-implementations).
-  // Accepted debt: lock/journal and Git-primitive helpers should move into their own
-  // modules; recorded as a follow-up rather than splitting during feature work.
-  "apps/browser-extension/playlist-manager/src/components/editor/EditorToolbar.svelte",
-  // Accepted debt: lock/journal and Git-primitive helpers should move into their own
-  // modules; recorded as a follow-up rather than splitting during feature work.
+  ["apps/browser-extension/playlist-manager/src/views/MetadataManager.svelte", 437],
+  ["apps/browser-extension/playlist-manager/src/components/ReleaseNotesModal.svelte", 350],
+  ["apps/browser-extension/playlist-manager/src/components/PlaylistVideo.svelte", 648],
+  ["apps/browser-extension/playlist-manager/src/components/Header.svelte", 488],
+  ["apps/browser-extension/playlist-manager/src/components/ProfileDropdown.svelte", 475],
+  ["apps/browser-extension/playlist-manager/src/services/video-service.ts", 623],
+  ["apps/browser-extension/playlist-manager/src/components/ViewHeader.svelte", 529],
+  ["apps/browser-extension/playlist-manager/src/components/editor/PlaylistModals.svelte", 465],
+  ["apps/browser-extension/playlist-manager/src/components/Sidebar.svelte", 784],
+  ["apps/browser-extension/playlist-manager/src/components/FavoritesManager.svelte", 484],
+  ["apps/browser-extension/playlist-manager/src/services/backup-service.ts", 350],
+  ["apps/browser-extension/playlist-manager/src/services/youtube-auth.ts", 391],
+  ["apps/browser-extension/playlist-manager/src/views/Shortcuts.svelte", 371],
+  ["apps/browser-extension/playlist-manager/src/components/editor/EditorToolbar.svelte", 397],
+  ["apps/browser-extension/playlist-manager/src/components/editor/MultiSortModal.svelte", 358],
+  ["apps/browser-extension/playlist-manager/src/components/manage/ManageModals.svelte", 360],
+  ["apps/browser-extension/playlist-manager/src/views/Saved-refactored.svelte", 350],
+  ["apps/browser-extension/playlist-manager/src/views/Sync.svelte", 663],
 ]);
 
 function isExcluded(relativePath) {
@@ -104,24 +97,42 @@ for (const { absolutePath, relativePath } of files) {
   if (lineCount <= MAX_LINES) continue;
 
   if (legacyAllowlist.has(relativePath)) {
-    allowlisted.push({ relativePath, lineCount });
+    const maxAllowed = legacyAllowlist.get(relativePath);
+    if (lineCount > maxAllowed) {
+      violations.push({
+        relativePath,
+        lineCount,
+        maxAllowed,
+        isGrowth: true,
+      });
+    } else {
+      allowlisted.push({ relativePath, lineCount, maxAllowed });
+    }
   } else {
-    violations.push({ relativePath, lineCount });
+    violations.push({ relativePath, lineCount, maxAllowed: MAX_LINES, isGrowth: false });
   }
 }
 
-for (const { relativePath, lineCount } of allowlisted) {
-  console.log(`\x1b[33m[ALLOWLISTED]\x1b[0m ${relativePath}: ${lineCount} lines (existing debt)`);
+for (const { relativePath, lineCount, maxAllowed } of allowlisted) {
+  console.log(
+    `\x1b[33m[ALLOWLISTED]\x1b[0m ${relativePath}: ${lineCount} lines (ratchet limit: ${maxAllowed})`
+  );
 }
 
 if (violations.length > 0) {
-  for (const { relativePath, lineCount } of violations) {
-    console.error(
-      `\x1b[31m[FILE SIZE] ${relativePath} has ${lineCount} lines (limit ${MAX_LINES}).\x1b[0m`
-    );
+  for (const { relativePath, lineCount, maxAllowed, isGrowth } of violations) {
+    if (isGrowth) {
+      console.error(
+        `\x1b[31m[FILE SIZE RATCHET] ${relativePath} grew to ${lineCount} lines (allowed max: ${maxAllowed}). Refactor or ratchet downwards, do not expand.\x1b[0m`
+      );
+    } else {
+      console.error(
+        `\x1b[31m[FILE SIZE] ${relativePath} has ${lineCount} lines (limit ${MAX_LINES}).\x1b[0m`
+      );
+    }
   }
   console.error(
-    `\n\x1b[31mFile-size verification failed. Split new files under ${MAX_LINES} lines; legacy files must be added by exact path to the allowlist.\x1b[0m\n`
+    `\n\x1b[31mFile-size verification failed. Split new files under ${MAX_LINES} lines; allowlisted files cannot grow beyond their recorded ratchet cap.\x1b[0m\n`
   );
   process.exit(1);
 }
