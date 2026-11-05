@@ -7,7 +7,11 @@ const root = path.resolve(__dirname, "../..");
 const output = path.join(root, "dist/verification/dependency-audit.json");
 const report = { generatedAt: new Date().toISOString(), trees: [] };
 let failures = false;
-for (const directory of [".", "apps/browser-extension/playlist-manager", "apps/web-portal"]) {
+for (const directory of [
+  "apps/browser-extension/playlist-manager",
+  "apps/web-portal",
+  "apps/mobile-app",
+]) {
   const tree = { directory, scopes: {} };
   for (const [scope, flags] of [
     ["all", []],
