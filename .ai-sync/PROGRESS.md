@@ -1,3 +1,13 @@
+## Cross-device Sync v2 bugfix & Sync Center hardening — verified 2026-11-05
+
+- [x] Bind IndexedDB shadow store (`yph_sync_shadow_v1`) to `space|relayUrl` (`ensureShadowBinding`) and reset shadows/cursors on key save, generate, remove, or rotate so legacy `mawqiei.net` shadows never suppress initial push to `pfydngsbcmuhsqqjbcte`.
+- [x] Fix background service worker settings sync (`storage.local` + `storage.sync` filtered by `SYNCABLE_SETTING_KEYS`), unify `merge/settings.ts` allowlist (`favoritePlaylistIds`, `watchLaterPlaylistId`), and fix 3-way `mergeSingleSetting` so remote changes win when `local === base`.
+- [x] Fix `merge/playlists.ts` (`merge/playlist-videos.ts`) for `string[]` video IDs, ISO `updatedAt` parsing, single-sided title edits, and `"merge" | "lww"` conflict strategy; normalize `local_yt_history` `.videoId` injection.
+- [x] Fix `lastSeqByCollection` cursor advancement across all enabled collections, skip no-op storage writes on already-applied versions, and hash actual `deviceId` in `hlc.ts`.
+- [x] Add read-only `verifyRelayConnection` (`Test connection`), `SyncConflictCard.svelte`, live stage/category progress, `[SYNC]` `yph_system_logs` audit entries, user-gesture host permission requests, and remove `qvwitlpnetwthyhrobca.supabase.co` from manifests.
+- [x] Add unit + end-to-end Firefox → Relay → Chrome regression tests (`84` files / `765` tests), update `#/sync` Playwright visual baselines (`24/24`), and verify `npm run check` + `npm run build` exit 0.
+- [ ] Owner reloads `dist/firefox` + `dist/chrome` and runs live Firefox → Chrome sync round-trip.
+
 ## Sync hardening audit follow-up — local fixes verified 2026-11-04
 
 - [x] Relay test fixture creates the `anon` and `authenticated` roles used by the hardening migration.

@@ -20,10 +20,28 @@ describe("sync v2 settings merge", () => {
   });
 
   it("isSyncableSetting filters device-local keys", () => {
-    // Allowlist should exclude at least one obviously device-local key.
-    const candidates = ["themeChoice", "defaultPageSize", "watchLaterPlaylistId"];
-    const results = candidates.map((k) => [k, isSyncableSetting(k)]);
-    // At least one syncable, at least the function is callable.
-    expect(results.every(([, v]) => typeof v === "boolean")).toBe(true);
+    expect(isSyncableSetting("favoritePlaylistIds")).toBe(true);
+    expect(isSyncableSetting("watchLaterPlaylistId")).toBe(true);
+    expect(isSyncableSetting("themeChoice")).toBe(true);
+    expect(isSyncableSetting("defaultPageSize")).toBe(true);
+    expect(isSyncableSetting("yt_auth_token_cache")).toBe(false);
+    expect(isSyncableSetting("yph_sync_config")).toBe(false);
+    expect(isSyncableSetting("custom_yt_credentials")).toBe(false);
+  });
+
+  it("applies remote changes when local still matches base", () => {
+    const base: any = { themeChoice: "dark" };
+    const local: any = { themeChoice: "dark" };
+    const remote: any = { themeChoice: "light" };
+    const { merged } = mergeSettings(local, remote, base);
+    expect(merged.themeChoice).toBe("light");
+  });
+
+  it("merges concurrent favoritePlaylistIds additions in 3-way merge mode", () => {
+    const base: any = { favoritePlaylistIds: ["local-1"] };
+    const local: any = { favoritePlaylistIds: ["local-1", "local-2"] };
+    const remote: any = { favoritePlaylistIds: ["local-1", "local-3"] };
+    const { merged } = mergeSettings(local, remote, base, { strategy: "merge" });
+    expect(merged.favoritePlaylistIds).toEqual(["local-1", "local-3", "local-2"]);
   });
 });

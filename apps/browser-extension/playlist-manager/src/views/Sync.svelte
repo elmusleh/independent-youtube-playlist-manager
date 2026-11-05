@@ -1,6 +1,5 @@
 <script lang="ts">
-  import { onMount, onDestroy } from "svelte";
-  import Fa from "svelte-fa";
+  import { onMount } from "svelte";
   import { faArrowsRotate } from "@fortawesome/free-solid-svg-icons";
   import ViewHeader from "../components/ViewHeader.svelte";
   import StickyHeader from "../components/StickyHeader.svelte";
@@ -12,6 +11,7 @@
   import SyncHero from "../components/sync/SyncHero.svelte";
   import SyncCounters from "../components/sync/SyncCounters.svelte";
   import SyncKeyCard from "../components/sync/SyncKeyCard.svelte";
+  import SyncConflictCard from "../components/sync/SyncConflictCard.svelte";
   import SyncAdvanced from "../components/sync/SyncAdvanced.svelte";
   import SyncScheduleCard from "../components/sync/SyncScheduleCard.svelte";
   import SyncOfflineCard from "../components/sync/SyncOfflineCard.svelte";
@@ -19,6 +19,7 @@
   import {
     loadSyncConfig,
     saveSyncConfig,
+    getOrCreateDeviceId,
     DEFAULT_SYNC_CONFIG,
     isRelayConfigured,
     RELAY_SUPABASE_URL,
@@ -31,7 +32,12 @@
     needsV2RelayAcknowledgement,
   } from "../services/sync/sync-config-compatibility.js";
   import { requestSyncHostPermission } from "../services/sync/host-permissions.js";
-  // v2 engine is the background authority; manual sync goes through it.
+  import { verifyRelayConnection } from "../services/sync/sync-diagnostics.js";
+  import { rotateSyncKey } from "../services/sync/rotate-key.js";
+  import { subscribeToSyncNudge } from "../services/sync/realtime-nudge.js";
+  import { toast } from "../stores/toast.js";
+  import { requestConfirm } from "../stores/confirmation";
+
   function triggerSyncNow() {
     const b = (window as any).browser || (window as any).chrome;
     if (b?.runtime?.sendMessage) {
@@ -41,16 +47,6 @@
     if (engine?.runOnce) return engine.runOnce();
     return Promise.resolve();
   }
-  function pullNow() {
-    return triggerSyncNow();
-  }
-  function onSyncProgress(cb: any) {
-    // v2 engine reports status via yph_sync_status storage key; no-op callback registration.
-  }
-  import { rotateSyncKey } from "../services/sync/rotate-key.js";
-  import { subscribeToSyncNudge } from "../services/sync/realtime-nudge.js";
-  import { toast } from "../stores/toast.js";
-  import { requestConfirm } from "../stores/confirmation";
 
   const caps = detectCapabilities();
   const status = new StatusManager();
@@ -60,31 +56,18 @@
     content: { ...DEFAULT_SYNC_CONFIG.content },
   });
 
+  let localDeviceId = $state<string | null>(null);
   let lastSyncedAt = $state<number | null>(null);
   let lastError = $state<string | null>(null);
   let lastSyncSummary = $state<string | null>(null);
   let knownDevices = $state(0);
   let isSyncing = $state(false);
-  let categoryTimestamps = $state<{
-    playlists: number | null;
-    settings: number | null;
-    history: number | null;
-  }>({
-    playlists: null,
-    settings: null,
-    history: null,
-  });
-
+  let isTestingConnection = $state(false);
   let syncStage = $state<string>("idle");
   let syncStageDetail = $state<string>("");
   let syncProgress = $state<number>(0);
 
-  let categoryProgress = $state<{
-    playlists: { processed: number; applied: number; total: number };
-    settings: { processed: number; applied: number; total: number };
-    history: { processed: number; applied: number; total: number };
-    devices: { processed: number; applied: number; total: number };
-  }>({
+  let categoryProgress = $state({
     playlists: { processed: 0, applied: 0, total: 0 },
     settings: { processed: 0, applied: 0, total: 0 },
     history: { processed: 0, applied: 0, total: 0 },
@@ -99,21 +82,17 @@
       return "Enter a sync key to begin. Generate one on your first device, or paste a key from another device.";
     if (c.backends.length === 0)
       return 'You have a key, but no sync backend is enabled. Turn on "IYPM hosted" below.';
-    if (!lastSyncedAt) return 'Key and backend ready. Click "Sync now" to upload your data.';
+    if (!lastSyncedAt) return 'Key and backend ready. Click "Sync now" to sync this device.';
     return null;
   }
   const setupHint = $derived(hintFor(config));
 
-  const stageProgress: Record<string, number> = {
+  const phaseProgress: Record<string, number> = {
     idle: 0,
-    reading: 10,
-    preparing: 25,
-    pushing: 50,
-    pulling: 50,
-    success: 100,
+    pulling: 30,
+    merging: 65,
+    pushing: 85,
     error: 0,
-    partial: 75,
-    conflict: 25,
   };
 
   let nudgeUnsubscribe: (() => void) | null = null;
@@ -126,7 +105,7 @@
     if (!config.syncKey) return;
     try {
       nudgeUnsubscribe = await subscribeToSyncNudge(config.syncKey, () => {
-        pullNow().catch(() => {});
+        triggerSyncNow().catch(() => {});
       });
     } catch {
       // ignore subscription failures
@@ -140,6 +119,7 @@
   async function refresh() {
     await status.refresh(async () => {
       config = await loadSyncConfig();
+      localDeviceId = await getOrCreateDeviceId().catch(() => null);
       await refreshStatus();
     });
   }
@@ -147,30 +127,49 @@
   async function refreshStatus() {
     const b = (window as any).browser || (window as any).chrome;
     let s: any = {};
+    let deviceList: Array<{ deviceId?: string }> = [];
     if (b?.storage?.local) {
-      const stored = await b.storage.local.get("yph_sync_status");
+      const stored = await b.storage.local.get(["yph_sync_status", "yph_sync_devices"]);
       s = stored?.yph_sync_status ?? {};
-      const devicesStored = await b.storage.local.get("yph_sync_devices");
-      const devices = devicesStored?.yph_sync_devices;
-      knownDevices = Array.isArray(devices) ? devices.length : 0;
+      deviceList = Array.isArray(stored?.yph_sync_devices) ? stored.yph_sync_devices : [];
     } else {
       const engine = (window as any).syncEngine;
       s = engine?.getStatus ? engine.getStatus() : {};
-      knownDevices = 0;
     }
-    lastSyncedAt = s.lastRunAt ?? null;
-    lastError = s.lastError ?? null;
-    lastSyncSummary = s.lastSummary ?? null;
-    isSyncing = s.phase === "pulling" || s.phase === "merging" || s.phase === "pushing";
-    // Update category progress
-    if (s.categoryProgress) {
-      categoryProgress = s.categoryProgress;
+
+    lastSyncedAt = s.lastRunAt ?? config.lastSyncedAt ?? null;
+    lastError = s.lastError ?? config.lastError ?? null;
+    if (!isTestingConnection) {
+      lastSyncSummary = s.lastSummary ?? config.lastSyncSummary ?? null;
     }
-    // Update time estimate
+
+    const uniqueDevices = new Set(
+      deviceList
+        .map((d) => d?.deviceId)
+        .filter((id): id is string => typeof id === "string" && !!id)
+    );
+    if (lastSyncedAt && localDeviceId) uniqueDevices.add(localDeviceId);
+    knownDevices = uniqueDevices.size;
+
+    const activePhase = s.phase ?? "idle";
+    isSyncing = activePhase === "pulling" || activePhase === "merging" || activePhase === "pushing";
+    syncStage = activePhase;
+    syncProgress = phaseProgress[activePhase] ?? 0;
+    syncStageDetail =
+      activePhase === "pulling"
+        ? `Downloading encrypted records${s.incomingCount ? ` (${s.incomingCount} fetched)` : ""}…`
+        : activePhase === "merging"
+          ? "Merging playlists, watch history & settings…"
+          : activePhase === "pushing"
+            ? `Uploading ${s.pendingCount || ""} changed record${s.pendingCount === 1 ? "" : "s"}…`.replace(
+                "Uploading  ",
+                "Uploading "
+              )
+            : "";
+
+    if (s.categoryProgress) categoryProgress = s.categoryProgress;
     if (s.startedAt && s.estimatedMs) {
-      const elapsed = Date.now() - s.startedAt;
-      const remaining = Math.max(0, s.estimatedMs - elapsed);
-      estimatedRemaining = remaining;
+      estimatedRemaining = Math.max(0, s.estimatedMs - (Date.now() - s.startedAt));
     } else {
       estimatedRemaining = null;
     }
@@ -183,12 +182,41 @@
     }
   }
 
-  function toggleBackend(backend: SyncBackend, enabled: boolean) {
+  async function ensureEndpointPermissions(): Promise<boolean> {
+    const permissions =
+      (globalThis as any).browser?.permissions || (globalThis as any).chrome?.permissions;
+    if (!permissions) return true;
+    if (config.backends.includes("relay")) {
+      const granted = await requestSyncHostPermission(RELAY_SUPABASE_URL, permissions);
+      if (!granted) {
+        lastError = "Allow secure access to the IYPM sync relay before syncing.";
+        lastSyncSummary = "Relay host permission was not granted.";
+        addLogEntry(lastSyncSummary, "error");
+        return false;
+      }
+    }
+    if (config.backends.includes("supabase-byo")) {
+      const granted = await requestSyncHostPermission(config.supabaseUrl, permissions);
+      if (!granted) {
+        lastError =
+          "Allow secure access to your Supabase project before syncing. Check its HTTPS URL and try again.";
+        lastSyncSummary = "Supabase permission was not granted.";
+        addLogEntry(lastSyncSummary, "error");
+        return false;
+      }
+    }
+    return true;
+  }
+
+  async function toggleBackend(backend: SyncBackend, enabled: boolean) {
     const set = new Set(config.backends);
     if (enabled) set.add(backend);
     else set.delete(backend);
     config.backends = [...set];
-    persist();
+    if (enabled && backend === "relay") {
+      await ensureEndpointPermissions();
+    }
+    await persist();
   }
 
   function setUrl(value: string) {
@@ -203,10 +231,8 @@
 
   async function chooseFolder() {
     try {
-      const handle = await (window as any).showDirectoryPicker();
-      // Persist handle via the browser's native IndexedDB (v2 file backend).
-      const db = await (window as any).indexedDB?.open("yph_file_sync", 1);
-      // Best-effort: store handle; full file-sync backend is a follow-up.
+      await (window as any).showDirectoryPicker();
+      await (window as any).indexedDB?.open("yph_file_sync", 1);
       persist();
     } catch {
       // cancelled
@@ -220,42 +246,37 @@
       addLogEntry(lastSyncSummary, "warning");
       return;
     }
-    if (config.backends.includes("supabase-byo")) {
-      const permissions =
-        (globalThis as any).browser?.permissions || (globalThis as any).chrome?.permissions;
-      const granted = await requestSyncHostPermission(config.supabaseUrl, permissions);
-      if (!granted) {
-        lastError =
-          "Allow secure access to your Supabase project before syncing. Check its HTTPS URL and try again.";
-        lastSyncSummary = "Supabase permission was not granted.";
-        addLogEntry(lastSyncSummary, "error");
-        return;
-      }
-    }
+    if (!(await ensureEndpointPermissions())) return;
     lastError = null;
     addLogEntry("Manual sync started…", "info");
     await triggerSyncNow();
-    await refreshStatus();
+    await refresh();
     addLogEntry(lastSyncSummary || "Sync finished", lastError ? "error" : "success");
+    if (lastError) toast.show(lastError, "error");
+    else if (lastSyncSummary) toast.show(lastSyncSummary, "success");
   }
 
   async function testConnection() {
-    addLogEntry("Testing connection…", "info");
-    if (config.backends.includes("relay")) {
-      const permissions =
-        (globalThis as any).browser?.permissions || (globalThis as any).chrome?.permissions;
-      const granted = await requestSyncHostPermission(RELAY_SUPABASE_URL, permissions);
-      if (!granted) {
-        lastError = "Host permission for the relay was not granted.";
-        addLogEntry(lastError, "error");
-        return;
+    if (!(await ensureEndpointPermissions())) return;
+    isTestingConnection = true;
+    lastError = null;
+    addLogEntry("Testing relay connection…", "info");
+    try {
+      const check = await verifyRelayConnection(config);
+      if (check.ok) {
+        lastError = null;
+        lastSyncSummary = check.summary;
+        addLogEntry(check.summary, "success");
+        toast.show(check.summary, "success");
+      } else {
+        lastError = check.error || check.summary;
+        lastSyncSummary = check.summary;
+        addLogEntry(check.summary, "error");
+        toast.show(check.summary, "error");
       }
+    } finally {
+      isTestingConnection = false;
     }
-    await syncNow();
-    addLogEntry(
-      lastError ? "Connection test failed" : "Connection test succeeded",
-      lastError ? "error" : "success"
-    );
   }
 
   async function handleRotateKey() {
@@ -297,46 +318,32 @@
 
   function getStageLabel(stage: string) {
     switch (stage) {
-      case "reading":
-        return "Checking remote…";
-      case "preparing":
-        return "Preparing changes…";
-      case "pushing":
-        return "Uploading…";
       case "pulling":
-        return "Downloading…";
-      case "success":
-        return "Complete";
+        return "Downloading encrypted records…";
+      case "merging":
+        return "Merging playlists, history & settings…";
+      case "pushing":
+        return "Uploading changes…";
       case "error":
         return "Error";
-      case "partial":
-        return "Partial";
-      case "conflict":
-        return "Conflict";
       default:
         return "Ready";
     }
   }
 
   onMount(() => {
-    onSyncProgress((stage: string, detail: string) => {
-      syncStage = stage;
-      syncStageDetail = detail || "";
-      syncProgress = stageProgress[stage] ?? 0;
-      if (detail)
-        addLogEntry(detail, stage === "error" ? "error" : stage === "success" ? "success" : "info");
-    });
     const timer = setInterval(refreshStatus, 10_000);
     const b = (window as any).browser || (window as any).chrome;
     const storageListener = (changes: any, area: string) => {
-      if (area === "local" && changes?.yph_sync_status) refreshStatus();
+      if (area === "local" && (changes?.yph_sync_status || changes?.yph_sync_devices)) {
+        refreshStatus();
+      }
     };
     b?.storage?.onChanged?.addListener?.(storageListener);
     refresh().then(() => subscribeNudge());
     return () => {
       clearInterval(timer);
       b?.storage?.onChanged?.removeListener?.(storageListener);
-      onSyncProgress(null);
       if (nudgeUnsubscribe) nudgeUnsubscribe();
     };
   });
@@ -356,7 +363,6 @@
 
     <SyncLegacyWarning {config} onPersist={persist} onContinue={syncNow} />
 
-    <!-- Main Status Banner -->
     <SyncHero
       {syncIsOn}
       {isSyncing}
@@ -377,13 +383,13 @@
     <SyncCounters {syncIsOn} {isSyncing} {lastSyncedAt} {knownDevices} {formatWhen} />
 
     <div class="settings-grid">
-      <!-- Sync Key (top-left; required to sync) -->
       <SyncKeyCard
         {config}
         onPersist={persist}
         onLog={addLogEntry}
         onRotate={handleRotateKey}
         onTestConnection={testConnection}
+        {isTestingConnection}
       />
       <RelayCard
         enabled={config.backends.includes("relay")}
@@ -407,13 +413,12 @@
         onChooseFolder={chooseFolder}
       />
 
-      <!-- Offline Mode (moved under File/Syncthing) -->
       <SyncOfflineCard {config} onPersist={persist} onLog={addLogEntry} />
 
-      <!-- Sync Schedule -->
       <SyncScheduleCard {config} onPersist={persist} onLog={addLogEntry} />
 
-      <!-- Sync Advanced -->
+      <SyncConflictCard {config} onPersist={persist} onLog={addLogEntry} />
+
       <SyncAdvanced />
     </div>
   </div>

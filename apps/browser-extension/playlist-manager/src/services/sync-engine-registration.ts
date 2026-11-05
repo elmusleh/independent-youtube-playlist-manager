@@ -1,5 +1,6 @@
 import { loadSyncConfig } from "./sync/sync-config";
 import { needsV2RelayAcknowledgement } from "./sync/sync-config-compatibility";
+import { verifyRelayConnection } from "./sync/sync-diagnostics";
 import type { SyncStatus } from "./sync-engine";
 
 type SyncEngineHandlers = {
@@ -10,6 +11,13 @@ type SyncEngineHandlers = {
   getStatus: () => SyncStatus;
   isRunning: () => boolean;
 };
+
+const IGNORED_STORAGE_KEYS = new Set([
+  "yph_sync_status",
+  "yph_system_logs",
+  "yph_sync_devices",
+  "yt_playlist_cache_v1",
+]);
 
 /** Register engine triggers and the runtime message bridge in the background context. */
 export function registerSyncEngine(handlers: SyncEngineHandlers): void {
@@ -55,9 +63,25 @@ export function registerSyncEngine(handlers: SyncEngineHandlers): void {
 
   let debounceTimer: ReturnType<typeof setTimeout> | null = null;
   browserObj.storage?.onChanged?.addListener?.((changes: any, area: string) => {
-    if (area !== "local" || handlers.isRunning()) return;
-    if (changes?.yph_sync_status) return;
-    if (changes?.yph_sync_config) refreshPeriodicAlarm().catch(() => {});
+    if ((area !== "local" && area !== "sync") || handlers.isRunning()) return;
+    const changedKeys = Object.keys(changes ?? {}).filter((k) => !IGNORED_STORAGE_KEYS.has(k));
+    if (changedKeys.length === 0) return;
+
+    if (area === "local" && changes?.yph_sync_config) {
+      refreshPeriodicAlarm().catch(() => {});
+      const prev = changes.yph_sync_config.oldValue;
+      const next = changes.yph_sync_config.newValue;
+      const onlyCursorOrMetaChanged =
+        prev &&
+        next &&
+        prev.syncKey === next.syncKey &&
+        JSON.stringify(prev.backends) === JSON.stringify(next.backends) &&
+        prev.supabaseUrl === next.supabaseUrl &&
+        prev.supabaseKey === next.supabaseKey &&
+        prev.conflictStrategy === next.conflictStrategy;
+      if (changedKeys.length === 1 && onlyCursorOrMetaChanged) return;
+    }
+
     if (debounceTimer) clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => {
       debounceTimer = null;
@@ -75,6 +99,15 @@ export function registerSyncEngine(handlers: SyncEngineHandlers): void {
         .runOnce()
         .then((result) => sendResponse(result))
         .catch((error) => sendResponse({ phase: "error", lastError: String(error) }));
+      return true;
+    }
+    if (request?.cmd === "sync-test-connection") {
+      loadSyncConfig()
+        .then((cfg) => verifyRelayConnection(cfg))
+        .then((res) => sendResponse(res))
+        .catch((error) =>
+          sendResponse({ ok: false, error: String(error), summary: String(error) })
+        );
       return true;
     }
     if (request?.cmd === "sync-pause") {

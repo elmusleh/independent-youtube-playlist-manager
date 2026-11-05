@@ -14,11 +14,14 @@ export type HlcTimestamp = {
   deviceHash: number;
 };
 
+let cachedDeviceKey: string | null = null;
 let cachedDeviceHash: number | null = null;
 
-async function getDeviceHash(syncKey: string): Promise<number> {
-  if (cachedDeviceHash !== null) return cachedDeviceHash;
-  const recordId = await computeRecordId(syncKey, "device", "hlc-device-id");
+async function getDeviceHash(syncKey: string, deviceId = "hlc-device-id"): Promise<number> {
+  const cacheKey = `${syncKey}|${deviceId}`;
+  if (cachedDeviceKey === cacheKey && cachedDeviceHash !== null) return cachedDeviceHash;
+  const recordId = await computeRecordId(syncKey, "device", deviceId);
+  cachedDeviceKey = cacheKey;
   cachedDeviceHash = parseInt(recordId.slice(0, 4), 16) & 0xffff;
   return cachedDeviceHash;
 }
@@ -32,8 +35,12 @@ function toTimestamp(
   return { value: value ?? wall, wall, counter, deviceHash };
 }
 
-export async function getHlc(syncKey: string, lastHlc?: HlcTimestamp): Promise<HlcTimestamp> {
-  const deviceHash = await getDeviceHash(syncKey);
+export async function getHlc(
+  syncKey: string,
+  lastHlc?: HlcTimestamp,
+  deviceId?: string
+): Promise<HlcTimestamp> {
+  const deviceHash = await getDeviceHash(syncKey, deviceId);
   const wall = Date.now();
 
   let counter = 0;
@@ -46,7 +53,7 @@ export async function getHlc(syncKey: string, lastHlc?: HlcTimestamp): Promise<H
         while (Date.now() === wall) {
           await new Promise((r) => setTimeout(r, 0));
         }
-        return getHlc(syncKey, lastHlc);
+        return getHlc(syncKey, lastHlc, deviceId);
       }
       // Ensure value is strictly monotonic even within same wall
       value = Math.max(wall, (lastHlc.value ?? wall) + 1);

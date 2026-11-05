@@ -13,6 +13,7 @@
 import type { SyncSnapshot } from "./snapshot-codec.js";
 
 export type SyncBackend = "relay" | "supabase-byo" | "file";
+export type ConflictStrategy = "merge" | "lww";
 
 export type SyncContentSelection = {
   playlists: boolean;
@@ -74,6 +75,12 @@ export type SyncConfig = {
   lastSeqByCollection?: Record<string, number>;
   /** Per-category last successful sync timestamps. */
   categoryTimestamps: SyncTimestamps;
+  /** Conflict resolution strategy for concurrent modifications ("merge" = 3-way merge, "lww" = last-write-wins). */
+  conflictStrategy?: ConflictStrategy;
+  /** Active SHA-256 space address most recently synced by this device. */
+  lastSyncedSpace?: string | null;
+  /** Active relay URL most recently synced by this device. */
+  lastSyncedRelayUrl?: string | null;
 };
 
 const KEY = "yph_sync_config";
@@ -95,15 +102,14 @@ export const DEFAULT_SYNC_CONFIG: SyncConfig = {
   syncProtocolVersion: null,
   legacyV2AcknowledgedAt: null,
   categoryTimestamps: { playlists: null, settings: null, history: null },
+  conflictStrategy: "merge",
+  lastSyncedSpace: null,
+  lastSyncedRelayUrl: null,
 };
 
 /**
- * The developer-hosted v2 relay endpoint. Replace these two placeholders with the real
- * Supabase project URL + anon key before the recommended backend can function.
- * The relay is zero-knowledge: it stores only encrypted v2 records keyed by a SHA-256 address.
- *
- * TODO(owner): configure the v2 RPC/schema from `docs/sync-relay-v2.sql` and the guarded
- * migrations. Do not provision the legacy `relay_snapshots` table for a v2 client.
+ * The developer-hosted v2 relay endpoint (IYPM Supabase project `pfydngsbcmuhsqqjbcte`).
+ * Zero-knowledge: stores only AES-256-GCM encrypted v2 records keyed by SHA-256 space address.
  */
 export const RELAY_SUPABASE_URL = "https://pfydngsbcmuhsqqjbcte.supabase.co";
 export const RELAY_SUPABASE_ANON_KEY = "sb_publishable_pKwO4ShF2yR1cufZA-2jfw_QsENS9vN";
@@ -196,6 +202,10 @@ export function migrateSyncConfig(stored: unknown): SyncConfig {
     knownDevices: Array.isArray(source.knownDevices) ? source.knownDevices : [],
     syncRevision: typeof source.syncRevision === "number" ? source.syncRevision : 0,
     categoryTimestamps,
+    conflictStrategy: source.conflictStrategy === "lww" ? "lww" : "merge",
+    lastSyncedSpace: typeof source.lastSyncedSpace === "string" ? source.lastSyncedSpace : null,
+    lastSyncedRelayUrl:
+      typeof source.lastSyncedRelayUrl === "string" ? source.lastSyncedRelayUrl : null,
     syncIntervalMinutes:
       typeof source.syncIntervalMinutes === "number"
         ? source.syncIntervalMinutes

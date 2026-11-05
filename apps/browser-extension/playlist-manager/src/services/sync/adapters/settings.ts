@@ -22,6 +22,7 @@ import type { RecordEnvelope, EncryptedRecord } from "../record-codec";
 export type AdapterContext = {
   syncKey: string;
   localDeviceId: string;
+  conflictStrategy?: "merge" | "lww";
   librarySnapshot: () => Promise<{ settings: Record<string, unknown> }>;
   saveSettings: (settings: Record<string, unknown>, deletedKeys?: string[]) => Promise<void>;
   // shared HLC state for monotonicity across adapters
@@ -37,7 +38,7 @@ export async function collectDirtySettings(ctx: AdapterContext): Promise<DirtyCa
     if (!isSyncableSetting(key)) continue;
     if (await isDirty("settings", key, value)) {
       const rid = await computeRecordId(ctx.syncKey, "settings", key);
-      const hlc = await getHlc(ctx.syncKey, lastHlc);
+      const hlc = await getHlc(ctx.syncKey, lastHlc, ctx.localDeviceId);
       lastHlc = hlc;
       const version = hlc.value;
       const envelope: RecordEnvelope = {
@@ -75,7 +76,7 @@ export async function collectDirtySettings(ctx: AdapterContext): Promise<DirtyCa
     const baseCopy = shadow.baseCopy;
     if (baseCopy === undefined) continue;
     const rid = await computeRecordId(ctx.syncKey, "settings", shadow.recordId);
-    const hlc = await getHlc(ctx.syncKey, lastHlc);
+    const hlc = await getHlc(ctx.syncKey, lastHlc, ctx.localDeviceId);
     lastHlc = hlc;
     const version = hlc.value;
     const envelope: RecordEnvelope = {
@@ -155,6 +156,7 @@ export async function applyRemoteSettings(
           continue;
         }
         const shadow = await getShadow("settings", parsed.key);
+        if (shadow?.baseCopy !== undefined) baseCopies[parsed.key] = shadow.baseCopy;
         if (shadow && r.version <= shadow.remoteVersion) continue;
         remoteObj[parsed.key] = parsed.value;
         remoteVersions.set(parsed.key, r.version);
@@ -166,7 +168,10 @@ export async function applyRemoteSettings(
     }
   }
 
-  const { merged } = mergeSettings(local, remoteObj, baseCopies);
+  const { merged } = mergeSettings(local, remoteObj, baseCopies, {
+    strategy: ctx.conflictStrategy ?? "merge",
+    preferRemoteOnTie: true,
+  });
   const locallyEditedDeletes = new Set<string>();
   const appliedDeletes = new Set<string>();
   for (const [key, version] of remoteDeletes) {
@@ -183,6 +188,11 @@ export async function applyRemoteSettings(
       delete merged[key];
       appliedDeletes.add(key);
     }
+  }
+
+  const remoteKeyCount = Object.keys(remoteObj).length;
+  if (remoteKeyCount === 0 && appliedDeletes.size === 0 && locallyEditedDeletes.size === 0) {
+    return { applied: 0, failed };
   }
 
   try {
@@ -210,5 +220,5 @@ export async function applyRemoteSettings(
     );
   }
 
-  return { applied: Object.keys(merged).length, failed };
+  return { applied: remoteKeyCount + appliedDeletes.size, failed };
 }

@@ -124,4 +124,57 @@ describe("sync v2 playlist merge", () => {
     expect(merged.find((p) => p.id === "p1")?.title).toBe("A2");
     expect(merged.find((p) => p.id === "p2")?.title).toBe("B2");
   });
+
+  it("merges real IYPM string[] video ID lists and ISO timestamps without corrupting items", () => {
+    const base = [
+      {
+        id: "local-1",
+        title: "Music",
+        videos: ["dQw4w9WgXcQ", "9bZkp7q19f0"],
+        updatedAt: "2026-11-04T20:00:00.000Z",
+        revision: 1,
+      },
+    ];
+    const local = [
+      {
+        id: "local-1",
+        title: "Music",
+        videos: ["dQw4w9WgXcQ", "3JZ_D3ELwOQ"], // removed 9bZkp7q19f0, added 3JZ_D3ELwOQ
+        updatedAt: "2026-11-04T21:00:00.000Z",
+        revision: 2,
+      },
+    ];
+    const remote = [
+      {
+        id: "local-1",
+        title: "Music Mix",
+        videos: ["dQw4w9WgXcQ", "9bZkp7q19f0", "kJQP7kiw5Fk"], // renamed + added kJQP7kiw5Fk
+        updatedAt: "2026-11-04T20:30:00.000Z",
+        revision: 2,
+      },
+    ];
+
+    const { merged } = mergePlaylists(local, remote, base);
+    expect(merged).toHaveLength(1);
+    expect(merged[0].title).toBe("Music Mix");
+    expect(merged[0].videos.every((v) => typeof v === "string")).toBe(true);
+    expect(merged[0].videos).toEqual(["dQw4w9WgXcQ", "3JZ_D3ELwOQ", "kJQP7kiw5Fk"]);
+    expect(typeof merged[0].updatedAt).toBe("string");
+    expect(Number.isNaN(Date.parse(String(merged[0].updatedAt)))).toBe(false);
+  });
+
+  it("supports last-write-wins strategy when configured", () => {
+    const base = [{ id: "local-1", title: "Base", videos: ["v1"], updatedAt: 10, revision: 1 }];
+    const local = [
+      { id: "local-1", title: "Local", videos: ["v1", "v2"], updatedAt: 20, revision: 2 },
+    ];
+    const remote = [
+      { id: "local-1", title: "Remote", videos: ["v1", "v3"], updatedAt: 30, revision: 2 },
+    ];
+    const { merged, conflicts } = mergePlaylists(local, remote, base, { strategy: "lww" });
+    expect(merged[0].title).toBe("Remote");
+    expect(merged[0].videos).toEqual(["v1", "v3"]);
+    expect(conflicts).toHaveLength(1);
+    expect(conflicts[0].resolution).toBe("remote");
+  });
 });

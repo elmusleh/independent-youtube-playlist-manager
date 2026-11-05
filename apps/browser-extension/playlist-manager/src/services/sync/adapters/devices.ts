@@ -39,7 +39,7 @@ export async function collectDirtyDevices(ctx: AdapterContext): Promise<DirtyCan
   const keys = await deriveKeys(ctx.syncKey);
   if (await isDirty("devices", ctx.localDeviceId, device)) {
     const rid = await computeRecordId(ctx.syncKey, "devices", ctx.localDeviceId);
-    const hlc = await getHlc(ctx.syncKey, ctx.hlcState?.lastHlc);
+    const hlc = await getHlc(ctx.syncKey, ctx.hlcState?.lastHlc, ctx.localDeviceId);
     if (ctx.hlcState) ctx.hlcState.lastHlc = hlc;
     const version = hlc.value;
     const envelope: RecordEnvelope = {
@@ -146,6 +146,10 @@ export async function applyRemoteDevices(
       appliedDeletes.add(deviceId);
     }
   }
+  if (remoteDevices.length === 0 && appliedDeletes.size === 0 && locallyEditedDeletes.size === 0) {
+    return { applied: 0, failed };
+  }
+
   const list = [...merged.values()];
 
   try {
@@ -180,5 +184,5 @@ export async function applyRemoteDevices(
     failed.push(`devices shadow update: ${error instanceof Error ? error.message : String(error)}`);
   }
 
-  return { applied: list.length, failed };
+  return { applied: remoteDevices.length + appliedDeletes.size, failed };
 }

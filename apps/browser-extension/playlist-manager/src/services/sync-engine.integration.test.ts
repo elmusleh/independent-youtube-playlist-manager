@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { computeRecordId, deriveKeys } from "./sync/keys";
 import { encryptRecord, RECORD_VERSION } from "./sync/record-codec";
-import { clearAllShadows, getShadow, isDirty } from "./sync/shadow-store";
+import { clearAllShadows, getShadow, isDirty, setShadow } from "./sync/shadow-store";
 
 vi.mock("./sync/realtime-nudge", () => ({ broadcastSyncNudge: vi.fn(async () => undefined) }));
 
@@ -411,6 +411,158 @@ describe("sync engine real relay/storage path", () => {
     expect(
       state.yph_sync_devices.map((device: { deviceId: string }) => device.deviceId).sort()
     ).toEqual(["remote-a", "remote-b"]);
+  });
+
+  it("clears stale unbound shadows (e.g. after switching relay endpoint or key) and uploads all local playlists", async () => {
+    // Simulate a leftover shadow from a previous endpoint/key where baseHash matches localPlaylists[0].
+    await setShadow("playlists", "playlist-a", localPlaylists[0], 50, "device-a");
+    expect(await isDirty("playlists", "playlist-a", localPlaylists[0])).toBe(false);
+
+    const { runOnce } = await import("./sync-engine");
+    const result = await runOnce();
+
+    const pushedPlaylists = wirePushes
+      .flatMap((push) => push.p_records as Array<Record<string, any>>)
+      .filter((r) => r.collection === "playlists");
+    expect(result.phase).toBe("idle");
+    expect(pushedPlaylists).toHaveLength(1);
+    expect(result.pushedCount).toBeGreaterThanOrEqual(1);
+  });
+
+  it("syncs string[] playlists, keyless-videoId history, and pinned favorites end-to-end across two devices without re-pull loops", async () => {
+    // Shared in-memory relay table for Firefox -> Chrome round-trip.
+    let seqCounter = 0;
+    const cloudRecords = new Map<string, RelayRow>();
+
+    vi.stubGlobal("fetch", async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      const body = init?.body ? JSON.parse(String(init.body)) : {};
+      if (url.endsWith("/sync_claim")) return jsonResponse(true);
+      if (url.endsWith("/sync_pull")) {
+        pullRequests.push(body);
+        const rows = [...cloudRecords.values()]
+          .filter((r) => r.seq > body.p_since_seq)
+          .sort((a, b) => a.seq - b.seq);
+        return jsonResponse(rows);
+      }
+      if (url.endsWith("/sync_push")) {
+        wirePushes.push(body);
+        const out = (body.p_records as Array<Record<string, any>>).map((rec) => {
+          seqCounter += 1;
+          cloudRecords.set(`${rec.collection}|${rec.rid}`, {
+            collection: rec.collection,
+            rid: rec.rid,
+            version: rec.version,
+            seq: seqCounter,
+            payload: rec.payload,
+            deleted: !!rec.deleted,
+            updatedAt: new Date().toISOString(),
+          });
+          return {
+            collection: rec.collection,
+            rid: rec.rid,
+            status: "ok",
+            current_version: rec.version,
+          };
+        });
+        return jsonResponse(out);
+      }
+      throw new Error(`Unexpected relay request: ${url}`);
+    });
+
+    // Device 1 (Firefox) in background service worker mode (no window.getSettings / storeObject)
+    state.yph_sync_config.content = { playlists: true, settings: true, history: true };
+    state.favoritePlaylistIds = ["local-fav-1"];
+    state.themeChoice = "dark";
+    state.local_yt_history = {
+      dQw4w9WgXcQ: {
+        title: "Rick Astley",
+        channel: "RickAstleyVEVO",
+        timestamp: 42,
+        duration: 212,
+        isCompleted: false,
+        lastWatchedAt: 1700000000000,
+      },
+    };
+    localPlaylists = [
+      {
+        id: "local-fav-1",
+        title: "Pinned Favorites",
+        videos: ["dQw4w9WgXcQ", "9bZkp7q19f0"],
+        timestamp: 1700000000000,
+        updatedAt: "2026-11-04T22:00:00.000Z",
+        revision: 1,
+      },
+    ];
+    (globalThis as any).window = {
+      mutateLibrary: async (op: { playlists: Array<Record<string, unknown>> }) => {
+        localPlaylists = structuredClone(op.playlists);
+      },
+    };
+
+    const engine1 = await import("./sync-engine");
+    const firefoxSync = await engine1.runOnce();
+    expect(firefoxSync.phase).toBe("idle");
+    expect(firefoxSync.pushedCount).toBe(5); // 1 playlist + 1 history + 2 settings + 1 device
+
+    // Device 2 (Chrome): fresh storage, empty playlists/history, no persisted settings
+    await clearAllShadows();
+    vi.resetModules();
+    delete state.favoritePlaylistIds;
+    delete state.themeChoice;
+    state.yph_sync_device_id = "device-b";
+    state.local_yt_history = {};
+    state.yph_sync_devices = [];
+    state.yph_sync_config = {
+      syncKey: SYNC_KEY,
+      backends: ["relay"],
+      syncIntervalMinutes: 0,
+      relayUrl: "https://relay.test",
+      relayAnonKey: "test-anon-key",
+      content: { playlists: true, settings: true, history: true },
+      lastSeq: 0,
+      syncConfigVersion: 2,
+      syncProtocolVersion: 2,
+      legacyV2AcknowledgedAt: null,
+    };
+    localPlaylists = [];
+    let mutateCalls = 0;
+    (globalThis as any).window = {
+      mutateLibrary: async (op: { playlists: Array<Record<string, unknown>> }) => {
+        mutateCalls += 1;
+        localPlaylists = structuredClone(op.playlists);
+      },
+    };
+
+    const engine2 = await import("./sync-engine");
+    const chromeSync1 = await engine2.runOnce();
+    expect(chromeSync1.phase).toBe("idle");
+    expect(chromeSync1.failedCount).toBe(0);
+    expect(localPlaylists).toHaveLength(1);
+    expect(localPlaylists[0].id).toBe("local-fav-1");
+    expect(localPlaylists[0].videos).toEqual(["dQw4w9WgXcQ", "9bZkp7q19f0"]);
+    expect(state.favoritePlaylistIds).toEqual(["local-fav-1"]);
+    expect(state.themeChoice).toBe("dark");
+    expect(state.local_yt_history.dQw4w9WgXcQ).toMatchObject({
+      videoId: "dQw4w9WgXcQ",
+      title: "Rick Astley",
+      timestamp: 42,
+    });
+    expect(mutateCalls).toBe(1);
+
+    // Second Chrome sync: cursor advances past Device B's own device push and performs 0 storage mutations!
+    pullRequests = [];
+    const chromeSync2 = await engine2.runOnce();
+    expect(chromeSync2.phase).toBe("idle");
+    expect(mutateCalls).toBe(1); // MUST NOT re-write playlists when nothing changed!
+    expect(state.yph_sync_config.lastSeq).toBe(seqCounter);
+
+    // Third Chrome sync: 0 records pulled at all (`p_since_seq === seqCounter`)!
+    pullRequests = [];
+    const chromeSync3 = await engine2.runOnce();
+    expect(pullRequests[0].p_since_seq).toBe(seqCounter);
+    expect(chromeSync3.pulledCount).toBe(0);
+    expect(chromeSync3.pushedCount).toBe(0);
   });
 });
 

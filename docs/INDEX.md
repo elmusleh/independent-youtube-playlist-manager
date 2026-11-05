@@ -18,6 +18,7 @@ What each document is for, and who it is for. If you are an agent starting a ses
 | Document                | Purpose                                                                                  |
 | ----------------------- | ---------------------------------------------------------------------------------------- |
 | `RELEASING.md`          | **The** release runbook: semver, version sync, changelog, tag, store uploads.            |
+| `DEV_BUILD_WORKFLOW.md` | Mandatory `npm run build` workflow, browser reload steps, and hosted sync relay details. |
 | `IMPROVEMENT_PLAN.md`   | Sequenced plan for in-flight work, the four open issues, debt and the sync rollout.      |
 | `DEPLOYMENT.md`         | Vercel: why there is no root `vercel.json`, the Root Directory setting, `ignoreCommand`. |
 | `RELEASE_READINESS.md`  | Pre-release checklist across stores and platforms.                                       |

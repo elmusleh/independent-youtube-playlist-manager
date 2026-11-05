@@ -2,7 +2,6 @@
   import Fa from "svelte-fa";
   import {
     faArrowsRotate,
-    faCheck,
     faCircleCheck,
     faCircleExclamation,
     faSpinner,
@@ -52,7 +51,13 @@
   <div class="banner-main">
     <div class="status-icon-wrapper" class:syncing={isSyncing}>
       <Fa
-        icon={isSyncing ? faSpinner : syncIsOn ? faCircleCheck : faCircleExclamation}
+        icon={isSyncing
+          ? faSpinner
+          : lastError
+            ? faCircleExclamation
+            : syncIsOn
+              ? faCircleCheck
+              : faCircleExclamation}
         class="status-icon"
       />
     </div>
@@ -73,14 +78,14 @@
         {/if}
       </h3>
       <p class="status-message">
-        {#if setupHint}
-          {setupHint}
-        {:else if isSyncing}
+        {#if isSyncing}
           {syncStageDetail || getStageLabel(syncStage)}
         {:else if lastError}
           <span class="error-text"><Fa icon={faCircleExclamation} /> {lastError}</span>
         {:else if lastSyncSummary}
           <Fa icon={faCircleCheck} /> {lastSyncSummary}
+        {:else if setupHint}
+          {setupHint}
         {:else}
           Ready to sync. Click "Sync now" to begin.
         {/if}
@@ -120,7 +125,9 @@
       disabled={isSyncing || !syncIsOn}
       className="sync-now-btn"
     >
-      <span class:spin={isSyncing}><Fa icon={isSyncing ? faSpinner : faArrowsRotate} /></span>
+      <span class="btn-icon" class:spin={isSyncing}>
+        <Fa icon={isSyncing ? faSpinner : faArrowsRotate} />
+      </span>
       {isSyncing ? "Syncing…" : "Sync now"}
     </SimpleButton>
   </div>
@@ -172,7 +179,9 @@
     border-radius: 10px;
     background: var(--muted, #f3f4f6);
   }
-  .status-icon-wrapper.syncing :global(.status-icon) {
+  .status-icon-wrapper.syncing :global(.status-icon),
+  .btn-icon.spin {
+    display: inline-flex;
     animation: spin 1s linear infinite;
   }
   @keyframes spin {
@@ -200,7 +209,7 @@
     color: var(--foreground, #111);
   }
   .device-count {
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 0.4rem;
   }
@@ -215,9 +224,6 @@
     color: var(--accent, #3b82f6);
     background: rgba(59, 130, 246, 0.1);
     border-radius: 999px;
-  }
-  .syncing-badge :global(.fa-spinner) {
-    animation: spin 1s linear infinite;
   }
   .status-message {
     margin: 0;
@@ -285,50 +291,7 @@
   .banner-actions {
     flex-shrink: 0;
   }
-  .latest-log {
-    margin: 0.35rem 0 0;
-    font-size: 0.8rem;
-    color: var(--muted-foreground, #6b7280);
-  }
-  .log-toggle {
-    background: none;
-    border: none;
-    padding: 0;
-    margin-top: 0.35rem;
-    font-size: 0.75rem;
-    color: var(--primary-color);
-    cursor: pointer;
-  }
-  .log-toggle:hover {
-    text-decoration: underline;
-  }
-  .recent-log {
-    margin-top: 0.35rem;
-    max-height: 120px;
-    overflow-y: auto;
-    font-size: 0.75rem;
-    border: 1px solid var(--border, #e5e7eb);
-    border-radius: 6px;
-    padding: 0.25rem 0.5rem;
-    background: var(--bg-secondary, #f9fafb);
-  }
-  .log-line {
-    padding: 0.15rem 0;
-    color: var(--text-color);
-  }
-  .log-line.type-success {
-    color: var(--success, #10b981);
-  }
-  .log-line.type-error {
-    color: var(--danger, #ef4444);
-  }
-  .log-line.type-warning {
-    color: var(--warning, #f59e0b);
-  }
   :global(.sync-now-btn) {
     min-width: 0;
-  }
-  :global(.fa-spinner.spin) {
-    animation: spin 1s linear infinite;
   }
 </style>

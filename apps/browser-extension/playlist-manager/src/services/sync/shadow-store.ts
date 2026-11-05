@@ -11,6 +11,7 @@
 const DB_NAME = "yph_sync_shadow_v1";
 const STORE_NAME = "shadow";
 const DB_VERSION = 1;
+const META_COLLECTION = "__meta__";
 
 function waitForTransaction(tx: IDBTransaction): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -210,6 +211,7 @@ export async function getAllBaseCopies(collection: string): Promise<Map<string, 
  * Clear all shadow records (e.g., on logout or reset).
  */
 export async function clearAllShadows(): Promise<void> {
+  if (typeof indexedDB === "undefined") return;
   const db = await openDb();
   const tx = db.transaction(STORE_NAME, "readwrite");
   tx.objectStore(STORE_NAME).clear();
@@ -228,6 +230,7 @@ export async function getShadowCounts(): Promise<Record<string, number>> {
     request.onsuccess = () => {
       const counts: Record<string, number> = {};
       for (const record of request.result) {
+        if (record.collection === META_COLLECTION) continue;
         counts[record.collection] = (counts[record.collection] || 0) + 1;
       }
       resolve(counts);

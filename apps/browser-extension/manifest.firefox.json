@@ -48,7 +48,6 @@
   "host_permissions": ["https://*.youtube.com/*"],
   "optional_host_permissions": [
     "https://i.ytimg.com/*",
-    "https://qvwitlpnetwthyhrobca.supabase.co/*",
     "https://pfydngsbcmuhsqqjbcte.supabase.co/*",
     "https://*/*"
   ],

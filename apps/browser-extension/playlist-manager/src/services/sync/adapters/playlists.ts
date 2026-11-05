@@ -33,6 +33,7 @@ export type AdapterContext = {
   authHash: string;
   relayConfig: { url: string; anonKey: string };
   localDeviceId: string;
+  conflictStrategy?: "merge" | "lww";
   // injected by the engine
   librarySnapshot: () => Promise<{ playlists: any[]; revision: number }>;
   mutateLibrary: (op: any) => Promise<any>;
@@ -48,7 +49,7 @@ export async function collectDirtyPlaylists(ctx: AdapterContext): Promise<DirtyC
   for (const p of playlists) {
     if (await isDirty("playlists", p.id, p)) {
       const rid = await computeRecordId(ctx.syncKey, "playlists", p.id);
-      const hlc = await getHlc(ctx.syncKey, lastHlc);
+      const hlc = await getHlc(ctx.syncKey, lastHlc, ctx.localDeviceId);
       lastHlc = hlc;
       const version = hlc.value;
       const envelope: RecordEnvelope = {
@@ -87,7 +88,7 @@ export async function collectDirtyPlaylists(ctx: AdapterContext): Promise<DirtyC
     const baseCopy = shadow.baseCopy as any;
     if (!baseCopy) continue;
     const rid = await computeRecordId(ctx.syncKey, "playlists", shadow.recordId);
-    const hlc = await getHlc(ctx.syncKey, lastHlc);
+    const hlc = await getHlc(ctx.syncKey, lastHlc, ctx.localDeviceId);
     lastHlc = hlc;
     const version = hlc.value;
     const envelope: RecordEnvelope = {
@@ -122,9 +123,9 @@ export async function collectDirtyPlaylists(ctx: AdapterContext): Promise<DirtyC
 export async function applyRemotePlaylists(
   ctx: AdapterContext,
   remote: Array<{ rid: string; payload: string; deleted: boolean; version: number }>
-): Promise<{ applied: number; failed: string[] }> {
+): Promise<{ applied: number; failed: string[]; conflicts?: string[] }> {
   // Nothing to apply from an empty remote; leave local playlists untouched.
-  if (!remote || remote.length === 0) return { applied: 0, failed: [] };
+  if (!remote || remote.length === 0) return { applied: 0, failed: [], conflicts: [] };
   const { playlists: local } = await ctx.librarySnapshot();
   const keys = await deriveKeys(ctx.syncKey);
   const baseCopies = new Map<string, any>();
@@ -180,7 +181,10 @@ export async function applyRemotePlaylists(
   const targetBase = [...baseCopies.entries()]
     .filter(([id]) => mergeTargetIds.has(id))
     .map(([, playlist]) => playlist);
-  const { merged } = mergePlaylists(targetLocal, remotePlaylists, targetBase);
+  const { merged, conflicts } = mergePlaylists(targetLocal, remotePlaylists, targetBase, {
+    strategy: ctx.conflictStrategy ?? "merge",
+    remoteVersions,
+  });
   const mergedTargets = new Map(merged.map((playlist) => [playlist.id, playlist]));
   const mergedById = new Map(local.map((playlist) => [playlist.id, playlist]));
   for (const id of remoteVersions.keys()) {
@@ -204,6 +208,15 @@ export async function applyRemotePlaylists(
       appliedDeletes.add(id);
     }
   }
+
+  if (
+    remotePlaylists.length === 0 &&
+    appliedDeletes.size === 0 &&
+    locallyEditedDeletes.size === 0
+  ) {
+    return { applied: 0, failed, conflicts: [] };
+  }
+
   const finalPlaylists = [...mergedById.values()];
 
   try {
@@ -214,7 +227,7 @@ export async function applyRemotePlaylists(
     });
   } catch (e) {
     failed.push(`playlists: ${e instanceof Error ? e.message : String(e)}`);
-    return { applied: 0, failed };
+    return { applied: 0, failed, conflicts: [] };
   }
 
   try {
@@ -237,5 +250,9 @@ export async function applyRemotePlaylists(
     );
   }
 
-  return { applied: finalPlaylists.length, failed };
+  return {
+    applied: remotePlaylists.length + appliedDeletes.size,
+    failed,
+    conflicts: conflicts.map((c) => c.message),
+  };
 }

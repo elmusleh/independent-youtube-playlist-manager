@@ -10,22 +10,21 @@ import {
   LEGACY_SYNC_RECOVERY_NOTICE,
   needsV2RelayAcknowledgement,
 } from "./sync-config-compatibility.js";
+import { clearLocalSyncRuntimeState, resetSyncConfigCursors } from "./sync-state-reset.js";
 
 export async function rotateSyncKey(): Promise<string> {
   const config = await loadSyncConfig();
   if (!config.syncKey) throw new Error("No sync key configured");
   if (needsV2RelayAcknowledgement(config)) throw new Error(LEGACY_SYNC_RECOVERY_NOTICE);
 
+  const summary = "Sync key rotated; the old remote space is retained.";
   const newKey = generateSyncKey();
   config.syncKey = newKey;
-  config.lastSeq = 0; // force a full push to the new space
-  config.lastSeqByCollection = {}; // reset per-collection cursors
-  config.lastSyncedAt = null;
-  config.lastSyncSummary = "Sync key rotated; the old remote space is retained.";
-  config.lastError = null;
+  resetSyncConfigCursors(config, summary);
   config.syncConfigVersion = 2;
   config.syncProtocolVersion = 2;
   config.legacyV2AcknowledgedAt = null;
+  await clearLocalSyncRuntimeState(summary);
   await saveSyncConfig(config);
 
   // Keep the previous remote space intact. Deleting it immediately could destroy

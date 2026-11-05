@@ -11,11 +11,19 @@ import {
   LEGACY_SYNC_RECOVERY_NOTICE,
   needsV2RelayAcknowledgement,
 } from "./sync/sync-config-compatibility";
-import { runAdapterPass } from "./sync-engine-adapters";
+import { runAdapterPass, type CategoryProgressMap } from "./sync-engine-adapters";
 import { pushCandidatesWithConflictResolution } from "./sync-engine-push";
 import { registerSyncEngine } from "./sync-engine-registration";
 import { computeStorageAddress, computeAuthToken } from "./sync/keys";
 import { claimSpace, pullAll } from "./sync/relay-transport";
+import { ensureShadowBinding } from "./sync/sync-state-reset";
+import {
+  appendSyncSystemLog,
+  enabledCollectionNames,
+  formatSyncRunSummary,
+  resolveActiveRelayEndpoint,
+  stampSyncedConfig,
+} from "./sync/sync-diagnostics";
 
 export type SyncPhase = "idle" | "pulling" | "merging" | "pushing" | "error" | "offline" | "paused";
 
@@ -29,27 +37,25 @@ export type SyncStatus = {
   pushedCount: number;
   pulledCount: number;
   failedCount: number;
-  /** When the current sync run started (epoch ms). Null when idle. */
   startedAt: number | null;
-  /** Estimated total duration in ms based on previous runs. Null on first run. */
   estimatedMs: number | null;
-  /** Per-category counts: { processed, applied, total } for the current run. */
-  categoryProgress: {
-    playlists: { processed: number; applied: number; total: number };
-    settings: { processed: number; applied: number; total: number };
-    history: { processed: number; applied: number; total: number };
-    devices: { processed: number; applied: number; total: number };
-  };
+  categoryProgress: CategoryProgressMap;
 };
 
 const STATUS_KEY = "yph_sync_status";
 const BACKOFF_STEPS = [30_000, 60_000, 300_000, 900_000];
+const emptyProgress = (): CategoryProgressMap => ({
+  playlists: { processed: 0, applied: 0, total: 0 },
+  settings: { processed: 0, applied: 0, total: 0 },
+  history: { processed: 0, applied: 0, total: 0 },
+  devices: { processed: 0, applied: 0, total: 0 },
+});
 
 let phase: SyncPhase = "idle";
 let isRunning = false;
 let backoffIndex = 0;
 let backoffTimer: ReturnType<typeof setTimeout> | null = null;
-let lastRunDurationMs = 5000; // default estimate for first run
+let lastRunDurationMs = 5000;
 let status: SyncStatus = {
   phase: "idle",
   lastRunAt: null,
@@ -62,12 +68,7 @@ let status: SyncStatus = {
   failedCount: 0,
   startedAt: null,
   estimatedMs: null,
-  categoryProgress: {
-    playlists: { processed: 0, applied: 0, total: 0 },
-    settings: { processed: 0, applied: 0, total: 0 },
-    history: { processed: 0, applied: 0, total: 0 },
-    devices: { processed: 0, applied: 0, total: 0 },
-  },
+  categoryProgress: emptyProgress(),
 };
 
 function getStorage(): { get: (k: string) => Promise<any>; set: (o: any) => Promise<void> } | null {
@@ -101,6 +102,7 @@ export async function runOnce(): Promise<SyncStatus> {
   const startedAt = Date.now();
   status.startedAt = startedAt;
   status.estimatedMs = lastRunDurationMs;
+  status.categoryProgress = emptyProgress();
   await persistStatus();
 
   try {
@@ -133,16 +135,7 @@ export async function runOnce(): Promise<SyncStatus> {
       return getStatus();
     }
 
-    if (!isRelayConfigured() && backends.includes("relay") && backends.length === 1) {
-      phase = "idle";
-      status.lastSummary = "No backend configured";
-      status.lastRunAt = Date.now();
-      await persistStatus();
-      return getStatus();
-    }
-
-    if (!isRelayConfigured() && !backends.includes("relay")) {
-      // non-relay backends handled elsewhere; nothing to do here
+    if (!isRelayConfigured() && backends.includes("relay")) {
       phase = "idle";
       status.lastSummary = "No backend configured";
       status.lastRunAt = Date.now();
@@ -152,21 +145,28 @@ export async function runOnce(): Promise<SyncStatus> {
 
     const space = await computeStorageAddress(syncKey);
     const authHash = await computeAuthToken(syncKey, space);
-
-    const relayConfig = {
-      url:
-        (backends.includes("supabase-byo") && cfg?.supabaseUrl) ||
-        cfg?.relayUrl ||
-        "https://pfydngsbcmuhsqqjbcte.supabase.co",
-      anonKey:
-        (backends.includes("supabase-byo") && cfg?.supabaseKey) ||
-        cfg?.relayAnonKey ||
-        "sb_publishable_pKwO4ShF2yR1cufZA-2jfw_QsENS9vN",
-    };
+    const relayConfig = resolveActiveRelayEndpoint(cfg);
 
     const claimed = await claimSpace(relayConfig, space, authHash);
     if (!claimed)
       throw new Error("Relay space claim was rejected; check the sync key or pairing setup.");
+
+    const shadowReset = await ensureShadowBinding(space, relayConfig.url);
+    const endpointChanged =
+      shadowReset ||
+      (cfg.lastSyncedSpace != null && cfg.lastSyncedSpace !== space) ||
+      (cfg.lastSyncedRelayUrl != null &&
+        cfg.lastSyncedRelayUrl.replace(/\/$/, "") !== relayConfig.url.replace(/\/$/, ""));
+
+    if (endpointChanged) {
+      cfg.lastSeq = 0;
+      cfg.lastSeqByCollection = {};
+      await storage.set({ yph_sync_devices: [] });
+      await appendSyncSystemLog(
+        "INFO",
+        "Cleared stale sync shadows after key or endpoint change; running full sync"
+      );
+    }
 
     const localDeviceId = await getOrCreateDeviceId();
 
@@ -177,7 +177,11 @@ export async function runOnce(): Promise<SyncStatus> {
       Object.keys(lastSeqByCollection).length > 0
         ? Math.min(...Object.values(lastSeqByCollection))
         : (cfg?.lastSeq ?? 0);
-    const incoming = await pullAll(relayConfig, space, authHash, sinceSeq);
+    const incoming = await pullAll(relayConfig, space, authHash, sinceSeq, (count) => {
+      status.incomingCount = count;
+      persistStatus().catch(() => {});
+    });
+    status.incomingCount = incoming.length;
 
     phase = "merging";
     await persistStatus();
@@ -192,7 +196,13 @@ export async function runOnce(): Promise<SyncStatus> {
       sinceSeq,
       storage,
       cfg,
+      onProgress: async (progress) => {
+        status.categoryProgress = structuredClone(progress);
+        await persistStatus();
+      },
     });
+    status.categoryProgress = structuredClone(result.categoryProgress);
+    status.pendingCount = result.allDirty.length;
 
     phase = "pushing";
     await persistStatus();
@@ -222,7 +232,9 @@ export async function runOnce(): Promise<SyncStatus> {
       additionalIncomingCount = pushOutcome.pulledCount;
       didPushSuccessfully = pushOutcome.didPushSuccessfully;
       pushedCount = pushOutcome.pushedCount;
-      // Notify peers via Realtime broadcast (best-effort, no data).
+      for (const coll of ["playlists", "settings", "history", "devices"] as const) {
+        status.categoryProgress[coll].processed = status.categoryProgress[coll].total;
+      }
       if (didPushSuccessfully) {
         try {
           const { broadcastSyncNudge } = await import("./sync/realtime-nudge");
@@ -239,40 +251,42 @@ export async function runOnce(): Promise<SyncStatus> {
       !result.cursorBlocked
     ) {
       const maxSeqByCollection: Record<string, number> = { ...lastSeqByCollection };
-      // Advance cursor for each collection that had incoming records
-      const collectionsSeen = new Set(incoming.map((r: any) => r.collection));
-      for (const coll of collectionsSeen) {
-        const collMax = Math.max(
-          ...incoming.filter((r: any) => r.collection === coll).map((r: any) => r.seq)
-        );
-        if (!maxSeqByCollection[coll] || collMax > maxSeqByCollection[coll]) {
-          maxSeqByCollection[coll] = collMax;
-        }
+      for (const coll of enabledCollectionNames(cfg.content)) {
+        maxSeqByCollection[coll] = Math.max(maxSeqByCollection[coll] ?? 0, result.maxSeq);
       }
       cfg.lastSeqByCollection = maxSeqByCollection;
-      cfg.lastSeq = result.maxSeq; // keep legacy in sync
+      cfg.lastSeq = result.maxSeq;
     } else if ((incoming.length > 0 || additionalIncomingCount > 0) && result.failed.length > 0) {
-      // Keep lastSeq unchanged so failed records are re-pulled next run.
       status.lastError = result.failed.join("; ");
     }
 
+    const nowTs = Date.now();
+    status.lastError = result.failed.length ? result.failed.join("; ") : null;
+    status.lastSummary = formatSyncRunSummary(
+      result.failed,
+      result.cursorBlocked,
+      result.appliedCount,
+      pushedCount
+    );
+
     if (result.failed.length === 0 && !result.cursorBlocked) {
-      cfg.syncConfigVersion = 2;
-      cfg.syncProtocolVersion = 2;
+      stampSyncedConfig(cfg, space, relayConfig.url, nowTs, status.lastSummary);
       await storage.set({ yph_sync_config: cfg });
     }
 
+    for (const conflictMsg of result.conflicts) {
+      await appendSyncSystemLog("WARN", `Conflict resolved: ${conflictMsg}`);
+    }
+    await appendSyncSystemLog(result.failed.length ? "WARN" : "INFO", status.lastSummary, {
+      pulled: incoming.length + additionalIncomingCount,
+      applied: result.appliedCount,
+      pushed: pushedCount,
+      conflicts: result.conflicts.length,
+      failed: result.failed.length,
+    });
+
     phase = "idle";
-    const totalSynced = result.appliedCount + pushedCount;
-    status.lastError = result.failed.length ? result.failed.join("; ") : null;
-    status.lastSummary = result.failed.length
-      ? `Partial: ${result.failed.join("; ")}`
-      : result.cursorBlocked
-        ? `Synced ${totalSynced} records; cursor held while a collection is disabled`
-        : totalSynced > 0
-          ? `Synced ${totalSynced} records`
-          : "Sync complete (no changes)";
-    status.lastRunAt = Date.now();
+    status.lastRunAt = nowTs;
     status.pendingCount = 0;
     status.pushedCount = pushedCount;
     status.pulledCount = incoming.length + additionalIncomingCount;
@@ -284,6 +298,7 @@ export async function runOnce(): Promise<SyncStatus> {
     status.lastSummary = `Sync failed: ${status.lastError}`;
     status.lastRunAt = Date.now();
     backoffIndex = Math.min(backoffIndex + 1, BACKOFF_STEPS.length - 1);
+    await appendSyncSystemLog("ERROR", status.lastSummary);
   } finally {
     lastRunDurationMs = Date.now() - startedAt;
     isRunning = false;

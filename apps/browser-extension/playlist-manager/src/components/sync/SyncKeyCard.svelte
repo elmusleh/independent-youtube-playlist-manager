@@ -6,8 +6,8 @@
     faTrash,
     faKey,
     faInfoCircle,
-    faCircleExclamation,
     faArrowsRotate,
+    faSpinner,
   } from "@fortawesome/free-solid-svg-icons";
   import SimpleButton from "../SimpleButton.svelte";
   import {
@@ -16,8 +16,16 @@
     formatSyncKey,
     SYNC_KEY_SYMBOLS,
   } from "../../services/sync/sync-key.js";
-  import { isRelayConfigured } from "../../services/sync/sync-config.js";
-  import type { SyncConfig } from "../../services/sync/sync-config.js";
+  import {
+    isRelayConfigured,
+    RELAY_SUPABASE_URL,
+    type SyncConfig,
+  } from "../../services/sync/sync-config.js";
+  import { requestSyncHostPermission } from "../../services/sync/host-permissions.js";
+  import {
+    clearLocalSyncRuntimeState,
+    resetSyncConfigCursors,
+  } from "../../services/sync/sync-state-reset.js";
   import { requestConfirm } from "../../stores/confirmation";
 
   let {
@@ -26,12 +34,14 @@
     onLog,
     onRotate,
     onTestConnection,
+    isTestingConnection = false,
   }: {
     config: SyncConfig;
     onPersist: () => void | Promise<void>;
     onLog: (message: string, type?: "info" | "success" | "error" | "warning") => void;
     onRotate?: () => void | Promise<void>;
     onTestConnection?: () => void | Promise<void>;
+    isTestingConnection?: boolean;
   } = $props();
 
   let keyInput = $state("");
@@ -39,15 +49,33 @@
 
   const hasSyncKey = $derived(!!config.syncKey);
 
-  function handleKeySave() {
+  async function requestRelayAccessIfNeeded() {
+    if (!config.backends.includes("relay")) return;
+    const permissions =
+      (globalThis as any).browser?.permissions || (globalThis as any).chrome?.permissions;
+    if (permissions) {
+      await requestSyncHostPermission(RELAY_SUPABASE_URL, permissions);
+    }
+  }
+
+  async function handleKeySave() {
     if (isValidSyncKey(keyInput)) {
-      config.syncKey = formatSyncKey(keyInput);
-      config.syncProtocolVersion = null;
+      const formatted = formatSyncKey(keyInput);
+      const changed = config.syncKey !== formatted;
+      config.syncKey = formatted;
+      config.syncConfigVersion = 2;
+      config.syncProtocolVersion = 2;
       config.legacyV2AcknowledgedAt = null;
+      if (config.backends.length === 0 && isRelayConfigured()) config.backends = ["relay"];
+      if (changed) {
+        resetSyncConfigCursors(config, null);
+        await clearLocalSyncRuntimeState(null);
+      }
+      await requestRelayAccessIfNeeded();
       keyInput = "";
       keyError = null;
-      onPersist();
-      onLog("Sync key saved", "success");
+      await onPersist();
+      onLog('Sync key saved — click "Sync now" to sync this device', "success");
     } else {
       keyError = `A sync key has ${SYNC_KEY_SYMBOLS} letters/digits, e.g. ABCDE-FGHJK-MNPQR-STVWX.`;
       onLog(keyError, "error");
@@ -61,14 +89,17 @@
         "Only do this on your FIRST device. Every other device must paste this same key — a second generated key creates a separate, unconnected sync space.",
       color: "primary",
       confirmLabel: "Create key",
-      onConfirm: () => {
+      onConfirm: async () => {
         config.syncKey = generateSyncKey();
         config.syncConfigVersion = 2;
         config.syncProtocolVersion = 2;
         config.legacyV2AcknowledgedAt = null;
         if (config.backends.length === 0 && isRelayConfigured()) config.backends = ["relay"];
+        resetSyncConfigCursors(config, null);
+        await clearLocalSyncRuntimeState(null);
+        await requestRelayAccessIfNeeded();
         keyError = null;
-        onPersist();
+        await onPersist();
         onLog("New sync key created — copy it to your other devices", "success");
       },
     });
@@ -92,11 +123,13 @@
     });
   }
 
-  function removeKey() {
+  async function removeKey() {
     config.syncKey = null;
     config.syncProtocolVersion = null;
     config.legacyV2AcknowledgedAt = null;
-    onPersist();
+    resetSyncConfigCursors(config, null);
+    await clearLocalSyncRuntimeState(null);
+    await onPersist();
     onLog("Sync key removed from this device", "warning");
   }
 </script>
@@ -120,14 +153,24 @@
             <Fa icon={faCopy} /> Copy
           </SimpleButton>
           {#if onTestConnection}
-            <SimpleButton secondary onclick={() => onTestConnection?.()}>
-              Test connection
+            <SimpleButton
+              secondary
+              disabled={isTestingConnection}
+              title="Verifies encrypted relay access and checks how many records exist in your cloud space"
+              onclick={() => onTestConnection?.()}
+            >
+              {#if isTestingConnection}
+                <Fa icon={faSpinner} spin /> Testing…
+              {:else}
+                Test connection
+              {/if}
             </SimpleButton>
           {/if}
         </div>
       </div>
       <p class="key-hint">
-        <Fa icon={faInfoCircle} /> This key is set. Paste it into other devices to link them.
+        <Fa icon={faInfoCircle} /> This key is set. Paste it into other devices to link them, then click
+        <strong>Sync now</strong>.
       </p>
       <SimpleButton secondary className="danger" onclick={handleRemoveKey}>
         <Fa icon={faTrash} /> Remove key from this device

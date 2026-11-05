@@ -1,3 +1,46 @@
+## 2026-11-05 — Critical cross-device Sync v2 root-cause fix & Sync Center hardening
+
+### Root Causes Fixed
+
+1. **Stale unbound IndexedDB shadows (`yph_sync_shadow_v1`) suppressed initial push:**
+   - Shadows were never cleared on sync key/relay URL changes, leaving Firefox's local shadow store populated from an earlier `mawqiei.net` test space while `pfydngsbcmuhsqqjbcte` had `0` rows (`isDirty()` returned `false` → `"Sync complete (no changes)"`).
+   - Added `sync-state-reset.ts` (`ensureShadowBinding(space, relayUrl)`, `resetSyncConfigCursors`, `clearLocalSyncRuntimeState`) and wired shadow/cursor resets into `sync-engine.ts`, `SyncKeyCard.svelte`, and `rotate-key.ts`, while filtering `__meta__` rows out of `getShadowCounts()`.
+2. **Background service worker settings blindness + broken 3-way settings merge:**
+   - `"sync-now"` executes in the background service worker where `window.getSettings` is `undefined`, so `sync-engine-adapters.ts` previously read `{}`. Extracted `adapter-storage-io.ts` to read/write syncable settings directly from `storage.local` + `storage.sync` filtered by `SYNCABLE_SETTING_KEYS` (including `favoritePlaylistIds` and `watchLaterPlaylistId`).
+   - Unified `merge/settings.ts` allowlist with `SYNCABLE_SETTING_KEYS`, fixed `mergeSingleSetting` so remote changes win when `local === base` (previously hardcoded `return { value: local }`), and added 3-way set-union merge for `favoritePlaylistIds`.
+3. **Playlist `string[]` video array corruption & `local_yt_history` missing `.videoId`:**
+   - Extracted `merge/playlist-videos.ts` and updated `merge/playlists.ts` to natively 3-way merge `string[]` video ID arrays (instead of `{ ...l }` character-indexed object corruption), parse ISO `updatedAt` timestamps without `NaN`, preserve single-sided title edits, and honour `conflictStrategy: "merge" | "lww"`.
+   - Normalized `local_yt_history` entries in `adapter-storage-io.ts` and `adapters/history.ts` so entries stored under `{ [videoId]: entry }` always carry `.videoId`.
+4. **Infinite re-pull cursor loop + self-triggered `storage.onChanged` loops:**
+   - `sync-engine.ts` now advances `lastSeqByCollection` across all enabled collections (preventing an unchanged collection like `devices` from pinning `Math.min` forever), and all 4 adapters skip storage writes and return `{ applied: 0 }` when incoming records have `version <= shadow.remoteVersion`.
+   - Fixed `hlc.ts` `getDeviceHash` to hash the actual `deviceId` instead of a static literal.
+5. **Sync Center UX, read-only connection test, conflict strategy, permissions & `[SYNC]` audit logs:**
+   - Added `verifyRelayConnection` (`sync-test-connection` runtime message) so **"Test connection"** performs a dedicated read-only relay handshake + cloud record count check instead of running `syncNow()`.
+   - Added `SyncConflictCard.svelte` (`Automatic 3-way merge`, `Last-write-wins`, `Manual review queue (Coming soon)` + `#/logs` link), fixed `SyncHero.svelte` status priority + unused CSS selectors, wired live `syncStage`/`syncProgress`/`categoryProgress` and real device counts, added user-gesture relay host permission requests, emitted `[SYNC]` entries to `yph_system_logs`, and removed `qvwitlpnetwthyhrobca.supabase.co` (`mawqiei.net`) from both manifests.
+
+### Files Changed
+
+- `apps/browser-extension/manifest.chrome.json`, `apps/browser-extension/manifest.firefox.json`
+- `apps/browser-extension/playlist-manager/src/services/sync/{shadow-store,sync-state-reset,rotate-key,hlc,sync-config,adapter-storage-io,sync-diagnostics}.ts`
+- `apps/browser-extension/playlist-manager/src/services/sync/merge/{playlist-videos,playlists,settings}.ts` + tests
+- `apps/browser-extension/playlist-manager/src/services/sync/adapters/{playlists,history,settings,devices}.ts`
+- `apps/browser-extension/playlist-manager/src/services/{sync-engine,sync-engine-adapters,sync-engine-registration}.ts` + `sync-engine.integration.test.ts`
+- `apps/browser-extension/playlist-manager/src/components/sync/{SyncConflictCard,SyncHero,SyncKeyCard}.svelte`, `src/views/Sync.svelte`
+- `tests/visual/views.spec.ts-snapshots/sync-{light,dark}-{mobile,desktop}-chromium-linux.png`, `docs/INDEX.md`
+
+### Build & Verification Status
+
+- Live hosted relay RPC verification against `pfydngsbcmuhsqqjbcte.supabase.co` (`sync_claim`, `sync_push` insert + upsert, `sync_pull`, `sync_delete_space`): ✅
+- `npm run check`: ✅ (`lint`, `format:check`, `84` Vitest files / `765` tests, `contracts:check`, `verify-file-size` [329 files], `verify-visual-baselines`, `svelte-check` [0 errors], CSS bundle, Vercel config, assets, lockfiles, release notes)
+- `npm run test:visual`: ✅ (`24/24` passed with updated `#/sync` snapshots)
+- `npm run build`: ✅ (`dist/chrome`, `dist/firefox`, `dist/edge` freshly packaged within bundle budgets)
+
+### Next Steps (Manual Browser Reload)
+
+1. Reload unpacked extension in Firefox (`about:debugging`) and Chrome (`chrome://extensions`) from `dist/firefox` and `dist/chrome`.
+2. In Firefox `#/sync`, click **Sync now** first so `ensureShadowBinding` clears the legacy unbound shadow store and pushes all local playlists, watch history, and pinned favorites to `pfydngsbcmuhsqqjbcte`.
+3. In Chrome `#/sync`, click **Sync now** (or **Test connection** first to confirm cloud record count > 0) and verify all playlists, history, and pinned favorites appear cleanly.
+
 ## 2026-11-04 — Trusted gateway rate limiting folded into PR #88
 
 - Merged `fix/sync-ip-ratelimit` into `feat/sync-hardening` and pushed; PR #88 head is now `056aec6`.

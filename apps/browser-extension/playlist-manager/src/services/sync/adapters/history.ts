@@ -28,15 +28,25 @@ export type AdapterContext = {
   hlcState?: { lastHlc: any };
 };
 
+function normalizeHistoryEntry(videoId: string, raw: unknown): HistoryEntry | null {
+  if (!raw || typeof raw !== "object") return null;
+  const obj = raw as Record<string, unknown>;
+  const resolvedId = typeof obj.videoId === "string" && obj.videoId ? obj.videoId : videoId;
+  if (!resolvedId) return null;
+  return { ...(obj as HistoryEntry), videoId: resolvedId };
+}
+
 export async function collectDirtyHistory(ctx: AdapterContext): Promise<DirtyCandidate[]> {
   const { history } = await ctx.librarySnapshot();
   const keys = await deriveKeys(ctx.syncKey);
   const dirty: DirtyCandidate[] = [];
   let lastHlc: any = ctx.hlcState?.lastHlc;
-  for (const [videoId, entry] of Object.entries(history)) {
+  for (const [videoId, rawEntry] of Object.entries(history)) {
+    const entry = normalizeHistoryEntry(videoId, rawEntry);
+    if (!entry) continue;
     if (await isDirty("history", videoId, entry)) {
       const rid = await computeRecordId(ctx.syncKey, "history", videoId);
-      const hlc = await getHlc(ctx.syncKey, lastHlc);
+      const hlc = await getHlc(ctx.syncKey, lastHlc, ctx.localDeviceId);
       lastHlc = hlc;
       const version = hlc.value;
       const envelope: RecordEnvelope = {
@@ -71,10 +81,10 @@ export async function collectDirtyHistory(ctx: AdapterContext): Promise<DirtyCan
     if (localIds.has(shadow.recordId)) continue;
     // An acknowledged deletion has already been propagated; do not re-emit it.
     if (shadow.deleted) continue;
-    const baseCopy = shadow.baseCopy;
+    const baseCopy = normalizeHistoryEntry(shadow.recordId, shadow.baseCopy);
     if (!baseCopy) continue;
     const rid = await computeRecordId(ctx.syncKey, "history", shadow.recordId);
-    const hlc = await getHlc(ctx.syncKey, lastHlc);
+    const hlc = await getHlc(ctx.syncKey, lastHlc, ctx.localDeviceId);
     lastHlc = hlc;
     const version = hlc.value;
     const envelope: RecordEnvelope = {
@@ -114,11 +124,16 @@ export async function applyRemoteHistory(
   if (!remote || remote.length === 0) return { applied: 0, failed: [] };
   const { history: localObj } = await ctx.librarySnapshot();
   const keys = await deriveKeys(ctx.syncKey);
-  const local = Object.values(localObj) as HistoryEntry[];
+  const local = Object.entries(localObj)
+    .map(([videoId, entry]) => normalizeHistoryEntry(videoId, entry))
+    .filter((entry): entry is HistoryEntry => entry !== null);
   const baseCopies: HistoryEntry[] = [];
   for (const entry of local) {
     const base = await getShadow("history", entry.videoId);
-    if (base?.baseCopy) baseCopies.push(base.baseCopy as HistoryEntry);
+    const normalizedBase = base?.baseCopy
+      ? normalizeHistoryEntry(entry.videoId, base.baseCopy)
+      : null;
+    if (normalizedBase) baseCopies.push(normalizedBase);
   }
 
   const failed: string[] = [];
@@ -184,6 +199,10 @@ export async function applyRemoteHistory(
     }
   }
 
+  if (remoteEntries.length === 0 && appliedDeletes.size === 0 && locallyEditedDeletes.size === 0) {
+    return { applied: 0, failed };
+  }
+
   const finalHistory = [...mergedById.values()].sort((a, b) => b.lastWatchedAt - a.lastWatchedAt);
   try {
     await ctx.saveHistory(finalHistory);
@@ -217,5 +236,5 @@ export async function applyRemoteHistory(
     failed.push(`history shadow update: ${error instanceof Error ? error.message : String(error)}`);
   }
 
-  return { applied: finalHistory.length, failed };
+  return { applied: remoteEntries.length + appliedDeletes.size, failed };
 }
