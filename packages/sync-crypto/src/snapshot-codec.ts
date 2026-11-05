@@ -4,6 +4,8 @@
 import type { SyncSnapshot, SnapshotInput } from "./types.js";
 import { SNAPSHOT_SCHEMA_VERSION } from "./constants.js";
 
+export { SNAPSHOT_SCHEMA_VERSION } from "./constants.js";
+
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
 

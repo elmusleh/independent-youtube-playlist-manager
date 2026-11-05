@@ -1,0 +1,21 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">IYPM</string>
+    <string name="title_activity_main">IYPM</string>
+    <string name="package_name">com.elmusleh.iypm</string>
+    <string name="custom_url_scheme">com.elmusleh.iypm</string>
+    
+    <!-- TV Strings -->
+    <string name="playlist_thumbnail">Playlist thumbnail</string>
+    <string name="no_playlists_synced">No playlists synced yet</string>
+    <string name="pairing_title">Pair Your TV</string>
+    <string name="pairing_instructions">On your phone, go to iypm.vercel.app/pair and enter this code</string>
+    <string name="generate_new_code">Generate New Code</string>
+    <string name="unpair_device">Unpair Device</string>
+    <string name="sync_now">Sync Now</string>
+    <string name="last_synced_never">Never</string>
+    <string name="last_synced_just_now">Just now</string>
+    <string name="last_synced_minutes_ago">%d min ago</string>
+    <string name="last_synced_hours_ago">%d hours ago</string>
+    <string name="last_synced_days_ago">%d days ago</string>
+</resources>

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/card_background"
+    android:layout_width="@dimen/tb_card_width"
+    android:layout_height="@dimen/tb_card_height"
+    android:orientation="vertical"
+    android:background="@drawable/tv_card_background"
+    android:focusable="true"
+    android:clickable="true"
+    android:padding="@dimen/tb_card_padding">
+
+    <ImageView
+        android:id="@+id/iv_thumbnail"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:scaleType="centerCrop"
+        android:src="@drawable/ic_playlist_placeholder"
+        android:contentDescription="@string/playlist_thumbnail" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingTop="@dimen/tb_card_text_padding"
+        android:gravity="center_horizontal">
+
+        <TextView
+            android:id="@+id/tv_playlist_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:maxLines="2"
+            android:ellipsize="end"
+            android:textSize="@dimen/tb_card_title_text_size"
+            android:textColor="@android:color/white"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:layout_marginBottom="@dimen/tb_card_text_spacing" />
+
+        <TextView
+            android:id="@+id/tv_video_count"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:textSize="@dimen/tb_card_subtitle_text_size"
+            android:textColor="@color/colorAccent"
+            android:gravity="center" />
+    </LinearLayout>
+</LinearLayout>

@@ -3,10 +3,17 @@
 
 import { useState, useEffect } from "react";
 import { createClient } from "@supabase/supabase-js";
-import { deriveKeys, decryptRecord, decodeRecord } from "@iypm/sync-crypto";
+import {
+  deriveKeys,
+  decryptRecord,
+  decodeRecord,
+  EncryptedRecord,
+  DerivedKeys,
+} from "@iypm/sync-crypto";
 import { PlaylistManager } from "@/components/PlaylistManager";
 import { SyncKeyEntry } from "@/components/SyncKeyEntry";
 import { SyncStatus } from "@/components/SyncStatus";
+import { PairingCodeEntry } from "@/components/PairingCodeEntry";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -28,10 +35,12 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [lastSynced, setLastSynced] = useState<Date | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showPairing, setShowPairing] = useState(false);
 
   useEffect(() => {
     const stored = localStorage.getItem("dashboard_sync_key");
     if (stored) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSyncKey(stored);
       loadPlaylists(stored);
     }
@@ -51,10 +60,17 @@ export default function DashboardPage() {
       });
 
       const lists = data
-        .filter((r: any) => r.collection === "playlists" && !r.deleted)
-        .map((r: any) => {
-          const decrypted = await decryptRecord(r.payload, { encryptionKey } as any);
-          return decodeRecord(decrypted);
+        .filter((r: Record<string, unknown>) => r.collection === "playlists" && !r.deleted)
+        .map(async (r: Record<string, unknown>) => {
+          const decrypted = await decryptRecord(
+            r.payload as EncryptedRecord,
+            {
+              encryptionKey,
+              recordIdKey: encryptionKey,
+              authTokenKey: encryptionKey,
+            } as DerivedKeys
+          );
+          return decodeRecord(decrypted as unknown as Uint8Array);
         });
 
       const playlists = await Promise.all(lists);
@@ -84,6 +100,13 @@ export default function DashboardPage() {
     loadPlaylists(key);
   }
 
+  function handlePairingComplete(receivedSyncKey: string) {
+    localStorage.setItem("dashboard_sync_key", receivedSyncKey);
+    setSyncKey(receivedSyncKey);
+    setShowPairing(false);
+    loadPlaylists(receivedSyncKey);
+  }
+
   function playOnYouTube(playlistId: string) {
     window.open(`https://youtube.com/playlist?list=${playlistId}`, "_blank");
   }
@@ -96,6 +119,29 @@ export default function DashboardPage() {
     );
   }
 
+  if (showPairing) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <header className="border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+          <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between">
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Pair Device</h1>
+              <button
+                onClick={() => setShowPairing(false)}
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </header>
+        <main className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+          <PairingCodeEntry onComplete={handlePairingComplete} />
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <header className="border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
@@ -104,6 +150,12 @@ export default function DashboardPage() {
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Playlist Dashboard</h1>
             <div className="flex items-center gap-4">
               <SyncStatus lastSynced={lastSynced} isLoading={isLoading} onSync={handleSync} />
+              <button
+                onClick={() => setShowPairing(true)}
+                className="px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-500 transition-colors"
+              >
+                Pair New Device
+              </button>
             </div>
           </div>
         </div>
@@ -118,4 +170,8 @@ export default function DashboardPage() {
       </main>
     </div>
   );
+}
+
+function playOnYouTube(playlistId: string) {
+  window.open(`https://youtube.com/playlist?list=${playlistId}`, "_blank");
 }

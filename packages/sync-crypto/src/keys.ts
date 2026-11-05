@@ -2,7 +2,6 @@
 // Key derivation, sync key management, and identity functions
 
 import {
-  DerivedKeys,
   ENCRYPTION_KEY_BYTES,
   RECORD_ID_KEY_BYTES,
   AUTH_TOKEN_KEY_BYTES,
@@ -15,7 +14,7 @@ import {
   FINGERPRINT_DOMAIN,
   STORAGE_ADDRESS_DOMAIN,
 } from "./constants.js";
-import type { KeyFingerprint } from "./types.js";
+import type { DerivedKeys, KeyFingerprint } from "./types.js";
 import { EMOJI_POOL, WORD_POOL } from "./fingerprint-pools.js";
 
 /** Crockford base32 alphabet (no I, L, O, U) */
@@ -36,7 +35,7 @@ export class InvalidSyncKeyError extends Error {
 function randomByte(): number {
   const buffer = new Uint8Array(1);
   globalThis.crypto.getRandomValues(buffer);
-  return buffer[0];
+  return buffer[0]!;
 }
 
 function randomIndex(): number {

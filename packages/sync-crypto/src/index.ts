@@ -28,8 +28,6 @@ export {
   isValidSyncKey,
   assertValidSyncKey,
   InvalidSyncKeyError,
-  SYNC_KEY_SYMBOLS,
-  SYNC_KEY_GROUPS,
 } from "./keys.js";
 
 // Encryption (record-level)
@@ -49,7 +47,6 @@ export {
   createSnapshot,
   encodeSnapshot,
   decodeSnapshot,
-  validateSnapshot,
   isNewerRevision,
   SyncSnapshotError,
   SNAPSHOT_SCHEMA_VERSION,

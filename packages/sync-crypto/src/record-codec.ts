@@ -9,12 +9,12 @@ export { RECORD_VERSION } from "./constants.js";
 function bytesToBase64(bytes: Uint8Array): string {
   let binary = "";
   for (let i = 0; i < bytes.length; i++) {
-    binary += String.fromCharCode(bytes[i]);
+    binary += String.fromCharCode(bytes[i]!);
   }
   return btoa(binary);
 }
 
-function base64ToBytes(b64: string): Uint8Array {
+function base64ToBytes(b64: string): Uint8Array<ArrayBuffer> {
   const binary = atob(b64);
   const out = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i++) {
@@ -56,7 +56,7 @@ export async function encryptRecord(
   const ciphertext = await globalThis.crypto.subtle.encrypt(
     { name: "AES-GCM", iv: nonce, additionalData: aad },
     keys.encryptionKey,
-    plaintext.buffer as ArrayBuffer
+    plaintext as Uint8Array<ArrayBuffer>
   );
 
   return {
@@ -83,7 +83,7 @@ export async function decryptRecord(
     const plaintextBuffer = await globalThis.crypto.subtle.decrypt(
       { name: "AES-GCM", iv: nonce, additionalData: aad },
       keys.encryptionKey,
-      ciphertext.buffer as ArrayBuffer
+      ciphertext as Uint8Array<ArrayBuffer>
     );
     return decodeRecord(new Uint8Array(plaintextBuffer));
   } catch (e) {
