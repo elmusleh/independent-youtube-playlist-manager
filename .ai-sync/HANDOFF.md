@@ -1,3 +1,42 @@
+## 2026-11-06 — Dependabot Remediation (All 29 Open Vulnerabilities Resolved)
+
+### Status & Deliverables
+
+- **Branch:** `fix/dependabot-remediation` (branched from `next` @ `9585b7c`)
+- **PR:** [#95](https://github.com/elmusleh/independent-youtube-playlist-manager/pull/95) (`fix/dependabot-remediation` -> `next`)
+- **Status:** Complete & Verified. All 29 open Dependabot vulnerabilities addressed and verified with tests, audits, and builds passing cleanly.
+
+### What Was Done
+
+1. **`packages/sync-crypto/package.json`**:
+   - Bumped `vitest` devDependency from `^2.1.0` to `^4.1.12` to align with root workspace vitest v4.
+   - Eliminated nested legacy vulnerable dependencies (`vitest@2.1.9`, `vite@5.4.21`, `tinypool@1.0.1`, and `esbuild@0.21.5`).
+   - Fixed grapheme cluster length assertion in `packages/sync-crypto/src/keys.test.ts` using `Intl.Segmenter` for proper Unicode grapheme cluster counting on complex emoji.
+2. **`apps/mobile-app/package.json`**:
+   - Upgraded `@capacitor/assets` from `^3.0.0` to `^4.0.0` to natively resolve `sharp@^0.35.5`.
+3. **`package-lock.json`**:
+   - Upgraded `tar` to `7.5.22` (fixes alerts #109, #110, #111, #112, #113, #114, #116, #120).
+   - Upgraded `sharp` to `0.35.5` (fixes alerts #17, #22, #81).
+   - Upgraded `uuid` to `11.1.1` (fixes alert #115).
+   - Pruned nested vulnerable dependencies of `vite`, `vitest`, `@vitest/mocker`, `tinypool`, and `esbuild` (fixes alerts #1, #9, #13, #14, #15, #100, #122, #123, #124, #125, #126, #127, #128, #129, #130, #132, #133).
+   - Preserved `lockfileVersion: 2` structure.
+
+### Verification Results
+
+- `npm ci`: Clean install, 0 missing packages.
+- `npm audit --audit-level=high`: Exits 0, 0 high/critical vulnerabilities across root and workspaces.
+- `npm run check`: 92 test files passed (800 unit tests), contract checks passed, svelte diagnostics clean, file-size ratchet clean.
+- `npm run test --prefix packages/sync-crypto`: 4 test files passed (38 tests).
+- `npm run build`: Chrome, Firefox, Edge, and Portal packages generated within file size budgets.
+- Pre-commit git hooks: Passed.
+
+### Next Steps
+
+1. Merge PR #95 into `next`. Dependabot will automatically mark all 29 alerts as resolved upon merge.
+2. Release lock verified released (`.agents/EDITING`).
+
+---
+
 ## 2026-11-05 — v1.4 Android TV & Native Android Support Planning (NEW)
 
 ### Plan Created
