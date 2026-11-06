@@ -166,7 +166,8 @@ describe("Key Fingerprint", () => {
   it("should generate emoji + word fingerprint", async () => {
     const fp = await generateKeyFingerprint(testKey);
     // Emoji are grapheme clusters, count them properly
-    expect([...fp.emoji]).toHaveLength(4);
+    const segmenter = new Intl.Segmenter("en", { granularity: "grapheme" });
+    expect([...segmenter.segment(fp.emoji)]).toHaveLength(4);
     expect(fp.words).toMatch(/^[a-z]+(-[a-z]+){3}$/);
   });
 
