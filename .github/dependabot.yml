@@ -1,18 +1,11 @@
 version: 2
 
-# Three independent npm trees, three entries. There are no npm workspaces: root, the
-# portal and the extension each carry their own package.json + lockfile, and Dependabot
-# only ever sees the directory it is pointed at. Pointing it at "/" alone left the portal
-# and the extension completely unmonitored.
-#
-# Each directory is grouped separately: one PR per directory per week, and a broken
-# lockfile in one tree cannot take the others down.
+# Dependabot configuration for independent npm trees and workspace packages.
+# Each directory is grouped separately: one PR per directory per week, grouping
+# minor and patch dependency updates to reduce PR noise and lockfile fragmentation.
 
 updates:
   # Root: shared tooling — eslint, prettier, vitest, playwright, husky, lint-staged.
-  # The old svelte/vite/esbuild ignores are gone: none of those three is declared here,
-  # so they were guarding dependencies this directory does not have. The svelte rule now
-  # lives next to svelte.
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
@@ -21,6 +14,35 @@ updates:
       npm_and_yarn:
         patterns:
           - "*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # Shared crypto workspace package
+  - package-ecosystem: "npm"
+    directory: "/packages/sync-crypto"
+    schedule:
+      interval: "weekly"
+    groups:
+      sync-crypto:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # Mobile app workspace
+  - package-ecosystem: "npm"
+    directory: "/apps/mobile-app"
+    schedule:
+      interval: "weekly"
+    groups:
+      mobile-app:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
 
   # Web portal: Next.js 15 + React 19.
   - package-ecosystem: "npm"
@@ -31,6 +53,9 @@ updates:
       portal:
         patterns:
           - "*"
+        update-types:
+          - "minor"
+          - "patch"
     ignore:
       # Framework majors are migrations, not weekly chores. A major PR that cannot pass
       # CI teaches nobody anything — bump these deliberately, by hand, when ready.
@@ -50,6 +75,9 @@ updates:
       extension:
         patterns:
           - "*"
+        update-types:
+          - "minor"
+          - "patch"
     ignore:
       # Svelte 6 would require a full runes migration.
       - dependency-name: "svelte"

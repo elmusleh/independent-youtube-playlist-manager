@@ -50,8 +50,8 @@ jobs:
             apps/mobile-app/package-lock.json
       - name: Install Root Dependencies
         run: npm ci
-      - name: Audit Root Dependencies
-        run: npm audit --audit-level=high
+      - name: Audit Root & Workspace Dependencies
+        run: npm audit --workspaces --audit-level=high
         continue-on-error: true
       - name: Install Extension Dependencies
         run: cd apps/browser-extension/playlist-manager && npm ci

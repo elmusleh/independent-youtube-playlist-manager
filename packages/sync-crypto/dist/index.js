@@ -12,3 +12,5 @@ export { getHlc, compareHlc, isNewer, receiveHlc, hlcToString, parseHlc } from "
 export { ENCRYPTION_KEY_BYTES, RECORD_ID_KEY_BYTES, AUTH_TOKEN_KEY_BYTES, PBKDF2_ITERATIONS, } from "./constants.js";
 // Fingerprint pools
 export { EMOJI_POOL, WORD_POOL } from "./fingerprint-pools.js";
+// Unicode utilities
+export { countGraphemes, splitGraphemes } from "./utils.js";
