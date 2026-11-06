@@ -120,8 +120,8 @@ jobs:
           node packages/build-tools/orchestration/evidence-preflight.js
           node packages/build-tools/orchestration/demo-parallel.js
 
-      - name: Audit Root Dependencies
-        run: npm audit --audit-level=high
+      - name: Audit Root & Workspace Dependencies
+        run: npm audit --workspaces --audit-level=high
         continue-on-error: true
 
       - name: Audit Extension Dependencies

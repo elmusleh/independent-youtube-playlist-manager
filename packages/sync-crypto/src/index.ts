@@ -65,3 +65,6 @@ export {
 
 // Fingerprint pools
 export { EMOJI_POOL, WORD_POOL } from "./fingerprint-pools.js";
+
+// Unicode utilities
+export { countGraphemes, splitGraphemes } from "./utils.js";

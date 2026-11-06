@@ -16,6 +16,7 @@ import {
   generateKeyFingerprint,
   InvalidSyncKeyError,
 } from "./keys.js";
+import { countGraphemes } from "./utils.js";
 
 describe("Sync Key Management", () => {
   let validKey: string;
@@ -166,8 +167,7 @@ describe("Key Fingerprint", () => {
   it("should generate emoji + word fingerprint", async () => {
     const fp = await generateKeyFingerprint(testKey);
     // Emoji are grapheme clusters, count them properly
-    const segmenter = new Intl.Segmenter("en", { granularity: "grapheme" });
-    expect([...segmenter.segment(fp.emoji)]).toHaveLength(4);
+    expect(countGraphemes(fp.emoji)).toBe(4);
     expect(fp.words).toMatch(/^[a-z]+(-[a-z]+){3}$/);
   });
 

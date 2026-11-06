@@ -5,4 +5,5 @@ export { createSnapshot, encodeSnapshot, decodeSnapshot, isNewerRevision, SyncSn
 export { getHlc, compareHlc, isNewer, receiveHlc, hlcToString, parseHlc } from "./hlc.js";
 export { ENCRYPTION_KEY_BYTES, RECORD_ID_KEY_BYTES, AUTH_TOKEN_KEY_BYTES, PBKDF2_ITERATIONS, } from "./constants.js";
 export { EMOJI_POOL, WORD_POOL } from "./fingerprint-pools.js";
+export { countGraphemes, splitGraphemes } from "./utils.js";
 //# sourceMappingURL=index.d.ts.map
