@@ -18,7 +18,7 @@
     "@capacitor/keyboard": "^6.0.0",
     "@capacitor/preferences": "^6.0.4",
     "@capacitor/splash-screen": "^6.0.0",
-    "@capacitor/status-bar": "^6.0.0",
+    "@capacitor/status-bar": "^8.0.4",
     "@iypm/sync-crypto": "file:../../packages/sync-crypto"
   },
   "devDependencies": {
