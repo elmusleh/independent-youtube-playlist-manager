@@ -13,6 +13,9 @@
 
 </div>
 
+> ⭐ **If IYPM helps you, please star this repo** — it helps others discover it and keeps the project going.
+> Found a bug or have an idea? Open an issue; PRs are welcome.
+
 ## 🌐 Supported browsers
 
 Install IYPM on any browser that supports WebExtensions. Chromium-based browsers all run the same build.
