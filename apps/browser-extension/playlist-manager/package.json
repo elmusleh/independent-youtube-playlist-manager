@@ -36,7 +36,7 @@
     "svelte-eslint-parser": "^1.10.0",
     "svelte-preprocess": "^6.0.3",
     "tslib": "^2.8.1",
-    "typescript": "^6.0.3"
+    "typescript": "^7.0.2"
   },
   "overrides": {
     "follow-redirects": "^1.16.2",
